@@ -1,0 +1,19 @@
+{
+  "name": "nitroping",
+  "type": "module",
+  "private": false,
+  "version": "0.0.1",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "release": "pnpm build && pnpm publish --no-git-checks --access public"
+  },
+  "dependencies": {
+    "nuxt": "^4.0.3",
+    "vue": "^3.5.18",
+    "vue-router": "^4.5.1"
+  }
+}
