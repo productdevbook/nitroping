@@ -12,8 +12,21 @@
     "release": "pnpm build && pnpm publish --no-git-checks --access public"
   },
   "dependencies": {
+    "@nuxtjs/tailwindcss": "7.0.0-beta.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^0.539.0",
     "nuxt": "^4.0.3",
+    "reka-ui": "^2.4.1",
+    "shadcn-nuxt": "2.2.0",
+    "tailwind-merge": "^3.3.1",
+    "tw-animate-css": "^1.3.6",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.179.0",
+    "tailwindcss": "^4.1.12",
+    "typescript": "^5.9.2"
   }
 }
