@@ -114,3 +114,57 @@ export function useRegenerateApiKey() {
     },
   })
 }
+
+export function useConfigureAPNs() {
+  const queryCache = useQueryCache()
+
+  return useMutation({
+    mutation: async ({ id, input }: { id: string, input: { keyId: string, teamId: string, privateKey: string, bundleId?: string, isProduction?: boolean } }) => {
+      const result = await $sdk.configureAPNs({ id, input })
+      return result.data?.configureAPNs || null
+    },
+    onSuccess: (_data, { id }) => {
+      queryCache.invalidateQueries({ key: ['apps'] })
+      queryCache.invalidateQueries({ key: ['app', id] })
+    },
+  })
+}
+
+export function useConfigureFCM() {
+  const queryCache = useQueryCache()
+
+  return useMutation({
+    mutation: async ({ id, input }: { id: string, input: { projectId: string, serviceAccount: string } }) => {
+      const result = await $sdk.configureFCM({ id, input })
+      return result.data?.configureFCM || null
+    },
+    onSuccess: (_data, { id }) => {
+      queryCache.invalidateQueries({ key: ['apps'] })
+      queryCache.invalidateQueries({ key: ['app', id] })
+    },
+  })
+}
+
+export function useConfigureWebPush() {
+  const queryCache = useQueryCache()
+
+  return useMutation({
+    mutation: async ({ id, input }: { id: string, input: { subject: string, publicKey: string, privateKey: string } }) => {
+      const result = await $sdk.configureWebPush({ id, input })
+      return result.data?.configureWebPush || null
+    },
+    onSuccess: (_data, { id }) => {
+      queryCache.invalidateQueries({ key: ['apps'] })
+      queryCache.invalidateQueries({ key: ['app', id] })
+    },
+  })
+}
+
+export function useGenerateVapidKeys() {
+  return useMutation({
+    mutation: async () => {
+      const result = await $sdk.generateVapidKeys()
+      return result.data?.generateVapidKeys || null
+    },
+  })
+}

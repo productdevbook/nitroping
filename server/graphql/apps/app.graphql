@@ -55,11 +55,36 @@ input UpdateAppInput {
   vapidPrivateKey: String
 }
 
+input ConfigureAPNsInput {
+  keyId: String!
+  teamId: String!
+  privateKey: String!
+  bundleId: String
+  isProduction: Boolean
+}
+
+input ConfigureFCMInput {
+  projectId: String!
+  serviceAccount: String!
+}
+
+input ConfigureWebPushInput {
+  subject: String!
+  publicKey: String!
+  privateKey: String!
+}
+
+type VapidKeys {
+  publicKey: String!
+  privateKey: String!
+}
+
 extend type Query {
   apps: [App!]!
   app(id: ID!): App
   appBySlug(slug: String!): App
   appExists(slug: String!): Boolean!
+  generateVapidKeys: VapidKeys!
 }
 
 extend type Mutation {
@@ -67,4 +92,7 @@ extend type Mutation {
   updateApp(id: ID!, input: UpdateAppInput!): App!
   deleteApp(id: ID!): Boolean!
   regenerateApiKey(id: ID!): App!
+  configureAPNs(id: ID!, input: ConfigureAPNsInput!): App!
+  configureFCM(id: ID!, input: ConfigureFCMInput!): App!
+  configureWebPush(id: ID!, input: ConfigureWebPushInput!): App!
 }

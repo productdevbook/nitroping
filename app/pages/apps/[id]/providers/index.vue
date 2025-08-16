@@ -17,18 +17,15 @@ const app = computed(() => appData.value)
 
 // Methods
 function configureFCM() {
-  // TODO: Open FCM configuration dialog
-  console.log('Configure FCM')
+  navigateTo(`/apps/${appId.value}/providers/fcm`)
 }
 
 function configureAPNs() {
-  // TODO: Open APNs configuration dialog
-  console.log('Configure APNs')
+  navigateTo(`/apps/${appId.value}/providers/apns`)
 }
 
 function configureWebPush() {
-  // TODO: Open Web Push configuration dialog
-  console.log('Configure Web Push')
+  navigateTo(`/apps/${appId.value}/providers/webpush`)
 }
 </script>
 
