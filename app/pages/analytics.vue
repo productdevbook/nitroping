@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { BarChart3, CheckCircle, RefreshCw, Send, Smartphone, XCircle } from 'lucide-vue-next'
-import { Badge } from '~/components/ui/badge'
+import { BarChart3, CheckCircle, RefreshCw, Send, XCircle } from 'lucide-vue-next'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
+import { useAnalyticsSummary } from '~/graphql/analytics'
 
 definePageMeta({
   layout: 'default',
@@ -16,22 +16,62 @@ const apps = computed(() => appsData.value || [])
 // Reactive data
 const selectedApp = ref('all')
 const timeRange = ref('7d')
-const recentNotifications = ref<any[]>([])
 
-const metrics = ref({
-  totalSent: 25847,
-  delivered: 25203,
-  failed: 644,
-  activeDevices: 1250,
-  sentChange: 12.5,
-  deviceChange: 23,
+// Get analytics data
+const { data: analyticsData, isLoading: _analyticsLoading } = useAnalyticsSummary(
+  computed(() => selectedApp.value === 'all' ? apps.value?.[0]?.id || '' : selectedApp.value),
+  timeRange,
+)
+
+// Computed metrics
+const metrics = computed(() => {
+  if (!analyticsData.value) {
+    return {
+      totalSent: 0,
+      delivered: 0,
+      opened: 0,
+      clicked: 0,
+      deliveryRate: 0,
+      openRate: 0,
+      clickRate: 0,
+      activeDevices: 0,
+    }
+  }
+
+  return {
+    totalSent: analyticsData.value.totalSent,
+    delivered: Math.round(analyticsData.value.totalSent * analyticsData.value.deliveryRate / 100),
+    opened: Math.round(analyticsData.value.totalSent * analyticsData.value.openRate / 100),
+    clicked: Math.round(analyticsData.value.totalSent * analyticsData.value.clickRate / 100),
+    deliveryRate: analyticsData.value.deliveryRate,
+    openRate: analyticsData.value.openRate,
+    clickRate: analyticsData.value.clickRate,
+    activeDevices: analyticsData.value.platformStats?.reduce((sum, platform) => sum + platform.sent, 0) || 0,
+  }
 })
 
-const platformStats = ref([
-  { name: 'Android', count: 15430, percentage: 59.7, color: '#10B981' },
-  { name: 'iOS', count: 8521, percentage: 33.0, color: '#3B82F6' },
-  { name: 'Web', count: 1896, percentage: 7.3, color: '#8B5CF6' },
-])
+const platformStats = computed(() => {
+  if (!analyticsData.value?.platformStats)
+    return []
+
+  const colors = {
+    android: '#10B981',
+    ios: '#3B82F6',
+    web: '#8B5CF6',
+  }
+
+  return analyticsData.value.platformStats.map(platform => ({
+    name: platform.name.charAt(0).toUpperCase() + platform.name.slice(1).toLowerCase(),
+    count: platform.sent,
+    delivered: platform.delivered,
+    opened: platform.opened,
+    clicked: platform.clicked,
+    deliveryRate: platform.deliveryRate,
+    openRate: platform.openRate,
+    clickRate: platform.clickRate,
+    color: colors[platform.name.toLowerCase() as keyof typeof colors] || '#6B7280',
+  }))
+})
 
 const commonErrors = ref([
   {
@@ -54,78 +94,11 @@ const commonErrors = ref([
   },
 ])
 
-// Methods
-
-async function loadRecentNotifications() {
-  try {
-    // TODO: Load from API with filters
-    recentNotifications.value = [
-      {
-        id: '1',
-        title: 'Welcome to our app!',
-        body: 'Thanks for downloading our app. Get started now!',
-        appName: 'Mobile App',
-        status: 'sent',
-        totalTargets: 150,
-        totalSent: 147,
-        totalFailed: 3,
-        createdAt: new Date(Date.now() - 1000 * 60 * 30),
-      },
-      {
-        id: '2',
-        title: 'New feature available',
-        body: 'Check out our latest update with amazing new features.',
-        appName: 'Mobile App',
-        status: 'sent',
-        totalTargets: 1200,
-        totalSent: 1180,
-        totalFailed: 20,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-      },
-      {
-        id: '3',
-        title: 'System maintenance',
-        body: 'We will be performing scheduled maintenance tonight.',
-        appName: 'Web Dashboard',
-        status: 'failed',
-        totalTargets: 45,
-        totalSent: 12,
-        totalFailed: 33,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4),
-      },
-    ]
-  }
-  catch (error) {
-    console.error('Error loading recent notifications:', error)
-  }
+// Refresh function for manual reload
+function refreshData() {
+  // The reactive queries will automatically refresh when dependencies change
+  console.log('Refreshing analytics data...')
 }
-
-function getStatusVariant(status: string) {
-  switch (status) {
-    case 'sent': return 'default'
-    case 'failed': return 'destructive'
-    case 'pending': return 'secondary'
-    default: return 'outline'
-  }
-}
-
-function formatDate(date: Date) {
-  return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
-    Math.round((date.getTime() - Date.now()) / (1000 * 60)),
-    'minute',
-  )
-}
-
-// Watch for filter changes
-watch([selectedApp, timeRange], () => {
-  // TODO: Reload data when filters change
-  console.log('Filters changed:', { app: selectedApp.value, range: timeRange.value })
-})
-
-// Load data on mount
-onMounted(() => {
-  loadRecentNotifications()
-})
 </script>
 
 <template>
@@ -172,10 +145,7 @@ onMounted(() => {
         <CardContent>
           <div class="text-2xl font-bold">{{ metrics.totalSent.toLocaleString() }}</div>
           <p class="text-xs text-muted-foreground">
-            <span :class="metrics.sentChange >= 0 ? 'text-green-600' : 'text-red-600'">
-              {{ metrics.sentChange >= 0 ? '+' : '' }}{{ metrics.sentChange }}%
-            </span>
-            from last period
+            Total notifications sent
           </p>
         </CardContent>
       </Card>
@@ -188,36 +158,33 @@ onMounted(() => {
         <CardContent>
           <div class="text-2xl font-bold">{{ metrics.delivered.toLocaleString() }}</div>
           <p class="text-xs text-muted-foreground">
-            {{ ((metrics.delivered / metrics.totalSent) * 100).toFixed(1) }}% delivery rate
+            {{ metrics.deliveryRate.toFixed(1) }}% delivery rate
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Failed</CardTitle>
+          <CardTitle class="text-sm font-medium">Opened</CardTitle>
+          <CheckCircle class="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div class="text-2xl font-bold">{{ metrics.opened.toLocaleString() }}</div>
+          <p class="text-xs text-muted-foreground">
+            {{ metrics.openRate.toFixed(1) }}% open rate
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle class="text-sm font-medium">Clicked</CardTitle>
           <XCircle class="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ metrics.failed.toLocaleString() }}</div>
+          <div class="text-2xl font-bold">{{ metrics.clicked.toLocaleString() }}</div>
           <p class="text-xs text-muted-foreground">
-            {{ ((metrics.failed / metrics.totalSent) * 100).toFixed(1) }}% failure rate
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Active Devices</CardTitle>
-          <Smartphone class="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div class="text-2xl font-bold">{{ metrics.activeDevices.toLocaleString() }}</div>
-          <p class="text-xs text-muted-foreground">
-            <span :class="metrics.deviceChange >= 0 ? 'text-green-600' : 'text-red-600'">
-              {{ metrics.deviceChange >= 0 ? '+' : '' }}{{ metrics.deviceChange }}
-            </span>
-            new this period
+            {{ metrics.clickRate.toFixed(1) }}% click rate
           </p>
         </CardContent>
       </Card>
@@ -256,7 +223,9 @@ onMounted(() => {
               </div>
               <div class="text-right">
                 <div class="font-bold">{{ platform.count.toLocaleString() }}</div>
-                <div class="text-sm text-muted-foreground">{{ platform.percentage }}%</div>
+                <div class="text-sm text-muted-foreground">
+                  {{ platform.deliveryRate.toFixed(1) }}% delivery • {{ platform.openRate.toFixed(1) }}% open
+                </div>
               </div>
             </div>
           </div>
@@ -264,7 +233,7 @@ onMounted(() => {
       </Card>
     </div>
 
-    <!-- Recent Notifications -->
+    <!-- Recent Notifications - Coming Soon -->
     <Card>
       <CardHeader>
         <div class="flex items-center justify-between">
@@ -272,43 +241,17 @@ onMounted(() => {
             <CardTitle>Recent Notifications</CardTitle>
             <CardDescription>Latest sent notifications and their status</CardDescription>
           </div>
-          <Button variant="outline" @click="loadRecentNotifications">
+          <Button variant="outline" @click="refreshData">
             <RefreshCw class="w-4 h-4 mr-2" />
             Refresh
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div class="space-y-4">
-          <div v-for="notification in recentNotifications" :key="notification.id" class="flex items-center justify-between p-4 border rounded-lg">
-            <div class="flex-1">
-              <div class="flex items-center space-x-3 mb-2">
-                <h4 class="font-medium">{{ notification.title }}</h4>
-                <Badge :variant="getStatusVariant(notification.status)">
-                  {{ notification.status }}
-                </Badge>
-              </div>
-              <p class="text-sm text-muted-foreground mb-2">{{ notification.body }}</p>
-              <div class="flex items-center space-x-4 text-xs text-muted-foreground">
-                <span>{{ notification.appName }}</span>
-                <span>•</span>
-                <span>{{ formatDate(notification.createdAt) }}</span>
-                <span>•</span>
-                <span>{{ notification.totalTargets }} targets</span>
-              </div>
-            </div>
-            <div class="text-right space-y-1">
-              <div class="text-sm">
-                <span class="text-green-600">{{ notification.totalSent }}</span> sent
-              </div>
-              <div class="text-sm">
-                <span class="text-red-600">{{ notification.totalFailed }}</span> failed
-              </div>
-              <div class="text-xs text-muted-foreground">
-                {{ ((notification.totalSent / notification.totalTargets) * 100).toFixed(1) }}% rate
-              </div>
-            </div>
-          </div>
+        <div class="text-center py-8 text-muted-foreground">
+          <BarChart3 class="h-12 w-12 mx-auto mb-4" />
+          <p>Recent notifications feature</p>
+          <p class="text-sm">Coming soon...</p>
         </div>
       </CardContent>
     </Card>

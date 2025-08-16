@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { encryptSensitiveData } from '~~/server/utils/crypto'
 
 export const configureWebPushMutation = defineMutation({
   configureWebPush: {
@@ -28,13 +29,16 @@ export const configureWebPushMutation = defineMutation({
         })
       }
 
+      // Encrypt sensitive private key before storing
+      const encryptedPrivateKey = encryptSensitiveData(input.privateKey)
+
       // Update app with Web Push configuration
       const updatedApp = await db
         .update(tables.app)
         .set({
           vapidSubject: input.subject,
           vapidPublicKey: input.publicKey,
-          vapidPrivateKey: input.privateKey,
+          vapidPrivateKey: encryptedPrivateKey,
           updatedAt: new Date(),
         })
         .where(eq(tables.app.id, id))

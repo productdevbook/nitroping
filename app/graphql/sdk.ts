@@ -7,6 +7,52 @@ import type * as Types from '#graphql/client';
 
 import type { ExecutionResult } from 'graphql';
 
+export const GetNotificationAnalyticsDocument = /*#__PURE__*/ `
+    query getNotificationAnalytics($notificationId: ID!) {
+  getNotificationAnalytics(notificationId: $notificationId) {
+    notificationId
+    sentCount
+    deliveredCount
+    openedCount
+    clickedCount
+    deliveryRate
+    openRate
+    clickRate
+    platformBreakdown {
+      platform
+      sent
+      delivered
+      opened
+      clicked
+      avgDeliveryTime
+      avgOpenTime
+    }
+  }
+}
+    `;
+export const GetEngagementMetricsDocument = /*#__PURE__*/ `
+    query getEngagementMetrics($appId: ID!, $timeRange: String) {
+  getEngagementMetrics(appId: $appId, timeRange: $timeRange) {
+    totalNotifications
+    totalSent
+    totalDelivered
+    totalOpened
+    totalClicked
+    overallDeliveryRate
+    overallOpenRate
+    overallClickRate
+    platformBreakdown {
+      platform
+      sent
+      delivered
+      opened
+      clicked
+      avgDeliveryTime
+      avgOpenTime
+    }
+  }
+}
+    `;
 export const CreateAppDocument = /*#__PURE__*/ `
     mutation createApp($input: CreateAppInput!) {
   createApp(input: $input) {
@@ -48,6 +94,35 @@ export const RegenerateApiKeyDocument = /*#__PURE__*/ `
   regenerateApiKey(id: $id) {
     id
     apiKey
+    updatedAt
+  }
+}
+    `;
+export const ConfigureApNsDocument = /*#__PURE__*/ `
+    mutation configureAPNs($id: ID!, $input: ConfigureAPNsInput!) {
+  configureAPNs(id: $id, input: $input) {
+    id
+    apnsKeyId
+    apnsTeamId
+    updatedAt
+  }
+}
+    `;
+export const ConfigureFcmDocument = /*#__PURE__*/ `
+    mutation configureFCM($id: ID!, $input: ConfigureFCMInput!) {
+  configureFCM(id: $id, input: $input) {
+    id
+    fcmProjectId
+    updatedAt
+  }
+}
+    `;
+export const ConfigureWebPushDocument = /*#__PURE__*/ `
+    mutation configureWebPush($id: ID!, $input: ConfigureWebPushInput!) {
+  configureWebPush(id: $id, input: $input) {
+    id
+    vapidSubject
+    vapidPublicKey
     updatedAt
   }
 }
@@ -231,6 +306,82 @@ export const SendNotificationDocument = /*#__PURE__*/ `
   }
 }
     `;
+export const NotificationsDocument = /*#__PURE__*/ `
+    query notifications($appId: ID) {
+  notifications(appId: $appId) {
+    id
+    appId
+    title
+    body
+    data
+    badge
+    sound
+    clickAction
+    imageUrl
+    targetDevices
+    platforms
+    scheduledAt
+    status
+    totalTargets
+    totalSent
+    totalDelivered
+    totalFailed
+    totalClicked
+    createdAt
+    updatedAt
+    sentAt
+  }
+}
+    `;
+export const NotificationDocument = /*#__PURE__*/ `
+    query notification($id: ID!) {
+  notification(id: $id) {
+    id
+    appId
+    title
+    body
+    data
+    badge
+    sound
+    clickAction
+    imageUrl
+    targetDevices
+    platforms
+    scheduledAt
+    status
+    totalTargets
+    totalSent
+    totalDelivered
+    totalFailed
+    totalClicked
+    createdAt
+    updatedAt
+    sentAt
+    deliveryLogs {
+      id
+      deviceId
+      status
+      errorMessage
+      createdAt
+      clickedAt
+    }
+  }
+}
+    `;
+export const DeliveryLogsDocument = /*#__PURE__*/ `
+    query deliveryLogs($notificationId: ID) {
+  deliveryLogs(notificationId: $notificationId) {
+    id
+    notificationId
+    deviceId
+    status
+    errorMessage
+    clickedAt
+    createdAt
+    updatedAt
+  }
+}
+    `;
 export const DashboardStatsDocument = /*#__PURE__*/ `
     query dashboardStats {
   dashboardStats {
@@ -244,6 +395,12 @@ export const DashboardStatsDocument = /*#__PURE__*/ `
 export type Requester<C = {}, E = unknown> = <R, V>(doc: string, vars?: V, options?: C) => Promise<ExecutionResult<R, E>> | AsyncIterable<ExecutionResult<R, E>>
 export function getSdk<C, E>(requester: Requester<C, E>) {
   return {
+    getNotificationAnalytics(variables: Types.GetNotificationAnalyticsQueryVariables, options?: C): Promise<ExecutionResult<Types.GetNotificationAnalyticsQuery, E>> {
+      return requester<Types.GetNotificationAnalyticsQuery, Types.GetNotificationAnalyticsQueryVariables>(GetNotificationAnalyticsDocument, variables, options) as Promise<ExecutionResult<Types.GetNotificationAnalyticsQuery, E>>;
+    },
+    getEngagementMetrics(variables: Types.GetEngagementMetricsQueryVariables, options?: C): Promise<ExecutionResult<Types.GetEngagementMetricsQuery, E>> {
+      return requester<Types.GetEngagementMetricsQuery, Types.GetEngagementMetricsQueryVariables>(GetEngagementMetricsDocument, variables, options) as Promise<ExecutionResult<Types.GetEngagementMetricsQuery, E>>;
+    },
     createApp(variables: Types.CreateAppMutationVariables, options?: C): Promise<ExecutionResult<Types.CreateAppMutation, E>> {
       return requester<Types.CreateAppMutation, Types.CreateAppMutationVariables>(CreateAppDocument, variables, options) as Promise<ExecutionResult<Types.CreateAppMutation, E>>;
     },
@@ -255,6 +412,15 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     regenerateApiKey(variables: Types.RegenerateApiKeyMutationVariables, options?: C): Promise<ExecutionResult<Types.RegenerateApiKeyMutation, E>> {
       return requester<Types.RegenerateApiKeyMutation, Types.RegenerateApiKeyMutationVariables>(RegenerateApiKeyDocument, variables, options) as Promise<ExecutionResult<Types.RegenerateApiKeyMutation, E>>;
+    },
+    configureAPNs(variables: Types.ConfigureApNsMutationVariables, options?: C): Promise<ExecutionResult<Types.ConfigureApNsMutation, E>> {
+      return requester<Types.ConfigureApNsMutation, Types.ConfigureApNsMutationVariables>(ConfigureApNsDocument, variables, options) as Promise<ExecutionResult<Types.ConfigureApNsMutation, E>>;
+    },
+    configureFCM(variables: Types.ConfigureFcmMutationVariables, options?: C): Promise<ExecutionResult<Types.ConfigureFcmMutation, E>> {
+      return requester<Types.ConfigureFcmMutation, Types.ConfigureFcmMutationVariables>(ConfigureFcmDocument, variables, options) as Promise<ExecutionResult<Types.ConfigureFcmMutation, E>>;
+    },
+    configureWebPush(variables: Types.ConfigureWebPushMutationVariables, options?: C): Promise<ExecutionResult<Types.ConfigureWebPushMutation, E>> {
+      return requester<Types.ConfigureWebPushMutation, Types.ConfigureWebPushMutationVariables>(ConfigureWebPushDocument, variables, options) as Promise<ExecutionResult<Types.ConfigureWebPushMutation, E>>;
     },
     apps(variables?: Types.AppsQueryVariables, options?: C): Promise<ExecutionResult<Types.AppsQuery, E>> {
       return requester<Types.AppsQuery, Types.AppsQueryVariables>(AppsDocument, variables, options) as Promise<ExecutionResult<Types.AppsQuery, E>>;
@@ -288,6 +454,15 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     sendNotification(variables: Types.SendNotificationMutationVariables, options?: C): Promise<ExecutionResult<Types.SendNotificationMutation, E>> {
       return requester<Types.SendNotificationMutation, Types.SendNotificationMutationVariables>(SendNotificationDocument, variables, options) as Promise<ExecutionResult<Types.SendNotificationMutation, E>>;
+    },
+    notifications(variables?: Types.NotificationsQueryVariables, options?: C): Promise<ExecutionResult<Types.NotificationsQuery, E>> {
+      return requester<Types.NotificationsQuery, Types.NotificationsQueryVariables>(NotificationsDocument, variables, options) as Promise<ExecutionResult<Types.NotificationsQuery, E>>;
+    },
+    notification(variables: Types.NotificationQueryVariables, options?: C): Promise<ExecutionResult<Types.NotificationQuery, E>> {
+      return requester<Types.NotificationQuery, Types.NotificationQueryVariables>(NotificationDocument, variables, options) as Promise<ExecutionResult<Types.NotificationQuery, E>>;
+    },
+    deliveryLogs(variables?: Types.DeliveryLogsQueryVariables, options?: C): Promise<ExecutionResult<Types.DeliveryLogsQuery, E>> {
+      return requester<Types.DeliveryLogsQuery, Types.DeliveryLogsQueryVariables>(DeliveryLogsDocument, variables, options) as Promise<ExecutionResult<Types.DeliveryLogsQuery, E>>;
     },
     dashboardStats(variables?: Types.DashboardStatsQueryVariables, options?: C): Promise<ExecutionResult<Types.DashboardStatsQuery, E>> {
       return requester<Types.DashboardStatsQuery, Types.DashboardStatsQueryVariables>(DashboardStatsDocument, variables, options) as Promise<ExecutionResult<Types.DashboardStatsQuery, E>>;

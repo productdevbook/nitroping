@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const platformSchema = z.enum(['ios', 'android', 'web'])
+export const platformSchema = z.enum(['IOS', 'ANDROID', 'WEB'])
 
 export const notificationPayloadSchema = z.object({
   title: z.string().min(1, 'Title is required'),

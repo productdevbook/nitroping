@@ -15,6 +15,8 @@ export default antfu(
       'scripts',
       '.claude',
       'CLAUDE.md',
+      'ios',
+      'android',
     ],
   },
   {

@@ -1,6 +1,6 @@
-CREATE TYPE "public"."device_status" AS ENUM('active', 'inactive', 'invalid');--> statement-breakpoint
-CREATE TYPE "public"."notification_status" AS ENUM('pending', 'sent', 'delivered', 'failed', 'expired');--> statement-breakpoint
-CREATE TYPE "public"."platform" AS ENUM('ios', 'android', 'web');--> statement-breakpoint
+CREATE TYPE "public"."device_status" AS ENUM('ACTIVE', 'INACTIVE', 'EXPIRED');--> statement-breakpoint
+CREATE TYPE "public"."notification_status" AS ENUM('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SCHEDULED');--> statement-breakpoint
+CREATE TYPE "public"."platform" AS ENUM('IOS', 'ANDROID', 'WEB');--> statement-breakpoint
 CREATE TABLE "apiKey" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"appId" uuid NOT NULL,
@@ -26,6 +26,7 @@ CREATE TABLE "app" (
 	"apnsCertificate" text,
 	"apnsKeyId" text,
 	"apnsTeamId" text,
+	"bundleId" text,
 	"vapidPublicKey" text,
 	"vapidPrivateKey" text,
 	"vapidSubject" text,
@@ -55,7 +56,7 @@ CREATE TABLE "device" (
 	"token" text NOT NULL,
 	"platform" "platform" NOT NULL,
 	"userId" text,
-	"status" "device_status" DEFAULT 'active',
+	"status" "device_status" DEFAULT 'ACTIVE',
 	"metadata" jsonb,
 	"lastSeenAt" timestamp,
 	"createdAt" timestamp DEFAULT now(),
@@ -77,11 +78,12 @@ CREATE TABLE "notification" (
 	"platforms" jsonb,
 	"scheduledAt" timestamp,
 	"expiresAt" timestamp,
-	"status" "notification_status" DEFAULT 'pending',
+	"status" "notification_status" DEFAULT 'PENDING',
 	"totalTargets" integer DEFAULT 0,
 	"totalSent" integer DEFAULT 0,
 	"totalDelivered" integer DEFAULT 0,
 	"totalFailed" integer DEFAULT 0,
+	"totalClicked" integer DEFAULT 0,
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now()
 );

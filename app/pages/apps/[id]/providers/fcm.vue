@@ -198,8 +198,13 @@ const serviceAccountInfo = computed(() => {
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">3</span>
               <div>
-                <p class="font-medium">Go to Service Accounts tab</p>
-                <p class="text-muted-foreground">Click "Service accounts" and then "Generate new private key"</p>
+                <p class="font-medium">Generate Firebase Admin SDK Key</p>
+                <div class="text-muted-foreground space-y-1">
+                  <p>• Click "Service accounts" tab</p>
+                  <p>• Find "Firebase Admin SDK" section</p>
+                  <p>• Click "Generate new private key" button</p>
+                  <p>• Confirm in the popup dialog</p>
+                </div>
               </div>
             </li>
             <li class="flex items-start space-x-3">

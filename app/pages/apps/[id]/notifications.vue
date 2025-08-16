@@ -18,47 +18,8 @@ const appId = computed(() => route.params.id as string)
 const { data: appData } = useApp(appId)
 const app = computed(() => appData.value)
 
-// TODO: Add notifications GraphQL query
-// const { data: notificationsData, isLoading: notificationsLoading } = useNotifications(appId)
-// const notifications = computed(() => notificationsData.value || [])
-
-// Mock data for now
-const notificationsLoading = ref(false)
-const notifications = ref([
-  {
-    id: '1',
-    title: 'Welcome to NitroPing!',
-    body: 'Thanks for registering. You can now receive push notifications.',
-    status: 'delivered',
-    targetCount: 150,
-    deliveredCount: 148,
-    failedCount: 2,
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    sentAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
-  },
-  {
-    id: '2',
-    title: 'New Feature Available',
-    body: 'Check out our latest update with enhanced notification targeting.',
-    status: 'sending',
-    targetCount: 200,
-    deliveredCount: 120,
-    failedCount: 5,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    sentAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-  },
-  {
-    id: '3',
-    title: 'Server Maintenance',
-    body: 'Scheduled maintenance will occur tonight from 2-4 AM UTC.',
-    status: 'failed',
-    targetCount: 100,
-    deliveredCount: 0,
-    failedCount: 100,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-    sentAt: null,
-  },
-])
+const { data: notificationsData, isLoading: notificationsLoading } = useNotifications(appId)
+const notifications = computed(() => notificationsData.value || [])
 
 // Reactive data
 const searchQuery = ref('')
@@ -88,18 +49,24 @@ const filteredNotifications = computed(() => {
 const notificationStats = computed(() => {
   const stats = notifications.value.reduce((acc, notification) => {
     acc.total++
-    acc.totalTargeted += notification.targetCount
-    acc.totalDelivered += notification.deliveredCount
-    acc.totalFailed += notification.failedCount
+    acc.totalTargeted += notification.totalTargets || 0
+    acc.totalDelivered += notification.totalDelivered || 0
+    acc.totalFailed += notification.totalFailed || 0
 
     switch (notification.status) {
-      case 'delivered':
+      case 'DELIVERED':
         acc.delivered++
         break
-      case 'sending':
-        acc.sending++
+      case 'SENT':
+        acc.sent++
         break
-      case 'failed':
+      case 'PENDING':
+        acc.pending++
+        break
+      case 'SCHEDULED':
+        acc.scheduled++
+        break
+      case 'FAILED':
         acc.failed++
         break
     }
@@ -108,7 +75,9 @@ const notificationStats = computed(() => {
   }, {
     total: 0,
     delivered: 0,
-    sending: 0,
+    sent: 0,
+    pending: 0,
+    scheduled: 0,
     failed: 0,
     totalTargeted: 0,
     totalDelivered: 0,
@@ -124,11 +93,15 @@ const notificationStats = computed(() => {
 
 function getStatusBadge(status: string) {
   switch (status) {
-    case 'delivered':
+    case 'DELIVERED':
       return { variant: 'default' as const, icon: CheckCircle, text: 'Delivered' }
-    case 'sending':
-      return { variant: 'secondary' as const, icon: Send, text: 'Sending' }
-    case 'failed':
+    case 'SENT':
+      return { variant: 'secondary' as const, icon: Send, text: 'Sent' }
+    case 'PENDING':
+      return { variant: 'outline' as const, icon: Loader2, text: 'Pending' }
+    case 'SCHEDULED':
+      return { variant: 'outline' as const, icon: Calendar, text: 'Scheduled' }
+    case 'FAILED':
       return { variant: 'destructive' as const, icon: XCircle, text: 'Failed' }
     default:
       return { variant: 'secondary' as const, icon: Send, text: 'Unknown' }
@@ -164,9 +137,9 @@ function formatTimeAgo(dateString: string) {
 }
 
 function getDeliveryRate(notification: any) {
-  if (notification.targetCount === 0)
+  if (notification.totalTargets === 0)
     return 0
-  return Math.round((notification.deliveredCount / notification.targetCount) * 100)
+  return Math.round((notification.totalDelivered / notification.totalTargets) * 100)
 }
 
 function viewNotificationDetails(notificationId: string) {
@@ -175,8 +148,8 @@ function viewNotificationDetails(notificationId: string) {
 }
 
 function refreshNotifications() {
-  // TODO: Refresh notifications list
-  console.log('Refresh notifications')
+  // Trigger refetch of notifications
+  notificationsData.value = undefined
 }
 </script>
 
@@ -270,9 +243,11 @@ function refreshNotifications() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All status</SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="sending">Sending</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="DELIVERED">Delivered</SelectItem>
+                <SelectItem value="SENT">Sent</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                <SelectItem value="FAILED">Failed</SelectItem>
               </SelectContent>
             </Select>
             <Select v-model="selectedTimeRange">
@@ -335,10 +310,10 @@ function refreshNotifications() {
                   <div class="space-y-1">
                     <div class="flex items-center space-x-2">
                       <span class="text-sm font-medium">{{ getDeliveryRate(notification) }}%</span>
-                      <span class="text-xs text-muted-foreground">({{ notification.deliveredCount }}/{{ notification.targetCount }})</span>
+                      <span class="text-xs text-muted-foreground">({{ notification.totalDelivered }}/{{ notification.totalTargets }})</span>
                     </div>
-                    <div v-if="notification.failedCount > 0" class="text-xs text-red-600">
-                      {{ notification.failedCount }} failed
+                    <div v-if="notification.totalFailed > 0" class="text-xs text-red-600">
+                      {{ notification.totalFailed }} failed
                     </div>
                   </div>
                 </TableCell>

@@ -12,6 +12,7 @@ type App {
   apnsKeyId: String
   apnsTeamId: String
   apnsPrivateKey: String
+  bundleId: String
   vapidSubject: String
   vapidPublicKey: String
   vapidPrivateKey: String
@@ -50,6 +51,7 @@ input UpdateAppInput {
   apnsKeyId: String
   apnsTeamId: String
   apnsPrivateKey: String
+  bundleId: String
   vapidSubject: String
   vapidPublicKey: String
   vapidPrivateKey: String

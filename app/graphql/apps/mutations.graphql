@@ -38,3 +38,29 @@ mutation regenerateApiKey($id: ID!) {
     updatedAt
   }
 }
+
+mutation configureAPNs($id: ID!, $input: ConfigureAPNsInput!) {
+  configureAPNs(id: $id, input: $input) {
+    id
+    apnsKeyId
+    apnsTeamId
+    updatedAt
+  }
+}
+
+mutation configureFCM($id: ID!, $input: ConfigureFCMInput!) {
+  configureFCM(id: $id, input: $input) {
+    id
+    fcmProjectId
+    updatedAt
+  }
+}
+
+mutation configureWebPush($id: ID!, $input: ConfigureWebPushInput!) {
+  configureWebPush(id: $id, input: $input) {
+    id
+    vapidSubject
+    vapidPublicKey
+    updatedAt
+  }
+}

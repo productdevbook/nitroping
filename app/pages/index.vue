@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { Activity, BarChart3, Plus, Send, Smartphone, TrendingUp } from 'lucide-vue-next'
+import { Activity, Plus, Send, Smartphone, TrendingUp } from 'lucide-vue-next'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Textarea } from '~/components/ui/textarea'
 
 definePageMeta({
@@ -15,28 +16,53 @@ definePageMeta({
 const { data: statsData } = useDashboardStats()
 const stats = computed(() => statsData.value)
 
+const { data: appsData } = useApps()
+const recentApps = computed(() => appsData.value?.slice(0, 3) || [])
+
+const { data: recentNotificationsData } = useRecentNotifications()
+const recentNotifications = computed(() => recentNotificationsData.value || [])
+
 const showSendNotification = ref(false)
 
 const testNotification = ref({
   title: '',
   body: '',
+  appId: '',
+})
+
+const selectedApp = computed(() => {
+  if (!testNotification.value.appId || !appsData.value)
+    return null
+  return appsData.value.find(app => app.id === testNotification.value.appId)
 })
 
 // Methods
 
+const { mutate: sendNotification, isPending: isSending } = useSendNotification()
+
 async function sendTestNotification() {
+  if (!testNotification.value.appId || !testNotification.value.title || !testNotification.value.body) {
+    return
+  }
+
   try {
-    // This would need an API key from a created app
-    console.log('Would send notification:', testNotification.value)
+    await sendNotification({
+      appId: testNotification.value.appId,
+      title: testNotification.value.title,
+      body: testNotification.value.body,
+    })
+
     showSendNotification.value = false
 
     // Reset form
     testNotification.value = {
       title: '',
       body: '',
+      appId: '',
     }
 
-    // TODO: Implement actual sending with proper auth
+    // Refresh recent notifications
+    recentNotificationsData.value = undefined
   }
   catch (error) {
     console.error('Error sending notification:', error)
@@ -50,8 +76,22 @@ async function sendTestNotification() {
   <div>
     <!-- Header -->
     <div class="mb-8">
-      <h1 class="text-4xl font-bold mb-2">NitroPing Dashboard</h1>
-      <p class="text-muted-foreground">Self-hosted push notification service</p>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 class="text-3xl sm:text-4xl font-bold mb-2">Welcome to NitroPing</h1>
+          <p class="text-muted-foreground">Manage your push notifications with ease</p>
+        </div>
+        <div class="flex gap-2">
+          <Button variant="outline" @click="navigateTo('/apps')">
+            <Activity class="mr-2 h-4 w-4" />
+            View Apps
+          </Button>
+          <Button @click="navigateTo('/apps/create')">
+            <Plus class="mr-2 h-4 w-4" />
+            Create App
+          </Button>
+        </div>
+      </div>
     </div>
 
     <!-- Quick Stats -->
@@ -99,53 +139,119 @@ async function sendTestNotification() {
       </Card>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Recent Apps -->
       <Card>
-        <CardHeader>
-          <CardTitle>Create New App</CardTitle>
-          <CardDescription>Register a new application to start sending notifications</CardDescription>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle>Recent Apps</CardTitle>
+            <CardDescription>Your recently created applications</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" @click="navigateTo('/apps')">
+            View All
+          </Button>
         </CardHeader>
         <CardContent>
-          <Button class="w-full" @click="navigateTo('/apps/create')">
-            <Plus class="mr-2 h-4 w-4" />
-            Create App
-          </Button>
+          <div v-if="recentApps.length > 0" class="space-y-4">
+            <div v-for="app in recentApps" :key="app.id" class="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer" @click="navigateTo(`/apps/${app.id}`)">
+              <div class="flex items-center space-x-3">
+                <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Activity class="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p class="font-medium">{{ app.name }}</p>
+                  <p class="text-sm text-muted-foreground">{{ app.description || 'No description' }}</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="w-2 h-2 rounded-full" :class="app.isActive ? 'bg-green-500' : 'bg-gray-400'"></div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-center py-8">
+            <Activity class="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+            <p class="text-sm text-muted-foreground">No apps created yet</p>
+            <Button variant="outline" size="sm" class="mt-2" @click="navigateTo('/apps/create')">
+              Create First App
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
+      <!-- Recent Notifications -->
       <Card>
-        <CardHeader>
-          <CardTitle>Send Notification</CardTitle>
-          <CardDescription>Send a test notification to your devices</CardDescription>
+        <CardHeader class="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle>Recent Notifications</CardTitle>
+            <CardDescription>Latest notifications sent</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" @click="navigateTo('/notifications')">
+            View All
+          </Button>
         </CardHeader>
         <CardContent>
-          <Button class="w-full" @click="showSendNotification = true">
-            <Send class="mr-2 h-4 w-4" />
-            Send Test
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>View Analytics</CardTitle>
-          <CardDescription>Check delivery reports and performance metrics</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button class="w-full" @click="navigateTo('/analytics')">
-            <BarChart3 class="mr-2 h-4 w-4" />
-            View Analytics
-          </Button>
+          <div v-if="recentNotifications.length > 0" class="space-y-4">
+            <div v-for="notification in recentNotifications" :key="notification.id" class="flex items-start space-x-3 p-3 border rounded-lg hover:bg-accent/50">
+              <div class="flex-shrink-0">
+                <div
+                  class="h-8 w-8 rounded-lg flex items-center justify-center" :class="{
+                    'bg-green-100 text-green-600': notification.status === 'DELIVERED',
+                    'bg-blue-100 text-blue-600': notification.status === 'SENT',
+                    'bg-yellow-100 text-yellow-600': notification.status === 'PENDING',
+                    'bg-purple-100 text-purple-600': notification.status === 'SCHEDULED',
+                    'bg-red-100 text-red-600': notification.status === 'FAILED',
+                  }"
+                >
+                  <Send class="h-4 w-4" />
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-medium truncate">{{ notification.title }}</p>
+                <p class="text-sm text-muted-foreground truncate">{{ notification.body }}</p>
+                <div class="flex items-center space-x-2 mt-1">
+                  <span
+                    class="text-xs px-2 py-1 rounded-full" :class="{
+                      'bg-green-100 text-green-600': notification.status === 'DELIVERED',
+                      'bg-blue-100 text-blue-600': notification.status === 'SENT',
+                      'bg-yellow-100 text-yellow-600': notification.status === 'PENDING',
+                      'bg-purple-100 text-purple-600': notification.status === 'SCHEDULED',
+                      'bg-red-100 text-red-600': notification.status === 'FAILED',
+                    }"
+                  >
+                    {{ notification.status }}
+                  </span>
+                  <span class="text-xs text-muted-foreground">
+                    {{ new Intl.DateTimeFormat('en', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }).format(new Date(notification.createdAt)) }}
+                  </span>
+                </div>
+              </div>
+              <div class="text-right text-xs text-muted-foreground">
+                {{ notification.totalDelivered }}/{{ notification.totalTargets }}
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-center py-8">
+            <Send class="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+            <p class="text-sm text-muted-foreground">No notifications sent yet</p>
+            <Button variant="outline" size="sm" class="mt-2" @click="showSendNotification = true">
+              Send First Notification
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
 
-    <!-- Getting Started -->
+    <!-- Getting Started Section -->
     <Card>
       <CardHeader>
         <CardTitle>Getting Started</CardTitle>
-        <CardDescription>Quick guide to set up your first push notification</CardDescription>
+        <CardDescription>Quick guide to set up push notifications</CardDescription>
       </CardHeader>
       <CardContent class="space-y-4">
         <div class="flex items-start space-x-4">
@@ -188,6 +294,19 @@ async function sendTestNotification() {
         </DialogHeader>
         <div class="grid gap-4 py-4">
           <div class="grid gap-2">
+            <Label for="notification-app">Select App</Label>
+            <Select v-model="testNotification.appId">
+              <SelectTrigger>
+                <SelectValue placeholder="Choose an app" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="app in appsData" :key="app.id" :value="app.id">
+                  {{ app.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="grid gap-2">
             <Label for="notification-title">Title</Label>
             <Input
               id="notification-title"
@@ -206,8 +325,13 @@ async function sendTestNotification() {
         </div>
         <DialogFooter>
           <Button variant="outline" @click="showSendNotification = false">Cancel</Button>
-          <Button :disabled="!testNotification.title || !testNotification.body" @click="sendTestNotification">
-            Send Notification
+          <Button
+            :disabled="!testNotification.appId || !testNotification.title || !testNotification.body || isSending"
+            @click="sendTestNotification"
+          >
+            <Send v-if="!isSending" class="mr-2 h-4 w-4" />
+            <div v-else class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            {{ isSending ? 'Sending...' : 'Send Notification' }}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { getDatabase } from '~~/server/database/connection'
 import { app } from '~~/server/database/schema'
+import { decryptSensitiveData, isDataEncrypted } from '~~/server/utils/crypto'
 import { APNsProvider } from './apns'
 import { FCMProvider } from './fcm'
 import { WebPushProvider } from './webpush'
@@ -40,36 +41,59 @@ export async function getProviderForApp(appId: string, platform: 'ios' | 'androi
         throw new Error('FCM not configured for this app (missing project ID or server key)')
       }
 
+      // Decrypt the service account key if it's encrypted
+      const serviceAccountKey = isDataEncrypted(appData.fcmServerKey)
+        ? decryptSensitiveData(appData.fcmServerKey)
+        : appData.fcmServerKey
+
       return new FCMProvider({
         projectId: appData.fcmProjectId,
-        serviceAccountKey: appData.fcmServerKey,
+        serviceAccountKey,
       })
 
     case 'ios':
-      // Use APNs for iOS
+    // Use APNs for iOS
+    {
       if (!appData.apnsKeyId || !appData.apnsTeamId || !appData.apnsCertificate) {
         throw new Error('APNs not configured for this app (missing key ID, team ID, or certificate)')
+      }
+
+      // Decrypt the private key if it's encrypted
+      const privateKey = isDataEncrypted(appData.apnsCertificate)
+        ? decryptSensitiveData(appData.apnsCertificate)
+        : appData.apnsCertificate
+
+      if (!appData.bundleId) {
+        throw new Error('iOS Bundle ID not configured for this app')
       }
 
       return new APNsProvider({
         keyId: appData.apnsKeyId,
         teamId: appData.apnsTeamId,
-        bundleId: appData.slug, // Use app slug as bundle ID for now
-        privateKey: appData.apnsCertificate,
+        bundleId: appData.bundleId,
+        privateKey,
         production: process.env.NODE_ENV === 'production',
       })
+    }
 
     case 'web':
-      // Use Web Push
+    // Use Web Push
+    {
       if (!appData.vapidPublicKey || !appData.vapidPrivateKey || !appData.vapidSubject) {
         throw new Error('Web Push not configured for this app (missing VAPID keys or subject)')
       }
 
+      // Decrypt the private key if it's encrypted
+      const vapidPrivateKey = isDataEncrypted(appData.vapidPrivateKey)
+        ? decryptSensitiveData(appData.vapidPrivateKey)
+        : appData.vapidPrivateKey
+
       return new WebPushProvider({
         vapidSubject: appData.vapidSubject,
         publicKey: appData.vapidPublicKey,
-        privateKey: appData.vapidPrivateKey,
+        privateKey: vapidPrivateKey,
       })
+    }
 
     default:
       throw new Error(`Unsupported platform: ${platform}`)

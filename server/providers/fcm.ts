@@ -162,7 +162,7 @@ class FCMProvider {
 
       // Import jwt for signing
       const jwt = await import('jsonwebtoken')
-      const assertion = jwt.sign(payload, serviceAccount.private_key, { algorithm: 'RS256' })
+      const assertion = jwt.default.sign(payload, serviceAccount.private_key, { algorithm: 'RS256' })
 
       // Exchange JWT for access token
       const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -177,6 +177,8 @@ class FCMProvider {
       })
 
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('[FCM] Token request failed:', response.status, errorText)
         throw new Error(`Failed to get access token: ${response.statusText}`)
       }
 
@@ -187,6 +189,7 @@ class FCMProvider {
       return this.accessToken!
     }
     catch (error) {
+      console.error('[FCM] Authentication error:', error)
       throw new Error(`Failed to authenticate with FCM: ${error}`)
     }
   }
@@ -207,6 +210,7 @@ class FCMProvider {
       const data: FCMResponse = await response.json()
 
       if (!response.ok || data.error) {
+        console.error(`[FCM] Send failed:`, data.error || `HTTP ${response.status}: ${response.statusText}`)
         return {
           success: false,
           error: data.error?.message || `HTTP ${response.status}: ${response.statusText}`,
@@ -219,6 +223,7 @@ class FCMProvider {
       }
     }
     catch (error) {
+      console.error(`[FCM] Send error:`, error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -260,7 +265,21 @@ class FCMProvider {
     }
   }
 
-  convertNotificationPayload(payload: NotificationPayload, deviceToken: string): FCMMessage {
+  convertNotificationPayload(payload: NotificationPayload, deviceToken: string, notificationId?: string, deviceId?: string): FCMMessage {
+    const baseData = payload.data
+      ? Object.fromEntries(
+          Object.entries(payload.data).map(([key, value]) => [key, String(value)]),
+        )
+      : {}
+
+    // Add tracking data
+    const trackingData = {
+      ...baseData,
+      nitroping_notification_id: notificationId || '',
+      nitroping_device_id: deviceId || '',
+      nitroping_platform: 'android',
+    }
+
     return {
       token: deviceToken,
       notification: {
@@ -268,18 +287,14 @@ class FCMProvider {
         body: payload.body,
         image: payload.image,
       },
-      data: payload.data
-        ? Object.fromEntries(
-            Object.entries(payload.data).map(([key, value]) => [key, String(value)]),
-          )
-        : undefined,
+      data: trackingData,
       android: {
         priority: 'high',
         notification: {
           icon: payload.icon,
           sound: payload.sound,
           click_action: payload.clickAction,
-          channel_id: 'default',
+          channel_id: 'nitroping_notifications',
         },
       },
       apns: {

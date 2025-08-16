@@ -98,7 +98,7 @@ class APNsProvider {
         },
       }
 
-      this.jwtToken = jwt.sign(payload, this.config.privateKey, options)
+      this.jwtToken = jwt.default.sign(payload, this.config.privateKey, options)
       this.tokenExpiresAt = Date.now() + 3500000 // 58 minutes (1 hour - 2 minutes buffer)
 
       return this.jwtToken
@@ -110,57 +110,74 @@ class APNsProvider {
 
   async sendMessage(message: APNsMessage): Promise<APNsResponse> {
     try {
-      const token = await this.generateJWT()
-      const endpoint = this.getAPNsEndpoint()
+      // Alternative: Use undici.request with HTTP/2 support
+      // const { request } = await import('undici')
+      // But for now, use node-apn library for proper HTTP/2 support
+      const apn = await import('node-apn')
 
-      const headers: Record<string, string> = {
-        'authorization': `bearer ${token}`,
-        'apns-topic': this.config.bundleId,
-        'content-type': 'application/json',
-      }
-
-      if (message.options?.priority) {
-        headers['apns-priority'] = message.options.priority.toString()
-      }
-
-      if (message.options?.expiration) {
-        headers['apns-expiration'] = message.options.expiration.toString()
-      }
-
-      if (message.options?.collapseId) {
-        headers['apns-collapse-id'] = message.options.collapseId
-      }
-
-      if (message.options?.pushType) {
-        headers['apns-push-type'] = message.options.pushType
-      }
-
-      const response = await fetch(`${endpoint}/3/device/${message.token}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(message.payload),
+      const provider = new apn.Provider({
+        token: {
+          key: this.config.privateKey,
+          keyId: this.config.keyId,
+          teamId: this.config.teamId,
+        },
+        production: this.config.production,
       })
 
-      if (response.status === 200) {
+      const notification = new apn.Notification()
+
+      // Set notification properties
+      if (message.payload.aps.alert) {
+        if (typeof message.payload.aps.alert === 'string') {
+          notification.alert = message.payload.aps.alert
+        }
+        else {
+          notification.alert = message.payload.aps.alert
+        }
+      }
+
+      if (message.payload.aps.badge !== undefined) {
+        notification.badge = message.payload.aps.badge
+      }
+
+      if (message.payload.aps.sound) {
+        notification.sound = typeof message.payload.aps.sound === 'string'
+          ? message.payload.aps.sound
+          : 'default'
+      }
+
+      notification.topic = this.config.bundleId
+
+      // Add custom data
+      Object.keys(message.payload).forEach((key) => {
+        if (key !== 'aps') {
+          notification.payload[key] = message.payload[key]
+        }
+      })
+
+      const result = await provider.send(notification, message.token)
+
+      // Close the provider connection
+      provider.shutdown()
+
+      if (result.sent && result.sent.length > 0) {
         return {
           success: true,
-          messageId: response.headers.get('apns-id') || undefined,
+          messageId: result.sent[0]?.device || undefined,
+        }
+      }
+      else if (result.failed && result.failed.length > 0) {
+        const failure = result.failed[0]
+        return {
+          success: false,
+          error: failure.error?.message || `Status: ${failure.status}`,
+          statusCode: failure.status,
         }
       }
       else {
-        let errorMessage = `HTTP ${response.status}`
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.reason || errorMessage
-        }
-        catch {
-          // Ignore JSON parse errors
-        }
-
         return {
           success: false,
-          error: errorMessage,
-          statusCode: response.status,
+          error: 'Unknown APNs result',
         }
       }
     }
@@ -213,7 +230,7 @@ class APNsProvider {
     }
   }
 
-  convertNotificationPayload(payload: NotificationPayload, deviceToken: string): APNsMessage {
+  convertNotificationPayload(payload: NotificationPayload, deviceToken: string, notificationId?: string, deviceId?: string): APNsMessage {
     const alert: APNsAlert = {
       title: payload.title,
       body: payload.body,
@@ -225,15 +242,23 @@ class APNsProvider {
         badge: payload.badge,
         sound: payload.sound || 'default',
         category: payload.clickAction,
+        'mutable-content': 1, // Enable notification service extension
       },
     }
 
-    // Add custom data
-    if (payload.data) {
-      Object.entries(payload.data).forEach(([key, value]) => {
-        apsPayload[key] = value
-      })
+    // Add custom data with tracking info
+    const customData = payload.data || {}
+    
+    // Add tracking data
+    if (notificationId && deviceId) {
+      customData.nitroping_notification_id = notificationId
+      customData.nitroping_device_id = deviceId
+      customData.nitroping_platform = 'ios'
     }
+
+    Object.entries(customData).forEach(([key, value]) => {
+      apsPayload[key] = value
+    })
 
     return {
       token: deviceToken,

@@ -31,7 +31,7 @@ const selectedPlatform = ref('all')
 const showRegisterDevice = ref(false)
 const deviceForm = ref({
   token: '',
-  platform: 'web',
+  platform: 'WEB',
   userId: '',
 })
 
@@ -92,10 +92,10 @@ function formatLastSeen(date: string | null) {
 }
 
 function getPlatformIcon(platform: string) {
-  switch (platform.toLowerCase()) {
-    case 'ios': return '🍎'
-    case 'android': return '🤖'
-    case 'web': return '🌐'
+  switch (platform.toUpperCase()) {
+    case 'IOS': return '🍎'
+    case 'ANDROID': return '🤖'
+    case 'WEB': return '🌐'
     default: return '📱'
   }
 }
@@ -110,7 +110,7 @@ async function registerDevice() {
     })
 
     showRegisterDevice.value = false
-    deviceForm.value = { token: '', platform: 'web', userId: '' }
+    deviceForm.value = { token: '', platform: 'WEB', userId: '' }
   }
   catch (error) {
     console.error('Error registering device:', error)
@@ -208,9 +208,9 @@ function refreshDevices() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All platforms</SelectItem>
-                <SelectItem value="web">Web</SelectItem>
-                <SelectItem value="ios">iOS</SelectItem>
-                <SelectItem value="android">Android</SelectItem>
+                <SelectItem value="WEB">Web</SelectItem>
+                <SelectItem value="IOS">iOS</SelectItem>
+                <SelectItem value="ANDROID">Android</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -305,9 +305,9 @@ function refreshDevices() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="web">Web</SelectItem>
-                <SelectItem value="ios">iOS</SelectItem>
-                <SelectItem value="android">Android</SelectItem>
+                <SelectItem value="WEB">Web</SelectItem>
+                <SelectItem value="IOS">iOS</SelectItem>
+                <SelectItem value="ANDROID">Android</SelectItem>
               </SelectContent>
             </Select>
           </div>

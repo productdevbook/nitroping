@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { encryptSensitiveData } from '~~/server/utils/crypto'
 
 export const configureFCMMutation = defineMutation({
   configureFCM: {
@@ -31,12 +32,15 @@ export const configureFCMMutation = defineMutation({
         })
       }
 
+      // Encrypt sensitive service account JSON before storing
+      const encryptedServiceAccount = encryptSensitiveData(input.serviceAccount)
+
       // Update app with FCM configuration
       const updatedApp = await db
         .update(tables.app)
         .set({
           fcmProjectId: input.projectId,
-          fcmServerKey: input.serviceAccount,
+          fcmServerKey: encryptedServiceAccount,
           updatedAt: new Date(),
         })
         .where(eq(tables.app.id, id))

@@ -1,0 +1,58 @@
+input TrackEventInput {
+  notificationId: ID!
+  deviceId: ID!
+  platform: String
+  userAgent: String
+  appVersion: String
+  osVersion: String
+}
+
+type TrackEventResponse {
+  success: Boolean!
+  message: String
+}
+
+extend type Mutation {
+  trackNotificationDelivered(input: TrackEventInput!): TrackEventResponse!
+  trackNotificationOpened(input: TrackEventInput!): TrackEventResponse!
+  trackNotificationClicked(input: TrackEventInput!): TrackEventResponse!
+}
+
+type NotificationAnalytics {
+  notificationId: ID!
+  sentCount: Int!
+  deliveredCount: Int!
+  openedCount: Int!
+  clickedCount: Int!
+  deliveryRate: Float!
+  openRate: Float!
+  clickRate: Float!
+  platformBreakdown: [PlatformMetrics!]!
+}
+
+type PlatformMetrics {
+  platform: String!
+  sent: Int!
+  delivered: Int!
+  opened: Int!
+  clicked: Int!
+  avgDeliveryTime: Float
+  avgOpenTime: Float
+}
+
+type EngagementMetrics {
+  totalNotifications: Int!
+  totalSent: Int!
+  totalDelivered: Int!
+  totalOpened: Int!
+  totalClicked: Int!
+  overallDeliveryRate: Float!
+  overallOpenRate: Float!
+  overallClickRate: Float!
+  platformBreakdown: [PlatformMetrics!]!
+}
+
+extend type Query {
+  getNotificationAnalytics(notificationId: ID!): NotificationAnalytics
+  getEngagementMetrics(appId: ID!, timeRange: String): EngagementMetrics
+}

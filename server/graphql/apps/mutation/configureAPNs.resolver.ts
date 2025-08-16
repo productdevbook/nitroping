@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { encryptSensitiveData } from '~~/server/utils/crypto'
 
 export const configureAPNsMutation = defineMutation({
   configureAPNs: {
@@ -20,14 +21,17 @@ export const configureAPNsMutation = defineMutation({
         })
       }
 
-      // TODO: Encrypt sensitive data before storing
+      // Encrypt sensitive private key before storing
+      const encryptedPrivateKey = encryptSensitiveData(input.privateKey)
+
       // Update app with APNs configuration
       const updatedApp = await db
         .update(tables.app)
         .set({
           apnsKeyId: input.keyId,
           apnsTeamId: input.teamId,
-          apnsCertificate: input.privateKey,
+          apnsCertificate: encryptedPrivateKey,
+          bundleId: input.bundleId,
           updatedAt: new Date(),
         })
         .where(eq(tables.app.id, id))

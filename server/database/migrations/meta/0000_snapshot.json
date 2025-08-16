@@ -1,5 +1,5 @@
 {
-  "id": "019a8c88-bf25-40cd-9774-6e1a1567e2de",
+  "id": "31cf4594-9d2a-48fa-8cc7-444c78699d1f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -164,6 +164,12 @@
         },
         "apnsTeamId": {
           "name": "apnsTeamId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bundleId": {
+          "name": "bundleId",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -377,7 +383,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
-          "default": "'active'"
+          "default": "'ACTIVE'"
         },
         "metadata": {
           "name": "metadata",
@@ -523,7 +529,7 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
-          "default": "'pending'"
+          "default": "'PENDING'"
         },
         "totalTargets": {
           "name": "totalTargets",
@@ -548,6 +554,13 @@
         },
         "totalFailed": {
           "name": "totalFailed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "totalClicked": {
+          "name": "totalClicked",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -596,29 +609,29 @@
       "name": "device_status",
       "schema": "public",
       "values": [
-        "active",
-        "inactive",
-        "invalid"
+        "ACTIVE",
+        "INACTIVE",
+        "EXPIRED"
       ]
     },
     "public.notification_status": {
       "name": "notification_status",
       "schema": "public",
       "values": [
-        "pending",
-        "sent",
-        "delivered",
-        "failed",
-        "expired"
+        "PENDING",
+        "SENT",
+        "DELIVERED",
+        "FAILED",
+        "SCHEDULED"
       ]
     },
     "public.platform": {
       "name": "platform",
       "schema": "public",
       "values": [
-        "ios",
-        "android",
-        "web"
+        "IOS",
+        "ANDROID",
+        "WEB"
       ]
     }
   },

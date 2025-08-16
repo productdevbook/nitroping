@@ -2,9 +2,9 @@ import { relations } from 'drizzle-orm'
 import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
 // Enums
-export const platformEnum = pgEnum('platform', ['ios', 'android', 'web'])
-export const notificationStatusEnum = pgEnum('notification_status', ['pending', 'sent', 'delivered', 'failed', 'expired'])
-export const deviceStatusEnum = pgEnum('device_status', ['active', 'inactive', 'invalid'])
+export const platformEnum = pgEnum('platform', ['IOS', 'ANDROID', 'WEB'])
+export const notificationStatusEnum = pgEnum('notification_status', ['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SCHEDULED'])
+export const deviceStatusEnum = pgEnum('device_status', ['ACTIVE', 'INACTIVE', 'EXPIRED'])
 
 // App table
 export const app = pgTable('app', {
@@ -18,6 +18,7 @@ export const app = pgTable('app', {
   apnsCertificate: text(),
   apnsKeyId: text(),
   apnsTeamId: text(),
+  bundleId: text(),
   vapidPublicKey: text(),
   vapidPrivateKey: text(),
   vapidSubject: text(),
@@ -33,7 +34,7 @@ export const device = pgTable('device', {
   token: text().notNull(),
   platform: platformEnum().notNull(),
   userId: text(),
-  status: deviceStatusEnum().default('active'),
+  status: deviceStatusEnum().default('ACTIVE'),
   metadata: jsonb(),
   lastSeenAt: timestamp(),
   createdAt: timestamp().defaultNow(),
@@ -56,11 +57,12 @@ export const notification = pgTable('notification', {
   platforms: jsonb(), // Array of platforms to target
   scheduledAt: timestamp(),
   expiresAt: timestamp(),
-  status: notificationStatusEnum().default('pending'),
+  status: notificationStatusEnum().default('PENDING'),
   totalTargets: integer().default(0),
   totalSent: integer().default(0),
   totalDelivered: integer().default(0),
   totalFailed: integer().default(0),
+  totalClicked: integer().default(0),
   createdAt: timestamp().defaultNow(),
   updatedAt: timestamp().defaultNow(),
 })
@@ -76,6 +78,12 @@ export const deliveryLog = pgTable('deliveryLog', {
   attemptCount: integer().default(1),
   sentAt: timestamp(),
   deliveredAt: timestamp(),
+  openedAt: timestamp(),
+  clickedAt: timestamp(),
+  platform: text(),
+  userAgent: text(),
+  appVersion: text(),
+  osVersion: text(),
   createdAt: timestamp().defaultNow(),
 })
 
