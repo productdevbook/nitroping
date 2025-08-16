@@ -1,0 +1,63 @@
+query apps {
+  apps {
+    id
+    name
+    slug
+    description
+    isActive
+    apiKey
+    createdAt
+    updatedAt
+    stats {
+      totalDevices
+      activeDevices
+      newDevicesToday
+      sentToday
+      deliveryRate
+      apiCalls
+    }
+  }
+}
+
+query app($id: ID!) {
+  app(id: $id) {
+    id
+    name
+    slug
+    description
+    isActive
+    apiKey
+    fcmProjectId
+    apnsKeyId
+    apnsTeamId
+    vapidSubject
+    vapidPublicKey
+    createdAt
+    updatedAt
+    stats {
+      totalDevices
+      activeDevices
+      newDevicesToday
+      sentToday
+      deliveryRate
+      apiCalls
+    }
+  }
+}
+
+query appBySlug($slug: String!) {
+  appBySlug(slug: $slug) {
+    id
+    name
+    slug
+    description
+    isActive
+    apiKey
+    createdAt
+    updatedAt
+  }
+}
+
+query appExists($slug: String!) {
+  appExists(slug: $slug)
+}

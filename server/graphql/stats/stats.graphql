@@ -1,0 +1,28 @@
+type DashboardStats {
+  totalApps: Int!
+  activeDevices: Int!
+  notificationsSent: Int!
+  deliveryRate: Float!
+}
+
+type AnalyticsData {
+  date: String!
+  sent: Int!
+  delivered: Int!
+  failed: Int!
+  clicked: Int!
+}
+
+type PlatformStats {
+  platform: DevicePlatform!
+  deviceCount: Int!
+  notificationsSent: Int!
+  deliveryRate: Float!
+}
+
+extend type Query {
+  dashboardStats: DashboardStats!
+  appStats(appId: ID!): AppStats
+  analyticsData(appId: ID, days: Int = 7): [AnalyticsData!]!
+  platformStats(appId: ID): [PlatformStats!]!
+}

@@ -1,0 +1,43 @@
+query getNotificationAnalytics($notificationId: ID!) {
+  getNotificationAnalytics(notificationId: $notificationId) {
+    notificationId
+    sentCount
+    deliveredCount
+    openedCount
+    clickedCount
+    deliveryRate
+    openRate
+    clickRate
+    platformBreakdown {
+      platform
+      sent
+      delivered
+      opened
+      clicked
+      avgDeliveryTime
+      avgOpenTime
+    }
+  }
+}
+
+query getEngagementMetrics($appId: ID!, $timeRange: String) {
+  getEngagementMetrics(appId: $appId, timeRange: $timeRange) {
+    totalNotifications
+    totalSent
+    totalDelivered
+    totalOpened
+    totalClicked
+    overallDeliveryRate
+    overallOpenRate
+    overallClickRate
+    platformBreakdown {
+      platform
+      sent
+      delivered
+      opened
+      clicked
+      avgDeliveryTime
+      avgOpenTime
+    }
+  }
+}

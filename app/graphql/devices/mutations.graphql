@@ -1,0 +1,32 @@
+mutation registerDevice($input: RegisterDeviceInput!) {
+  registerDevice(input: $input) {
+    id
+    appId
+    token
+    platform
+    userId
+    status
+    metadata
+    lastSeenAt
+    createdAt
+    updatedAt
+  }
+}
+
+mutation updateDevice($id: ID!, $input: UpdateDeviceInput!) {
+  updateDevice(id: $id, input: $input) {
+    id
+    appId
+    token
+    platform
+    userId
+    status
+    metadata
+    lastSeenAt
+    updatedAt
+  }
+}
+
+mutation deleteDevice($id: ID!) {
+  deleteDevice(id: $id)
+}

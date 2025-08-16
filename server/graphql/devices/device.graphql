@@ -1,0 +1,53 @@
+enum DevicePlatform {
+  ANDROID
+  IOS
+  WEB
+}
+
+enum DeviceStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+type Device {
+  id: ID!
+  appId: ID!
+  app: App
+  token: String!
+  platform: DevicePlatform!
+  status: DeviceStatus!
+  userId: String
+  metadata: String # JSON string
+  
+  # Timestamps
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  lastSeenAt: Timestamp
+}
+
+input RegisterDeviceInput {
+  appId: ID!
+  token: String!
+  platform: DevicePlatform!
+  userId: String
+  metadata: String # JSON string
+}
+
+input UpdateDeviceInput {
+  status: DeviceStatus
+  userId: String
+  metadata: String # JSON string
+}
+
+extend type Query {
+  devices(appId: ID): [Device!]!
+  device(id: ID!): Device
+  deviceByToken(token: String!): Device
+}
+
+extend type Mutation {
+  registerDevice(input: RegisterDeviceInput!): Device!
+  updateDevice(id: ID!, input: UpdateDeviceInput!): Device!
+  deleteDevice(id: ID!): Boolean!
+}

@@ -1,0 +1,72 @@
+query notifications($appId: ID) {
+  notifications(appId: $appId) {
+    id
+    appId
+    title
+    body
+    data
+    badge
+    sound
+    clickAction
+    imageUrl
+    targetDevices
+    platforms
+    scheduledAt
+    status
+    totalTargets
+    totalSent
+    totalDelivered
+    totalFailed
+    totalClicked
+    createdAt
+    updatedAt
+    sentAt
+  }
+}
+
+query notification($id: ID!) {
+  notification(id: $id) {
+    id
+    appId
+    title
+    body
+    data
+    badge
+    sound
+    clickAction
+    imageUrl
+    targetDevices
+    platforms
+    scheduledAt
+    status
+    totalTargets
+    totalSent
+    totalDelivered
+    totalFailed
+    totalClicked
+    createdAt
+    updatedAt
+    sentAt
+    deliveryLogs {
+      id
+      deviceId
+      status
+      errorMessage
+      createdAt
+      clickedAt
+    }
+  }
+}
+
+query deliveryLogs($notificationId: ID) {
+  deliveryLogs(notificationId: $notificationId) {
+    id
+    notificationId
+    deviceId
+    status
+    errorMessage
+    clickedAt
+    createdAt
+    updatedAt
+  }
+}

@@ -1,0 +1,100 @@
+type App {
+  id: ID!
+  name: String!
+  slug: String!
+  description: String
+  isActive: Boolean!
+  apiKey: String!
+  
+  # Push Provider Configuration
+  fcmProjectId: String
+  fcmServiceAccount: String
+  apnsKeyId: String
+  apnsTeamId: String
+  apnsPrivateKey: String
+  bundleId: String
+  vapidSubject: String
+  vapidPublicKey: String
+  vapidPrivateKey: String
+  
+  # Statistics
+  stats: AppStats
+  
+  # Timestamps
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type AppStats {
+  totalDevices: Int!
+  activeDevices: Int!
+  newDevicesToday: Int!
+  sentToday: Int!
+  deliveryRate: Float!
+  apiCalls: Int!
+}
+
+input CreateAppInput {
+  name: String!
+  slug: String!
+  description: String
+}
+
+input UpdateAppInput {
+  name: String
+  description: String
+  isActive: Boolean
+  
+  # Push Provider Configuration
+  fcmProjectId: String
+  fcmServiceAccount: String
+  apnsKeyId: String
+  apnsTeamId: String
+  apnsPrivateKey: String
+  bundleId: String
+  vapidSubject: String
+  vapidPublicKey: String
+  vapidPrivateKey: String
+}
+
+input ConfigureAPNsInput {
+  keyId: String!
+  teamId: String!
+  privateKey: String!
+  bundleId: String
+  isProduction: Boolean
+}
+
+input ConfigureFCMInput {
+  projectId: String!
+  serviceAccount: String!
+}
+
+input ConfigureWebPushInput {
+  subject: String!
+  publicKey: String!
+  privateKey: String!
+}
+
+type VapidKeys {
+  publicKey: String!
+  privateKey: String!
+}
+
+extend type Query {
+  apps: [App!]!
+  app(id: ID!): App
+  appBySlug(slug: String!): App
+  appExists(slug: String!): Boolean!
+  generateVapidKeys: VapidKeys!
+}
+
+extend type Mutation {
+  createApp(input: CreateAppInput!): App!
+  updateApp(id: ID!, input: UpdateAppInput!): App!
+  deleteApp(id: ID!): Boolean!
+  regenerateApiKey(id: ID!): App!
+  configureAPNs(id: ID!, input: ConfigureAPNsInput!): App!
+  configureFCM(id: ID!, input: ConfigureFCMInput!): App!
+  configureWebPush(id: ID!, input: ConfigureWebPushInput!): App!
+}

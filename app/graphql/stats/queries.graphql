@@ -1,0 +1,8 @@
+query dashboardStats {
+  dashboardStats {
+    totalApps
+    activeDevices
+    notificationsSent
+    deliveryRate
+  }
+}

@@ -22,3 +22,177 @@ logs
 .env
 .env.*
 !.env.example
+coverage
+
+# iOS Development
+*.ipa
+*.dSYM.zip
+*.dSYM
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.xcarchive
+*.xcuserstate
+*.xcworkspace/xcshareddata/
+
+# iOS certificates and keys
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+*.certSigningRequest
+
+# Xcode
+project.xcworkspace
+xcuserdata/
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.pbxuser
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# iOS Simulator
+*.app
+*.framework
+
+# CocoaPods
+Pods/
+*.podspec
+
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+
+# Carthage
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# APNS & Push Notification Keys
+AuthKey_*.p8
+apns-*.pem
+*.p8.txt
+push-cert-*.pem
+
+# Android Development
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Kotlin
+*.kt~
+*.kts~
+
+# Android Build outputs
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/gradle.properties
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+android/app/release/
+android/app/debug/
+
+# Android Studio / IntelliJ IDEA
+android/.idea/
+android/*.iml
+android/.gradle
+android/build
+android/captures
+android/.externalNativeBuild
+android/.cxx
+android/.idea/caches/
+android/.idea/modules.xml
+android/.idea/workspace.xml
+android/.idea/navEditor.xml
+android/.idea/assetWizardSettings.xml
+
+# Gradle
+android/.gradle/
+android/gradlew
+android/gradlew.bat
+android/gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin Multiplatform
+android/shared/build/
+android/composeApp/build/
+
+# Keystore files
+*.jks
+*.keystore
+android/app/*.jks
+android/app/*.keystore
+android/keystore.properties
+
+# Jetpack Compose
+android/.compose_deps/
+android/app/build/compose_compiler/
+android/compose-compiler-reports/
+android/compose-metrics/
+
+# Android Testing
+android/app/build/outputs/androidTest-results/
+android/app/build/outputs/unit_test_results/
+android/build/reports/
+android/app/build/reports/
+
+# Firebase & Google Services
+android/app/google-services.json
+google-services.json
+firebase-adminsdk-*.json
+service-account-*.json
+android/app/src/*/google-services.json
+
+# FCM & Push Notification Keys
+fcm-server-key.txt
+firebase-service-account.json
+android-firebase-config.json
+
+# Android Auto-generated files
+android/app/src/main/java/**/BuildConfig.java
+android/app/src/main/java/**/R.java
+
+# ProGuard/R8
+android/app/proguard/
+android/app/build/outputs/mapping/
+android/app/build/outputs/proguard/
+
+# React Native (if used)
+android/app/src/main/assets/index.android.bundle
+android/app/src/main/assets/index.android.bundle.meta
+android/app/src/main/res/drawable-*
+android/app/src/main/res/raw/
+
+# Gradle Wrapper
+android/gradle/wrapper/gradle-wrapper.properties
+
+# Android Lint
+android/lint-report.html
+android/lint-report_files/
+android/lint-results.xml
+
+# Android NDK
+android/obj/
+android/libs/armeabi/
+android/libs/armeabi-v7a/
+android/libs/arm64-v8a/
+android/libs/x86/
+android/libs/x86_64/
+
+# Demo/Test files
+demo-devices.json
+test-tokens.txt

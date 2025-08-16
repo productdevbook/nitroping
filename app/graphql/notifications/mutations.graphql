@@ -1,0 +1,25 @@
+mutation sendNotification($input: SendNotificationInput!) {
+  sendNotification(input: $input) {
+    id
+    appId
+    title
+    body
+    data
+    badge
+    sound
+    clickAction
+    imageUrl
+    targetDevices
+    platforms
+    scheduledAt
+    status
+    totalTargets
+    totalSent
+    totalDelivered
+    totalFailed
+    totalClicked
+    createdAt
+    updatedAt
+    sentAt
+  }
+}
