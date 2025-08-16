@@ -1,0 +1,90 @@
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SCHEDULED
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  CLICKED
+}
+
+type Notification {
+  id: ID!
+  appId: ID!
+  app: App
+  title: String!
+  body: String!
+  data: String # JSON string
+  imageUrl: String
+  clickAction: String
+  sound: String
+  badge: Int
+  status: NotificationStatus!
+  
+  # Targeting
+  targetDevices: [String!] # Device IDs
+  platforms: [DevicePlatform!]
+  scheduledAt: Timestamp
+  
+  # Statistics
+  totalTargets: Int!
+  totalSent: Int!
+  totalDelivered: Int!
+  totalFailed: Int!
+  totalClicked: Int!
+  
+  # Relations
+  deliveryLogs: [DeliveryLog!]!
+  
+  # Timestamps
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  sentAt: Timestamp
+}
+
+type DeliveryLog {
+  id: ID!
+  notificationId: ID!
+  notification: Notification
+  deviceId: ID!
+  device: Device
+  status: DeliveryStatus!
+  errorMessage: String
+  clickedAt: Timestamp
+  
+  # Timestamps
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+input SendNotificationInput {
+  appId: ID!
+  title: String!
+  body: String!
+  data: String # JSON string
+  imageUrl: String
+  clickAction: String
+  sound: String
+  badge: Int
+  
+  # Targeting
+  targetDevices: [String!] # Device IDs or tokens
+  platforms: [DevicePlatform!]
+  scheduledAt: Timestamp
+}
+
+extend type Query {
+  notifications(appId: ID): [Notification!]!
+  notification(id: ID!): Notification
+  deliveryLogs(notificationId: ID): [DeliveryLog!]!
+}
+
+extend type Mutation {
+  sendNotification(input: SendNotificationInput!): Notification!
+  scheduleNotification(input: SendNotificationInput!): Notification!
+  cancelNotification(id: ID!): Boolean!
+}

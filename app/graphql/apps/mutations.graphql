@@ -1,0 +1,40 @@
+mutation createApp($input: CreateAppInput!) {
+  createApp(input: $input) {
+    id
+    name
+    slug
+    description
+    isActive
+    apiKey
+    createdAt
+    updatedAt
+  }
+}
+
+mutation updateApp($id: ID!, $input: UpdateAppInput!) {
+  updateApp(id: $id, input: $input) {
+    id
+    name
+    slug
+    description
+    isActive
+    fcmProjectId
+    apnsKeyId
+    apnsTeamId
+    vapidSubject
+    vapidPublicKey
+    updatedAt
+  }
+}
+
+mutation deleteApp($id: ID!) {
+  deleteApp(id: $id)
+}
+
+mutation regenerateApiKey($id: ID!) {
+  regenerateApiKey(id: $id) {
+    id
+    apiKey
+    updatedAt
+  }
+}

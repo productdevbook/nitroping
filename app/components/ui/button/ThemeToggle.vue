@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import Button from './Button.vue'
+import { Button } from '~/components/ui/button'
+import { Sun, Moon } from 'lucide-vue-next'
 
 const colorMode = useColorMode()
 
@@ -12,12 +13,10 @@ function toggleDarkMode() {
 <template>
   <Button variant="ghost" size="icon" @click="toggleDarkMode">
     <ClientOnly>
-      <Icon 
-        :name="colorMode.value === 'dark' ? 'lucide:sun' : 'lucide:moon'" 
-        class="h-5 w-5" 
-      />
+      <Sun v-if="colorMode.value === 'dark'" class="h-4 w-4" />
+      <Moon v-else class="h-4 w-4" />
       <template #fallback>
-        <Icon name="lucide:moon" class="h-5 w-5" />
+        <Moon class="h-4 w-4" />
       </template>
     </ClientOnly>
     <span class="sr-only">Toggle dark mode</span>

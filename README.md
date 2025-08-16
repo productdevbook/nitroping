@@ -57,14 +57,79 @@ We're just getting started! This is the perfect time to get involved:
 
 Watch this repo for updates as we build NitroPing from the ground up. We'll be sharing our progress and looking for feedback from the community.
 
+## 🚀 Quick Start
+
+### Environment Setup
+
+1. **Copy environment file**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Generate required secrets**
+   
+   **JWT Secret** (for API authentication):
+   ```bash
+   # Option 1: Using Node.js
+   node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+   
+   # Option 2: Using OpenSSL
+   openssl rand -hex 64
+   
+   # Option 3: Using online generator
+   # Visit: https://generate-secret.vercel.app/64
+   ```
+
+   **Webhook Secret** (for delivery callbacks):
+   ```bash
+   # Option 1: Using Node.js
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   
+   # Option 2: Using OpenSSL
+   openssl rand -hex 32
+   ```
+
+3. **Set up database**
+   ```bash
+   # Start PostgreSQL (using Docker)
+   docker run --name nitroping-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=nitroping -p 5432:5432 -d postgres:15
+   
+   # Generate and run migrations
+   pnpm db:generate
+   pnpm db:migrate
+   ```
+
+4. **Start development server**
+   ```bash
+   pnpm dev
+   ```
+
+### Creating Your First App
+
+1. **Create an app via API**
+   ```bash
+   curl -X POST http://localhost:3000/api/v1/apps/create \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "My App",
+       "slug": "my-app",
+       "description": "My awesome app"
+     }'
+   ```
+
+2. **Configure push providers** (add FCM/APNs/WebPush credentials through the admin dashboard)
+
+3. **Register devices and start sending notifications!**
+
 ## 🗒️ Roadmap
 
-- [ ] Core service architecture
-- [ ] APNs integration
-- [ ] FCM integration  
-- [ ] Web Push support
+- [x] Core service architecture
+- [x] APNs integration
+- [x] FCM integration  
+- [x] Web Push support
 - [ ] GraphQL API
-- [ ] Admin dashboard
+- [ ] Admin dashboard UI
+- [ ] Queue system (BullMQ + Redis)
 - [ ] Docker deployment
 - [ ] Documentation site
 

@@ -1,0 +1,44 @@
+query devices($appId: ID) {
+  devices(appId: $appId) {
+    id
+    appId
+    token
+    platform
+    userId
+    status
+    metadata
+    lastSeenAt
+    createdAt
+    updatedAt
+  }
+}
+
+query device($id: ID!) {
+  device(id: $id) {
+    id
+    appId
+    token
+    platform
+    userId
+    status
+    metadata
+    lastSeenAt
+    createdAt
+    updatedAt
+  }
+}
+
+query deviceByToken($token: String!) {
+  deviceByToken(token: $token) {
+    id
+    appId
+    token
+    platform
+    userId
+    status
+    metadata
+    lastSeenAt
+    createdAt
+    updatedAt
+  }
+}

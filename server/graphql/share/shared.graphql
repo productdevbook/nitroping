@@ -1,0 +1,12 @@
+scalar JSON
+scalar Timestamp
+
+type PageInfo {
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
