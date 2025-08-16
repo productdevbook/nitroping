@@ -1,5 +1,5 @@
-import { pgTable, uuid, text, timestamp, jsonb, integer, boolean, pgEnum } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
+import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
 // Enums
 export const platformEnum = pgEnum('platform', ['ios', 'android', 'web'])
@@ -23,7 +23,7 @@ export const app = pgTable('app', {
   vapidSubject: text(),
   isActive: boolean().default(true),
   createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow()
+  updatedAt: timestamp().defaultNow(),
 })
 
 // Device table
@@ -37,7 +37,7 @@ export const device = pgTable('device', {
   metadata: jsonb(),
   lastSeenAt: timestamp(),
   createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow()
+  updatedAt: timestamp().defaultNow(),
 })
 
 // Notification table
@@ -62,7 +62,7 @@ export const notification = pgTable('notification', {
   totalDelivered: integer().default(0),
   totalFailed: integer().default(0),
   createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow()
+  updatedAt: timestamp().defaultNow(),
 })
 
 // Delivery log table
@@ -76,7 +76,7 @@ export const deliveryLog = pgTable('deliveryLog', {
   attemptCount: integer().default(1),
   sentAt: timestamp(),
   deliveredAt: timestamp(),
-  createdAt: timestamp().defaultNow()
+  createdAt: timestamp().defaultNow(),
 })
 
 // API Key table (for authentication)
@@ -90,46 +90,46 @@ export const apiKey = pgTable('apiKey', {
   lastUsedAt: timestamp(),
   expiresAt: timestamp(),
   createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow()
+  updatedAt: timestamp().defaultNow(),
 })
 
 // Relations
 export const appRelations = relations(app, ({ many }) => ({
   devices: many(device),
   notifications: many(notification),
-  apiKeys: many(apiKey)
+  apiKeys: many(apiKey),
 }))
 
 export const deviceRelations = relations(device, ({ one, many }) => ({
   app: one(app, {
     fields: [device.appId],
-    references: [app.id]
+    references: [app.id],
   }),
-  deliveryLogs: many(deliveryLog)
+  deliveryLogs: many(deliveryLog),
 }))
 
 export const notificationRelations = relations(notification, ({ one, many }) => ({
   app: one(app, {
     fields: [notification.appId],
-    references: [app.id]
+    references: [app.id],
   }),
-  deliveryLogs: many(deliveryLog)
+  deliveryLogs: many(deliveryLog),
 }))
 
 export const deliveryLogRelations = relations(deliveryLog, ({ one }) => ({
   notification: one(notification, {
     fields: [deliveryLog.notificationId],
-    references: [notification.id]
+    references: [notification.id],
   }),
   device: one(device, {
     fields: [deliveryLog.deviceId],
-    references: [device.id]
-  })
+    references: [device.id],
+  }),
 }))
 
 export const apiKeyRelations = relations(apiKey, ({ one }) => ({
   app: one(app, {
     fields: [apiKey.appId],
-    references: [app.id]
-  })
+    references: [app.id],
+  }),
 }))

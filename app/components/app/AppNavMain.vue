@@ -1,3 +1,39 @@
+<script setup lang="ts">
+import { ChevronRight, ExternalLink } from 'lucide-vue-next'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '~/components/ui/collapsible'
+import {
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from '~/components/ui/sidebar'
+
+interface MenuItem {
+  title: string
+  url: string
+  icon?: any
+  isActive: boolean
+  items?: Array<{
+    title: string
+    url: string
+    isActive: boolean
+  }>
+}
+
+defineProps<{
+  items: MenuItem[]
+  label?: string
+}>()
+</script>
+
 <template>
   <SidebarGroup>
     <SidebarGroupLabel v-if="label">{{ label }}</SidebarGroupLabel>
@@ -27,7 +63,7 @@
               </CollapsibleContent>
             </Collapsible>
           </template>
-          
+
           <!-- Simple menu item -->
           <template v-else>
             <SidebarMenuButton as-child :is-active="item.isActive" :tooltip="item.title">
@@ -49,39 +85,3 @@
     </SidebarMenu>
   </SidebarGroup>
 </template>
-
-<script setup lang="ts">
-import {
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-} from '~/components/ui/sidebar'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '~/components/ui/collapsible'
-import { ChevronRight, ExternalLink } from 'lucide-vue-next'
-
-interface MenuItem {
-  title: string
-  url: string
-  icon?: any
-  isActive: boolean
-  items?: Array<{
-    title: string
-    url: string
-    isActive: boolean
-  }>
-}
-
-defineProps<{
-  items: MenuItem[]
-  label?: string
-}>()
-</script>

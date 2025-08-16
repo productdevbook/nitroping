@@ -1,8 +1,9 @@
+import type { H3Event } from 'h3'
+import { and, eq } from 'drizzle-orm'
+import { createError, getHeader } from 'h3'
 import jwt from 'jsonwebtoken'
 import { getDatabase } from '../database/connection'
 import { apiKey, app } from '../database/schema'
-import { eq, and } from 'drizzle-orm'
-import type { H3Event } from 'h3'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key'
 
@@ -19,7 +20,8 @@ export function generateJWT(payload: JWTPayload, expiresIn: string = '24h'): str
 export function verifyJWT(token: string): JWTPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as JWTPayload
-  } catch {
+  }
+  catch {
     return null
   }
 }
@@ -35,7 +37,7 @@ export async function generateApiKey(): Promise<string> {
 
 export async function validateApiKey(apiKeyValue: string) {
   const db = getDatabase()
-  
+
   const result = await db
     .select({
       id: apiKey.id,
@@ -44,7 +46,7 @@ export async function validateApiKey(apiKeyValue: string) {
       isActive: apiKey.isActive,
       expiresAt: apiKey.expiresAt,
       appName: app.name,
-      appIsActive: app.isActive
+      appIsActive: app.isActive,
     })
     .from(apiKey)
     .innerJoin(app, eq(apiKey.appId, app.id))
@@ -52,8 +54,8 @@ export async function validateApiKey(apiKeyValue: string) {
       and(
         eq(apiKey.key, apiKeyValue),
         eq(apiKey.isActive, true),
-        eq(app.isActive, true)
-      )
+        eq(app.isActive, true),
+      ),
     )
     .limit(1)
 
@@ -78,19 +80,19 @@ export async function validateApiKey(apiKeyValue: string) {
     id: keyData.id,
     appId: keyData.appId,
     permissions: keyData.permissions as string[] || [],
-    appName: keyData.appName
+    appName: keyData.appName,
   }
 }
 
 export async function verifyApiKey(apiKeyValue: string) {
   const db = getDatabase()
-  
+
   const result = await db
     .select({
       id: app.id,
       name: app.name,
       slug: app.slug,
-      isActive: app.isActive
+      isActive: app.isActive,
     })
     .from(app)
     .where(eq(app.apiKey, apiKeyValue))
@@ -105,11 +107,11 @@ export async function verifyApiKey(apiKeyValue: string) {
 
 export async function extractAuthFromEvent(event: H3Event) {
   const authHeader = getHeader(event, 'authorization')
-  
+
   if (!authHeader) {
     throw createError({
       statusCode: 401,
-      statusMessage: 'Authorization header required'
+      statusMessage: 'Authorization header required',
     })
   }
 
@@ -117,37 +119,39 @@ export async function extractAuthFromEvent(event: H3Event) {
     // JWT authentication
     const token = authHeader.substring(7)
     const payload = verifyJWT(token)
-    
+
     if (!payload) {
       throw createError({
         statusCode: 401,
-        statusMessage: 'Invalid or expired JWT token'
+        statusMessage: 'Invalid or expired JWT token',
       })
     }
-    
+
     return payload
-  } else if (authHeader.startsWith('ApiKey ')) {
+  }
+  else if (authHeader.startsWith('ApiKey ')) {
     // API Key authentication
     const apiKeyValue = authHeader.substring(7)
     const keyData = await validateApiKey(apiKeyValue)
-    
+
     if (!keyData) {
       throw createError({
         statusCode: 401,
-        statusMessage: 'Invalid or expired API key'
+        statusMessage: 'Invalid or expired API key',
       })
     }
-    
+
     return {
       appId: keyData.appId,
       apiKeyId: keyData.id,
       permissions: keyData.permissions,
-      appName: keyData.appName
+      appName: keyData.appName,
     }
-  } else {
+  }
+  else {
     throw createError({
       statusCode: 401,
-      statusMessage: 'Invalid authorization format. Use "Bearer <jwt>" or "ApiKey <key>"'
+      statusMessage: 'Invalid authorization format. Use "Bearer <jwt>" or "ApiKey <key>"',
     })
   }
 }

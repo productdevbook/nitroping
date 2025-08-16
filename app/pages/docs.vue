@@ -1,3 +1,88 @@
+<script setup lang="ts">
+import { AlertTriangle, Code, Terminal } from 'lucide-vue-next'
+import { Badge } from '~/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+
+definePageMeta({
+  layout: 'default',
+})
+
+// Get base URL
+const baseUrl = computed(() => {
+  if (process.client) {
+    return `${window.location.protocol}//${window.location.host}`
+  }
+  return 'https://your-nitroping-instance.com'
+})
+
+const activeSection = ref('getting-started')
+
+const sections = [
+  { id: 'getting-started', title: 'Getting Started' },
+  { id: 'authentication', title: 'Authentication' },
+  { id: 'device-registration', title: 'Device Registration' },
+  { id: 'sending-notifications', title: 'Sending Notifications' },
+  { id: 'sdks', title: 'SDKs & Examples' },
+  { id: 'errors', title: 'Error Codes' },
+]
+
+const errorCodes = [
+  {
+    code: '400',
+    message: 'Bad Request',
+    description: 'Invalid request format or missing required fields',
+  },
+  {
+    code: '401',
+    message: 'Unauthorized',
+    description: 'Invalid or missing API key',
+  },
+  {
+    code: '403',
+    message: 'Forbidden',
+    description: 'API key does not have required permissions',
+  },
+  {
+    code: '404',
+    message: 'Not Found',
+    description: 'Resource not found or invalid endpoint',
+  },
+  {
+    code: '429',
+    message: 'Rate Limited',
+    description: 'Too many requests, please slow down',
+  },
+  {
+    code: '500',
+    message: 'Server Error',
+    description: 'Internal server error, please try again',
+  },
+]
+
+// Handle scroll to update active section
+onMounted(() => {
+  if (process.client) {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 100
+
+      for (const section of sections) {
+        const element = document.getElementById(section.id)
+        if (element) {
+          const { offsetTop, offsetHeight } = element
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            activeSection.value = section.id
+            break
+          }
+        }
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    onUnmounted(() => window.removeEventListener('scroll', handleScroll))
+  }
+})
+</script>
+
 <template>
   <div>
     <!-- Header -->
@@ -15,10 +100,12 @@
           </CardHeader>
           <CardContent>
             <nav class="space-y-2">
-              <a v-for="section in sections" :key="section.id" 
-                 :href="`#${section.id}`" 
-                 class="block text-sm hover:text-primary transition-colors py-1"
-                 :class="activeSection === section.id ? 'text-primary font-medium' : 'text-muted-foreground'">
+              <a
+                v-for="section in sections" :key="section.id"
+                :href="`#${section.id}`"
+                class="block text-sm hover:text-primary transition-colors py-1"
+                :class="activeSection === section.id ? 'text-primary font-medium' : 'text-muted-foreground'"
+              >
                 {{ section.title }}
               </a>
             </nav>
@@ -35,7 +122,7 @@
             <CardContent class="pt-6">
               <div class="space-y-4">
                 <p>Welcome to the NitroPing API! This RESTful API allows you to send push notifications to iOS, Android, and Web devices.</p>
-                
+
                 <div class="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
                   <h4 class="font-medium mb-2">Base URL</h4>
                   <code class="text-sm bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded">
@@ -64,7 +151,7 @@
             <CardContent class="pt-6">
               <div class="space-y-4">
                 <p>All API requests require authentication using your application's API key.</p>
-                
+
                 <div>
                   <h4 class="font-medium mb-2">API Key Authentication</h4>
                   <p class="text-sm text-muted-foreground mb-3">Include your API key in the Authorization header:</p>
@@ -100,7 +187,7 @@
                     <Badge variant="outline" class="font-mono">POST</Badge>
                     <code class="text-sm">/devices/register</code>
                   </div>
-                  
+
                   <h4 class="font-medium mb-2">Request Body</h4>
                   <div class="bg-gray-50 dark:bg-gray-950 p-4 rounded-lg overflow-x-auto">
                     <pre class="text-sm"><code>{
@@ -155,7 +242,7 @@
                     <Badge variant="outline" class="font-mono">POST</Badge>
                     <code class="text-sm">/notifications/send</code>
                   </div>
-                  
+
                   <h4 class="font-medium mb-2">Request Body</h4>
                   <div class="bg-gray-50 dark:bg-gray-950 p-4 rounded-lg overflow-x-auto">
                     <pre class="text-sm"><code>{
@@ -170,11 +257,11 @@
   "clickAction": "https://example.com", // Optional URL
   "icon": "https://example.com/icon.png", // Optional
   "image": "https://example.com/image.png", // Optional
-  
+
   // Targeting (optional, defaults to all devices)
   "targetDevices": ["device-id-1", "device-id-2"],
   "platforms": ["android", "ios"], // Filter by platform
-  
+
   // Scheduling (optional, defaults to immediate)
   "scheduledAt": "2024-01-15T10:00:00Z",
   "expiresAt": "2024-01-16T10:00:00Z"
@@ -206,7 +293,7 @@
         <!-- SDKs and Examples -->
         <section id="sdks">
           <h2 class="text-2xl font-bold mb-4">SDKs & Examples</h2>
-          
+
           <!-- JavaScript/Node.js -->
           <Card class="mb-6">
             <CardHeader>
@@ -279,7 +366,7 @@ class NitroPing:
             'Authorization': f'ApiKey {api_key}',
             'Content-Type': 'application/json'
         }
-    
+
     def register_device(self, token, platform, user_id=None):
         data = {
             'token': token,
@@ -292,7 +379,7 @@ class NitroPing:
             headers=self.headers
         )
         return response.json()
-    
+
     def send_notification(self, title, body, **kwargs):
         data = {
             'title': title,
@@ -354,7 +441,7 @@ curl -X POST {{ baseUrl }}/api/v1/notifications/send \
             <CardContent class="pt-6">
               <div class="space-y-4">
                 <p>All errors return a JSON response with the following format:</p>
-                
+
                 <div class="bg-gray-50 dark:bg-gray-950 p-4 rounded-lg overflow-x-auto">
                   <pre class="text-sm"><code>{
   "success": false,
@@ -380,88 +467,3 @@ curl -X POST {{ baseUrl }}/api/v1/notifications/send \
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  layout: 'default'
-})
-
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { Badge } from '~/components/ui/badge'
-import { AlertTriangle, Code, Terminal } from 'lucide-vue-next'
-
-// Get base URL
-const baseUrl = computed(() => {
-  if (process.client) {
-    return `${window.location.protocol}//${window.location.host}`
-  }
-  return 'https://your-nitroping-instance.com'
-})
-
-const activeSection = ref('getting-started')
-
-const sections = [
-  { id: 'getting-started', title: 'Getting Started' },
-  { id: 'authentication', title: 'Authentication' },
-  { id: 'device-registration', title: 'Device Registration' },
-  { id: 'sending-notifications', title: 'Sending Notifications' },
-  { id: 'sdks', title: 'SDKs & Examples' },
-  { id: 'errors', title: 'Error Codes' }
-]
-
-const errorCodes = [
-  {
-    code: '400',
-    message: 'Bad Request',
-    description: 'Invalid request format or missing required fields'
-  },
-  {
-    code: '401',
-    message: 'Unauthorized',
-    description: 'Invalid or missing API key'
-  },
-  {
-    code: '403',
-    message: 'Forbidden',
-    description: 'API key does not have required permissions'
-  },
-  {
-    code: '404',
-    message: 'Not Found',
-    description: 'Resource not found or invalid endpoint'
-  },
-  {
-    code: '429',
-    message: 'Rate Limited',
-    description: 'Too many requests, please slow down'
-  },
-  {
-    code: '500',
-    message: 'Server Error',
-    description: 'Internal server error, please try again'
-  }
-]
-
-// Handle scroll to update active section
-onMounted(() => {
-  if (process.client) {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY + 100
-      
-      for (const section of sections) {
-        const element = document.getElementById(section.id)
-        if (element) {
-          const { offsetTop, offsetHeight } = element
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            activeSection.value = section.id
-            break
-          }
-        }
-      }
-    }
-    
-    window.addEventListener('scroll', handleScroll)
-    onUnmounted(() => window.removeEventListener('scroll', handleScroll))
-  }
-})
-</script>

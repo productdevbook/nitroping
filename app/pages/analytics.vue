@@ -1,3 +1,133 @@
+<script setup lang="ts">
+import { BarChart3, CheckCircle, RefreshCw, Send, Smartphone, XCircle } from 'lucide-vue-next'
+import { Badge } from '~/components/ui/badge'
+import { Button } from '~/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
+
+definePageMeta({
+  layout: 'default',
+})
+
+// API queries
+const { data: appsData, isLoading: _appsLoading } = useApps()
+const apps = computed(() => appsData.value || [])
+
+// Reactive data
+const selectedApp = ref('all')
+const timeRange = ref('7d')
+const recentNotifications = ref<any[]>([])
+
+const metrics = ref({
+  totalSent: 25847,
+  delivered: 25203,
+  failed: 644,
+  activeDevices: 1250,
+  sentChange: 12.5,
+  deviceChange: 23,
+})
+
+const platformStats = ref([
+  { name: 'Android', count: 15430, percentage: 59.7, color: '#10B981' },
+  { name: 'iOS', count: 8521, percentage: 33.0, color: '#3B82F6' },
+  { name: 'Web', count: 1896, percentage: 7.3, color: '#8B5CF6' },
+])
+
+const commonErrors = ref([
+  {
+    type: 'invalid_token',
+    message: 'Invalid Registration Token',
+    description: 'Device token is no longer valid',
+    count: 342,
+  },
+  {
+    type: 'quota_exceeded',
+    message: 'Message Rate Exceeded',
+    description: 'Too many messages sent to device',
+    count: 156,
+  },
+  {
+    type: 'invalid_package',
+    message: 'Package Name Mismatch',
+    description: 'App package name does not match',
+    count: 89,
+  },
+])
+
+// Methods
+
+async function loadRecentNotifications() {
+  try {
+    // TODO: Load from API with filters
+    recentNotifications.value = [
+      {
+        id: '1',
+        title: 'Welcome to our app!',
+        body: 'Thanks for downloading our app. Get started now!',
+        appName: 'Mobile App',
+        status: 'sent',
+        totalTargets: 150,
+        totalSent: 147,
+        totalFailed: 3,
+        createdAt: new Date(Date.now() - 1000 * 60 * 30),
+      },
+      {
+        id: '2',
+        title: 'New feature available',
+        body: 'Check out our latest update with amazing new features.',
+        appName: 'Mobile App',
+        status: 'sent',
+        totalTargets: 1200,
+        totalSent: 1180,
+        totalFailed: 20,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
+      },
+      {
+        id: '3',
+        title: 'System maintenance',
+        body: 'We will be performing scheduled maintenance tonight.',
+        appName: 'Web Dashboard',
+        status: 'failed',
+        totalTargets: 45,
+        totalSent: 12,
+        totalFailed: 33,
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4),
+      },
+    ]
+  }
+  catch (error) {
+    console.error('Error loading recent notifications:', error)
+  }
+}
+
+function getStatusVariant(status: string) {
+  switch (status) {
+    case 'sent': return 'default'
+    case 'failed': return 'destructive'
+    case 'pending': return 'secondary'
+    default: return 'outline'
+  }
+}
+
+function formatDate(date: Date) {
+  return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
+    Math.round((date.getTime() - Date.now()) / (1000 * 60)),
+    'minute',
+  )
+}
+
+// Watch for filter changes
+watch([selectedApp, timeRange], () => {
+  // TODO: Reload data when filters change
+  console.log('Filters changed:', { app: selectedApp.value, range: timeRange.value })
+})
+
+// Load data on mount
+onMounted(() => {
+  loadRecentNotifications()
+})
+</script>
+
 <template>
   <div>
     <!-- Header -->
@@ -206,132 +336,3 @@
     </Card>
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  layout: 'default'
-})
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Button } from '~/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
-import { Badge } from '~/components/ui/badge'
-import { Send, CheckCircle, XCircle, Smartphone, BarChart3, RefreshCw } from 'lucide-vue-next'
-
-// API queries
-const { data: appsData, isLoading: appsLoading } = useApps()
-const apps = computed(() => appsData.value || [])
-
-// Reactive data
-const selectedApp = ref('all')
-const timeRange = ref('7d')
-const recentNotifications = ref<any[]>([])
-
-const metrics = ref({
-  totalSent: 25847,
-  delivered: 25203,
-  failed: 644,
-  activeDevices: 1250,
-  sentChange: 12.5,
-  deviceChange: 23
-})
-
-const platformStats = ref([
-  { name: 'Android', count: 15430, percentage: 59.7, color: '#10B981' },
-  { name: 'iOS', count: 8521, percentage: 33.0, color: '#3B82F6' },
-  { name: 'Web', count: 1896, percentage: 7.3, color: '#8B5CF6' }
-])
-
-const commonErrors = ref([
-  {
-    type: 'invalid_token',
-    message: 'Invalid Registration Token',
-    description: 'Device token is no longer valid',
-    count: 342
-  },
-  {
-    type: 'quota_exceeded',
-    message: 'Message Rate Exceeded',
-    description: 'Too many messages sent to device',
-    count: 156
-  },
-  {
-    type: 'invalid_package',
-    message: 'Package Name Mismatch',
-    description: 'App package name does not match',
-    count: 89
-  }
-])
-
-// Methods
-
-async function loadRecentNotifications() {
-  try {
-    // TODO: Load from API with filters
-    recentNotifications.value = [
-      {
-        id: '1',
-        title: 'Welcome to our app!',
-        body: 'Thanks for downloading our app. Get started now!',
-        appName: 'Mobile App',
-        status: 'sent',
-        totalTargets: 150,
-        totalSent: 147,
-        totalFailed: 3,
-        createdAt: new Date(Date.now() - 1000 * 60 * 30)
-      },
-      {
-        id: '2',
-        title: 'New feature available',
-        body: 'Check out our latest update with amazing new features.',
-        appName: 'Mobile App',
-        status: 'sent',
-        totalTargets: 1200,
-        totalSent: 1180,
-        totalFailed: 20,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2)
-      },
-      {
-        id: '3',
-        title: 'System maintenance',
-        body: 'We will be performing scheduled maintenance tonight.',
-        appName: 'Web Dashboard',
-        status: 'failed',
-        totalTargets: 45,
-        totalSent: 12,
-        totalFailed: 33,
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4)
-      }
-    ]
-  } catch (error) {
-    console.error('Error loading recent notifications:', error)
-  }
-}
-
-function getStatusVariant(status: string) {
-  switch (status) {
-    case 'sent': return 'default'
-    case 'failed': return 'destructive'
-    case 'pending': return 'secondary'
-    default: return 'outline'
-  }
-}
-
-function formatDate(date: Date) {
-  return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
-    Math.round((date.getTime() - Date.now()) / (1000 * 60)),
-    'minute'
-  )
-}
-
-// Watch for filter changes
-watch([selectedApp, timeRange], () => {
-  // TODO: Reload data when filters change
-  console.log('Filters changed:', { app: selectedApp.value, range: timeRange.value })
-})
-
-// Load data on mount
-onMounted(() => {
-  loadRecentNotifications()
-})
-</script>

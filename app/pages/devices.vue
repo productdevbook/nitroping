@@ -1,3 +1,218 @@
+<script setup lang="ts">
+import { CheckCircle, Loader2, RefreshCw, Search, Send, Smartphone, XCircle } from 'lucide-vue-next'
+import { Badge } from '~/components/ui/badge'
+import { Button } from '~/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
+import { Textarea } from '~/components/ui/textarea'
+
+definePageMeta({
+  layout: 'default',
+})
+
+// API queries
+const { data: appsData, isLoading: _appsLoading } = useApps()
+const apps = computed(() => appsData.value || [])
+const { mutateAsync: registerDeviceMutation, isLoading: isRegisteringDevice } = useRegisterDevice()
+
+// Reactive data
+const recentDevices = ref<any[]>([])
+const testLoading = ref(false)
+const deviceTestLoading = ref(false)
+const testResult = ref<any>(null)
+const showTestDeviceDialog = ref(false)
+const selectedDevice = ref<any>(null)
+
+const registrationForm = ref({
+  appId: '',
+  token: '',
+  platform: '',
+  userId: '',
+  metadata: '',
+})
+
+const testForm = ref({
+  appId: '',
+  token: '',
+})
+
+const deviceTestForm = ref({
+  title: '',
+  body: '',
+})
+
+// Methods
+
+async function loadRecentDevices() {
+  try {
+    // TODO: Implement recent devices API
+    recentDevices.value = [
+      {
+        id: '1',
+        appName: 'Mobile App',
+        platform: 'android',
+        userId: 'user123',
+        status: 'active',
+        createdAt: new Date(Date.now() - 1000 * 60 * 30),
+        lastSeenAt: new Date(),
+      },
+      {
+        id: '2',
+        appName: 'Web Dashboard',
+        platform: 'web',
+        userId: null,
+        status: 'active',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
+        lastSeenAt: new Date(Date.now() - 1000 * 60 * 10),
+      },
+    ]
+  }
+  catch (error) {
+    console.error('Error loading recent devices:', error)
+  }
+}
+
+async function registerDevice() {
+  if (!registrationForm.value.appId || !registrationForm.value.token || !registrationForm.value.platform)
+    return
+
+  try {
+    const payload = {
+      appId: registrationForm.value.appId,
+      token: registrationForm.value.token,
+      platform: registrationForm.value.platform,
+      userId: registrationForm.value.userId || undefined,
+      metadata: registrationForm.value.metadata ? JSON.parse(registrationForm.value.metadata) : undefined,
+    }
+
+    await registerDeviceMutation(payload)
+
+    console.log('Device registered successfully!')
+
+    // Reset form
+    registrationForm.value = {
+      appId: '',
+      token: '',
+      platform: '',
+      userId: '',
+      metadata: '',
+    }
+
+    await loadRecentDevices()
+
+    // TODO: Show success toast
+  }
+  catch (error) {
+    console.error('Error registering device:', error)
+    // TODO: Show error toast
+  }
+}
+
+async function testToken() {
+  if (!testForm.value.appId || !testForm.value.token)
+    return
+
+  testLoading.value = true
+  testResult.value = null
+
+  try {
+    // TODO: Implement token validation API
+    console.log('Would test token:', testForm.value)
+
+    // Mock response
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    testResult.value = {
+      success: true,
+      message: 'Device token is valid and registered',
+      device: {
+        id: 'device-123',
+        platform: 'android',
+        status: 'active',
+        userId: 'user123',
+        lastSeenAt: new Date(),
+      },
+    }
+  }
+  catch {
+    testResult.value = {
+      success: false,
+      message: 'Device token not found or invalid',
+    }
+  }
+  finally {
+    testLoading.value = false
+  }
+}
+
+function sendTestToDevice(device: any) {
+  selectedDevice.value = device
+  deviceTestForm.value = {
+    title: 'Test Notification',
+    body: 'This is a test notification from NitroPing',
+  }
+  showTestDeviceDialog.value = true
+}
+
+async function sendTestToSelectedDevice() {
+  if (!deviceTestForm.value.title || !deviceTestForm.value.body)
+    return
+
+  deviceTestLoading.value = true
+  try {
+    // TODO: Send test notification to specific device
+    console.log('Would send test to device:', selectedDevice.value.id, deviceTestForm.value)
+
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    showTestDeviceDialog.value = false
+    deviceTestForm.value = { title: '', body: '' }
+
+    // TODO: Show success toast
+  }
+  catch (error) {
+    console.error('Error sending test notification:', error)
+    // TODO: Show error toast
+  }
+  finally {
+    deviceTestLoading.value = false
+  }
+}
+
+function getPlatformBg(platform: string) {
+  switch (platform) {
+    case 'android': return 'bg-green-100 dark:bg-green-900'
+    case 'ios': return 'bg-blue-100 dark:bg-blue-900'
+    case 'web': return 'bg-purple-100 dark:bg-purple-900'
+    default: return 'bg-gray-100 dark:bg-gray-900'
+  }
+}
+
+function getPlatformText(platform: string) {
+  switch (platform) {
+    case 'android': return 'text-green-600'
+    case 'ios': return 'text-blue-600'
+    case 'web': return 'text-purple-600'
+    default: return 'text-gray-600'
+  }
+}
+
+function formatDate(date: Date) {
+  return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
+    Math.round((date.getTime() - Date.now()) / (1000 * 60)),
+    'minute',
+  )
+}
+
+// Load data on mount
+onMounted(() => {
+  loadRecentDevices()
+})
+</script>
+
 <template>
   <div>
     <!-- Header -->
@@ -14,7 +229,7 @@
           <CardDescription>Register a device to test push notifications</CardDescription>
         </CardHeader>
         <CardContent>
-          <form @submit.prevent="registerDevice" class="space-y-4">
+          <form class="space-y-4" @submit.prevent="registerDevice">
             <div class="space-y-2">
               <Label for="app">Application *</Label>
               <Select v-model="registrationForm.appId" required>
@@ -71,7 +286,7 @@
               <Textarea
                 id="metadata"
                 v-model="registrationForm.metadata"
-                placeholder='{"deviceName": "iPhone 15", "appVersion": "1.0.0"}'
+                placeholder="{&quot;deviceName&quot;: &quot;iPhone 15&quot;, &quot;appVersion&quot;: &quot;1.0.0&quot;}"
                 rows="3"
               />
             </div>
@@ -92,7 +307,7 @@
           <CardDescription>Test if a device token is valid and registered</CardDescription>
         </CardHeader>
         <CardContent>
-          <form @submit.prevent="testToken" class="space-y-4">
+          <form class="space-y-4" @submit.prevent="testToken">
             <div class="space-y-2">
               <Label for="test-app">Application *</Label>
               <Select v-model="testForm.appId" required>
@@ -197,7 +412,7 @@
           <DialogTitle>Send Test Notification</DialogTitle>
           <DialogDescription>Send a test notification to {{ selectedDevice?.appName }} device</DialogDescription>
         </DialogHeader>
-        <form @submit.prevent="sendTestToSelectedDevice" class="space-y-4">
+        <form class="space-y-4" @submit.prevent="sendTestToSelectedDevice">
           <div class="space-y-2">
             <Label for="device-test-title">Title *</Label>
             <Input
@@ -218,7 +433,7 @@
             />
           </div>
           <DialogFooter>
-            <Button type="button" @click="showTestDeviceDialog = false" variant="outline">Cancel</Button>
+            <Button type="button" variant="outline" @click="showTestDeviceDialog = false">Cancel</Button>
             <Button type="submit" :disabled="!deviceTestForm.title || !deviceTestForm.body || deviceTestLoading">
               <Loader2 v-if="deviceTestLoading" class="w-4 h-4 mr-2 animate-spin" />
               Send Test
@@ -229,209 +444,3 @@
     </Dialog>
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  layout: 'default'
-})
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { Textarea } from '~/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
-import { Badge } from '~/components/ui/badge'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
-import { Smartphone, Search, Loader2, CheckCircle, XCircle, RefreshCw, Send } from 'lucide-vue-next'
-
-// API queries
-const { data: appsData, isLoading: appsLoading } = useApps()
-const apps = computed(() => appsData.value || [])
-const { mutateAsync: registerDeviceMutation, isLoading: isRegisteringDevice } = useRegisterDevice()
-
-// Reactive data
-const recentDevices = ref<any[]>([])
-const testLoading = ref(false)
-const deviceTestLoading = ref(false)
-const testResult = ref<any>(null)
-const showTestDeviceDialog = ref(false)
-const selectedDevice = ref<any>(null)
-
-const registrationForm = ref({
-  appId: '',
-  token: '',
-  platform: '',
-  userId: '',
-  metadata: ''
-})
-
-const testForm = ref({
-  appId: '',
-  token: ''
-})
-
-const deviceTestForm = ref({
-  title: '',
-  body: ''
-})
-
-// Methods
-
-async function loadRecentDevices() {
-  try {
-    // TODO: Implement recent devices API
-    recentDevices.value = [
-      {
-        id: '1',
-        appName: 'Mobile App',
-        platform: 'android',
-        userId: 'user123',
-        status: 'active',
-        createdAt: new Date(Date.now() - 1000 * 60 * 30),
-        lastSeenAt: new Date()
-      },
-      {
-        id: '2',
-        appName: 'Web Dashboard',
-        platform: 'web',
-        userId: null,
-        status: 'active',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        lastSeenAt: new Date(Date.now() - 1000 * 60 * 10)
-      }
-    ]
-  } catch (error) {
-    console.error('Error loading recent devices:', error)
-  }
-}
-
-async function registerDevice() {
-  if (!registrationForm.value.appId || !registrationForm.value.token || !registrationForm.value.platform) return
-  
-  try {
-    const payload = {
-      appId: registrationForm.value.appId,
-      token: registrationForm.value.token,
-      platform: registrationForm.value.platform,
-      userId: registrationForm.value.userId || undefined,
-      metadata: registrationForm.value.metadata ? JSON.parse(registrationForm.value.metadata) : undefined
-    }
-    
-    await registerDeviceMutation(payload)
-    
-    console.log('Device registered successfully!')
-    
-    // Reset form
-    registrationForm.value = {
-      appId: '',
-      token: '',
-      platform: '',
-      userId: '',
-      metadata: ''
-    }
-    
-    await loadRecentDevices()
-    
-    // TODO: Show success toast
-  } catch (error) {
-    console.error('Error registering device:', error)
-    // TODO: Show error toast
-  }
-}
-
-async function testToken() {
-  if (!testForm.value.appId || !testForm.value.token) return
-  
-  testLoading.value = true
-  testResult.value = null
-  
-  try {
-    // TODO: Implement token validation API
-    console.log('Would test token:', testForm.value)
-    
-    // Mock response
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    testResult.value = {
-      success: true,
-      message: 'Device token is valid and registered',
-      device: {
-        id: 'device-123',
-        platform: 'android',
-        status: 'active',
-        userId: 'user123',
-        lastSeenAt: new Date()
-      }
-    }
-  } catch (error) {
-    testResult.value = {
-      success: false,
-      message: 'Device token not found or invalid'
-    }
-  } finally {
-    testLoading.value = false
-  }
-}
-
-function sendTestToDevice(device: any) {
-  selectedDevice.value = device
-  deviceTestForm.value = {
-    title: 'Test Notification',
-    body: 'This is a test notification from NitroPing'
-  }
-  showTestDeviceDialog.value = true
-}
-
-async function sendTestToSelectedDevice() {
-  if (!deviceTestForm.value.title || !deviceTestForm.value.body) return
-  
-  deviceTestLoading.value = true
-  try {
-    // TODO: Send test notification to specific device
-    console.log('Would send test to device:', selectedDevice.value.id, deviceTestForm.value)
-    
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    showTestDeviceDialog.value = false
-    deviceTestForm.value = { title: '', body: '' }
-    
-    // TODO: Show success toast
-  } catch (error) {
-    console.error('Error sending test notification:', error)
-    // TODO: Show error toast
-  } finally {
-    deviceTestLoading.value = false
-  }
-}
-
-function getPlatformBg(platform: string) {
-  switch (platform) {
-    case 'android': return 'bg-green-100 dark:bg-green-900'
-    case 'ios': return 'bg-blue-100 dark:bg-blue-900'
-    case 'web': return 'bg-purple-100 dark:bg-purple-900'
-    default: return 'bg-gray-100 dark:bg-gray-900'
-  }
-}
-
-function getPlatformText(platform: string) {
-  switch (platform) {
-    case 'android': return 'text-green-600'
-    case 'ios': return 'text-blue-600'
-    case 'web': return 'text-purple-600'
-    default: return 'text-gray-600'
-  }
-}
-
-function formatDate(date: Date) {
-  return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
-    Math.round((date.getTime() - Date.now()) / (1000 * 60)),
-    'minute'
-  )
-}
-
-// Load data on mount
-onMounted(() => {
-  loadRecentDevices()
-})
-</script>

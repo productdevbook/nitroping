@@ -1,3 +1,37 @@
+<script setup lang="ts">
+import { ExternalLink, Search, Zap } from 'lucide-vue-next'
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '~/components/ui/breadcrumb'
+import { Button } from '~/components/ui/button'
+import ThemeToggle from '~/components/ui/button/ThemeToggle.vue'
+import { Separator } from '~/components/ui/separator'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '~/components/ui/sidebar'
+
+const route = useRoute()
+
+const pageTitle = computed(() => {
+  const path = route.path
+  if (path === '/')
+    return 'Overview'
+  if (path.startsWith('/apps'))
+    return 'Applications'
+  if (path.startsWith('/analytics'))
+    return 'Analytics'
+  if (path.startsWith('/send'))
+    return 'Send Notification'
+  if (path.startsWith('/devices'))
+    return 'Device Testing'
+  if (path.startsWith('/docs'))
+    return 'Documentation'
+  if (path.startsWith('/settings'))
+    return 'Settings'
+  return 'Dashboard'
+})
+
+function handleViewDocs() {
+  navigateTo('/docs')
+}
+</script>
+
 <template>
   <SidebarProvider>
     <div class="flex min-h-screen w-full">
@@ -45,30 +79,3 @@
     </div>
   </SidebarProvider>
 </template>
-
-<script setup lang="ts">
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '~/components/ui/sidebar'
-import { Separator } from '~/components/ui/separator'
-import { Button } from '~/components/ui/button'
-import ThemeToggle from '~/components/ui/button/ThemeToggle.vue'
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '~/components/ui/breadcrumb'
-import { Search, ExternalLink, Zap } from 'lucide-vue-next'
-
-const route = useRoute()
-
-const pageTitle = computed(() => {
-  const path = route.path
-  if (path === '/') return 'Overview'
-  if (path.startsWith('/apps')) return 'Applications'
-  if (path.startsWith('/analytics')) return 'Analytics'
-  if (path.startsWith('/send')) return 'Send Notification'
-  if (path.startsWith('/devices')) return 'Device Testing'
-  if (path.startsWith('/docs')) return 'Documentation'
-  if (path.startsWith('/settings')) return 'Settings'
-  return 'Dashboard'
-})
-
-function handleViewDocs() {
-  navigateTo('/docs')
-}
-</script>

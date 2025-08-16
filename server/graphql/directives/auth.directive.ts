@@ -6,13 +6,13 @@ export function createAuthDirective() {
     // This will be a simple programmatic auth check in resolvers
     // since nitro-graphql may not support schema directives yet
     check: async (context: any) => {
-      const apiKey = context.event?.node?.req?.headers?.['authorization']?.replace('Bearer ', '') ||
-                    context.event?.node?.req?.headers?.['x-api-key']
-      
+      const apiKey = context.event?.node?.req?.headers?.authorization?.replace('Bearer ', '')
+        || context.event?.node?.req?.headers?.['x-api-key']
+
       if (!apiKey) {
         throw createError({
           statusCode: 401,
-          statusMessage: 'API key required'
+          statusMessage: 'API key required',
         })
       }
 
@@ -20,12 +20,12 @@ export function createAuthDirective() {
       if (!app) {
         throw createError({
           statusCode: 401,
-          statusMessage: 'Invalid API key'
+          statusMessage: 'Invalid API key',
         })
       }
 
       return app
-    }
+    },
   }
 }
 

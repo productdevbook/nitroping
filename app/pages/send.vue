@@ -1,3 +1,120 @@
+<script setup lang="ts">
+import { ChevronDown, Loader2, Send, Smartphone } from 'lucide-vue-next'
+import { Button } from '~/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { Checkbox } from '~/components/ui/checkbox'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
+import { Textarea } from '~/components/ui/textarea'
+
+definePageMeta({
+  layout: 'default',
+})
+
+// API queries
+const { data: appsData, isLoading: _appsLoading } = useApps()
+const apps = computed(() => appsData.value || [])
+const { mutateAsync: sendNotificationMutation, isLoading: isSendingNotification } = useSendNotification()
+
+// Reactive data
+const form = ref({
+  appId: '',
+  title: '',
+  body: '',
+  badge: undefined as number | undefined,
+  sound: '',
+  clickAction: '',
+  icon: '',
+  image: '',
+  data: null,
+})
+
+const customData = ref('')
+const targetType = ref('all')
+const selectedPlatforms = ref<string[]>([])
+const deviceIds = ref('')
+const scheduleType = ref('now')
+const scheduledAt = ref('')
+
+// Computed
+const selectedApp = computed(() => {
+  return apps.value?.find((app: any) => app.id === form.value.appId)
+})
+
+// Methods
+
+function getTargetDescription() {
+  if (targetType.value === 'all')
+    return 'All devices'
+  if (targetType.value === 'platform') {
+    return selectedPlatforms.value.length > 0
+      ? selectedPlatforms.value.join(', ')
+      : 'No platforms selected'
+  }
+  if (targetType.value === 'devices') {
+    const deviceCount = deviceIds.value.split('\n').filter(id => id.trim()).length
+    return `${deviceCount} specific devices`
+  }
+  return 'Unknown'
+}
+
+async function sendNotification() {
+  if (!form.value.appId || !form.value.title || !form.value.body)
+    return
+
+  try {
+    // Prepare payload
+    const payload = {
+      appId: form.value.appId,
+      title: form.value.title,
+      body: form.value.body,
+      data: customData.value ? JSON.parse(customData.value) : undefined,
+      targetDevices: targetType.value === 'devices'
+        ? deviceIds.value.split('\n').filter(id => id.trim())
+        : undefined,
+      platforms: targetType.value === 'platform'
+        ? selectedPlatforms.value
+        : undefined,
+      scheduledAt: scheduleType.value === 'later' ? scheduledAt.value : undefined,
+    }
+
+    await sendNotificationMutation(payload)
+
+    console.log('Notification sent successfully!')
+    // TODO: Show success toast and redirect to notification details
+    resetForm()
+  }
+  catch (error) {
+    console.error('Error sending notification:', error)
+    // TODO: Show error toast
+  }
+}
+
+function resetForm() {
+  form.value = {
+    appId: '',
+    title: '',
+    body: '',
+    badge: undefined,
+    sound: '',
+    clickAction: '',
+    icon: '',
+    image: '',
+    data: null,
+  }
+  customData.value = ''
+  targetType.value = 'all'
+  selectedPlatforms.value = []
+  deviceIds.value = ''
+  scheduleType.value = 'now'
+  scheduledAt.value = ''
+}
+
+// Apps are automatically loaded by useApps() composable
+</script>
+
 <template>
   <div>
     <!-- Header -->
@@ -14,7 +131,7 @@
             <CardTitle>Notification Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <form @submit.prevent="sendNotification" class="space-y-6">
+            <form class="space-y-6" @submit.prevent="sendNotification">
               <!-- App Selection -->
               <div class="space-y-2">
                 <Label for="app">Application *</Label>
@@ -115,7 +232,7 @@
                     <Textarea
                       id="data"
                       v-model="customData"
-                      placeholder='{"key": "value"}'
+                      placeholder="{&quot;key&quot;: &quot;value&quot;}"
                       rows="3"
                     />
                   </div>
@@ -127,49 +244,49 @@
                 <Label>Target Audience</Label>
                 <div class="space-y-3">
                   <div class="flex items-center space-x-2">
-                    <Checkbox 
-                      id="all-devices" 
-                      :v-model="targetType === 'all'"
-                      @update:v-model="targetType = 'all'"
+                    <Checkbox
+                      id="all-devices"
+                      :model-value="targetType === 'all'"
+                      @update:model-value="targetType = 'all'"
                     />
                     <Label for="all-devices">All registered devices</Label>
                   </div>
-                  
+
                   <div class="flex items-center space-x-2">
-                    <Checkbox 
-                      id="platform-filter" 
-                      :v-model="targetType === 'platform'"
-                      @update:v-model="targetType = 'platform'"
+                    <Checkbox
+                      id="platform-filter"
+                      :model-value="targetType === 'platform'"
+                      @update:model-value="targetType = 'platform'"
                     />
                     <Label for="platform-filter">Filter by platform</Label>
                   </div>
-                  
+
                   <div v-if="targetType === 'platform'" class="ml-6 space-y-2">
                     <div class="flex space-x-4">
                       <div class="flex items-center space-x-2">
-                        <Checkbox id="ios" :v-model="selectedPlatforms.includes('ios')" @update:v-model="(checked: any) => checked ? selectedPlatforms.push('ios') : selectedPlatforms.splice(selectedPlatforms.indexOf('ios'), 1)" />
+                        <Checkbox id="ios" :model-value="selectedPlatforms.includes('ios')" @update:model-value="(checked: any) => checked ? selectedPlatforms.push('ios') : selectedPlatforms.splice(selectedPlatforms.indexOf('ios'), 1)" />
                         <Label for="ios">iOS</Label>
                       </div>
                       <div class="flex items-center space-x-2">
-                        <Checkbox id="android" :v-model="selectedPlatforms.includes('android')" @update:v-model="(checked: any) => checked ? selectedPlatforms.push('android') : selectedPlatforms.splice(selectedPlatforms.indexOf('android'), 1)" />
+                        <Checkbox id="android" :model-value="selectedPlatforms.includes('android')" @update:model-value="(checked: any) => checked ? selectedPlatforms.push('android') : selectedPlatforms.splice(selectedPlatforms.indexOf('android'), 1)" />
                         <Label for="android">Android</Label>
                       </div>
                       <div class="flex items-center space-x-2">
-                        <Checkbox id="web" :v-model="selectedPlatforms.includes('web')" @update:v-model="(checked: any) => checked ? selectedPlatforms.push('web') : selectedPlatforms.splice(selectedPlatforms.indexOf('web'), 1)" />
+                        <Checkbox id="web" :model-value="selectedPlatforms.includes('web')" @update:model-value="(checked: any) => checked ? selectedPlatforms.push('web') : selectedPlatforms.splice(selectedPlatforms.indexOf('web'), 1)" />
                         <Label for="web">Web</Label>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div class="flex items-center space-x-2">
-                    <Checkbox 
-                      id="specific-devices" 
-                      :v-model="targetType === 'devices'"
-                      @update:v-model="targetType = 'devices'"
+                    <Checkbox
+                      id="specific-devices"
+                      :model-value="targetType === 'devices'"
+                      @update:model-value="targetType = 'devices'"
                     />
                     <Label for="specific-devices">Specific devices</Label>
                   </div>
-                  
+
                   <div v-if="targetType === 'devices'" class="ml-6">
                     <Textarea
                       v-model="deviceIds"
@@ -184,18 +301,18 @@
               <div class="space-y-2">
                 <Label>Schedule</Label>
                 <div class="flex items-center space-x-2">
-                  <Checkbox 
-                    id="send-now" 
-                    :v-model="scheduleType === 'now'"
-                    @update:v-model="scheduleType = 'now'"
+                  <Checkbox
+                    id="send-now"
+                    :model-value="scheduleType === 'now'"
+                    @update:model-value="scheduleType = 'now'"
                   />
                   <Label for="send-now">Send now</Label>
                 </div>
                 <div class="flex items-center space-x-2">
-                  <Checkbox 
-                    id="schedule-later" 
-                    :v-model="scheduleType === 'later'"
-                    @update:v-model="scheduleType = 'later'"
+                  <Checkbox
+                    id="schedule-later"
+                    :model-value="scheduleType === 'later'"
+                    @update:model-value="scheduleType = 'later'"
                   />
                   <Label for="schedule-later">Schedule for later</Label>
                 </div>
@@ -237,7 +354,7 @@
                 <Smartphone class="h-3 w-3" />
                 <span>Mobile Notification</span>
               </div>
-              
+
               <div class="bg-white dark:bg-gray-900 rounded-lg p-3 shadow-sm">
                 <div class="flex items-start space-x-3">
                   <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
@@ -287,117 +404,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  layout: 'default'
-})
-
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { Textarea } from '~/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
-import { Checkbox } from '~/components/ui/checkbox'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible'
-import { Send, Smartphone, ChevronDown, Loader2 } from 'lucide-vue-next'
-
-// API queries
-const { data: appsData, isLoading: appsLoading } = useApps()
-const apps = computed(() => appsData.value || [])
-const { mutateAsync: sendNotificationMutation, isLoading: isSendingNotification } = useSendNotification()
-
-// Reactive data
-const form = ref({
-  appId: '',
-  title: '',
-  body: '',
-  badge: undefined as number | undefined,
-  sound: '',
-  clickAction: '',
-  icon: '',
-  image: '',
-  data: null
-})
-
-const customData = ref('')
-const targetType = ref('all')
-const selectedPlatforms = ref<string[]>([])
-const deviceIds = ref('')
-const scheduleType = ref('now')
-const scheduledAt = ref('')
-
-// Computed
-const selectedApp = computed(() => {
-  return apps.value?.find((app: any) => app.id === form.value.appId)
-})
-
-// Methods
-
-function getTargetDescription() {
-  if (targetType.value === 'all') return 'All devices'
-  if (targetType.value === 'platform') {
-    return selectedPlatforms.value.length > 0 
-      ? selectedPlatforms.value.join(', ')
-      : 'No platforms selected'
-  }
-  if (targetType.value === 'devices') {
-    const deviceCount = deviceIds.value.split('\n').filter(id => id.trim()).length
-    return `${deviceCount} specific devices`
-  }
-  return 'Unknown'
-}
-
-async function sendNotification() {
-  if (!form.value.appId || !form.value.title || !form.value.body) return
-  
-  try {
-    // Prepare payload
-    const payload = {
-      appId: form.value.appId,
-      title: form.value.title,
-      body: form.value.body,
-      data: customData.value ? JSON.parse(customData.value) : undefined,
-      targetDevices: targetType.value === 'devices' 
-        ? deviceIds.value.split('\n').filter(id => id.trim())
-        : undefined,
-      platforms: targetType.value === 'platform' 
-        ? selectedPlatforms.value
-        : undefined,
-      scheduledAt: scheduleType.value === 'later' ? scheduledAt.value : undefined
-    }
-    
-    await sendNotificationMutation(payload)
-    
-    console.log('Notification sent successfully!')
-    // TODO: Show success toast and redirect to notification details
-    resetForm()
-  } catch (error) {
-    console.error('Error sending notification:', error)
-    // TODO: Show error toast
-  }
-}
-
-function resetForm() {
-  form.value = {
-    appId: '',
-    title: '',
-    body: '',
-    badge: undefined,
-    sound: '',
-    clickAction: '',
-    icon: '',
-    image: '',
-    data: null
-  }
-  customData.value = ''
-  targetType.value = 'all'
-  selectedPlatforms.value = []
-  deviceIds.value = ''
-  scheduleType.value = 'now'
-  scheduledAt.value = ''
-}
-
-// Apps are automatically loaded by useApps() composable
-</script>

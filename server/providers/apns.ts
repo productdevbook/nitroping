@@ -9,9 +9,9 @@ export interface APNsConfig {
 }
 
 export interface APNsAlert {
-  title?: string
-  subtitle?: string
-  body?: string
+  'title'?: string
+  'subtitle'?: string
+  'body'?: string
   'launch-image'?: string
   'title-loc-key'?: string
   'title-loc-args'?: string[]
@@ -28,11 +28,11 @@ export interface APNsSound {
 
 export interface APNsPayload {
   aps: {
-    alert?: string | APNsAlert
-    badge?: number
-    sound?: string | APNsSound
+    'alert'?: string | APNsAlert
+    'badge'?: number
+    'sound'?: string | APNsSound
     'thread-id'?: string
-    category?: string
+    'category'?: string
     'content-available'?: number
     'mutable-content'?: number
     'target-content-id'?: string
@@ -70,7 +70,7 @@ class APNsProvider {
   }
 
   private getAPNsEndpoint(): string {
-    return this.config.production 
+    return this.config.production
       ? 'https://api.push.apple.com'
       : 'https://api.sandbox.push.apple.com'
   }
@@ -82,27 +82,28 @@ class APNsProvider {
 
     try {
       const jwt = await import('jsonwebtoken')
-      
+
       const now = Math.floor(Date.now() / 1000)
       const payload = {
         iss: this.config.teamId,
         iat: now,
-        exp: now + 3600 // 1 hour
+        exp: now + 3600, // 1 hour
       }
 
       const options = {
         algorithm: 'ES256' as const,
         header: {
           alg: 'ES256',
-          kid: this.config.keyId
-        }
+          kid: this.config.keyId,
+        },
       }
 
       this.jwtToken = jwt.sign(payload, this.config.privateKey, options)
       this.tokenExpiresAt = Date.now() + 3500000 // 58 minutes (1 hour - 2 minutes buffer)
 
       return this.jwtToken
-    } catch (error) {
+    }
+    catch (error) {
       throw new Error(`Failed to generate APNs JWT: ${error}`)
     }
   }
@@ -111,11 +112,11 @@ class APNsProvider {
     try {
       const token = await this.generateJWT()
       const endpoint = this.getAPNsEndpoint()
-      
+
       const headers: Record<string, string> = {
         'authorization': `bearer ${token}`,
         'apns-topic': this.config.bundleId,
-        'content-type': 'application/json'
+        'content-type': 'application/json',
       }
 
       if (message.options?.priority) {
@@ -137,33 +138,36 @@ class APNsProvider {
       const response = await fetch(`${endpoint}/3/device/${message.token}`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(message.payload)
+        body: JSON.stringify(message.payload),
       })
 
       if (response.status === 200) {
         return {
           success: true,
-          messageId: response.headers.get('apns-id') || undefined
+          messageId: response.headers.get('apns-id') || undefined,
         }
-      } else {
+      }
+      else {
         let errorMessage = `HTTP ${response.status}`
         try {
           const errorData = await response.json()
           errorMessage = errorData.reason || errorMessage
-        } catch {
+        }
+        catch {
           // Ignore JSON parse errors
         }
 
         return {
           success: false,
           error: errorMessage,
-          statusCode: response.status
+          statusCode: response.status,
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -193,17 +197,18 @@ class APNsProvider {
         success: true,
         results,
         successCount,
-        failureCount
+        failureCount,
       }
-    } catch (error) {
+    }
+    catch (error) {
       return {
         success: false,
         results: messages.map(() => ({
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         })),
         successCount: 0,
-        failureCount: messages.length
+        failureCount: messages.length,
       }
     }
   }
@@ -211,7 +216,7 @@ class APNsProvider {
   convertNotificationPayload(payload: NotificationPayload, deviceToken: string): APNsMessage {
     const alert: APNsAlert = {
       title: payload.title,
-      body: payload.body
+      body: payload.body,
     }
 
     const apsPayload: APNsPayload = {
@@ -219,8 +224,8 @@ class APNsProvider {
         alert,
         badge: payload.badge,
         sound: payload.sound || 'default',
-        category: payload.clickAction
-      }
+        category: payload.clickAction,
+      },
     }
 
     // Add custom data
@@ -235,8 +240,8 @@ class APNsProvider {
       payload: apsPayload,
       options: {
         priority: 10, // High priority
-        pushType: 'alert'
-      }
+        pushType: 'alert',
+      },
     }
   }
 }

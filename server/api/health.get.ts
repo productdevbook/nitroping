@@ -1,8 +1,8 @@
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (_event) => {
   return {
     status: 'ok',
     service: 'nitroping',
     version: '0.0.1',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }
 })

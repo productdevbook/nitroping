@@ -8,90 +8,90 @@ export const appMutations = defineMutation({
     resolve: async (_parent, { input }, { context }) => {
       const { useDatabase, tables } = context
       const db = useDatabase()
-      
+
       const apiKey = await generateApiKey()
-      
+
       const newApp = await db
         .insert(tables.app)
         .values({
           name: input.name,
           slug: input.slug,
           description: input.description,
-          apiKey: apiKey,
-          isActive: true
+          apiKey,
+          isActive: true,
         })
         .returning()
-      
+
       return newApp[0]
-    }
+    },
   },
-  
+
   updateApp: {
     resolve: async (_parent, { id, input }, { context }) => {
       // Uncomment this line to require authentication:
       // const app = await requireAuth(context)
       // if (app.id !== id) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
-      
+
       const { useDatabase, tables } = context
       const db = useDatabase()
-      
+
       const updatedApp = await db
         .update(tables.app)
         .set({
           ...input,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(tables.app.id, id))
         .returning()
-      
+
       if (updatedApp.length === 0) {
         throw createError({
           statusCode: 404,
-          message: 'App not found'
+          message: 'App not found',
         })
       }
-      
+
       return updatedApp[0]
-    }
+    },
   },
-  
+
   deleteApp: {
     resolve: async (_parent, { id }, { context }) => {
       const { useDatabase, tables } = context
       const db = useDatabase()
-      
+
       await db
         .delete(tables.app)
         .where(eq(tables.app.id, id))
-      
+
       return true
-    }
+    },
   },
-  
+
   regenerateApiKey: {
     resolve: async (_parent, { id }, { context }) => {
       const { useDatabase, tables } = context
       const db = useDatabase()
-      
+
       const newApiKey = await generateApiKey()
-      
+
       const updatedApp = await db
         .update(tables.app)
         .set({
           apiKey: newApiKey,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(tables.app.id, id))
         .returning()
-      
+
       if (updatedApp.length === 0) {
         throw createError({
           statusCode: 404,
-          message: 'App not found'
+          message: 'App not found',
         })
       }
-      
+
       return updatedApp[0]
-    }
-  }
+    },
+  },
 })

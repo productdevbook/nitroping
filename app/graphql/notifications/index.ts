@@ -5,16 +5,16 @@ import { $sdk } from '../ofetch'
 export function useSendNotification() {
   return useMutation({
     mutation: async (input: {
-      appId: string,
-      title: string,
-      body: string,
-      data?: any,
-      targetDevices?: string[],
-      platforms?: string[],
-      scheduledAt?: string,
-      imageUrl?: string,
-      clickAction?: string,
-      sound?: string,
+      appId: string
+      title: string
+      body: string
+      data?: any
+      targetDevices?: string[]
+      platforms?: string[]
+      scheduledAt?: string
+      imageUrl?: string
+      clickAction?: string
+      sound?: string
       badge?: number
     }) => {
       const result = await $sdk.sendNotification({ input })

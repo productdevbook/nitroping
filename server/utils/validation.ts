@@ -14,7 +14,7 @@ export const notificationPayloadSchema = z.object({
   targetDevices: z.array(z.string().uuid()).optional(),
   platforms: z.array(platformSchema).optional(),
   scheduledAt: z.string().datetime().optional(),
-  expiresAt: z.string().datetime().optional()
+  expiresAt: z.string().datetime().optional(),
 })
 
 export const deviceRegistrationSchema = z.object({
@@ -22,7 +22,7 @@ export const deviceRegistrationSchema = z.object({
   platform: platformSchema,
   appId: z.string().uuid(),
   userId: z.string().optional(),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.any()).optional(),
 })
 
 export const appCreateSchema = z.object({
@@ -36,7 +36,7 @@ export const appCreateSchema = z.object({
   apnsTeamId: z.string().optional(),
   vapidPublicKey: z.string().optional(),
   vapidPrivateKey: z.string().optional(),
-  vapidSubject: z.string().optional()
+  vapidSubject: z.string().optional(),
 })
 
 export type NotificationPayload = z.infer<typeof notificationPayloadSchema>

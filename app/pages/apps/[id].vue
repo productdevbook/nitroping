@@ -1,3 +1,132 @@
+<script setup lang="ts">
+import {
+  Activity,
+  ArrowLeft,
+  Copy,
+  Download,
+  Eye,
+  EyeOff,
+  Globe,
+  Loader2,
+  Send,
+  Smartphone,
+  TrendingUp,
+} from 'lucide-vue-next'
+import { Badge } from '~/components/ui/badge'
+import { Button } from '~/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
+import { Textarea } from '~/components/ui/textarea'
+
+definePageMeta({
+  layout: 'default',
+})
+
+const route = useRoute()
+const appId = computed(() => route.params.id as string)
+
+// API queries
+const { data: appData } = useApp(appId)
+const app = computed(() => appData.value)
+
+// Reactive data
+const stats = computed(() => (app as any)?.stats || {
+  totalDevices: 0,
+  newDevicesToday: 0,
+  sentToday: 0,
+  deliveryRate: 0,
+  apiCalls: 0,
+})
+const recentActivity = ref<any[]>([])
+const showApiKey = ref(false)
+const showSendTest = ref(false)
+const testNotification = ref({
+  title: '',
+  body: '',
+})
+
+// Methods
+function _initializeRecentActivity() {
+  // Mock recent activity for now
+  recentActivity.value = [
+    {
+      id: 1,
+      type: 'notification',
+      message: 'Notification sent to 150 devices',
+      timestamp: new Date(Date.now() - 1000 * 60 * 30),
+    },
+    {
+      id: 2,
+      type: 'device',
+      message: '5 new devices registered',
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
+    },
+    {
+      id: 3,
+      type: 'config',
+      message: 'FCM configuration updated',
+      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6),
+    },
+  ]
+}
+
+function getActivityColor(type: string) {
+  switch (type) {
+    case 'notification': return 'bg-blue-500'
+    case 'device': return 'bg-green-500'
+    case 'config': return 'bg-orange-500'
+    default: return 'bg-gray-500'
+  }
+}
+
+function formatTime(timestamp: Date) {
+  return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
+    Math.round((timestamp.getTime() - Date.now()) / (1000 * 60)),
+    'minute',
+  )
+}
+
+async function copyApiKey() {
+  try {
+    await navigator.clipboard.writeText((app as any)?.apiKey || '')
+    // TODO: Show success toast
+  }
+  catch (error) {
+    console.error('Failed to copy API key:', error)
+  }
+}
+
+function configureFCM() {
+  // TODO: Open FCM configuration dialog
+  console.log('Configure FCM')
+}
+
+function configureAPNs() {
+  // TODO: Open APNs configuration dialog
+  console.log('Configure APNs')
+}
+
+function configureWebPush() {
+  // TODO: Open Web Push configuration dialog
+  console.log('Configure Web Push')
+}
+
+async function sendTestNotification() {
+  try {
+    // TODO: Implement test notification sending
+    console.log('Send test notification:', testNotification.value)
+    showSendTest.value = false
+    testNotification.value = { title: '', body: '' }
+  }
+  catch (error) {
+    console.error('Error sending test notification:', error)
+  }
+}
+</script>
+
 <template>
   <div v-if="app">
     <!-- Header -->
@@ -152,12 +281,12 @@
               <Badge :variant="app.fcmProjectId ? 'default' : 'secondary'">
                 {{ app.fcmProjectId ? 'Configured' : 'Not Configured' }}
               </Badge>
-              
+
               <div v-if="app.fcmProjectId" class="space-y-2">
                 <p class="text-sm"><strong>Project ID:</strong> {{ app.fcmProjectId }}</p>
                 <p class="text-sm text-muted-foreground">Service account configured</p>
               </div>
-              
+
               <Button variant="outline" size="sm" @click="configureFCM">
                 {{ app.fcmProjectId ? 'Update' : 'Configure' }} FCM
               </Button>
@@ -181,13 +310,13 @@
               <Badge :variant="app.apnsKeyId ? 'default' : 'secondary'">
                 {{ app.apnsKeyId ? 'Configured' : 'Not Configured' }}
               </Badge>
-              
+
               <div v-if="app.apnsKeyId" class="space-y-2">
                 <p class="text-sm"><strong>Key ID:</strong> {{ app.apnsKeyId }}</p>
                 <p class="text-sm"><strong>Team ID:</strong> {{ app.apnsTeamId }}</p>
                 <p class="text-sm text-muted-foreground">Private key configured</p>
               </div>
-              
+
               <Button variant="outline" size="sm" @click="configureAPNs">
                 {{ app.apnsKeyId ? 'Update' : 'Configure' }} APNs
               </Button>
@@ -211,12 +340,12 @@
               <Badge :variant="app.vapidPublicKey ? 'default' : 'secondary'">
                 {{ app.vapidPublicKey ? 'Configured' : 'Not Configured' }}
               </Badge>
-              
+
               <div v-if="app.vapidPublicKey" class="space-y-2">
                 <p class="text-sm"><strong>Subject:</strong> {{ app.vapidSubject }}</p>
                 <p class="text-sm text-muted-foreground">VAPID keys configured</p>
               </div>
-              
+
               <Button variant="outline" size="sm" @click="configureWebPush">
                 {{ app.vapidPublicKey ? 'Update' : 'Configure' }} Web Push
               </Button>
@@ -290,7 +419,7 @@
           </div>
         </div>
         <DialogFooter>
-          <Button @click="showSendTest = false" variant="outline">Cancel</Button>
+          <Button variant="outline" @click="showSendTest = false">Cancel</Button>
           <Button @click="sendTestNotification">Send Test</Button>
         </DialogFooter>
       </DialogContent>
@@ -302,131 +431,3 @@
     <Loader2 class="h-8 w-8 animate-spin" />
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  layout: 'default'
-})
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Button } from '~/components/ui/button'
-import { Badge } from '~/components/ui/badge'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { Textarea } from '~/components/ui/textarea'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
-import { 
-  ArrowLeft, 
-  Send, 
-  Download, 
-  Smartphone, 
-  Globe, 
-  TrendingUp, 
-  Activity, 
-  Eye, 
-  EyeOff, 
-  Copy, 
-  Loader2 
-} from 'lucide-vue-next'
-
-const route = useRoute()
-const appId = computed(() => route.params.id as string)
-
-// API queries
-const { data: appData } = useApp(appId)
-const app = computed(() => appData.value)
-
-// Reactive data
-const stats = computed(() => (app as any)?.stats || {
-  totalDevices: 0,
-  newDevicesToday: 0,
-  sentToday: 0,
-  deliveryRate: 0,
-  apiCalls: 0
-})
-const recentActivity = ref<any[]>([])
-const showApiKey = ref(false)
-const showSendTest = ref(false)
-const testNotification = ref({
-  title: '',
-  body: ''
-})
-
-// Methods
-function initializeRecentActivity() {
-  // Mock recent activity for now
-  recentActivity.value = [
-    {
-      id: 1,
-      type: 'notification',
-      message: 'Notification sent to 150 devices',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30)
-    },
-    {
-      id: 2,
-      type: 'device',
-      message: '5 new devices registered',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2)
-    },
-    {
-      id: 3,
-      type: 'config',
-      message: 'FCM configuration updated',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6)
-    }
-  ]
-}
-
-function getActivityColor(type: string) {
-  switch (type) {
-    case 'notification': return 'bg-blue-500'
-    case 'device': return 'bg-green-500'
-    case 'config': return 'bg-orange-500'
-    default: return 'bg-gray-500'
-  }
-}
-
-function formatTime(timestamp: Date) {
-  return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
-    Math.round((timestamp.getTime() - Date.now()) / (1000 * 60)),
-    'minute'
-  )
-}
-
-async function copyApiKey() {
-  try {
-    await navigator.clipboard.writeText((app as any)?.apiKey || '')
-    // TODO: Show success toast
-  } catch (error) {
-    console.error('Failed to copy API key:', error)
-  }
-}
-
-function configureFCM() {
-  // TODO: Open FCM configuration dialog
-  console.log('Configure FCM')
-}
-
-function configureAPNs() {
-  // TODO: Open APNs configuration dialog
-  console.log('Configure APNs')
-}
-
-function configureWebPush() {
-  // TODO: Open Web Push configuration dialog
-  console.log('Configure Web Push')
-}
-
-async function sendTestNotification() {
-  try {
-    // TODO: Implement test notification sending
-    console.log('Send test notification:', testNotification.value)
-    showSendTest.value = false
-    testNotification.value = { title: '', body: '' }
-  } catch (error) {
-    console.error('Error sending test notification:', error)
-  }
-}
-
-</script>

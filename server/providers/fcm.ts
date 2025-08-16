@@ -56,10 +56,10 @@ export interface FCMMessage {
     headers?: Record<string, string>
     payload?: {
       aps?: {
-        alert?: string | {
-          title?: string
-          subtitle?: string
-          body?: string
+        'alert'?: string | {
+          'title'?: string
+          'subtitle'?: string
+          'body'?: string
           'launch-image'?: string
           'title-loc-key'?: string
           'title-loc-args'?: string[]
@@ -67,14 +67,14 @@ export interface FCMMessage {
           'loc-key'?: string
           'loc-args'?: string[]
         }
-        badge?: number
-        sound?: string | {
+        'badge'?: number
+        'sound'?: string | {
           critical?: number
           name?: string
           volume?: number
         }
         'thread-id'?: string
-        category?: string
+        'category'?: string
         'content-available'?: number
         'mutable-content'?: number
         'target-content-id'?: string
@@ -149,7 +149,7 @@ class FCMProvider {
 
     try {
       const serviceAccount = JSON.parse(this.config.serviceAccountKey)
-      
+
       // Create JWT for Google OAuth2
       const now = Math.floor(Date.now() / 1000)
       const payload = {
@@ -157,7 +157,7 @@ class FCMProvider {
         scope: 'https://www.googleapis.com/auth/firebase.messaging',
         aud: 'https://oauth2.googleapis.com/token',
         iat: now,
-        exp: now + 3600
+        exp: now + 3600,
       }
 
       // Import jwt for signing
@@ -168,12 +168,12 @@ class FCMProvider {
       const response = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
           grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-          assertion
-        })
+          assertion,
+        }),
       })
 
       if (!response.ok) {
@@ -185,22 +185,23 @@ class FCMProvider {
       this.tokenExpiresAt = Date.now() + (data.expires_in * 1000) - 60000 // 1 minute buffer
 
       return this.accessToken!
-    } catch (error) {
+    }
+    catch (error) {
       throw new Error(`Failed to authenticate with FCM: ${error}`)
     }
   }
 
-  async sendMessage(message: FCMMessage): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  async sendMessage(message: FCMMessage): Promise<{ success: boolean, messageId?: string, error?: string }> {
     try {
       const accessToken = await this.getAccessToken()
-      
+
       const response = await fetch(`https://fcm.googleapis.com/v1/projects/${this.config.projectId}/messages:send`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message }),
       })
 
       const data: FCMResponse = await response.json()
@@ -208,25 +209,26 @@ class FCMProvider {
       if (!response.ok || data.error) {
         return {
           success: false,
-          error: data.error?.message || `HTTP ${response.status}: ${response.statusText}`
+          error: data.error?.message || `HTTP ${response.status}: ${response.statusText}`,
         }
       }
 
       return {
         success: true,
-        messageId: data.name
+        messageId: data.name,
       }
-    } catch (error) {
+    }
+    catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
 
   async sendBatchMessages(messages: FCMMessage[]): Promise<{
     success: boolean
-    results: Array<{ success: boolean; messageId?: string; error?: string }>
+    results: Array<{ success: boolean, messageId?: string, error?: string }>
     successCount: number
     failureCount: number
   }> {
@@ -242,17 +244,18 @@ class FCMProvider {
         success: true,
         results,
         successCount,
-        failureCount
+        failureCount,
       }
-    } catch (error) {
+    }
+    catch (error) {
       return {
         success: false,
         results: messages.map(() => ({
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         })),
         successCount: 0,
-        failureCount: messages.length
+        failureCount: messages.length,
       }
     }
   }
@@ -263,32 +266,34 @@ class FCMProvider {
       notification: {
         title: payload.title,
         body: payload.body,
-        image: payload.image
+        image: payload.image,
       },
-      data: payload.data ? Object.fromEntries(
-        Object.entries(payload.data).map(([key, value]) => [key, String(value)])
-      ) : undefined,
+      data: payload.data
+        ? Object.fromEntries(
+            Object.entries(payload.data).map(([key, value]) => [key, String(value)]),
+          )
+        : undefined,
       android: {
         priority: 'high',
         notification: {
           icon: payload.icon,
           sound: payload.sound,
           click_action: payload.clickAction,
-          channel_id: 'default'
-        }
+          channel_id: 'default',
+        },
       },
       apns: {
         payload: {
           aps: {
             alert: {
               title: payload.title,
-              body: payload.body
+              body: payload.body,
             },
             badge: payload.badge,
             sound: payload.sound || 'default',
-            category: payload.clickAction
-          }
-        }
+            category: payload.clickAction,
+          },
+        },
       },
       webpush: {
         notification: {
@@ -296,9 +301,9 @@ class FCMProvider {
           body: payload.body,
           icon: payload.icon,
           image: payload.image,
-          click_action: payload.clickAction
-        }
-      }
+          click_action: payload.clickAction,
+        },
+      },
     }
   }
 }

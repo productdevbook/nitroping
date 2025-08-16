@@ -1,3 +1,48 @@
+<script setup lang="ts">
+import { ChevronsUpDown, FileText, LogOut, Settings } from 'lucide-vue-next'
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu'
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '~/components/ui/sidebar'
+
+interface User {
+  name?: string
+  email?: string
+  avatar?: string
+}
+
+defineProps<{
+  user: User
+}>()
+
+function getInitials(name: string | undefined) {
+  if (!name)
+    return 'U'
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+function handleLogout() {
+  // TODO: Implement logout functionality
+  console.log('Logout clicked')
+}
+</script>
+
 <template>
   <SidebarMenu>
     <SidebarMenuItem>
@@ -65,47 +110,3 @@
     </SidebarMenuItem>
   </SidebarMenu>
 </template>
-
-<script setup lang="ts">
-import {
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from '~/components/ui/sidebar'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
-import { ChevronsUpDown, Settings, FileText, LogOut } from 'lucide-vue-next'
-
-interface User {
-  name?: string
-  email?: string
-  avatar?: string
-}
-
-defineProps<{
-  user: User
-}>()
-
-function getInitials(name: string | undefined) {
-  if (!name) return 'U'
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
-
-function handleLogout() {
-  // TODO: Implement logout functionality
-  console.log('Logout clicked')
-}
-</script>

@@ -21,7 +21,8 @@ export function useDevice(id: Ref<string | null> | string | null) {
   return useQuery({
     key: () => ['device', deviceId.value],
     query: async () => {
-      if (!deviceId.value) return null
+      if (!deviceId.value)
+        return null
       const result = await $sdk.device({ id: deviceId.value })
       return result.data?.device || null
     },
@@ -35,7 +36,8 @@ export function useDeviceByToken(token: Ref<string | null> | string | null) {
   return useQuery({
     key: () => ['device', 'by-token', tokenValue.value],
     query: async () => {
-      if (!tokenValue.value) return null
+      if (!tokenValue.value)
+        return null
       const result = await $sdk.deviceByToken({ token: tokenValue.value })
       return result.data?.deviceByToken || null
     },
@@ -48,12 +50,12 @@ export function useRegisterDevice() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async (input: { 
-      appId: string,
-      token: string, 
-      platform: string, 
-      userId?: string, 
-      metadata?: any 
+    mutation: async (input: {
+      appId: string
+      token: string
+      platform: string
+      userId?: string
+      metadata?: any
     }) => {
       const result = await $sdk.registerDevice({ input })
       return result.data?.registerDevice || null

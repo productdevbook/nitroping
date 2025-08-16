@@ -11,7 +11,7 @@ export function createSuccessResponse<T>(data: T, message?: string): ApiResponse
     success: true,
     data,
     message,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }
 }
 
@@ -20,6 +20,6 @@ export function createErrorResponse(error: string, message?: string): ApiRespons
     success: false,
     error,
     message,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }
 }

@@ -18,7 +18,8 @@ export function useApp(id: Ref<string | null> | string | null) {
   return useQuery({
     key: () => ['app', appId.value],
     query: async () => {
-      if (!appId.value) return null
+      if (!appId.value)
+        return null
       const result = await $sdk.app({ id: appId.value })
       return result.data?.app || null
     },
@@ -32,7 +33,8 @@ export function useAppBySlug(slug: Ref<string | null> | string | null) {
   return useQuery({
     key: () => ['app', 'by-slug', appSlug.value],
     query: async () => {
-      if (!appSlug.value) return null
+      if (!appSlug.value)
+        return null
       const result = await $sdk.appBySlug({ slug: appSlug.value })
       return result.data?.appBySlug || null
     },

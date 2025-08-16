@@ -1,9 +1,9 @@
-import { FCMProvider } from './fcm'
-import { APNsProvider } from './apns'
-import { WebPushProvider } from './webpush'
+import { eq } from 'drizzle-orm'
 import { getDatabase } from '~~/server/database/connection'
 import { app } from '~~/server/database/schema'
-import { eq } from 'drizzle-orm'
+import { APNsProvider } from './apns'
+import { FCMProvider } from './fcm'
+import { WebPushProvider } from './webpush'
 
 export interface ProviderResult {
   success: boolean
@@ -20,7 +20,7 @@ export interface BatchProviderResult {
 
 export async function getProviderForApp(appId: string, platform: 'ios' | 'android' | 'web') {
   const db = getDatabase()
-  
+
   const appResult = await db
     .select()
     .from(app)
@@ -39,10 +39,10 @@ export async function getProviderForApp(appId: string, platform: 'ios' | 'androi
       if (!appData.fcmProjectId || !appData.fcmServerKey) {
         throw new Error('FCM not configured for this app (missing project ID or server key)')
       }
-      
+
       return new FCMProvider({
         projectId: appData.fcmProjectId,
-        serviceAccountKey: appData.fcmServerKey
+        serviceAccountKey: appData.fcmServerKey,
       })
 
     case 'ios':
@@ -50,13 +50,13 @@ export async function getProviderForApp(appId: string, platform: 'ios' | 'androi
       if (!appData.apnsKeyId || !appData.apnsTeamId || !appData.apnsCertificate) {
         throw new Error('APNs not configured for this app (missing key ID, team ID, or certificate)')
       }
-      
+
       return new APNsProvider({
         keyId: appData.apnsKeyId,
         teamId: appData.apnsTeamId,
         bundleId: appData.slug, // Use app slug as bundle ID for now
         privateKey: appData.apnsCertificate,
-        production: process.env.NODE_ENV === 'production'
+        production: process.env.NODE_ENV === 'production',
       })
 
     case 'web':
@@ -64,11 +64,11 @@ export async function getProviderForApp(appId: string, platform: 'ios' | 'androi
       if (!appData.vapidPublicKey || !appData.vapidPrivateKey || !appData.vapidSubject) {
         throw new Error('Web Push not configured for this app (missing VAPID keys or subject)')
       }
-      
+
       return new WebPushProvider({
         vapidSubject: appData.vapidSubject,
         publicKey: appData.vapidPublicKey,
-        privateKey: appData.vapidPrivateKey
+        privateKey: appData.vapidPrivateKey,
       })
 
     default:

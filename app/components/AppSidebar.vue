@@ -1,59 +1,26 @@
-<template>
-  <Sidebar v-bind="props">
-    <SidebarHeader>
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton size="lg" as-child>
-            <NuxtLink to="/">
-              <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <Zap class="size-4" />
-              </div>
-              <div class="grid flex-1 text-left text-sm leading-tight">
-                <span class="truncate font-semibold">NitroPing</span>
-                <span class="truncate text-xs">Push Notifications</span>
-              </div>
-            </NuxtLink>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    </SidebarHeader>
-    
-    <SidebarContent>
-      <AppNavMain :items="navMain" label="Main" />
-      <AppNavMain :items="navTools" label="Tools" />
-      <AppNavMain :items="navHelp" label="Help" />
-    </SidebarContent>
-    
-    <SidebarFooter>
-      <AppNavUser :user="userData" />
-    </SidebarFooter>
-  </Sidebar>
-</template>
-
 <script setup lang="ts">
 import type { SidebarProps } from '~/components/ui/sidebar'
-import { 
-  Sidebar, 
-  SidebarContent, 
-  SidebarFooter, 
-  SidebarHeader, 
-  SidebarMenu, 
-  SidebarMenuButton, 
-  SidebarMenuItem 
-} from '~/components/ui/sidebar'
-import { 
-  Zap, 
-  Home, 
-  Package, 
-  BarChart3, 
-  Send, 
-  Smartphone, 
-  FileText, 
-  Github, 
-  ExternalLink
+import {
+  BarChart3,
+  FileText,
+  Github,
+  Home,
+  Package,
+  Send,
+  Smartphone,
+  Zap,
 } from 'lucide-vue-next'
 import AppNavMain from '~/components/app/AppNavMain.vue'
 import AppNavUser from '~/components/app/AppNavUser.vue'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '~/components/ui/sidebar'
 
 const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: 'icon',
@@ -120,3 +87,35 @@ const userData = computed(() => ({
   avatar: '/placeholder-avatar.jpg',
 }))
 </script>
+
+<template>
+  <Sidebar v-bind="props">
+    <SidebarHeader>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" as-child>
+            <NuxtLink to="/">
+              <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <Zap class="size-4" />
+              </div>
+              <div class="grid flex-1 text-left text-sm leading-tight">
+                <span class="truncate font-semibold">NitroPing</span>
+                <span class="truncate text-xs">Push Notifications</span>
+              </div>
+            </NuxtLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarHeader>
+
+    <SidebarContent>
+      <AppNavMain :items="navMain" label="Main" />
+      <AppNavMain :items="navTools" label="Tools" />
+      <AppNavMain :items="navHelp" label="Help" />
+    </SidebarContent>
+
+    <SidebarFooter>
+      <AppNavUser :user="userData" />
+    </SidebarFooter>
+  </Sidebar>
+</template>

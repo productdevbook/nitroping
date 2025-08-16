@@ -1,3 +1,51 @@
+<script setup lang="ts">
+import { Activity, BarChart3, Plus, Send, Smartphone, TrendingUp } from 'lucide-vue-next'
+import { Button } from '~/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
+import { Textarea } from '~/components/ui/textarea'
+
+definePageMeta({
+  layout: 'default',
+})
+
+// API queries
+const { data: statsData } = useDashboardStats()
+const stats = computed(() => statsData.value)
+
+const showSendNotification = ref(false)
+
+const testNotification = ref({
+  title: '',
+  body: '',
+})
+
+// Methods
+
+async function sendTestNotification() {
+  try {
+    // This would need an API key from a created app
+    console.log('Would send notification:', testNotification.value)
+    showSendNotification.value = false
+
+    // Reset form
+    testNotification.value = {
+      title: '',
+      body: '',
+    }
+
+    // TODO: Implement actual sending with proper auth
+  }
+  catch (error) {
+    console.error('Error sending notification:', error)
+  }
+}
+
+// Stats are automatically loaded by useStats() composable
+</script>
+
 <template>
   <div>
     <!-- Header -->
@@ -59,7 +107,7 @@
           <CardDescription>Register a new application to start sending notifications</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button @click="navigateTo('/apps/create')" class="w-full">
+          <Button class="w-full" @click="navigateTo('/apps/create')">
             <Plus class="mr-2 h-4 w-4" />
             Create App
           </Button>
@@ -72,7 +120,7 @@
           <CardDescription>Send a test notification to your devices</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button @click="showSendNotification = true" class="w-full">
+          <Button class="w-full" @click="showSendNotification = true">
             <Send class="mr-2 h-4 w-4" />
             Send Test
           </Button>
@@ -85,7 +133,7 @@
           <CardDescription>Check delivery reports and performance metrics</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button @click="navigateTo('/analytics')" class="w-full">
+          <Button class="w-full" @click="navigateTo('/analytics')">
             <BarChart3 class="mr-2 h-4 w-4" />
             View Analytics
           </Button>
@@ -131,7 +179,6 @@
       </CardContent>
     </Card>
 
-
     <!-- Send Notification Dialog -->
     <Dialog v-model:open="showSendNotification">
       <DialogContent>
@@ -158,8 +205,8 @@
           </div>
         </div>
         <DialogFooter>
-          <Button @click="showSendNotification = false" variant="outline">Cancel</Button>
-          <Button @click="sendTestNotification" :disabled="!testNotification.title || !testNotification.body">
+          <Button variant="outline" @click="showSendNotification = false">Cancel</Button>
+          <Button :disabled="!testNotification.title || !testNotification.body" @click="sendTestNotification">
             Send Notification
           </Button>
         </DialogFooter>
@@ -167,49 +214,3 @@
     </Dialog>
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  layout: 'default'
-})
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Button } from '~/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { Textarea } from '~/components/ui/textarea'
-import { Activity, Smartphone, Send, TrendingUp, Plus, BarChart3, Loader2 } from 'lucide-vue-next'
-
-// API queries
-const { data: statsData } = useDashboardStats()
-const stats = computed(() => statsData.value)
-
-const showSendNotification = ref(false)
-
-const testNotification = ref({
-  title: '',
-  body: ''
-})
-
-// Methods
-
-async function sendTestNotification() {
-  try {
-    // This would need an API key from a created app
-    console.log('Would send notification:', testNotification.value)
-    showSendNotification.value = false
-    
-    // Reset form
-    testNotification.value = {
-      title: '',
-      body: ''
-    }
-    
-    // TODO: Implement actual sending with proper auth
-  } catch (error) {
-    console.error('Error sending notification:', error)
-  }
-}
-
-// Stats are automatically loaded by useStats() composable
-</script>

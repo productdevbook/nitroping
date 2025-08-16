@@ -1,3 +1,26 @@
+<script setup lang="ts">
+import { ArrowLeft } from 'lucide-vue-next'
+import { Badge } from '~/components/ui/badge'
+import { Button } from '~/components/ui/button'
+
+interface Props {
+  title: string
+  subtitle?: string
+  badge?: string
+  badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline'
+  showBackButton?: boolean
+}
+
+const _props = withDefaults(defineProps<Props>(), {
+  badgeVariant: 'secondary',
+  showBackButton: true,
+})
+
+const _emit = defineEmits<{
+  back: []
+}>()
+</script>
+
 <template>
   <div class="mb-8">
     <div class="flex items-center space-x-4 mb-4">
@@ -17,26 +40,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { Button } from '~/components/ui/button'
-import { Badge } from '~/components/ui/badge'
-import { ArrowLeft } from 'lucide-vue-next'
-
-interface Props {
-  title: string
-  subtitle?: string
-  badge?: string
-  badgeVariant?: 'default' | 'secondary' | 'destructive' | 'outline'
-  showBackButton?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  badgeVariant: 'secondary',
-  showBackButton: true
-})
-
-const emit = defineEmits<{
-  back: []
-}>()
-</script>

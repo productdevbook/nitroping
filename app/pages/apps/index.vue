@@ -1,3 +1,66 @@
+<script setup lang="ts">
+import { Globe, Loader2, Package, Plus, Send, Settings, Smartphone } from 'lucide-vue-next'
+import { Badge } from '~/components/ui/badge'
+import { Button } from '~/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
+import { Textarea } from '~/components/ui/textarea'
+
+definePageMeta({
+  layout: 'default',
+})
+
+// API queries
+const { data: appsData } = useApps()
+const apps = computed(() => appsData.value || [])
+
+// Reactive data
+const testLoading = ref(false)
+const showTestDialog = ref(false)
+const selectedApp = ref(null)
+
+const testNotification = ref({
+  title: '',
+  body: '',
+})
+
+// Methods
+
+function sendTestNotification(app: any) {
+  selectedApp.value = app
+  testNotification.value = {
+    title: '',
+    body: '',
+  }
+  showTestDialog.value = true
+}
+
+async function sendTest() {
+  if (!testNotification.value.title || !testNotification.value.body)
+    return
+
+  testLoading.value = true
+  try {
+    // TODO: Implement with proper app API key
+    console.log('Would send test notification to:', (selectedApp.value as any)?.name, testNotification.value)
+    showTestDialog.value = false
+
+    // TODO: Show success toast
+  }
+  catch (error) {
+    console.error('Error sending test notification:', error)
+    // TODO: Show error toast
+  }
+  finally {
+    testLoading.value = false
+  }
+}
+
+// Apps are automatically loaded by useApps() composable
+</script>
+
 <template>
   <div>
     <!-- Header -->
@@ -32,7 +95,7 @@
           </div>
           <CardDescription v-if="app.description">{{ app.description }}</CardDescription>
         </CardHeader>
-        
+
         <CardContent>
           <div class="space-y-3">
             <!-- Quick Stats -->
@@ -46,7 +109,7 @@
                 <p class="font-semibold">{{ app.stats?.sentToday || 0 }}</p>
               </div>
             </div>
-            
+
             <!-- Provider Status -->
             <div class="space-y-2">
               <p class="text-sm font-medium">Configured Providers</p>
@@ -70,7 +133,7 @@
             </div>
           </div>
         </CardContent>
-        
+
         <CardContent class="pt-0">
           <div class="flex space-x-2">
             <Button variant="outline" size="sm" as-child class="flex-1">
@@ -99,7 +162,6 @@
       </Button>
     </div>
 
-
     <!-- Test Notification Dialog -->
     <Dialog v-model:open="showTestDialog">
       <DialogContent>
@@ -107,8 +169,8 @@
           <DialogTitle>Send Test Notification</DialogTitle>
           <DialogDescription>Send a test notification to {{ (selectedApp as any)?.name }}</DialogDescription>
         </DialogHeader>
-        
-        <form @submit.prevent="sendTest" class="space-y-4">
+
+        <form class="space-y-4" @submit.prevent="sendTest">
           <div class="space-y-2">
             <Label for="test-title">Title *</Label>
             <Input
@@ -118,7 +180,7 @@
               required
             />
           </div>
-          
+
           <div class="space-y-2">
             <Label for="test-body">Message *</Label>
             <Textarea
@@ -129,9 +191,9 @@
               rows="3"
             />
           </div>
-          
+
           <DialogFooter>
-            <Button type="button" @click="showTestDialog = false" variant="outline">Cancel</Button>
+            <Button type="button" variant="outline" @click="showTestDialog = false">Cancel</Button>
             <Button type="submit" :disabled="!testNotification.title || !testNotification.body || testLoading">
               <Loader2 v-if="testLoading" class="w-4 h-4 mr-2 animate-spin" />
               <Send class="w-4 h-4 mr-2" />
@@ -143,63 +205,3 @@
     </Dialog>
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  layout: 'default'
-})
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Button } from '~/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { Textarea } from '~/components/ui/textarea'
-import { Badge } from '~/components/ui/badge'
-import { Plus, Package, Settings, Send, Smartphone, Globe, Loader2 } from 'lucide-vue-next'
-
-// API queries
-const { data: appsData } = useApps()
-const apps = computed(() => appsData.value || [])
-
-// Reactive data
-const testLoading = ref(false)
-const showTestDialog = ref(false)
-const selectedApp = ref(null)
-
-const testNotification = ref({
-  title: '',
-  body: ''
-})
-
-// Methods
-
-function sendTestNotification(app: any) {
-  selectedApp.value = app
-  testNotification.value = {
-    title: '',
-    body: ''
-  }
-  showTestDialog.value = true
-}
-
-async function sendTest() {
-  if (!testNotification.value.title || !testNotification.value.body) return
-  
-  testLoading.value = true
-  try {
-    // TODO: Implement with proper app API key
-    console.log('Would send test notification to:', (selectedApp.value as any)?.name, testNotification.value)
-    showTestDialog.value = false
-    
-    // TODO: Show success toast
-  } catch (error) {
-    console.error('Error sending test notification:', error)
-    // TODO: Show error toast
-  } finally {
-    testLoading.value = false
-  }
-}
-
-// Apps are automatically loaded by useApps() composable
-</script>

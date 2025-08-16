@@ -1,3 +1,36 @@
+<script setup lang="ts">
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+
+definePageMeta({
+  layout: 'default',
+})
+
+// API mutations
+const { mutateAsync: createAppMutation, isLoading: isCreatingApp } = useCreateApp()
+
+// Methods
+async function handleSubmit(formData: any) {
+  try {
+    const result = await createAppMutation(formData)
+
+    console.log('App created successfully!', result)
+
+    // Navigate to the new app's page
+    if (result?.id) {
+      await navigateTo(`/apps/${result.id}`)
+    }
+  }
+  catch (error) {
+    console.error('Error creating app:', error)
+    // TODO: Show error toast
+  }
+}
+
+function goBack() {
+  navigateTo('/apps')
+}
+</script>
+
 <template>
   <div>
     <!-- App Page Header -->
@@ -49,36 +82,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-definePageMeta({
-  layout: 'default'
-})
-
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-
-// API mutations
-const { mutateAsync: createAppMutation, isLoading: isCreatingApp } = useCreateApp()
-
-// Methods
-async function handleSubmit(formData: any) {
-  try {
-    const result = await createAppMutation(formData)
-    
-    console.log('App created successfully!', result)
-    
-    // Navigate to the new app's page
-    if (result?.id) {
-      await navigateTo(`/apps/${result.id}`)
-    }
-    
-  } catch (error) {
-    console.error('Error creating app:', error)
-    // TODO: Show error toast
-  }
-}
-
-function goBack() {
-  navigateTo('/apps')
-}
-</script>

@@ -1,8 +1,8 @@
 {
   "name": "nitroping",
   "type": "module",
-  "private": false,
   "version": "0.0.1",
+  "private": false,
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
@@ -11,6 +11,8 @@
     "postinstall": "nuxt prepare",
     "release": "pnpm build && pnpm publish --no-git-checks --access public",
     "typecheck": "nuxt typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "db:generate": "drizzle-kit generate --config ./server/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config ./server/drizzle.config.ts",
     "db:push": "drizzle-kit push --config ./server/drizzle.config.ts",
@@ -55,7 +57,9 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^5.2.1",
     "@types/three": "^0.179.0",
+    "eslint": "^9.33.0",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2"
   }
