@@ -93,9 +93,15 @@ const notificationStats = computed(() => {
     acc.totalFailed += notification.failedCount
 
     switch (notification.status) {
-      case 'delivered': acc.delivered++; break
-      case 'sending': acc.sending++; break
-      case 'failed': acc.failed++; break
+      case 'delivered':
+        acc.delivered++
+        break
+      case 'sending':
+        acc.sending++
+        break
+      case 'failed':
+        acc.failed++
+        break
     }
 
     return acc
