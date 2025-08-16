@@ -49,36 +49,12 @@
             <!-- Product Screenshot with Gradient Frame -->
             <div class="relative max-w-5xl mx-auto">
               <div class="bg-gradient-to-r from-blue-500 to-cyan-500 p-6 rounded-3xl shadow-2xl">
-                <div class="bg-white rounded-2xl p-8 shadow-inner">
-                  <div class="bg-gray-100 rounded-xl h-96 flex items-center justify-center">
-                    <div class="text-center">
-                      <div class="w-16 h-16 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                        <span class="text-white text-2xl font-bold">N</span>
-                      </div>
-                      <h3 class="text-xl font-semibold text-gray-900 mb-2">NitroPing Dashboard</h3>
-                      <p class="text-gray-600">Send notifications to millions of users</p>
-                      <div class="mt-6 space-y-2">
-                        <div class="bg-white rounded-lg p-3 shadow-sm border text-left">
-                          <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 bg-green-400 rounded-full"></div>
-                            <span class="text-sm">📱 iOS notifications sent: 1,234,567</span>
-                          </div>
-                        </div>
-                        <div class="bg-white rounded-lg p-3 shadow-sm border text-left">
-                          <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 bg-blue-400 rounded-full"></div>
-                            <span class="text-sm">🤖 Android notifications sent: 987,654</span>
-                          </div>
-                        </div>
-                        <div class="bg-white rounded-lg p-3 shadow-sm border text-left">
-                          <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 bg-purple-400 rounded-full"></div>
-                            <span class="text-sm">💻 Web notifications sent: 567,890</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div class="bg-white rounded-2xl p-4 shadow-inner">
+                  <img 
+                    src="/img/dashboard.png" 
+                    alt="NitroPing Dashboard - Send notifications to millions of users across iOS, Android, and Web platforms"
+                    class="w-full h-auto rounded-xl shadow-lg"
+                  />
                 </div>
               </div>
             </div>
