@@ -16,8 +16,16 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.nitroping.app.MainActivity
 import com.nitroping.app.R
+import com.nitroping.app.api.NitroPingApiService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class NitroPingFirebaseMessagingService : FirebaseMessagingService() {
+    
+    private lateinit var apiService: NitroPingApiService
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     companion object {
         private const val TAG = "NitroPingFCM"
@@ -25,32 +33,57 @@ class NitroPingFirebaseMessagingService : FirebaseMessagingService() {
         private const val NOTIFICATION_ID = 100
         
         fun trackNotificationOpened(context: Context, notificationId: String, deviceId: String) {
-            // TODO: Implement API call to track open
             Log.d(TAG, "Tracking notification opened: $notificationId for device: $deviceId")
             
-            // Example GraphQL mutation:
-            // mutation TrackNotificationOpened($input: TrackEventInput!) {
-            //   trackNotificationOpened(input: $input) {
-            //     success
-            //   }
-            // }
+            val apiService = NitroPingApiService(context)
+            val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+            
+            scope.launch {
+                try {
+                    val result = apiService.trackNotificationOpened(notificationId, deviceId)
+                    result.onSuccess { response ->
+                        if (response.success) {
+                            Log.d(TAG, "✅ Notification open tracked successfully")
+                        } else {
+                            Log.w(TAG, "❌ Failed to track open: ${response.message}")
+                        }
+                    }.onFailure { error ->
+                        Log.e(TAG, "❌ Error tracking open: ${error.message}", error)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Exception tracking open: ${e.message}", e)
+                }
+            }
         }
 
         fun trackNotificationClicked(context: Context, notificationId: String, deviceId: String) {
-            // TODO: Implement API call to track click
             Log.d(TAG, "Tracking notification clicked: $notificationId for device: $deviceId")
             
-            // Example GraphQL mutation:
-            // mutation TrackNotificationClicked($input: TrackEventInput!) {
-            //   trackNotificationClicked(input: $input) {
-            //     success
-            //   }
-            // }
+            val apiService = NitroPingApiService(context)
+            val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+            
+            scope.launch {
+                try {
+                    val result = apiService.trackNotificationClicked(notificationId, deviceId)
+                    result.onSuccess { response ->
+                        if (response.success) {
+                            Log.d(TAG, "✅ Notification click tracked successfully")
+                        } else {
+                            Log.w(TAG, "❌ Failed to track click: ${response.message}")
+                        }
+                    }.onFailure { error ->
+                        Log.e(TAG, "❌ Error tracking click: ${error.message}", error)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Exception tracking click: ${e.message}", e)
+                }
+            }
         }
     }
 
     override fun onCreate() {
         super.onCreate()
+        apiService = NitroPingApiService(applicationContext)
         createNotificationChannel()
     }
 
@@ -187,15 +220,24 @@ class NitroPingFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun trackNotificationDelivered(notificationId: String, deviceId: String) {
-        // TODO: Implement API call to track delivery
         Log.d(TAG, "Tracking notification delivered: $notificationId for device: $deviceId")
         
-        // Example GraphQL mutation:
-        // mutation TrackNotificationDelivered($input: TrackEventInput!) {
-        //   trackNotificationDelivered(input: $input) {
-        //     success
-        //   }
-        // }
+        serviceScope.launch {
+            try {
+                val result = apiService.trackNotificationDelivered(notificationId, deviceId)
+                result.onSuccess { response ->
+                    if (response.success) {
+                        Log.d(TAG, "✅ Notification delivery tracked successfully")
+                    } else {
+                        Log.w(TAG, "❌ Failed to track delivery: ${response.message}")
+                    }
+                }.onFailure { error ->
+                    Log.e(TAG, "❌ Error tracking delivery: ${error.message}", error)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Exception tracking delivery: ${e.message}", e)
+            }
+        }
     }
 
 }

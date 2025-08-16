@@ -14,11 +14,22 @@ export function useEngagementMetrics(appId: Ref<string> | string, timeRange: Ref
   return useQuery({
     key: () => ['engagementMetrics', unref(appId), unref(timeRange)],
     query: async () => {
+      const currentAppId = unref(appId)
+      
+      // Don't run query if appId is empty
+      if (!currentAppId || currentAppId.trim() === '') {
+        return null
+      }
+      
       const result = await $sdk.getEngagementMetrics({
-        appId: unref(appId),
+        appId: currentAppId,
         timeRange: unref(timeRange),
       })
       return result.data?.getEngagementMetrics || null
+    },
+    enabled: () => {
+      const currentAppId = unref(appId)
+      return !!currentAppId && currentAppId.trim() !== ''
     },
   })
 }

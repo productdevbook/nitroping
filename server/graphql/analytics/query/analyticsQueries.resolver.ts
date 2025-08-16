@@ -112,6 +112,22 @@ export const analyticsQueries = defineQuery({
       const db = useDatabase()
 
       try {
+        // Validate appId
+        if (!appId || appId.trim() === '') {
+          console.warn('[Analytics] Empty appId provided, returning empty metrics')
+          return {
+            totalNotifications: 0,
+            totalSent: 0,
+            totalDelivered: 0,
+            totalOpened: 0,
+            totalClicked: 0,
+            overallDeliveryRate: 0,
+            overallOpenRate: 0,
+            overallClickRate: 0,
+            platformBreakdown: [],
+          }
+        }
+
         // Calculate date range
         const now = new Date()
         const days = parseInt(timeRange.replace('d', ''))

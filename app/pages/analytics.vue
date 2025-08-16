@@ -18,8 +18,20 @@ const selectedApp = ref('all')
 const timeRange = ref('7d')
 
 // Get analytics data
+const selectedAppId = computed(() => {
+  // Wait for apps to load before selecting an app
+  if (!apps.value?.length) {
+    return ''
+  }
+  
+  if (selectedApp.value === 'all') {
+    return apps.value[0]?.id || ''
+  }
+  return selectedApp.value
+})
+
 const { data: analyticsData, isLoading: _analyticsLoading } = useAnalyticsSummary(
-  computed(() => selectedApp.value === 'all' ? apps.value?.[0]?.id || '' : selectedApp.value),
+  selectedAppId,
   timeRange,
 )
 
