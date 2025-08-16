@@ -106,7 +106,7 @@ public class NitroPingClient: NSObject {
             "input": [
                 "appId": appId,
                 "token": token,
-                "platform": "ios",
+                "platform": "IOS",
                 "userId": userId as Any,
                 "metadata": getDeviceMetadata()
             ]
@@ -121,34 +121,104 @@ public class NitroPingClient: NSObject {
         print("✅ NitroPing: Device registered successfully")
     }
     
-    private func trackNotificationDelivery(_ userInfo: [AnyHashable: Any]) async {
-        // Extract notification ID if available
-        guard let notificationId = userInfo["notification_id"] as? String else {
-            return
-        }
-        
+    /// Track notification delivered
+    public func trackNotificationDelivered(notificationId: String, deviceId: String) async {
         let mutation = """
-        mutation trackDelivery($notificationId: ID!) {
-            trackNotificationDelivery(notificationId: $notificationId) {
+        mutation TrackNotificationDelivered($input: TrackEventInput!) {
+            trackNotificationDelivered(input: $input) {
                 success
+                message
             }
         }
         """
         
         let variables: [String: Any] = [
-            "notificationId": notificationId
+            "input": [
+                "notificationId": notificationId,
+                "deviceId": deviceId,
+                "platform": "IOS",
+                "userAgent": getDeviceUserAgent(),
+                "appVersion": getAppVersion(),
+                "osVersion": UIDevice.current.systemVersion
+            ]
         ]
         
-        let body: [String: Any] = [
-            "query": mutation,
-            "variables": variables
+        await trackEvent(mutation: mutation, variables: variables, eventType: "delivered")
+    }
+    
+    /// Track notification opened
+    public func trackNotificationOpened(notificationId: String, deviceId: String) async {
+        let mutation = """
+        mutation TrackNotificationOpened($input: TrackEventInput!) {
+            trackNotificationOpened(input: $input) {
+                success
+                message
+            }
+        }
+        """
+        
+        let variables: [String: Any] = [
+            "input": [
+                "notificationId": notificationId,
+                "deviceId": deviceId,
+                "platform": "IOS",
+                "userAgent": getDeviceUserAgent(),
+                "appVersion": getAppVersion(),
+                "osVersion": UIDevice.current.systemVersion
+            ]
         ]
         
+        await trackEvent(mutation: mutation, variables: variables, eventType: "opened")
+    }
+    
+    /// Track notification clicked
+    public func trackNotificationClicked(notificationId: String, deviceId: String, action: String? = nil) async {
+        let mutation = """
+        mutation TrackNotificationClicked($input: TrackEventInput!) {
+            trackNotificationClicked(input: $input) {
+                success
+                message
+            }
+        }
+        """
+        
+        let inputData: [String: Any] = [
+            "notificationId": notificationId,
+            "deviceId": deviceId,
+            "platform": "IOS",
+            "userAgent": getDeviceUserAgent(),
+            "appVersion": getAppVersion(),
+            "osVersion": UIDevice.current.systemVersion
+        ]
+        
+        let variables: [String: Any] = [
+            "input": inputData
+        ]
+        
+        await trackEvent(mutation: mutation, variables: variables, eventType: "clicked")
+    }
+    
+    private func trackNotificationDelivery(_ userInfo: [AnyHashable: Any]) async {
+        // Extract NitroPing IDs from notification payload
+        guard let notificationId = userInfo["nitroping_notification_id"] as? String,
+              let deviceId = userInfo["nitroping_device_id"] as? String else {
+            return
+        }
+        
+        await trackNotificationDelivered(notificationId: notificationId, deviceId: deviceId)
+    }
+    
+    private func trackEvent(mutation: String, variables: [String: Any], eventType: String) async {
         do {
+            let body: [String: Any] = [
+                "query": mutation,
+                "variables": variables
+            ]
+            
             try await performGraphQLRequest(body: body)
-            print("📊 NitroPing: Delivery tracked for notification: \(notificationId)")
+            print("✅ NitroPing: Notification \(eventType) tracked successfully")
         } catch {
-            print("⚠️ NitroPing: Failed to track delivery: \(error)")
+            print("❌ NitroPing: Failed to track notification \(eventType): \(error)")
         }
     }
     
@@ -185,16 +255,33 @@ public class NitroPingClient: NSObject {
         }
     }
     
-    private func getDeviceMetadata() -> [String: Any] {
+    private func getDeviceMetadata() -> String {
         let device = UIDevice.current
         
-        return [
+        let metadata: [String: Any] = [
             "deviceModel": device.model,
             "systemName": device.systemName,
             "systemVersion": device.systemVersion,
-            "appVersion": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
+            "appVersion": getAppVersion(),
             "bundleId": Bundle.main.bundleIdentifier ?? "Unknown"
         ]
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: metadata, options: [])
+            return String(data: jsonData, encoding: .utf8) ?? "{}"
+        } catch {
+            return "{}"
+        }
+    }
+    
+    private func getDeviceUserAgent() -> String {
+        let device = UIDevice.current
+        let appVersion = getAppVersion()
+        return "NitroPing iOS/\(appVersion) (\(device.model); \(device.systemName) \(device.systemVersion))"
+    }
+    
+    private func getAppVersion() -> String {
+        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     }
 }
 

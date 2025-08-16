@@ -14,11 +14,22 @@ export function useEngagementMetrics(appId: Ref<string> | string, timeRange: Ref
   return useQuery({
     key: () => ['engagementMetrics', unref(appId), unref(timeRange)],
     query: async () => {
+      const currentAppId = unref(appId)
+
+      // Don't run query if appId is empty
+      if (!currentAppId || currentAppId.trim() === '') {
+        return null
+      }
+
       const result = await $sdk.getEngagementMetrics({
-        appId: unref(appId),
+        appId: currentAppId,
         timeRange: unref(timeRange),
       })
       return result.data?.getEngagementMetrics || null
+    },
+    enabled: () => {
+      const currentAppId = unref(appId)
+      return !!currentAppId && currentAppId.trim() !== ''
     },
   })
 }
@@ -33,6 +44,9 @@ export function useAnalyticsSummary(appId: Ref<string> | string, timeRange: Ref<
     return {
       totalNotifications: metrics.value.totalNotifications,
       totalSent: metrics.value.totalSent,
+      totalDelivered: metrics.value.totalDelivered,
+      totalOpened: metrics.value.totalOpened,
+      totalClicked: metrics.value.totalClicked,
       deliveryRate: metrics.value.overallDeliveryRate,
       openRate: metrics.value.overallOpenRate,
       clickRate: metrics.value.overallClickRate,

@@ -145,6 +145,16 @@ struct ContentView: View {
                             .padding(12)
                             .background(Color(.systemGray6))
                             .cornerRadius(8)
+                            
+                            // Test Click Tracking Button
+                            Button("Test Click Tracking") {
+                                Task {
+                                    await appDelegate.testClickTracking()
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .buttonStyle(.borderedProminent)
+                            .disabled(appDelegate.lastNotification.isEmpty)
                         }
                         .padding()
                         .background(Color(.systemBackground))

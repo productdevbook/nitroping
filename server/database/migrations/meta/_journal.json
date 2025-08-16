@@ -15,6 +15,13 @@
       "when": 1755360568009,
       "tag": "0001_flowery_dexter_bennett",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755368468884,
+      "tag": "0002_dapper_moon_knight",
+      "breakpoints": true
     }
   ]
 }

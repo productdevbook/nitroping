@@ -26,7 +26,6 @@ export const registerDeviceMutation = defineMutation({
             message: 'Invalid FCM token format. Token contains invalid characters.',
           })
         }
-
       }
 
       const newDevice = await db

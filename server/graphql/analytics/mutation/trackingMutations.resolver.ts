@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { and, eq, isNotNull } from 'drizzle-orm'
 
 export const trackingMutations = defineMutation({
   trackNotificationDelivered: {
@@ -7,21 +7,30 @@ export const trackingMutations = defineMutation({
       const db = useDatabase()
 
       try {
+        // Use upsert with ON CONFLICT to handle unique constraint
         await db
-          .update(tables.deliveryLog)
-          .set({
+          .insert(tables.deliveryLog)
+          .values({
+            notificationId: input.notificationId,
+            deviceId: input.deviceId,
+            status: 'DELIVERED',
             deliveredAt: new Date(),
+            sentAt: new Date(),
             platform: input.platform,
             userAgent: input.userAgent,
             appVersion: input.appVersion,
             osVersion: input.osVersion,
           })
-          .where(
-            and(
-              eq(tables.deliveryLog.notificationId, input.notificationId),
-              eq(tables.deliveryLog.deviceId, input.deviceId)
-            )
-          )
+          .onConflictDoUpdate({
+            target: [tables.deliveryLog.notificationId, tables.deliveryLog.deviceId],
+            set: {
+              deliveredAt: new Date(),
+              platform: input.platform,
+              userAgent: input.userAgent,
+              appVersion: input.appVersion,
+              osVersion: input.osVersion,
+            },
+          })
 
         // Update notification total delivered count
         const deliveredCount = await db
@@ -30,8 +39,8 @@ export const trackingMutations = defineMutation({
           .where(
             and(
               eq(tables.deliveryLog.notificationId, input.notificationId),
-              eq(tables.deliveryLog.deliveredAt, null).not()
-            )
+              isNotNull(tables.deliveryLog.deliveredAt),
+            ),
           )
 
         await db
@@ -60,21 +69,30 @@ export const trackingMutations = defineMutation({
       const db = useDatabase()
 
       try {
+        // Use upsert with ON CONFLICT to handle unique constraint
         await db
-          .update(tables.deliveryLog)
-          .set({
+          .insert(tables.deliveryLog)
+          .values({
+            notificationId: input.notificationId,
+            deviceId: input.deviceId,
+            status: 'DELIVERED',
             openedAt: new Date(),
+            sentAt: new Date(),
             platform: input.platform,
             userAgent: input.userAgent,
             appVersion: input.appVersion,
             osVersion: input.osVersion,
           })
-          .where(
-            and(
-              eq(tables.deliveryLog.notificationId, input.notificationId),
-              eq(tables.deliveryLog.deviceId, input.deviceId)
-            )
-          )
+          .onConflictDoUpdate({
+            target: [tables.deliveryLog.notificationId, tables.deliveryLog.deviceId],
+            set: {
+              openedAt: new Date(),
+              platform: input.platform,
+              userAgent: input.userAgent,
+              appVersion: input.appVersion,
+              osVersion: input.osVersion,
+            },
+          })
 
         return {
           success: true,
@@ -97,21 +115,30 @@ export const trackingMutations = defineMutation({
       const db = useDatabase()
 
       try {
+        // Use upsert with ON CONFLICT to handle unique constraint
         await db
-          .update(tables.deliveryLog)
-          .set({
+          .insert(tables.deliveryLog)
+          .values({
+            notificationId: input.notificationId,
+            deviceId: input.deviceId,
+            status: 'DELIVERED',
             clickedAt: new Date(),
+            sentAt: new Date(),
             platform: input.platform,
             userAgent: input.userAgent,
             appVersion: input.appVersion,
             osVersion: input.osVersion,
           })
-          .where(
-            and(
-              eq(tables.deliveryLog.notificationId, input.notificationId),
-              eq(tables.deliveryLog.deviceId, input.deviceId)
-            )
-          )
+          .onConflictDoUpdate({
+            target: [tables.deliveryLog.notificationId, tables.deliveryLog.deviceId],
+            set: {
+              clickedAt: new Date(),
+              platform: input.platform,
+              userAgent: input.userAgent,
+              appVersion: input.appVersion,
+              osVersion: input.osVersion,
+            },
+          })
 
         // Update notification total clicked count
         const clickedCount = await db
@@ -120,8 +147,8 @@ export const trackingMutations = defineMutation({
           .where(
             and(
               eq(tables.deliveryLog.notificationId, input.notificationId),
-              eq(tables.deliveryLog.clickedAt, null).not()
-            )
+              isNotNull(tables.deliveryLog.clickedAt),
+            ),
           )
 
         await db
