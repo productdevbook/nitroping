@@ -4,19 +4,41 @@ iOS SDK for integrating with NitroPing push notification service.
 
 ## 🚀 Installation
 
-### Swift Package Manager
+### Option 1: Local Swift Package (Recommended)
+
+For integrating with an existing iOS project in the same repository:
+
+1. **Open your iOS project in Xcode**
+2. **Add Local Package:**
+   - File → Add Package Dependencies
+   - Click "Add Local..." button
+   - Navigate to and select: `/path/to/nitroping/ios/package`
+   - Click "Add Package"
+3. **Select Target:**
+   - Choose `NitroPingClient` library
+   - Add to your app target
+4. **Import in your code:**
+   ```swift
+   import NitroPingClient
+   ```
+
+### Option 2: Swift Package Manager (External)
 
 Add this to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(path: "../ios/nitroping")
+    .package(path: "../ios/package") // Adjust path as needed
 ]
 ```
 
-Or add via Xcode:
-1. File → Add Package Dependencies
-2. Enter local path: `../ios/nitroping`
+### Option 3: Git Submodule
+
+```bash
+git submodule add https://github.com/your-org/nitroping-ios ios/nitroping-sdk
+```
+
+Then add local package in Xcode pointing to `ios/nitroping-sdk/package`
 
 ## 📱 Quick Start
 
@@ -172,6 +194,27 @@ func userNotificationCenter(
 }
 ```
 
+### Manual Analytics Tracking
+
+```swift
+// Track notification events manually
+await nitroPingClient?.trackNotificationDelivered(
+    notificationId: "notification-123",
+    deviceId: "device-456"
+)
+
+await nitroPingClient?.trackNotificationOpened(
+    notificationId: "notification-123", 
+    deviceId: "device-456"
+)
+
+await nitroPingClient?.trackNotificationClicked(
+    notificationId: "notification-123",
+    deviceId: "device-456",
+    action: "button_1"
+)
+```
+
 ## 🔒 APNS Setup
 
 ### 1. Enable Push Notifications
@@ -283,6 +326,11 @@ if settings.authorizationStatus != .authorized {
 - `handleDeviceToken(_ deviceToken: Data) async` - Register device token
 - `handleNotification(_ userInfo: [AnyHashable: Any])` - Process notification
 - `updateUserId(_ userId: String) async throws` - Update user ID
+
+#### Analytics Methods
+- `trackNotificationDelivered(notificationId: String, deviceId: String) async` - Track delivery
+- `trackNotificationOpened(notificationId: String, deviceId: String) async` - Track open
+- `trackNotificationClicked(notificationId: String, deviceId: String, action: String?) async` - Track click
 
 #### Errors
 - `NitroPingError.permissionDenied` - Notification permission denied

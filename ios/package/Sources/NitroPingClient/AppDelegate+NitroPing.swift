@@ -20,7 +20,7 @@ public extension UIApplicationDelegate {
 }
 
 /// Example AppDelegate implementation
-open class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+open class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject {
     
     public var nitroPingClient: NitroPingClient?
     
@@ -78,8 +78,18 @@ open class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCente
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Handle notification when app is in foreground
-        nitroPingClient?.handleNotification(notification.request.content.userInfo)
+        let userInfo = notification.request.content.userInfo
+        
+        // Handle notification when app is in foreground (delivered)
+        nitroPingClient?.handleNotification(userInfo)
+        
+        // Track delivered if we have the necessary IDs
+        if let notificationId = userInfo["nitroping_notification_id"] as? String,
+           let deviceId = userInfo["nitroping_device_id"] as? String {
+            Task {
+                await nitroPingClient?.trackNotificationDelivered(notificationId: notificationId, deviceId: deviceId)
+            }
+        }
         
         // Show notification even when app is in foreground
         completionHandler([.banner, .badge, .sound])
@@ -90,8 +100,26 @@ open class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCente
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        // Handle notification tap
-        nitroPingClient?.handleNotification(response.notification.request.content.userInfo)
+        let userInfo = response.notification.request.content.userInfo
+        
+        // Handle notification tap (opened)
+        nitroPingClient?.handleNotification(userInfo)
+        
+        // Track opened and clicked if we have the necessary IDs
+        if let notificationId = userInfo["nitroping_notification_id"] as? String,
+           let deviceId = userInfo["nitroping_device_id"] as? String {
+            Task {
+                await nitroPingClient?.trackNotificationOpened(notificationId: notificationId, deviceId: deviceId)
+                
+                // If user performed specific action, track click
+                if response.actionIdentifier != UNNotificationDefaultActionIdentifier {
+                    await nitroPingClient?.trackNotificationClicked(notificationId: notificationId, deviceId: deviceId, action: response.actionIdentifier)
+                } else {
+                    // Default action (tap) counts as click too
+                    await nitroPingClient?.trackNotificationClicked(notificationId: notificationId, deviceId: deviceId, action: "default")
+                }
+            }
+        }
         
         completionHandler()
     }
@@ -108,19 +136,22 @@ public struct NitroPingAppModifier: ViewModifier {
     let apiURL: String
     let userId: String?
     
-    @StateObject private var appDelegate = AppDelegate()
+    @State private var nitroPingClient: NitroPingClient?
     
     public func body(content: Content) -> some View {
         content
             .onAppear {
                 // Setup NitroPing for SwiftUI apps
-                let client = appDelegate.setupNitroPing(appId: appId, apiURL: apiURL)
-                
-                Task {
-                    do {
-                        try await client.initialize(userId: userId)
-                    } catch {
-                        print("❌ Failed to initialize NitroPing: \(error)")
+                if nitroPingClient == nil {
+                    let client = NitroPingClient(apiURL: apiURL, appId: appId)
+                    nitroPingClient = client
+                    
+                    Task {
+                        do {
+                            try await client.initialize(userId: userId)
+                        } catch {
+                            print("❌ Failed to initialize NitroPing: \(error)")
+                        }
                     }
                 }
             }

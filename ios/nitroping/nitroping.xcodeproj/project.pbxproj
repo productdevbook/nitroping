@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		CD361CE02E510FF20064F6FE /* NitroPingClient in Frameworks */ = {isa = PBXBuildFile; productRef = CD361CDF2E510FF20064F6FE /* NitroPingClient */; };
+		CD361CE22E51134A0064F6FE /* NitroPingClient in Frameworks */ = {isa = PBXBuildFile; productRef = CD361CE12E51134A0064F6FE /* NitroPingClient */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		CDF057C92E50A5F50094CF5E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +57,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD361CE22E51134A0064F6FE /* NitroPingClient in Frameworks */,
+				CD361CE02E510FF20064F6FE /* NitroPingClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +119,8 @@
 			);
 			name = nitroping;
 			packageProductDependencies = (
+				CD361CDF2E510FF20064F6FE /* NitroPingClient */,
+				CD361CE12E51134A0064F6FE /* NitroPingClient */,
 			);
 			productName = nitroping;
 			productReference = CDF057B82E50A5F40094CF5E /* nitroping.app */;
@@ -195,6 +204,9 @@
 			);
 			mainGroup = CDF057AF2E50A5F40094CF5E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CD361CDE2E510FF20064F6FE /* XCLocalSwiftPackageReference "../package" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CDF057B92E50A5F40094CF5E /* Products */;
 			projectDirPath = "";
@@ -392,7 +404,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = QPH96J479A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -432,7 +444,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = QPH96J479A;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -589,6 +601,24 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		CD361CDE2E510FF20064F6FE /* XCLocalSwiftPackageReference "../package" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../package;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CD361CDF2E510FF20064F6FE /* NitroPingClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NitroPingClient;
+		};
+		CD361CE12E51134A0064F6FE /* NitroPingClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NitroPingClient;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CDF057B02E50A5F40094CF5E /* Project object */;
 }

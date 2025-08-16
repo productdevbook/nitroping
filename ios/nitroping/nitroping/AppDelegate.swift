@@ -1,5 +1,6 @@
 import UIKit
 import UserNotifications
+import NitroPingClient
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject {
     
@@ -7,22 +8,31 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     @Published var notificationCount: Int = 0
     @Published var lastNotification: [AnyHashable: Any] = [:]
     
-    private var nitroPingService: NitroPingService?
+    private var nitroPingClient: NitroPingClient?
     
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         
-        // Initialize NitroPing service
-        nitroPingService = NitroPingService()
+        // Initialize NitroPing client
+        nitroPingClient = NitroPingClient(
+            apiURL: "http://172.20.10.3:3000/api/graphql", // Use network IP instead of localhost
+            appId: "707bf3c9-5553-40da-9508-15a7bf371324" // Use APNs configured app ID
+        )
         
         // Set notification delegate
         UNUserNotificationCenter.current().delegate = self
         
-        // Request push notification permission
+        // Initialize NitroPing (request permissions and register)
         Task {
-            await requestNotificationPermission()
+            do {
+                try await nitroPingClient?.initialize(userId: "demo-user-\(UUID().uuidString.prefix(8))")
+            } catch {
+                print("❌ Failed to initialize NitroPing: \(error)")
+                // Fallback to manual permission request
+                await requestNotificationPermission()
+            }
         }
         
         return true
@@ -42,9 +52,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         print("📱 Device token: \(tokenString)")
         
-        // Register device with NitroPing
+        // Handle device token with NitroPing
         Task {
-            await nitroPingService?.registerDevice(token: tokenString)
+            await nitroPingClient?.handleDeviceToken(deviceToken)
         }
     }
     
@@ -75,8 +85,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         print("📬 Notification received (foreground): \(userInfo)")
         
-        // Track delivery
-        trackNotificationDelivered(userInfo: userInfo)
+        // Handle notification with NitroPing (includes delivery tracking)
+        nitroPingClient?.handleNotification(userInfo)
+        
+        // Track delivered if we have the necessary IDs
+        if let notificationId = userInfo["nitroping_notification_id"] as? String,
+           let deviceId = userInfo["nitroping_device_id"] as? String {
+            Task {
+                await nitroPingClient?.trackNotificationDelivered(notificationId: notificationId, deviceId: deviceId)
+            }
+        }
         
         // Show notification
         completionHandler([.banner, .badge, .sound])
@@ -95,15 +113,23 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         print("📬 Notification tapped: \(userInfo)")
         
-        // Track notification opened/clicked
-        trackNotificationOpened(userInfo: userInfo)
+        // Handle notification with NitroPing
+        nitroPingClient?.handleNotification(userInfo)
         
-        // If user performed specific action, track click
-        if response.actionIdentifier != UNNotificationDefaultActionIdentifier {
-            trackNotificationClicked(userInfo: userInfo, action: response.actionIdentifier)
-        } else {
-            // Default action (tap) counts as click too
-            trackNotificationClicked(userInfo: userInfo, action: "default")
+        // Track opened and clicked if we have the necessary IDs
+        if let notificationId = userInfo["nitroping_notification_id"] as? String,
+           let deviceId = userInfo["nitroping_device_id"] as? String {
+            Task {
+                await nitroPingClient?.trackNotificationOpened(notificationId: notificationId, deviceId: deviceId)
+                
+                // If user performed specific action, track click
+                if response.actionIdentifier != UNNotificationDefaultActionIdentifier {
+                    await nitroPingClient?.trackNotificationClicked(notificationId: notificationId, deviceId: deviceId, action: response.actionIdentifier)
+                } else {
+                    // Default action (tap) counts as click too
+                    await nitroPingClient?.trackNotificationClicked(notificationId: notificationId, deviceId: deviceId, action: "default")
+                }
+            }
         }
         
         completionHandler()
@@ -139,41 +165,23 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     // MARK: - Public Methods
     
     func updateUserId(_ userId: String) async {
-        await nitroPingService?.updateUserId(userId)
+        do {
+            try await nitroPingClient?.updateUserId(userId)
+        } catch {
+            print("❌ Failed to update user ID: \(error)")
+        }
     }
     
-    // MARK: - Notification Tracking
-    
-    private func trackNotificationDelivered(userInfo: [AnyHashable: Any]) {
-        guard let notificationId = userInfo["nitroping_notification_id"] as? String,
-              let deviceId = userInfo["nitroping_device_id"] as? String else {
+    func testClickTracking() async {
+        guard !lastNotification.isEmpty,
+              let notificationId = lastNotification["nitroping_notification_id"] as? String,
+              let deviceId = lastNotification["nitroping_device_id"] as? String else {
+            print("❌ No recent notification to track click for")
             return
         }
         
-        Task {
-            await nitroPingService?.trackNotificationDelivered(notificationId: notificationId, deviceId: deviceId)
-        }
+        print("🔄 Testing click tracking for notification: \(notificationId)")
+        await nitroPingClient?.trackNotificationClicked(notificationId: notificationId, deviceId: deviceId, action: "manual_test")
     }
     
-    private func trackNotificationOpened(userInfo: [AnyHashable: Any]) {
-        guard let notificationId = userInfo["nitroping_notification_id"] as? String,
-              let deviceId = userInfo["nitroping_device_id"] as? String else {
-            return
-        }
-        
-        Task {
-            await nitroPingService?.trackNotificationOpened(notificationId: notificationId, deviceId: deviceId)
-        }
-    }
-    
-    private func trackNotificationClicked(userInfo: [AnyHashable: Any], action: String) {
-        guard let notificationId = userInfo["nitroping_notification_id"] as? String,
-              let deviceId = userInfo["nitroping_device_id"] as? String else {
-            return
-        }
-        
-        Task {
-            await nitroPingService?.trackNotificationClicked(notificationId: notificationId, deviceId: deviceId, action: action)
-        }
-    }
 }
