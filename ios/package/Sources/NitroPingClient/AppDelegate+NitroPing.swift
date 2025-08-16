@@ -41,7 +41,7 @@ open class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCente
         // Initialize NitroPing (request permissions and register)
         Task {
             do {
-                try await nitroPingClient?.initialize(userId: "demo-user-\(UUID().uuidString)")
+                try await nitroPingClient?.initialize(userId: "demo-user")
             } catch {
                 print("❌ Failed to initialize NitroPing: \(error)")
             }
