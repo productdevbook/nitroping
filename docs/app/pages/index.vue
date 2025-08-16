@@ -47,15 +47,13 @@
             </div>
 
             <!-- Product Screenshot with Gradient Frame -->
-            <div class="relative max-w-5xl mx-auto">
-              <div class="bg-gradient-to-r from-blue-500 to-cyan-500 p-6 rounded-3xl shadow-2xl">
-                <div class="bg-white rounded-2xl p-4 shadow-inner">
-                  <img 
-                    src="/img/dashboard.png" 
-                    alt="NitroPing Dashboard - Send notifications to millions of users across iOS, Android, and Web platforms"
-                    class="w-full h-auto rounded-xl shadow-lg"
-                  />
-                </div>
+            <div class="relative max-w-6xl mx-auto">
+              <div class="bg-gradient-to-r from-blue-500 to-cyan-500 p-3 rounded-3xl shadow-2xl">
+                <img 
+                  src="/img/dashboard.png" 
+                  alt="NitroPing Dashboard - Send notifications to millions of users across iOS, Android, and Web platforms"
+                  class="w-full h-auto rounded-2xl shadow-inner"
+                />
               </div>
             </div>
           </div>
@@ -131,9 +129,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                   </svg>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900">Device directory</h3>
+                <h3 class="text-2xl font-semibold text-gray-900">Device directory</h3>
               </div>
-              <p class="text-gray-600 mb-6">Manage all your users' devices in one place.</p>
+              <p class="text-lg text-gray-600 leading-relaxed mb-8">Manage all your users' devices in one place. Organize, track, and control every endpoint with elegant simplicity.</p>
+              <div class="bg-gradient-to-r from-blue-500 to-cyan-500 p-4 rounded-2xl">
+                <div class="bg-gray-100 rounded-xl h-48 flex items-center justify-center">
+                  <span class="text-gray-500 text-sm">Device Management Preview</span>
+                </div>
+              </div>
             </div>
 
             <div class="bg-white rounded-2xl border border-gray-200 p-8">
