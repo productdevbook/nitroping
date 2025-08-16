@@ -239,16 +239,16 @@ class APNsProvider {
     const apsPayload: APNsPayload = {
       aps: {
         alert,
-        badge: payload.badge,
-        sound: payload.sound || 'default',
-        category: payload.clickAction,
+        'badge': payload.badge,
+        'sound': payload.sound || 'default',
+        'category': payload.clickAction,
         'mutable-content': 1, // Enable notification service extension
       },
     }
 
     // Add custom data with tracking info
     const customData = payload.data || {}
-    
+
     // Add tracking data
     if (notificationId && deviceId) {
       customData.nitroping_notification_id = notificationId

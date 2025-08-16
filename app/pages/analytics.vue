@@ -40,9 +40,9 @@ const metrics = computed(() => {
 
   return {
     totalSent: analyticsData.value.totalSent,
-    delivered: Math.round(analyticsData.value.totalSent * analyticsData.value.deliveryRate / 100),
-    opened: Math.round(analyticsData.value.totalSent * analyticsData.value.openRate / 100),
-    clicked: Math.round(analyticsData.value.totalSent * analyticsData.value.clickRate / 100),
+    delivered: analyticsData.value.totalDelivered,
+    opened: analyticsData.value.totalOpened,
+    clicked: analyticsData.value.totalClicked,
     deliveryRate: analyticsData.value.deliveryRate,
     openRate: analyticsData.value.openRate,
     clickRate: analyticsData.value.clickRate,

@@ -1,4 +1,4 @@
-import { eq, and, sql, count } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 
 export const analyticsQueries = defineQuery({
   getNotificationAnalytics: {
@@ -30,14 +30,14 @@ export const analyticsQueries = defineQuery({
           .where(eq(tables.deliveryLog.notificationId, notificationId))
 
         const sentCount = notif.totalSent
-        const deliveredCount = deliveryLogs.filter(log => log.deliveredAt !== null).length
-        const openedCount = deliveryLogs.filter(log => log.openedAt !== null).length
-        const clickedCount = deliveryLogs.filter(log => log.clickedAt !== null).length
+        const deliveredCount = deliveryLogs.filter((log: any) => log.deliveredAt !== null).length
+        const openedCount = deliveryLogs.filter((log: any) => log.openedAt !== null).length
+        const clickedCount = deliveryLogs.filter((log: any) => log.clickedAt !== null).length
 
         // Calculate platform breakdown
         const platformStats = new Map<string, any>()
-        
-        deliveryLogs.forEach((log) => {
+
+        deliveryLogs.forEach((log: any) => {
           const platform = log.platform || 'unknown'
           if (!platformStats.has(platform)) {
             platformStats.set(platform, {
@@ -53,21 +53,21 @@ export const analyticsQueries = defineQuery({
 
           const stats = platformStats.get(platform)
           stats.sent++
-          
+
           if (log.deliveredAt) {
             stats.delivered++
             if (log.sentAt) {
               stats.deliveryTimes.push(log.deliveredAt.getTime() - log.sentAt.getTime())
             }
           }
-          
+
           if (log.openedAt) {
             stats.opened++
             if (log.deliveredAt) {
               stats.openTimes.push(log.openedAt.getTime() - log.deliveredAt.getTime())
             }
           }
-          
+
           if (log.clickedAt) {
             stats.clicked++
           }
@@ -79,11 +79,11 @@ export const analyticsQueries = defineQuery({
           delivered: stats.delivered,
           opened: stats.opened,
           clicked: stats.clicked,
-          avgDeliveryTime: stats.deliveryTimes.length > 0 
-            ? stats.deliveryTimes.reduce((a, b) => a + b, 0) / stats.deliveryTimes.length / 1000 
+          avgDeliveryTime: stats.deliveryTimes.length > 0
+            ? stats.deliveryTimes.reduce((a: number, b: number) => a + b, 0) / stats.deliveryTimes.length / 1000
             : null,
-          avgOpenTime: stats.openTimes.length > 0 
-            ? stats.openTimes.reduce((a, b) => a + b, 0) / stats.openTimes.length / 1000 
+          avgOpenTime: stats.openTimes.length > 0
+            ? stats.openTimes.reduce((a: number, b: number) => a + b, 0) / stats.openTimes.length / 1000
             : null,
         }))
 
@@ -114,7 +114,7 @@ export const analyticsQueries = defineQuery({
       try {
         // Calculate date range
         const now = new Date()
-        const days = parseInt(timeRange.replace('d', ''))
+        const days = Number.parseInt(timeRange.replace('d', ''))
         const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
 
         // Get notifications for this app in the time range
@@ -124,8 +124,8 @@ export const analyticsQueries = defineQuery({
           .where(
             and(
               eq(tables.notification.appId, appId),
-              sql`${tables.notification.createdAt} >= ${startDate.toISOString()}`
-            )
+              sql`${tables.notification.createdAt} >= ${startDate.toISOString()}`,
+            ),
           )
 
         if (!notifications.length) {
@@ -142,24 +142,24 @@ export const analyticsQueries = defineQuery({
           }
         }
 
-        const notificationIds = notifications.map(n => n.id)
+        const notificationIds = notifications.map((n: any) => n.id)
 
         // Get all delivery logs for these notifications
         const deliveryLogs = await db
           .select()
           .from(tables.deliveryLog)
-          .where(sql`${tables.deliveryLog.notificationId} IN (${sql.join(notificationIds.map(id => sql`${id}`), sql`, `)})`)
+          .where(sql`${tables.deliveryLog.notificationId} IN (${sql.join(notificationIds.map((id: any) => sql`${id}`), sql`, `)})`)
 
         const totalNotifications = notifications.length
-        const totalSent = notifications.reduce((sum, n) => sum + n.totalSent, 0)
-        const totalDelivered = deliveryLogs.filter(log => log.deliveredAt !== null).length
-        const totalOpened = deliveryLogs.filter(log => log.openedAt !== null).length
-        const totalClicked = deliveryLogs.filter(log => log.clickedAt !== null).length
+        const totalSent = notifications.reduce((sum: number, n: any) => sum + n.totalSent, 0)
+        const totalDelivered = deliveryLogs.filter((log: any) => log.deliveredAt !== null).length
+        const totalOpened = deliveryLogs.filter((log: any) => log.openedAt !== null).length
+        const totalClicked = deliveryLogs.filter((log: any) => log.clickedAt !== null).length
 
         // Calculate platform breakdown
         const platformStats = new Map<string, any>()
-        
-        deliveryLogs.forEach((log) => {
+
+        deliveryLogs.forEach((log: any) => {
           const platform = log.platform || 'unknown'
           if (!platformStats.has(platform)) {
             platformStats.set(platform, {
@@ -175,21 +175,21 @@ export const analyticsQueries = defineQuery({
 
           const stats = platformStats.get(platform)
           stats.sent++
-          
+
           if (log.deliveredAt) {
             stats.delivered++
             if (log.sentAt) {
               stats.deliveryTimes.push(log.deliveredAt.getTime() - log.sentAt.getTime())
             }
           }
-          
+
           if (log.openedAt) {
             stats.opened++
             if (log.deliveredAt) {
               stats.openTimes.push(log.openedAt.getTime() - log.deliveredAt.getTime())
             }
           }
-          
+
           if (log.clickedAt) {
             stats.clicked++
           }
@@ -201,11 +201,11 @@ export const analyticsQueries = defineQuery({
           delivered: stats.delivered,
           opened: stats.opened,
           clicked: stats.clicked,
-          avgDeliveryTime: stats.deliveryTimes.length > 0 
-            ? stats.deliveryTimes.reduce((a, b) => a + b, 0) / stats.deliveryTimes.length / 1000 
+          avgDeliveryTime: stats.deliveryTimes.length > 0
+            ? stats.deliveryTimes.reduce((a: number, b: number) => a + b, 0) / stats.deliveryTimes.length / 1000
             : null,
-          avgOpenTime: stats.openTimes.length > 0 
-            ? stats.openTimes.reduce((a, b) => a + b, 0) / stats.openTimes.length / 1000 
+          avgOpenTime: stats.openTimes.length > 0
+            ? stats.openTimes.reduce((a: number, b: number) => a + b, 0) / stats.openTimes.length / 1000
             : null,
         }))
 

@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm'
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
 
 // Enums
 export const platformEnum = pgEnum('platform', ['IOS', 'ANDROID', 'WEB'])
@@ -85,7 +85,10 @@ export const deliveryLog = pgTable('deliveryLog', {
   appVersion: text(),
   osVersion: text(),
   createdAt: timestamp().defaultNow(),
-})
+}, table => ({
+  // Unique constraint: one delivery log per notification per device
+  uniqueNotificationDevice: unique().on(table.notificationId, table.deviceId),
+}))
 
 // API Key table (for authentication)
 export const apiKey = pgTable('apiKey', {

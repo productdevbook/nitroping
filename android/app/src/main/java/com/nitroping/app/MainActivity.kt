@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
 
     private var fcmToken by mutableStateOf<String?>(null)
     private var deviceId by mutableStateOf<String?>(null)
+    private var lastNotificationId by mutableStateOf<String?>(null)
+    private var lastNotificationDeviceId by mutableStateOf<String?>(null)
 
     // Permission launcher for notification permission (Android 13+)
     private val requestPermissionLauncher = registerForActivityResult(
@@ -74,6 +76,11 @@ class MainActivity : ComponentActivity() {
                     NitroPingScreen(
                         fcmToken = fcmToken,
                         deviceId = deviceId,
+                        lastNotificationId = lastNotificationId,
+                        lastNotificationDeviceId = lastNotificationDeviceId,
+                        onClickTracking = { notifId, devId ->
+                            NitroPingFirebaseMessagingService.trackNotificationClicked(this@MainActivity, notifId, devId)
+                        },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -164,11 +171,15 @@ class MainActivity : ComponentActivity() {
             if (!notificationId.isNullOrEmpty() && !deviceId.isNullOrEmpty()) {
                 Log.d(TAG, "App opened from notification: $notificationId")
                 
+                // Save notification info for potential click tracking
+                lastNotificationId = notificationId
+                lastNotificationDeviceId = deviceId
+                
                 // Track that notification was opened
                 NitroPingFirebaseMessagingService.trackNotificationOpened(this, notificationId, deviceId)
                 
-                // If user performed specific action, track click as well
-                NitroPingFirebaseMessagingService.trackNotificationClicked(this, notificationId, deviceId)
+                // Note: Click tracking should only happen for specific call-to-action buttons
+                // For now, we only track opens when notification tapped
             }
         }
     }
@@ -178,6 +189,9 @@ class MainActivity : ComponentActivity() {
 fun NitroPingScreen(
     fcmToken: String?,
     deviceId: String?,
+    lastNotificationId: String?,
+    lastNotificationDeviceId: String?,
+    onClickTracking: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -349,6 +363,24 @@ fun NitroPingScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Test click tracking button
+                Button(
+                    onClick = { 
+                        if (!lastNotificationId.isNullOrEmpty() && !lastNotificationDeviceId.isNullOrEmpty()) {
+                            onClickTracking(lastNotificationId, lastNotificationDeviceId)
+                            Toast.makeText(context, "Click tracked for notification: $lastNotificationId", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "No recent notification to track click for", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    enabled = !lastNotificationId.isNullOrEmpty() && !lastNotificationDeviceId.isNullOrEmpty(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Test Click Tracking")
+                }
             }
         }
     }
@@ -360,7 +392,10 @@ fun NitroPingScreenPreview() {
     NitropingTheme {
         NitroPingScreen(
             fcmToken = "sample_fcm_token_here_for_preview",
-            deviceId = "1234567890abcdef"
+            deviceId = "1234567890abcdef",
+            lastNotificationId = "sample_notification_id",
+            lastNotificationDeviceId = "sample_device_id",
+            onClickTracking = { _, _ -> }
         )
     }
 }

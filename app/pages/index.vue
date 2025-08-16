@@ -30,7 +30,7 @@ const testNotification = ref({
   appId: '',
 })
 
-const selectedApp = computed(() => {
+const _selectedApp = computed(() => {
   if (!testNotification.value.appId || !appsData.value)
     return null
   return appsData.value.find(app => app.id === testNotification.value.appId)

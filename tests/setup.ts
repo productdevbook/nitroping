@@ -8,4 +8,4 @@ vi.stubEnv('DATABASE_URL', 'postgresql://test:test@localhost:5432/test')
 vi.stubEnv('JWT_SECRET', 'test-jwt-secret')
 
 // Mock global functions if needed
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()

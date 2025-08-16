@@ -35,7 +35,7 @@ export async function getProviderForApp(appId: string, platform: 'ios' | 'androi
   const appData = appResult[0]!
 
   switch (platform) {
-    case 'android':
+    case 'android': {
       // Use FCM for Android
       if (!appData.fcmProjectId || !appData.fcmServerKey) {
         throw new Error('FCM not configured for this app (missing project ID or server key)')
@@ -50,10 +50,10 @@ export async function getProviderForApp(appId: string, platform: 'ios' | 'androi
         projectId: appData.fcmProjectId,
         serviceAccountKey,
       })
+    }
 
-    case 'ios':
-    // Use APNs for iOS
-    {
+    case 'ios': {
+      // Use APNs for iOS
       if (!appData.apnsKeyId || !appData.apnsTeamId || !appData.apnsCertificate) {
         throw new Error('APNs not configured for this app (missing key ID, team ID, or certificate)')
       }
@@ -76,9 +76,8 @@ export async function getProviderForApp(appId: string, platform: 'ios' | 'androi
       })
     }
 
-    case 'web':
-    // Use Web Push
-    {
+    case 'web': {
+      // Use Web Push
       if (!appData.vapidPublicKey || !appData.vapidPrivateKey || !appData.vapidSubject) {
         throw new Error('Web Push not configured for this app (missing VAPID keys or subject)')
       }

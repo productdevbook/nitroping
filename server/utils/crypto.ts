@@ -100,8 +100,8 @@ class CryptoService {
       return false
     const parts = data.split(':')
     return parts.length === 3
-      && parts[0].length === this.ivLength * 2 // IV hex length
-      && parts[1].length === this.tagLength * 2 // Auth tag hex length
+      && parts[0]?.length === this.ivLength * 2 // IV hex length
+      && parts[1]?.length === this.tagLength * 2 // Auth tag hex length
   }
 
   generateKey(): string {

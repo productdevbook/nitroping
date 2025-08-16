@@ -16,6 +16,11 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.nitroping.app.MainActivity
 import com.nitroping.app.R
+import com.nitroping.app.api.NitroPingApiService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class NitroPingFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -25,33 +30,45 @@ class NitroPingFirebaseMessagingService : FirebaseMessagingService() {
         private const val NOTIFICATION_ID = 100
         
         fun trackNotificationOpened(context: Context, notificationId: String, deviceId: String) {
-            // TODO: Implement API call to track open
             Log.d(TAG, "Tracking notification opened: $notificationId for device: $deviceId")
             
-            // Example GraphQL mutation:
-            // mutation TrackNotificationOpened($input: TrackEventInput!) {
-            //   trackNotificationOpened(input: $input) {
-            //     success
-            //   }
-            // }
+            val apiService = NitroPingApiService(context)
+            val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+            
+            serviceScope.launch {
+                val result = apiService.trackNotificationOpened(notificationId, deviceId)
+                if (result.isSuccess) {
+                    Log.d(TAG, "✅ Successfully tracked notification opened")
+                } else {
+                    Log.e(TAG, "❌ Failed to track notification opened: ${result.exceptionOrNull()?.message}")
+                }
+            }
         }
 
         fun trackNotificationClicked(context: Context, notificationId: String, deviceId: String) {
-            // TODO: Implement API call to track click
             Log.d(TAG, "Tracking notification clicked: $notificationId for device: $deviceId")
             
-            // Example GraphQL mutation:
-            // mutation TrackNotificationClicked($input: TrackEventInput!) {
-            //   trackNotificationClicked(input: $input) {
-            //     success
-            //   }
-            // }
+            val apiService = NitroPingApiService(context)
+            val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+            
+            serviceScope.launch {
+                val result = apiService.trackNotificationClicked(notificationId, deviceId)
+                if (result.isSuccess) {
+                    Log.d(TAG, "✅ Successfully tracked notification clicked")
+                } else {
+                    Log.e(TAG, "❌ Failed to track notification clicked: ${result.exceptionOrNull()?.message}")
+                }
+            }
         }
     }
+    
+    private lateinit var apiService: NitroPingApiService
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        apiService = NitroPingApiService(this)
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -187,15 +204,16 @@ class NitroPingFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun trackNotificationDelivered(notificationId: String, deviceId: String) {
-        // TODO: Implement API call to track delivery
         Log.d(TAG, "Tracking notification delivered: $notificationId for device: $deviceId")
         
-        // Example GraphQL mutation:
-        // mutation TrackNotificationDelivered($input: TrackEventInput!) {
-        //   trackNotificationDelivered(input: $input) {
-        //     success
-        //   }
-        // }
+        serviceScope.launch {
+            val result = apiService.trackNotificationDelivered(notificationId, deviceId)
+            if (result.isSuccess) {
+                Log.d(TAG, "✅ Successfully tracked notification delivered")
+            } else {
+                Log.e(TAG, "❌ Failed to track notification delivered: ${result.exceptionOrNull()?.message}")
+            }
+        }
     }
 
 }
