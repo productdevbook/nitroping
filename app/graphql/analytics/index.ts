@@ -1,4 +1,4 @@
-import { useQuery } from '@pinia/colada'
+import { useQuery, useMutation, useQueryCache } from '@pinia/colada'
 
 export function useNotificationAnalytics(notificationId: Ref<string> | string) {
   return useQuery({
@@ -65,4 +65,74 @@ export function useAnalyticsSummary(appId: Ref<string> | string, timeRange: Ref<
     isLoading,
     error,
   }
+}
+
+// Tracking mutations for web clients
+export function useTrackNotificationDelivered() {
+  const queryCache = useQueryCache()
+
+  return useMutation({
+    mutation: async (input: {
+      notificationId: string
+      deviceId: string
+      platform?: string
+      userAgent?: string
+      appVersion?: string
+      osVersion?: string
+    }) => {
+      const result = await $sdk.trackNotificationDelivered({ input })
+      return result.data?.trackNotificationDelivered || null
+    },
+    onSuccess: () => {
+      // Invalidate related analytics queries
+      queryCache.invalidateQueries({ key: ['engagementMetrics'] })
+      queryCache.invalidateQueries({ key: ['notificationAnalytics'] })
+    },
+  })
+}
+
+export function useTrackNotificationOpened() {
+  const queryCache = useQueryCache()
+
+  return useMutation({
+    mutation: async (input: {
+      notificationId: string
+      deviceId: string
+      platform?: string
+      userAgent?: string
+      appVersion?: string
+      osVersion?: string
+    }) => {
+      const result = await $sdk.trackNotificationOpened({ input })
+      return result.data?.trackNotificationOpened || null
+    },
+    onSuccess: () => {
+      // Invalidate related analytics queries
+      queryCache.invalidateQueries({ key: ['engagementMetrics'] })
+      queryCache.invalidateQueries({ key: ['notificationAnalytics'] })
+    },
+  })
+}
+
+export function useTrackNotificationClicked() {
+  const queryCache = useQueryCache()
+
+  return useMutation({
+    mutation: async (input: {
+      notificationId: string
+      deviceId: string
+      platform?: string
+      userAgent?: string
+      appVersion?: string
+      osVersion?: string
+    }) => {
+      const result = await $sdk.trackNotificationClicked({ input })
+      return result.data?.trackNotificationClicked || null
+    },
+    onSuccess: () => {
+      // Invalidate related analytics queries
+      queryCache.invalidateQueries({ key: ['engagementMetrics'] })
+      queryCache.invalidateQueries({ key: ['notificationAnalytics'] })
+    },
+  })
 }

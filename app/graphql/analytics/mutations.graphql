@@ -1,0 +1,20 @@
+mutation trackNotificationDelivered($input: TrackEventInput!) {
+  trackNotificationDelivered(input: $input) {
+    success
+    message
+  }
+}
+
+mutation trackNotificationOpened($input: TrackEventInput!) {
+  trackNotificationOpened(input: $input) {
+    success
+    message
+  }
+}
+
+mutation trackNotificationClicked($input: TrackEventInput!) {
+  trackNotificationClicked(input: $input) {
+    success
+    message
+  }
+}

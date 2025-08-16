@@ -4,6 +4,8 @@ import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { useAnalyticsSummary } from '~/graphql/analytics'
+import { useApps } from '~/graphql/apps'
+import { useQueryCache } from '@pinia/colada'
 
 definePageMeta({
   layout: 'default',
@@ -24,9 +26,20 @@ const selectedAppId = computed(() => {
     return ''
   }
   
+  // For now, "all" means the first app since the backend doesn't support aggregation
+  // TODO: Implement proper aggregation across all apps
   if (selectedApp.value === 'all') {
     return apps.value[0]?.id || ''
   }
+  
+  // Validate that the selected app still exists
+  const appExists = apps.value.some(app => app.id === selectedApp.value)
+  if (!appExists && apps.value.length > 0) {
+    // Reset to first app if selected app no longer exists
+    selectedApp.value = apps.value[0].id
+    return apps.value[0].id
+  }
+  
   return selectedApp.value
 })
 
@@ -106,10 +119,18 @@ const commonErrors = ref([
   },
 ])
 
+// Get query cache for manual invalidation
+const queryCache = useQueryCache()
+
 // Refresh function for manual reload
 function refreshData() {
-  // The reactive queries will automatically refresh when dependencies change
+  // Force refresh by invalidating the query cache
   console.log('Refreshing analytics data...')
+  
+  // Invalidate relevant analytics and apps queries
+  queryCache.invalidateQueries({ key: ['engagementMetrics'] })
+  queryCache.invalidateQueries({ key: ['notificationAnalytics'] })
+  queryCache.invalidateQueries({ key: ['apps'] })
 }
 </script>
 
