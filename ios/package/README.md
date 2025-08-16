@@ -67,9 +67,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         // Set notification delegate
         UNUserNotificationCenter.current().delegate = self
         
-        // Request permissions and register
+        // Request permissions and register with your user ID
         Task {
-            try await nitroPingClient?.initialize(userId: "user-123")
+            try await nitroPingClient?.initialize(userId: "user-123") // Use your actual user ID
         }
         
         return true
@@ -121,7 +121,7 @@ struct MyApp: App {
                 .nitroPing(
                     appId: "your-app-id-from-nitroping",
                     apiURL: "http://localhost:3000/api/graphql",
-                    userId: "user-123"
+                    userId: "user-123" // Your actual user ID - this will be used for tracking
                 )
         }
     }
