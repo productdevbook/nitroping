@@ -29,7 +29,7 @@ const { mutateAsync: generateVapidKeysMutation, isLoading: isGenerating } = useG
 // Form validation schema
 const formSchema = toTypedSchema(z.object({
   subject: z.string().min(1, 'Subject is required').refine(
-    (val) => val.startsWith('mailto:') || val.startsWith('https://'),
+    val => val.startsWith('mailto:') || val.startsWith('https://'),
     'Subject must be a mailto: email or https: URL',
   ),
   publicKey: z.string().min(1, 'Public key is required'),
@@ -64,7 +64,7 @@ async function generateKeys() {
     if (keys) {
       setValue('publicKey', keys.publicKey)
       setValue('privateKey', keys.privateKey)
-      
+
       // Set default subject if empty
       const currentSubject = (document.querySelector('[name="subject"]') as HTMLInputElement)?.value
       if (!currentSubject) {
@@ -92,7 +92,7 @@ const onSubmit = handleSubmit(async (values) => {
 
     // TODO: Show success toast
     console.log('Web Push configured successfully')
-    
+
     // Navigate back to providers page
     await router.push(`/apps/${appId.value}/providers`)
   }
@@ -196,11 +196,11 @@ const hasExistingConfig = computed(() => {
               <CardTitle>Web Push Configuration</CardTitle>
               <CardDescription>Enter your VAPID credentials for web push notifications</CardDescription>
             </div>
-            <Button 
-              type="button" 
-              variant="outline" 
-              @click="generateKeys" 
+            <Button
+              type="button"
+              variant="outline"
               :disabled="isGenerating || isSubmitting || isConfiguring"
+              @click="generateKeys"
             >
               <Loader2 v-if="isGenerating" class="mr-2 h-4 w-4 animate-spin" />
               <Key v-else class="mr-2 h-4 w-4" />
@@ -346,7 +346,7 @@ await fetch('/api/v1/devices/register', {
         </CardHeader>
         <CardContent>
           <div class="space-y-3">
-            <a 
+            <a
               href="https://developer.mozilla.org/en-US/docs/Web/API/Push_API"
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
@@ -354,7 +354,7 @@ await fetch('/api/v1/devices/register', {
               <FileText class="h-4 w-4" />
               <span>MDN Push API Documentation</span>
             </a>
-            <a 
+            <a
               href="https://web.dev/push-notifications/"
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
@@ -362,7 +362,7 @@ await fetch('/api/v1/devices/register', {
               <FileText class="h-4 w-4" />
               <span>Web Push Notifications Guide</span>
             </a>
-            <a 
+            <a
               href="https://tools.ietf.org/html/rfc8292"
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"

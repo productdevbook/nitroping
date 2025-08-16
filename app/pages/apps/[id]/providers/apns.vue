@@ -76,7 +76,7 @@ const onSubmit = handleSubmit(async (values) => {
 
     // TODO: Show success toast
     console.log('APNs configured successfully')
-    
+
     // Navigate back to providers page
     await router.push(`/apps/${appId.value}/providers`)
   }
@@ -311,7 +311,7 @@ MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg...
         </CardHeader>
         <CardContent>
           <div class="space-y-3">
-            <a 
+            <a
               href="https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/establishing_a_token-based_connection_to_apns"
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
@@ -319,7 +319,7 @@ MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg...
               <FileText class="h-4 w-4" />
               <span>Apple APNs Documentation</span>
             </a>
-            <a 
+            <a
               href="https://developer.apple.com/account/resources/authkeys/list"
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"

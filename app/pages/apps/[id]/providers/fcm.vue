@@ -71,7 +71,7 @@ function handleFileUpload(event: Event) {
     reader.onload = (e) => {
       const content = e.target?.result as string
       setValue('serviceAccount', content)
-      
+
       // Try to extract project ID from the JSON
       try {
         const parsed = JSON.parse(content)
@@ -104,7 +104,7 @@ const onSubmit = handleSubmit(async (values) => {
 
     // TODO: Show success toast
     console.log('FCM configured successfully')
-    
+
     // Navigate back to providers page
     await router.push(`/apps/${appId.value}/providers`)
   }
@@ -245,7 +245,7 @@ const serviceAccountInfo = computed(() => {
                 <FormLabel class="required">Service Account JSON</FormLabel>
                 <div class="space-y-3">
                   <!-- File Upload Button -->
-                  <Button type="button" variant="outline" @click="triggerFileUpload" :disabled="isSubmitting || isConfiguring">
+                  <Button type="button" variant="outline" :disabled="isSubmitting || isConfiguring" @click="triggerFileUpload">
                     <Upload class="mr-2 h-4 w-4" />
                     Upload JSON File
                   </Button>
@@ -256,12 +256,12 @@ const serviceAccountInfo = computed(() => {
                     class="hidden"
                     @change="handleFileUpload"
                   />
-                  
+
                   <!-- Manual Textarea -->
                   <FormControl>
                     <Textarea
                       v-bind="componentField"
-                      placeholder='{"type": "service_account", "project_id": "your-project", ...}'
+                      placeholder="{&quot;type&quot;: &quot;service_account&quot;, &quot;project_id&quot;: &quot;your-project&quot;, ...}"
                       rows="12"
                       class="font-mono text-xs"
                       :disabled="isSubmitting || isConfiguring"
@@ -323,7 +323,7 @@ const serviceAccountInfo = computed(() => {
         </CardHeader>
         <CardContent>
           <div class="space-y-3">
-            <a 
+            <a
               href="https://firebase.google.com/docs/cloud-messaging/server"
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
@@ -331,7 +331,7 @@ const serviceAccountInfo = computed(() => {
               <FileText class="h-4 w-4" />
               <span>Firebase Cloud Messaging Documentation</span>
             </a>
-            <a 
+            <a
               href="https://console.firebase.google.com/"
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
@@ -339,7 +339,7 @@ const serviceAccountInfo = computed(() => {
               <FileText class="h-4 w-4" />
               <span>Firebase Console</span>
             </a>
-            <a 
+            <a
               href="https://firebase.google.com/docs/cloud-messaging/auth-server"
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
