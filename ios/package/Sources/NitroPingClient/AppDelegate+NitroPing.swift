@@ -7,7 +7,7 @@ import UserNotifications
 public extension UIApplicationDelegate {
     
     /// Setup NitroPing with your app
-    func setupNitroPing(appId: String, apiURL: String = "http://localhost:3000/api/graphql") -> NitroPingClient {
+    func setupNitroPing(appId: String, apiURL: String = "http://localhost:3000/api/graphql", userId: String? = nil) -> NitroPingClient {
         let client = NitroPingClient(apiURL: apiURL, appId: appId)
         
         // Store client in AppDelegate
@@ -23,6 +23,7 @@ public extension UIApplicationDelegate {
 open class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject {
     
     public var nitroPingClient: NitroPingClient?
+    private var nitroPingUserId: String?
     
     public func application(
         _ application: UIApplication,
@@ -30,9 +31,13 @@ open class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCente
     ) -> Bool {
         
         // Initialize NitroPing
+        let defaultUserId = "demo-user" // Replace with your actual user ID
+        nitroPingUserId = defaultUserId
+        
         nitroPingClient = setupNitroPing(
             appId: "your-app-id-here", // Replace with your actual app ID
-            apiURL: "http://localhost:3000/api/graphql" // Replace with your NitroPing server URL
+            apiURL: "http://localhost:3000/api/graphql", // Replace with your NitroPing server URL
+            userId: defaultUserId
         )
         
         // Set notification delegate
@@ -41,7 +46,7 @@ open class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCente
         // Initialize NitroPing (request permissions and register)
         Task {
             do {
-                try await nitroPingClient?.initialize(userId: "demo-user")
+                try await nitroPingClient?.initialize(userId: nitroPingUserId)
             } catch {
                 print("❌ Failed to initialize NitroPing: \(error)")
             }
@@ -148,7 +153,7 @@ public struct NitroPingAppModifier: ViewModifier {
                     
                     Task {
                         do {
-                            try await client.initialize(userId: userId)
+                            try await client.initialize(userId: userId ?? "demo-user")
                         } catch {
                             print("❌ Failed to initialize NitroPing: \(error)")
                         }
