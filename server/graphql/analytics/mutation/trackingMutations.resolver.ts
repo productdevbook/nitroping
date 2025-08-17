@@ -24,7 +24,7 @@ export const trackingMutations = defineMutation({
           .onConflictDoUpdate({
             target: [tables.deliveryLog.notificationId, tables.deliveryLog.deviceId],
             set: {
-              deliveredAt: new Date(),
+              deliveredAt: new Date().toDateString(),
               platform: input.platform,
               userAgent: input.userAgent,
               appVersion: input.appVersion,
@@ -86,7 +86,7 @@ export const trackingMutations = defineMutation({
           .onConflictDoUpdate({
             target: [tables.deliveryLog.notificationId, tables.deliveryLog.deviceId],
             set: {
-              openedAt: new Date(),
+              openedAt: new Date().toDateString(),
               platform: input.platform,
               userAgent: input.userAgent,
               appVersion: input.appVersion,

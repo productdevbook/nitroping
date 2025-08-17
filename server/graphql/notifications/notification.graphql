@@ -1,12 +1,14 @@
 enum NotificationStatus {
   PENDING
   SENT
+  DELIVERED
   FAILED
   SCHEDULED
 }
 
 enum DeliveryStatus {
   PENDING
+  SENT
   DELIVERED
   FAILED
   CLICKED
@@ -38,7 +40,7 @@ type Notification {
   totalClicked: Int!
   
   # Relations
-  deliveryLogs: [DeliveryLog!]!
+  deliveryLogs: [DeliveryLog!]
   
   # Timestamps
   createdAt: Timestamp!

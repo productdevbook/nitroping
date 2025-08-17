@@ -6,6 +6,7 @@ import { customTimestamp, uuidv7Generator } from './shared'
 export const platformEnum = pgEnum('platform', ['IOS', 'ANDROID', 'WEB'])
 export const notificationStatusEnum = pgEnum('notification_status', ['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SCHEDULED'])
 export const deviceStatusEnum = pgEnum('device_status', ['ACTIVE', 'INACTIVE', 'EXPIRED'])
+export const deliveryStatusEnum = pgEnum('delivery_status', ['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'CLICKED'])
 
 // App table
 export const app = pgTable('app', {
@@ -54,16 +55,18 @@ export const notification = pgTable('notification', {
   clickAction: text(),
   icon: text(),
   image: text(),
+  imageUrl: text(),
   targetDevices: jsonb(), // Array of device IDs or filters
   platforms: jsonb(), // Array of platforms to target
   scheduledAt: customTimestamp('scheduled_at'),
   expiresAt: customTimestamp('expires_at'),
   status: notificationStatusEnum().default('PENDING').notNull(),
-  totalTargets: integer().default(0),
-  totalSent: integer().default(0),
-  totalDelivered: integer().default(0),
-  totalFailed: integer().default(0),
-  totalClicked: integer().default(0),
+  totalTargets: integer().default(0).notNull(),
+  totalSent: integer().default(0).notNull(),
+  totalDelivered: integer().default(0).notNull(),
+  totalFailed: integer().default(0).notNull(),
+  totalClicked: integer().default(0).notNull(),
+  sentAt: customTimestamp('sent_at'),
   createdAt: customTimestamp('created_at').defaultNow().notNull(),
   updatedAt: customTimestamp('updated_at').defaultNow().notNull(),
 })
@@ -73,7 +76,7 @@ export const deliveryLog = pgTable('deliveryLog', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),
   notificationId: uuid().notNull().references(() => notification.id, { onDelete: 'cascade' }),
   deviceId: uuid().notNull().references(() => device.id, { onDelete: 'cascade' }),
-  status: notificationStatusEnum().notNull(),
+  status: deliveryStatusEnum().notNull(),
   providerResponse: jsonb(),
   errorMessage: text(),
   attemptCount: integer().default(1),
@@ -86,6 +89,7 @@ export const deliveryLog = pgTable('deliveryLog', {
   appVersion: text(),
   osVersion: text(),
   createdAt: customTimestamp('created_at').defaultNow().notNull(),
+  updatedAt: customTimestamp('updated_at').defaultNow().notNull(),
 }, table => ({
   // Unique constraint: one delivery log per notification per device
   uniqueNotificationDevice: unique().on(table.notificationId, table.deviceId),
