@@ -35,7 +35,7 @@ export const device = pgTable('device', {
   token: text().notNull(),
   platform: platformEnum().notNull(),
   userId: text(),
-  status: deviceStatusEnum().default('ACTIVE'),
+  status: deviceStatusEnum().default('ACTIVE').notNull(),
   metadata: jsonb(),
   lastSeenAt: customTimestamp('last_seen_at'),
   createdAt: customTimestamp('created_at').defaultNow().notNull(),
@@ -58,7 +58,7 @@ export const notification = pgTable('notification', {
   platforms: jsonb(), // Array of platforms to target
   scheduledAt: customTimestamp('scheduled_at'),
   expiresAt: customTimestamp('expires_at'),
-  status: notificationStatusEnum().default('PENDING'),
+  status: notificationStatusEnum().default('PENDING').notNull(),
   totalTargets: integer().default(0),
   totalSent: integer().default(0),
   totalDelivered: integer().default(0),

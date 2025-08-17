@@ -18,7 +18,7 @@ type Device {
   platform: DevicePlatform!
   status: DeviceStatus!
   userId: String
-  metadata: String # JSON string
+  metadata: JSON
   
   # Timestamps
   createdAt: Timestamp!
@@ -31,13 +31,13 @@ input RegisterDeviceInput {
   token: String!
   platform: DevicePlatform!
   userId: String
-  metadata: String # JSON string
+  metadata: JSON
 }
 
 input UpdateDeviceInput {
   status: DeviceStatus
   userId: String
-  metadata: String # JSON string
+  metadata: JSON
 }
 
 extend type Query {

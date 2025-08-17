@@ -66,14 +66,14 @@ export async function validateApiKey(apiKeyValue: string) {
   const keyData = result[0]!
 
   // Check if API key is expired
-  if (keyData.expiresAt && new Date() > keyData.expiresAt) {
+  if (keyData.expiresAt && new Date() > new Date(keyData.expiresAt)) {
     return null
   }
 
   // Update last used timestamp
   await db
     .update(apiKey)
-    .set({ lastUsedAt: new Date() })
+    .set({ lastUsedAt: new Date().toISOString() })
     .where(eq(apiKey.id, keyData.id))
 
   return {
