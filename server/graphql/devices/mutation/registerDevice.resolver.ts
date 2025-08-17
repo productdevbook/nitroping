@@ -8,7 +8,7 @@ export const registerDeviceMutation = defineMutation({
       let cleanToken = input.token.trim()
 
       // Remove any spaces from the token (common copy/paste issue)
-      if (input.platform === 'android' || input.platform === 'ios') {
+      if (input.platform === 'ANDROID' || input.platform === 'IOS') {
         cleanToken = cleanToken.replace(/\s+/g, '')
 
         // Basic FCM token validation
@@ -37,7 +37,7 @@ export const registerDeviceMutation = defineMutation({
           status: 'ACTIVE',
           userId: input.userId,
           metadata: input.metadata,
-          lastSeenAt: new Date(),
+          lastSeenAt: new Date().toISOString(),
         })
         .returning()
 

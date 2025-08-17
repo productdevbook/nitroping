@@ -13,7 +13,7 @@ export const regenerateApiKeyMutation = defineMutation({
         .update(tables.app)
         .set({
           apiKey: newApiKey,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(tables.app.id, id))
         .returning()

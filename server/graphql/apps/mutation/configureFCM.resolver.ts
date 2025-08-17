@@ -41,7 +41,7 @@ export const configureFCMMutation = defineMutation({
         .set({
           fcmProjectId: input.projectId,
           fcmServerKey: encryptedServiceAccount,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(tables.app.id, id))
         .returning()

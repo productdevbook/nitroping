@@ -39,7 +39,7 @@ export const configureWebPushMutation = defineMutation({
           vapidSubject: input.subject,
           vapidPublicKey: input.publicKey,
           vapidPrivateKey: encryptedPrivateKey,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(tables.app.id, id))
         .returning()

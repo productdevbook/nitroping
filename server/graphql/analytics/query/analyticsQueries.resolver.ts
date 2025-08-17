@@ -89,11 +89,11 @@ export const analyticsQueries = defineQuery({
 
         return {
           notificationId,
-          sentCount,
+          sentCount: sentCount ?? 0,
           deliveredCount,
           openedCount,
           clickedCount,
-          deliveryRate: sentCount > 0 ? (deliveredCount / sentCount) * 100 : 0,
+          deliveryRate: (sentCount ?? 0) > 0 ? (deliveredCount / (sentCount ?? 0)) * 100 : 0,
           openRate: deliveredCount > 0 ? (openedCount / deliveredCount) * 100 : 0,
           clickRate: openedCount > 0 ? (clickedCount / openedCount) * 100 : 0,
           platformBreakdown,

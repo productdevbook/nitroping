@@ -10,7 +10,7 @@ export const updateDeviceMutation = defineMutation({
         .update(tables.device)
         .set({
           ...input,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(tables.device.id, id))
         .returning()
