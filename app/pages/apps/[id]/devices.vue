@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DevicePlatform } from '#graphql/client'
 import { CheckCircle, Loader2, Plus, RefreshCw, Search, Smartphone, XCircle } from 'lucide-vue-next'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -59,7 +60,7 @@ const filteredDevices = computed(() => {
 const deviceStats = computed(() => {
   const stats = devices.value.reduce((acc, device) => {
     acc.total++
-    if (device.isActive)
+    if (device.status === 'ACTIVE')
       acc.active++
     if (device.lastSeenAt && new Date(device.lastSeenAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
       acc.seenToday++
@@ -70,7 +71,7 @@ const deviceStats = computed(() => {
   return stats
 })
 
-function formatLastSeen(date: string | null) {
+function formatLastSeen(date: string | null | undefined) {
   if (!date)
     return 'Never'
   const now = new Date()
@@ -105,7 +106,7 @@ async function registerDevice() {
     await registerDeviceMutation({
       appId: appId.value,
       token: deviceForm.value.token,
-      platform: deviceForm.value.platform,
+      platform: deviceForm.value.platform as DevicePlatform,
       userId: deviceForm.value.userId || undefined,
     })
 
@@ -260,10 +261,10 @@ function refreshDevices() {
                   <span v-else class="text-muted-foreground text-sm">Anonymous</span>
                 </TableCell>
                 <TableCell>
-                  <Badge :variant="device.isActive ? 'default' : 'secondary'">
-                    <CheckCircle v-if="device.isActive" class="mr-1 h-3 w-3" />
+                  <Badge :variant="device.status === 'ACTIVE' ? 'default' : 'secondary'">
+                    <CheckCircle v-if="device.status === 'ACTIVE'" class="mr-1 h-3 w-3" />
                     <XCircle v-else class="mr-1 h-3 w-3" />
-                    {{ device.isActive ? 'Active' : 'Inactive' }}
+                    {{ device.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
                   </Badge>
                 </TableCell>
                 <TableCell>

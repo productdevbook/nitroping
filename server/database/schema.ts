@@ -25,8 +25,8 @@ export const app = pgTable('app', {
   vapidPrivateKey: text(),
   vapidSubject: text(),
   isActive: boolean().default(true).notNull(),
-  createdAt: customTimestamp('created_at').defaultNow().notNull(),
-  updatedAt: customTimestamp('updated_at').defaultNow().notNull(),
+  createdAt: customTimestamp().defaultNow().notNull(),
+  updatedAt: customTimestamp().defaultNow().notNull(),
 })
 
 // Device table
@@ -38,9 +38,9 @@ export const device = pgTable('device', {
   userId: text(),
   status: deviceStatusEnum().default('ACTIVE').notNull(),
   metadata: jsonb(),
-  lastSeenAt: customTimestamp('last_seen_at'),
-  createdAt: customTimestamp('created_at').defaultNow().notNull(),
-  updatedAt: customTimestamp('updated_at').defaultNow().notNull(),
+  lastSeenAt: customTimestamp(),
+  createdAt: customTimestamp().defaultNow().notNull(),
+  updatedAt: customTimestamp().defaultNow().notNull(),
 })
 
 // Notification table
@@ -58,17 +58,17 @@ export const notification = pgTable('notification', {
   imageUrl: text(),
   targetDevices: jsonb(), // Array of device IDs or filters
   platforms: jsonb(), // Array of platforms to target
-  scheduledAt: customTimestamp('scheduled_at'),
-  expiresAt: customTimestamp('expires_at'),
+  scheduledAt: customTimestamp(),
+  expiresAt: customTimestamp(),
   status: notificationStatusEnum().default('PENDING').notNull(),
   totalTargets: integer().default(0).notNull(),
   totalSent: integer().default(0).notNull(),
   totalDelivered: integer().default(0).notNull(),
   totalFailed: integer().default(0).notNull(),
   totalClicked: integer().default(0).notNull(),
-  sentAt: customTimestamp('sent_at'),
-  createdAt: customTimestamp('created_at').defaultNow().notNull(),
-  updatedAt: customTimestamp('updated_at').defaultNow().notNull(),
+  sentAt: customTimestamp(),
+  createdAt: customTimestamp().defaultNow().notNull(),
+  updatedAt: customTimestamp().defaultNow().notNull(),
 })
 
 // Delivery log table
@@ -80,16 +80,16 @@ export const deliveryLog = pgTable('deliveryLog', {
   providerResponse: jsonb(),
   errorMessage: text(),
   attemptCount: integer().default(1),
-  sentAt: customTimestamp('sent_at'),
-  deliveredAt: customTimestamp('delivered_at'),
-  openedAt: customTimestamp('opened_at'),
-  clickedAt: customTimestamp('clicked_at'),
+  sentAt: customTimestamp(),
+  deliveredAt: customTimestamp(),
+  openedAt: customTimestamp(),
+  clickedAt: customTimestamp(),
   platform: text(),
   userAgent: text(),
   appVersion: text(),
   osVersion: text(),
-  createdAt: customTimestamp('created_at').defaultNow().notNull(),
-  updatedAt: customTimestamp('updated_at').defaultNow().notNull(),
+  createdAt: customTimestamp().defaultNow().notNull(),
+  updatedAt: customTimestamp().defaultNow().notNull(),
 }, table => ({
   // Unique constraint: one delivery log per notification per device
   uniqueNotificationDevice: unique().on(table.notificationId, table.deviceId),
@@ -103,10 +103,10 @@ export const apiKey = pgTable('apiKey', {
   key: text().notNull().unique(),
   permissions: jsonb(), // Array of permissions
   isActive: boolean().default(true),
-  lastUsedAt: customTimestamp('last_used_at'),
-  expiresAt: customTimestamp('expires_at'),
-  createdAt: customTimestamp('created_at').defaultNow().notNull(),
-  updatedAt: customTimestamp('updated_at').defaultNow().notNull(),
+  lastUsedAt: customTimestamp(),
+  expiresAt: customTimestamp(),
+  createdAt: customTimestamp().defaultNow().notNull(),
+  updatedAt: customTimestamp().defaultNow().notNull(),
 })
 
 // Relations

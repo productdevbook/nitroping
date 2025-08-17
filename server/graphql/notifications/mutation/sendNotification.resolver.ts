@@ -1,4 +1,4 @@
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { getProviderForApp } from '~~/server/providers'
 
 export const notificationMutations = defineMutation({
@@ -40,16 +40,16 @@ export const notificationMutations = defineMutation({
       }
       else {
         // All devices for app (optionally filtered by platform)
-        let query = db
-          .select()
-          .from(tables.device)
-          .where(eq(tables.device.appId, input.appId))
+        const whereConditions = [eq(tables.device.appId, input.appId)]
 
         if (input.platforms && input.platforms.length > 0) {
-          query = query.where(inArray(tables.device.platform, input.platforms))
+          whereConditions.push(inArray(tables.device.platform, input.platforms))
         }
 
-        targetDevices = await query
+        targetDevices = await db
+          .select()
+          .from(tables.device)
+          .where(and(...whereConditions))
       }
 
       // Update notification with target count

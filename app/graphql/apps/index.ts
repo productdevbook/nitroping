@@ -163,8 +163,10 @@ export function useConfigureWebPush() {
 export function useGenerateVapidKeys() {
   return useMutation({
     mutation: async () => {
-      const result = await $sdk.generateVapidKeys()
-      return result.data?.generateVapidKeys || null
+      // TODO: Fix generateVapidKeys method - method does not exist in SDK
+      // const result = await $sdk.generateVapidKeys()
+      // return result.data?.generateVapidKeys || null
+      throw new Error('generateVapidKeys method not implemented')
     },
   })
 }

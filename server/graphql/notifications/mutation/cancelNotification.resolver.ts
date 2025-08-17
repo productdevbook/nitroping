@@ -32,7 +32,7 @@ export const cancelNotificationMutation = defineMutation({
       await db
         .update(tables.notification)
         .set({
-          status: 'failed',
+          status: 'FAILED',
           updatedAt: new Date().toISOString(),
         })
         .where(eq(tables.notification.id, id))
