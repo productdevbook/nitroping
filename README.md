@@ -123,15 +123,24 @@ Watch this repo for updates as we build NitroPing from the ground up. We'll be s
 
 ## 🗒️ Roadmap
 
+### ✅ Completed
 - [x] Core service architecture
 - [x] APNs integration
 - [x] FCM integration  
 - [x] Web Push support
-- [ ] GraphQL API
-- [ ] Admin dashboard UI
-- [ ] Queue system (BullMQ + Redis)
+- [x] GraphQL API
+- [x] Dashboard UI
+- [x] Documentation site (this website!)
+
+### 🚧 In Progress
+- [ ] [Queue system](https://github.com/productdevbook/nitroping/issues/13) (technology choice under community discussion)
 - [ ] Docker deployment
-- [ ] Documentation site
+
+### 📋 Planned Features
+- [ ] [Sign-in System](https://github.com/productdevbook/nitroping/issues/9) - User authentication and account management
+- [ ] [React Native SDK](https://github.com/productdevbook/nitroping/issues/10) - Cross-platform mobile development support
+- [ ] [Flutter SDK](https://github.com/productdevbook/nitroping/issues/11) - Google's cross-platform framework support
+- [ ] [Unity SDK](https://github.com/productdevbook/nitroping/issues/12) - Game development integration
 
 ---
 
