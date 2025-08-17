@@ -217,14 +217,20 @@
             <div class="bg-gradient-to-r from-green-500 to-emerald-500 p-3 rounded-3xl">
               <div class="bg-white rounded-2xl p-8 text-center">
                 <div class="mb-6">
-                  <h3 class="text-2xl font-bold text-gray-900 mb-2">One line. Two platforms.</h3>
-                  <p class="text-gray-600">Simple integration for iOS and Android</p>
+                  <div class="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-4">
+                    <Icon name="lucide:zap" size="16" />
+                    Cross-Platform
+                  </div>
+                  <h3 class="text-3xl font-bold text-gray-900 mb-3">
+                    One line. <span class="text-green-600">Two platforms.</span>
+                  </h3>
+                  <p class="text-lg text-gray-600">Native SDKs for iOS and Android. Same simplicity, native performance.</p>
                 </div>
                 
-                <div class="bg-gray-900 rounded-xl p-6 text-white font-mono text-lg max-w-2xl mx-auto">
-                  <div class="text-green-400 mb-4">// Just one line to get started</div>
-                  <div>
-                    <span class="text-purple-400">NitroPing</span>.<span class="text-blue-400">register</span>(<span class="text-green-400">"your-device-token"</span>)
+                <div class="bg-white/90 backdrop-blur-sm rounded-xl p-8 max-w-2xl mx-auto font-mono text-xl">
+                  <div class="text-green-600 mb-4">// Just one line to get started</div>
+                  <div class="text-gray-800">
+                    <span class="text-purple-600 font-semibold">NitroPing</span>.<span class="text-blue-600 font-semibold">register</span>(<span class="text-green-600">"your-device-token"</span>)
                   </div>
                 </div>
                 
