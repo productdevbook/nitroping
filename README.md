@@ -133,10 +133,12 @@ Watch this repo for updates as we build NitroPing from the ground up. We'll be s
 - [x] Documentation site (this website!)
 
 ### 🚧 In Progress
+- [ ] [Swift iOS SDK](https://github.com/productdevbook/nitroping/issues/14) - Native iOS development (work in progress in `ios/package`)
 - [ ] [Queue system](https://github.com/productdevbook/nitroping/issues/13) (technology choice under community discussion)
 - [ ] Docker deployment
 
 ### 📋 Planned Features
+- [ ] [Android SDK](https://github.com/productdevbook/nitroping/issues/15) - Native Android development with Kotlin
 - [ ] [Sign-in System](https://github.com/productdevbook/nitroping/issues/9) - User authentication and account management
 - [ ] [React Native SDK](https://github.com/productdevbook/nitroping/issues/10) - Cross-platform mobile development support
 - [ ] [Flutter SDK](https://github.com/productdevbook/nitroping/issues/11) - Google's cross-platform framework support
