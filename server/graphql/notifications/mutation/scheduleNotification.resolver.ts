@@ -50,7 +50,7 @@ export const scheduleNotificationMutation = defineMutation({
       else {
         // All devices for app (optionally filtered by platform)
         const whereConditions = [eq(tables.device.appId, input.appId)]
-        
+
         if (input.platforms && input.platforms.length > 0) {
           whereConditions.push(inArray(tables.device.platform, input.platforms.map((p: string) => p.toLowerCase())))
         }
@@ -59,7 +59,7 @@ export const scheduleNotificationMutation = defineMutation({
           .select({ count: count() })
           .from(tables.device)
           .where(and(...whereConditions))
-        
+
         targetDevicesCount = devices.length
       }
 
