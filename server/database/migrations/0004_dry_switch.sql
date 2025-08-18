@@ -1,1 +1,0 @@
-ALTER TABLE "device" ADD CONSTRAINT "device_appId_token_userId_unique" UNIQUE("appId","token","userId");

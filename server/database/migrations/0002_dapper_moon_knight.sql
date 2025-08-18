@@ -1,1 +1,0 @@
-ALTER TABLE "deliveryLog" ADD CONSTRAINT "deliveryLog_notificationId_deviceId_unique" UNIQUE("notificationId","deviceId");
