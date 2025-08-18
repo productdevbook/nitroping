@@ -21,13 +21,14 @@ export const registerDeviceMutation = defineMutation({
         }
 
         // APNS tokens are hex strings
-        if (!/^[0-9a-fA-F]+$/.test(cleanToken)) {
+        if (!/^[0-9a-f]+$/i.test(cleanToken)) {
           throw createError({
             statusCode: 400,
             message: 'Invalid APNS token format. Token should be a 64-character hex string.',
           })
         }
-      } else if (input.platform === 'ANDROID' || input.platform === 'WEB') {
+      }
+      else if (input.platform === 'ANDROID' || input.platform === 'WEB') {
         // FCM token validation for Android and Web
         if (cleanToken.length < 140 || cleanToken.length > 200) {
           throw createError({
