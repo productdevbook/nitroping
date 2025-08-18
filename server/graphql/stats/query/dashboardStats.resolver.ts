@@ -30,7 +30,7 @@ export const statsQuery = defineQuery({
       // Calculate delivery rate
       const deliveryRateResult = await db
         .select({
-          delivered: sql<number>`count(case when ${tables.deliveryLog.status} = 'delivered' then 1 end)`,
+          delivered: sql<number>`count(case when ${tables.deliveryLog.status} = 'DELIVERED' then 1 end)`,
           total: count(),
         })
         .from(tables.deliveryLog)
