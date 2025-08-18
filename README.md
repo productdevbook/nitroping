@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="https://nitroping.dev"><img src="https://img.shields.io/badge/website-nitroping.dev-00DC82?style=flat&colorA=020420" alt="Website"></a>
+  <a href="https://hub.docker.com/r/productdevbook/nitroping"><img src="https://img.shields.io/docker/pulls/productdevbook/nitroping.svg?style=flat&colorA=020420&colorB=00DC82" alt="Docker Pulls"></a>
   <a href="https://npmjs.org/package/nitroping"><img src="https://img.shields.io/npm/v/nitroping.svg?style=flat&colorA=020420&colorB=00DC82" alt="npm version"></a>
   <a href="https://npmjs.org/package/nitroping"><img src="https://img.shields.io/npm/dt/nitroping.svg?style=flat&colorA=020420&colorB=00DC82" alt="npm downloads"></a>
   <a href="https://github.com/productdevbook/nitroping/blob/main/LICENSE"><img src="https://img.shields.io/github/license/productdevbook/nitroping.svg?style=flat&colorA=020420&colorB=00DC82" alt="License"></a>
@@ -199,10 +200,27 @@ For production deployments, you can use the `prod` profile to run the applicatio
 docker compose up --profile prod -d
 ```
 
-Note: production image has to be built first.
+### 🐳 Docker Hub Image
+
+Pull the latest image from Docker Hub:
 
 ```bash
-docker build -t nitroping --target production .
+# Pull latest version
+docker pull productdevbook/nitroping:latest
+
+# Or specific version
+docker pull productdevbook/nitroping:v0.0.1
+```
+
+**Using with docker-compose.yaml:**
+```yaml
+services:
+  server:
+    image: productdevbook/nitroping:latest
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/nitroping
+    ports:
+      - "3000:3000"
 ```
 
 
@@ -394,6 +412,7 @@ pnpm dev --host
 - Delivery tracking and metrics
 - Encrypted credential storage
 - JWT-based authentication
+- Docker deployment & Docker Hub publishing
 
 </details>
 
@@ -402,7 +421,6 @@ pnpm dev --host
 
 - [Swift iOS SDK](https://github.com/productdevbook/nitroping/issues/14) - Native iOS integration
 - [Queue System](https://github.com/productdevbook/nitroping/issues/13) - Background job processing
-- Docker deployment configuration
 - Advanced scheduling features
 
 </details>
