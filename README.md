@@ -179,6 +179,32 @@ graph TB
    ```bash
    pnpm dev --host  # Allows access from mobile devices on same network
    ```
+   
+#### Docker
+If you prefer Docker, you can run NitroPing in a containerized environment. Make sure to set up the `.env` file with the necessary secrets and database connection details.
+
+If running Docker compose for the first time, migration is needed. Run the docker compose with `migrate` profile to set up the database schema. 
+
+```bash
+docker compose up --profile migrate --profile dev -d 
+```
+For subsequent runs, you can use the `dev` profile to start the application without migrating again.
+
+```bash
+docker compose up --profile dev -d
+```
+For production deployments, you can use the `prod` profile to run the application in production mode.
+
+```bash
+docker compose up --profile prod -d
+```
+
+Note: production image has to be built first.
+
+```bash
+docker build -t nitroping --target production .
+```
+
 
 ### Your First Notification
 

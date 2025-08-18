@@ -1,0 +1,71 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+  redis:
+    image: redis:latest
+    restart: always
+    volumes:
+      - redis_data:/data
+  server:
+    profiles: ["prod"]
+    image: nitroping
+    restart: always
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      NITRO_HOST: 0.0.0.0
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+  server-dev:
+    profiles: ["dev"]
+    container_name: nitro_dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    restart: always
+    tty: true
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      NITRO_HOST: 0.0.0.0
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./server:/app
+      - ./app:/app/app
+  migrate:
+    profiles: ["migrate"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migration
+    restart: no
+    command: ["pnpm", "db:migrate"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      - db
+
+
+volumes:
+  db_data:
+  redis_data:
