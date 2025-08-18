@@ -4,14 +4,31 @@ export const registerDeviceMutation = defineMutation({
       const { useDatabase, tables } = context
       const db = useDatabase()
 
-      // Validate and clean FCM token
+      // Validate and clean push token based on platform
       let cleanToken = input.token.trim()
 
       // Remove any spaces from the token (common copy/paste issue)
-      if (input.platform === 'ANDROID' || input.platform === 'IOS') {
-        cleanToken = cleanToken.replace(/\s+/g, '')
+      cleanToken = cleanToken.replace(/\s+/g, '')
 
-        // Basic FCM token validation
+      // Platform-specific token validation
+      if (input.platform === 'IOS') {
+        // APNS token validation (64 characters, hex string)
+        if (cleanToken.length !== 64) {
+          throw createError({
+            statusCode: 400,
+            message: `Invalid APNS token length: ${cleanToken.length}. Expected 64 characters.`,
+          })
+        }
+
+        // APNS tokens are hex strings
+        if (!/^[0-9a-fA-F]+$/.test(cleanToken)) {
+          throw createError({
+            statusCode: 400,
+            message: 'Invalid APNS token format. Token should be a 64-character hex string.',
+          })
+        }
+      } else if (input.platform === 'ANDROID' || input.platform === 'WEB') {
+        // FCM token validation for Android and Web
         if (cleanToken.length < 140 || cleanToken.length > 200) {
           throw createError({
             statusCode: 400,
