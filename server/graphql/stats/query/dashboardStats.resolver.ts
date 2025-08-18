@@ -2,7 +2,7 @@ import { count, eq, gte, sql } from 'drizzle-orm'
 
 export const statsQuery = defineQuery({
   dashboardStats: {
-    resolve: async (_parent, args, { context }) => {
+    resolve: async (_parent, _args, { context }) => {
       const { useDatabase, tables } = context
       const db = useDatabase()
 
