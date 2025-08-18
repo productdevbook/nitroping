@@ -41,7 +41,10 @@ export const device = pgTable('device', {
   lastSeenAt: customTimestamp(),
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),
-})
+}, table => ({
+  // Unique constraint: one token per app per user
+  uniqueAppTokenUser: unique().on(table.appId, table.token, table.userId),
+}))
 
 // Notification table
 export const notification = pgTable('notification', {

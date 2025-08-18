@@ -46,7 +46,8 @@ export const registerDeviceMutation = defineMutation({
         }
       }
 
-      const newDevice = await db
+      // Use upsert with ON CONFLICT to handle unique constraint
+      const device = await db
         .insert(tables.device)
         .values({
           appId: input.appId,
@@ -57,9 +58,18 @@ export const registerDeviceMutation = defineMutation({
           metadata: input.metadata,
           lastSeenAt: new Date().toISOString(),
         })
+        .onConflictDoUpdate({
+          target: [tables.device.appId, tables.device.token, tables.device.userId],
+          set: {
+            metadata: input.metadata,
+            status: 'ACTIVE',
+            lastSeenAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        })
         .returning()
 
-      return newDevice[0]
+      return device[0]
     },
   },
 })
