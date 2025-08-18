@@ -6,13 +6,13 @@ export const notificationsQuery = defineQuery({
       const { useDatabase, tables } = context
       const db = useDatabase()
 
-      let query = db
+      const query = db
         .select()
         .from(tables.notification)
         .orderBy(tables.notification.createdAt)
 
       if (appId) {
-        query = query.where(eq(tables.notification.appId, appId))
+        return await query.where(eq(tables.notification.appId, appId))
       }
 
       return await query

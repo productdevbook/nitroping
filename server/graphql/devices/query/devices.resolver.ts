@@ -6,10 +6,10 @@ export const devicesQuery = defineQuery({
       const { useDatabase, tables } = context
       const db = useDatabase()
 
-      let query = db.select().from(tables.device)
+      const query = db.select().from(tables.device)
 
       if (appId) {
-        query = query.where(eq(tables.device.appId, appId))
+        return await query.where(eq(tables.device.appId, appId))
       }
 
       return await query

@@ -57,14 +57,14 @@ export const analyticsQueries = defineQuery({
           if (log.deliveredAt) {
             stats.delivered++
             if (log.sentAt) {
-              stats.deliveryTimes.push(log.deliveredAt.getTime() - log.sentAt.getTime())
+              stats.deliveryTimes.push(new Date(log.deliveredAt).getTime() - new Date(log.sentAt).getTime())
             }
           }
 
           if (log.openedAt) {
             stats.opened++
             if (log.deliveredAt) {
-              stats.openTimes.push(log.openedAt.getTime() - log.deliveredAt.getTime())
+              stats.openTimes.push(new Date(log.openedAt).getTime() - new Date(log.deliveredAt).getTime())
             }
           }
 
@@ -89,11 +89,11 @@ export const analyticsQueries = defineQuery({
 
         return {
           notificationId,
-          sentCount,
+          sentCount: sentCount ?? 0,
           deliveredCount,
           openedCount,
           clickedCount,
-          deliveryRate: sentCount > 0 ? (deliveredCount / sentCount) * 100 : 0,
+          deliveryRate: (sentCount ?? 0) > 0 ? (deliveredCount / (sentCount ?? 0)) * 100 : 0,
           openRate: deliveredCount > 0 ? (openedCount / deliveredCount) * 100 : 0,
           clickRate: openedCount > 0 ? (clickedCount / openedCount) * 100 : 0,
           platformBreakdown,
@@ -179,14 +179,14 @@ export const analyticsQueries = defineQuery({
           if (log.deliveredAt) {
             stats.delivered++
             if (log.sentAt) {
-              stats.deliveryTimes.push(log.deliveredAt.getTime() - log.sentAt.getTime())
+              stats.deliveryTimes.push(new Date(log.deliveredAt).getTime() - new Date(log.sentAt).getTime())
             }
           }
 
           if (log.openedAt) {
             stats.opened++
             if (log.deliveredAt) {
-              stats.openTimes.push(log.openedAt.getTime() - log.deliveredAt.getTime())
+              stats.openTimes.push(new Date(log.openedAt).getTime() - new Date(log.deliveredAt).getTime())
             }
           }
 

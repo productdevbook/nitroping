@@ -136,6 +136,15 @@ export const AppsDocument = /*#__PURE__*/ `
     description
     isActive
     apiKey
+    fcmProjectId
+    fcmServiceAccount
+    apnsKeyId
+    apnsTeamId
+    apnsPrivateKey
+    bundleId
+    vapidSubject
+    vapidPublicKey
+    vapidPrivateKey
     createdAt
     updatedAt
     stats {
@@ -159,10 +168,14 @@ export const AppDocument = /*#__PURE__*/ `
     isActive
     apiKey
     fcmProjectId
+    fcmServiceAccount
     apnsKeyId
     apnsTeamId
+    apnsPrivateKey
+    bundleId
     vapidSubject
     vapidPublicKey
+    vapidPrivateKey
     createdAt
     updatedAt
     stats {

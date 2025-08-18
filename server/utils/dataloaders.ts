@@ -11,6 +11,7 @@ export interface DataLoaders {
   notificationLoader: DataLoader<string, typeof tables.notification.$inferSelect | null>
   devicesByAppLoader: DataLoader<string, (typeof tables.device.$inferSelect)[]>
   notificationsByAppLoader: DataLoader<string, (typeof tables.notification.$inferSelect)[]>
+  deliveryLogsByNotificationLoader: DataLoader<string, (typeof tables.deliveryLog.$inferSelect)[]>
 }
 
 export function createDataLoaders(db: Database): DataLoaders {
@@ -73,11 +74,25 @@ export function createDataLoaders(db: Database): DataLoaders {
     },
   )
 
+  const deliveryLogsByNotificationLoader = new DataLoader<string, (typeof tables.deliveryLog.$inferSelect)[]>(
+    async (notificationIds) => {
+      const deliveryLogs = await db
+        .select()
+        .from(tables.deliveryLog)
+        .where(inArray(tables.deliveryLog.notificationId, notificationIds as string[]))
+
+      return notificationIds.map(notificationId =>
+        deliveryLogs.filter(log => log.notificationId === notificationId),
+      )
+    },
+  )
+
   return {
     appLoader,
     deviceLoader,
     notificationLoader,
     devicesByAppLoader,
     notificationsByAppLoader,
+    deliveryLogsByNotificationLoader,
   }
 }

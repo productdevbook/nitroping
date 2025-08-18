@@ -14,7 +14,7 @@ export const updateAppMutation = defineMutation({
         .update(tables.app)
         .set({
           ...input,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(tables.app.id, id))
         .returning()

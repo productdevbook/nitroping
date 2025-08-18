@@ -32,7 +32,7 @@ export const configureAPNsMutation = defineMutation({
           apnsTeamId: input.teamId,
           apnsCertificate: encryptedPrivateKey,
           bundleId: input.bundleId,
-          updatedAt: new Date(),
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(tables.app.id, id))
         .returning()

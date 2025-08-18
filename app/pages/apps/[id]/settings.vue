@@ -232,7 +232,7 @@ const canDelete = computed(() => {
             </div>
             <div class="space-y-2">
               <Label class="text-sm font-medium">Notifications Sent</Label>
-              <div class="text-2xl font-bold">{{ app.stats?.notificationsSent || 0 }}</div>
+              <div class="text-2xl font-bold">{{ app.stats?.sentToday || 0 }}</div>
             </div>
             <div class="space-y-2">
               <Label class="text-sm font-medium">API Calls</Label>

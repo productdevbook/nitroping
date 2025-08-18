@@ -1,12 +1,14 @@
 enum NotificationStatus {
   PENDING
   SENT
+  DELIVERED
   FAILED
   SCHEDULED
 }
 
 enum DeliveryStatus {
   PENDING
+  SENT
   DELIVERED
   FAILED
   CLICKED
@@ -18,7 +20,7 @@ type Notification {
   app: App
   title: String!
   body: String!
-  data: String # JSON string
+  data: JSON
   imageUrl: String
   clickAction: String
   sound: String
@@ -26,8 +28,8 @@ type Notification {
   status: NotificationStatus!
   
   # Targeting
-  targetDevices: [String!] # Device IDs
-  platforms: [DevicePlatform!]
+  targetDevices: JSON # Array of device IDs
+  platforms: JSON # Array of platforms
   scheduledAt: Timestamp
   
   # Statistics
@@ -38,7 +40,7 @@ type Notification {
   totalClicked: Int!
   
   # Relations
-  deliveryLogs: [DeliveryLog!]!
+  deliveryLogs: [DeliveryLog!]
   
   # Timestamps
   createdAt: Timestamp!
@@ -65,15 +67,15 @@ input SendNotificationInput {
   appId: ID!
   title: String!
   body: String!
-  data: String # JSON string
+  data: JSON
   imageUrl: String
   clickAction: String
   sound: String
   badge: Int
   
   # Targeting
-  targetDevices: [String!] # Device IDs or tokens
-  platforms: [DevicePlatform!]
+  targetDevices: JSON # Array of device IDs or tokens
+  platforms: JSON # Array of platforms
   scheduledAt: Timestamp
 }
 

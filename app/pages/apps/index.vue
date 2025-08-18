@@ -102,7 +102,7 @@ async function sendTest() {
             <div class="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p class="text-muted-foreground">Devices</p>
-                <p class="font-semibold">{{ app.stats?.devices || 0 }}</p>
+                <p class="font-semibold">{{ app.stats?.totalDevices || 0 }}</p>
               </div>
               <div>
                 <p class="text-muted-foreground">Sent Today</p>

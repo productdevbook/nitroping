@@ -43,7 +43,7 @@ const formSchema = toTypedSchema(z.object({
 }))
 
 // Form setup
-const { handleSubmit, isSubmitting, setValues, setValue } = useForm({
+const { handleSubmit, isSubmitting, setValues, setFieldValue, values } = useForm({
   validationSchema: formSchema,
   initialValues: {
     projectId: '',
@@ -56,7 +56,7 @@ watch(app, (newApp) => {
   if (newApp && newApp.fcmProjectId) {
     setValues({
       projectId: newApp.fcmProjectId || '',
-      serviceAccount: newApp.fcmServerKey || '',
+      serviceAccount: newApp.fcmServiceAccount || '',
     })
   }
 }, { immediate: true })
@@ -70,13 +70,13 @@ function handleFileUpload(event: Event) {
     const reader = new FileReader()
     reader.onload = (e) => {
       const content = e.target?.result as string
-      setValue('serviceAccount', content)
+      setFieldValue('serviceAccount', content)
 
       // Try to extract project ID from the JSON
       try {
         const parsed = JSON.parse(content)
         if (parsed.project_id) {
-          setValue('projectId', parsed.project_id)
+          setFieldValue('projectId', parsed.project_id)
         }
       }
       catch {
@@ -126,7 +126,7 @@ const hasExistingConfig = computed(() => {
 // Parse service account to show info
 const serviceAccountInfo = computed(() => {
   try {
-    const formValues = setValue.value as any
+    const formValues = values
     if (formValues?.serviceAccount) {
       return JSON.parse(formValues.serviceAccount)
     }

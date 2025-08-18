@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DevicePlatform } from '#graphql/client'
 import { CheckCircle, Loader2, RefreshCw, Search, Send, Smartphone, XCircle } from 'lucide-vue-next'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -83,7 +84,7 @@ async function registerDevice() {
     const payload = {
       appId: registrationForm.value.appId,
       token: registrationForm.value.token,
-      platform: registrationForm.value.platform,
+      platform: registrationForm.value.platform as DevicePlatform,
       userId: registrationForm.value.userId || undefined,
       metadata: registrationForm.value.metadata ? JSON.parse(registrationForm.value.metadata) : undefined,
     }

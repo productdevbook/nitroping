@@ -132,7 +132,10 @@ class APNsProvider {
           notification.alert = message.payload.aps.alert
         }
         else {
-          notification.alert = message.payload.aps.alert
+          notification.alert = {
+            title: message.payload.aps.alert.title || '',
+            body: message.payload.aps.alert.body || '',
+          }
         }
       }
 
@@ -171,7 +174,7 @@ class APNsProvider {
         return {
           success: false,
           error: failure.error?.message || `Status: ${failure.status}`,
-          statusCode: failure.status,
+          statusCode: typeof failure.status === 'string' ? Number.parseInt(failure.status) : failure.status,
         }
       }
       else {
