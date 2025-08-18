@@ -82,6 +82,7 @@ const notificationStats = computed(() => {
     totalTargeted: 0,
     totalDelivered: 0,
     totalFailed: 0,
+    deliveryRate: 0,
   })
 
   stats.deliveryRate = stats.totalTargeted > 0
@@ -108,7 +109,7 @@ function getStatusBadge(status: string) {
   }
 }
 
-function formatDate(dateString: string | null) {
+function formatDate(dateString: string | null | undefined) {
   if (!dateString)
     return 'Not sent'
   return new Intl.DateTimeFormat('en', {

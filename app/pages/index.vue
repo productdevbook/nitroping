@@ -38,7 +38,7 @@ const _selectedApp = computed(() => {
 
 // Methods
 
-const { mutate: sendNotification, isPending: isSending } = useSendNotification()
+const { mutate: sendNotification, isLoading: isSending } = useSendNotification()
 
 async function sendTestNotification() {
   if (!testNotification.value.appId || !testNotification.value.title || !testNotification.value.body) {

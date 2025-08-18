@@ -1,4 +1,4 @@
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { getProviderForApp } from '~~/server/providers'
 
 export const notificationMutations = defineMutation({
@@ -19,7 +19,7 @@ export const notificationMutations = defineMutation({
           sound: input.sound,
           badge: input.badge,
           status: input.scheduledAt ? 'SCHEDULED' : 'PENDING',
-          scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
+          scheduledAt: input.scheduledAt,
           totalTargets: 0, // Will be calculated
           totalSent: 0,
           totalDelivered: 0,
@@ -40,16 +40,16 @@ export const notificationMutations = defineMutation({
       }
       else {
         // All devices for app (optionally filtered by platform)
-        let query = db
-          .select()
-          .from(tables.device)
-          .where(eq(tables.device.appId, input.appId))
+        const whereConditions = [eq(tables.device.appId, input.appId)]
 
         if (input.platforms && input.platforms.length > 0) {
-          query = query.where(inArray(tables.device.platform, input.platforms))
+          whereConditions.push(inArray(tables.device.platform, input.platforms))
         }
 
-        targetDevices = await query
+        targetDevices = await db
+          .select()
+          .from(tables.device)
+          .where(and(...whereConditions))
       }
 
       // Update notification with target count
@@ -61,7 +61,7 @@ export const notificationMutations = defineMutation({
       // Send notifications to devices
       let totalSent = 0
       let totalFailed = 0
-      const deliveryLogs = []
+      const deliveryLogs: Array<typeof tables.deliveryLog.$inferInsert> = []
 
       if (!input.scheduledAt && targetDevices.length > 0) {
         // Group devices by platform for efficient sending
@@ -103,10 +103,10 @@ export const notificationMutations = defineMutation({
                 deliveryLogs.push({
                   notificationId: newNotification[0].id,
                   deviceId: device.id,
-                  status: result.success ? 'SENT' : 'FAILED',
+                  status: result.success ? ('SENT' as const) : ('FAILED' as const),
                   errorMessage: result.error,
                   providerResponse: { messageId: result.messageId },
-                  sentAt: result.success ? new Date() : null,
+                  sentAt: result.success ? new Date().toISOString() : null,
                 })
               }
               catch (deviceError) {
@@ -115,7 +115,7 @@ export const notificationMutations = defineMutation({
                 deliveryLogs.push({
                   notificationId: newNotification[0].id,
                   deviceId: device.id,
-                  status: 'FAILED',
+                  status: 'FAILED' as const,
                   errorMessage: deviceError instanceof Error ? deviceError.message : 'Unknown error',
                   sentAt: null,
                 })
@@ -130,7 +130,7 @@ export const notificationMutations = defineMutation({
               deliveryLogs.push({
                 notificationId: newNotification[0].id,
                 deviceId: device.id,
-                status: 'FAILED',
+                status: 'FAILED' as const,
                 errorMessage: `Provider error: ${providerError instanceof Error ? providerError.message : 'Unknown provider error'}`,
                 sentAt: null,
               })
@@ -150,7 +150,7 @@ export const notificationMutations = defineMutation({
             totalSent,
             totalFailed,
             status: 'SENT',
-            sentAt: new Date(),
+            sentAt: new Date().toISOString(),
           })
           .where(eq(tables.notification.id, newNotification[0].id))
       }

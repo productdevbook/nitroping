@@ -37,7 +37,7 @@ const formSchema = toTypedSchema(z.object({
 }))
 
 // Form setup
-const { handleSubmit, isSubmitting, setValues, setValue } = useForm({
+const { handleSubmit, isSubmitting, setValues, setFieldValue } = useForm({
   validationSchema: formSchema,
   initialValues: {
     subject: '',
@@ -60,17 +60,19 @@ watch(app, (newApp) => {
 // Generate new VAPID keys
 async function generateKeys() {
   try {
-    const keys = await generateVapidKeysMutation()
-    if (keys) {
-      setValue('publicKey', keys.publicKey)
-      setValue('privateKey', keys.privateKey)
+    // TODO: Implement generateVapidKeys properly
+    // const keys = await generateVapidKeysMutation()
+    // if (keys) {
+    //   setFieldValue('publicKey', keys.publicKey)
+    //   setFieldValue('privateKey', keys.privateKey)
 
-      // Set default subject if empty
-      const currentSubject = (document.querySelector('[name="subject"]') as HTMLInputElement)?.value
-      if (!currentSubject) {
-        setValue('subject', 'mailto:admin@example.com')
-      }
-    }
+    //   // Set default subject if empty
+    //   const currentSubject = (document.querySelector('[name="subject"]') as HTMLInputElement)?.value
+    //   if (!currentSubject) {
+    //     setFieldValue('subject', 'mailto:admin@example.com')
+    //   }
+    // }
+    console.log('Generate VAPID keys not implemented yet')
   }
   catch (error) {
     console.error('Error generating VAPID keys:', error)

@@ -2,12 +2,13 @@ import { count, eq, gte, sql } from 'drizzle-orm'
 
 export const statsQuery = defineQuery({
   dashboardStats: {
-    resolve: async (_parent, args, { context }) => {
+    resolve: async (_parent, _args, { context }) => {
       const { useDatabase, tables } = context
       const db = useDatabase()
 
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayIso = yesterday.toISOString()
 
       // Total apps
       const totalAppsResult = await db
@@ -18,22 +19,22 @@ export const statsQuery = defineQuery({
       const activeDevicesResult = await db
         .select({ count: count() })
         .from(tables.device)
-        .where(eq(tables.device.status, 'active'))
+        .where(eq(tables.device.status, 'ACTIVE'))
 
       // Notifications sent in last 24h
       const notificationsSentResult = await db
         .select({ count: count() })
         .from(tables.notification)
-        .where(gte(tables.notification.createdAt, yesterday))
+        .where(gte(tables.notification.createdAt, yesterdayIso))
 
       // Calculate delivery rate
       const deliveryRateResult = await db
         .select({
-          delivered: sql<number>`count(case when ${tables.deliveryLog.status} = 'delivered' then 1 end)`,
+          delivered: sql<number>`count(case when ${tables.deliveryLog.status} = 'DELIVERED' then 1 end)`,
           total: count(),
         })
         .from(tables.deliveryLog)
-        .where(gte(tables.deliveryLog.createdAt, yesterday))
+        .where(gte(tables.deliveryLog.createdAt, yesterdayIso))
 
       const deliveryRate = deliveryRateResult[0]?.total > 0
         ? (deliveryRateResult[0].delivered / deliveryRateResult[0].total) * 100

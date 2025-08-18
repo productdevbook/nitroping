@@ -1,4 +1,4 @@
-import { eq, inArray } from 'drizzle-orm'
+import { and, count, eq, inArray } from 'drizzle-orm'
 
 export const scheduleNotificationMutation = defineMutation({
   scheduleNotification: {
@@ -26,8 +26,8 @@ export const scheduleNotificationMutation = defineMutation({
           clickAction: input.clickAction,
           sound: input.sound,
           badge: input.badge,
-          status: 'scheduled',
-          scheduledAt: new Date(input.scheduledAt),
+          status: 'SCHEDULED',
+          scheduledAt: new Date(input.scheduledAt).toISOString(),
           totalTargets: 0, // Will be calculated
           totalSent: 0,
           totalDelivered: 0,
@@ -42,23 +42,24 @@ export const scheduleNotificationMutation = defineMutation({
       if (input.targetDevices && input.targetDevices.length > 0) {
         // Specific devices
         const devices = await db
-          .select({ count: 1 })
+          .select({ count: count() })
           .from(tables.device)
           .where(inArray(tables.device.token, input.targetDevices))
         targetDevicesCount = devices.length
       }
       else {
         // All devices for app (optionally filtered by platform)
-        let query = db
-          .select({ count: 1 })
-          .from(tables.device)
-          .where(eq(tables.device.appId, input.appId))
+        const whereConditions = [eq(tables.device.appId, input.appId)]
 
         if (input.platforms && input.platforms.length > 0) {
-          query = query.where(inArray(tables.device.platform, input.platforms.map(p => p.toLowerCase())))
+          whereConditions.push(inArray(tables.device.platform, input.platforms.map((p: string) => p.toLowerCase())))
         }
 
-        const devices = await query
+        const devices = await db
+          .select({ count: count() })
+          .from(tables.device)
+          .where(and(...whereConditions))
+
         targetDevicesCount = devices.length
       }
 

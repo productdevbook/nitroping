@@ -53,7 +53,7 @@ watch(app, (newApp) => {
     setValues({
       keyId: newApp.apnsKeyId || '',
       teamId: newApp.apnsTeamId || '',
-      privateKey: newApp.apnsCertificate || '',
+      privateKey: newApp.apnsPrivateKey || '',
       bundleId: newApp.bundleId || '',
       isProduction: false, // Default since we don't store this in DB yet
     })

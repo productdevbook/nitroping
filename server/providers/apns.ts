@@ -110,76 +110,89 @@ class APNsProvider {
 
   async sendMessage(message: APNsMessage): Promise<APNsResponse> {
     try {
-      // Alternative: Use undici.request with HTTP/2 support
-      // const { request } = await import('undici')
-      // But for now, use node-apn library for proper HTTP/2 support
-      const apn = await import('node-apn')
+      const http2 = await import('node:http2')
+      const jwt = await this.generateJWT()
+      const endpoint = this.getAPNsEndpoint()
 
-      const provider = new apn.Provider({
-        token: {
-          key: this.config.privateKey,
-          keyId: this.config.keyId,
-          teamId: this.config.teamId,
-        },
-        production: this.config.production,
+      const client = http2.connect(endpoint)
+
+      const headers: Record<string, string> = {
+        ':method': 'POST',
+        ':path': `/3/device/${message.token}`,
+        'authorization': `bearer ${jwt}`,
+        'apns-topic': this.config.bundleId,
+        'content-type': 'application/json',
+        'apns-priority': (message.options?.priority || 10).toString(),
+      }
+
+      if (message.options?.expiration) {
+        headers['apns-expiration'] = message.options.expiration.toString()
+      }
+
+      if (message.options?.collapseId) {
+        headers['apns-collapse-id'] = message.options.collapseId
+      }
+
+      if (message.options?.pushType) {
+        headers['apns-push-type'] = message.options.pushType
+      }
+
+      return new Promise<APNsResponse>((resolve) => {
+        const req = client.request(headers)
+        let responseData = ''
+
+        req.on('response', (headers) => {
+          const statusCode = Number(headers[':status'])
+
+          if (statusCode === 200) {
+            resolve({
+              success: true,
+              messageId: headers['apns-id'] as string,
+              statusCode,
+            })
+          }
+          else {
+            resolve({
+              success: false,
+              error: `APNs error: ${statusCode}`,
+              statusCode,
+            })
+          }
+        })
+
+        req.on('data', (chunk) => {
+          responseData += chunk
+        })
+
+        req.on('error', (error) => {
+          resolve({
+            success: false,
+            error: error.message,
+          })
+        })
+
+        req.on('end', () => {
+          client.close()
+          if (responseData && !req.destroyed) {
+            try {
+              const errorResponse = JSON.parse(responseData)
+              resolve({
+                success: false,
+                error: errorResponse.reason || 'Unknown APNs error',
+              })
+            }
+            catch {
+              resolve({
+                success: false,
+                error: 'Invalid APNs response',
+              })
+            }
+          }
+        })
+
+        req.write(JSON.stringify(message.payload))
+        req.end()
       })
-
-      const notification = new apn.Notification()
-
-      // Set notification properties
-      if (message.payload.aps.alert) {
-        if (typeof message.payload.aps.alert === 'string') {
-          notification.alert = message.payload.aps.alert
-        }
-        else {
-          notification.alert = message.payload.aps.alert
-        }
-      }
-
-      if (message.payload.aps.badge !== undefined) {
-        notification.badge = message.payload.aps.badge
-      }
-
-      if (message.payload.aps.sound) {
-        notification.sound = typeof message.payload.aps.sound === 'string'
-          ? message.payload.aps.sound
-          : 'default'
-      }
-
-      notification.topic = this.config.bundleId
-
-      // Add custom data
-      Object.keys(message.payload).forEach((key) => {
-        if (key !== 'aps') {
-          notification.payload[key] = message.payload[key]
-        }
-      })
-
-      const result = await provider.send(notification, message.token)
-
-      // Close the provider connection
-      provider.shutdown()
-
-      if (result.sent && result.sent.length > 0) {
-        return {
-          success: true,
-          messageId: result.sent[0]?.device || undefined,
-        }
-      }
-      else if (result.failed && result.failed.length > 0) {
-        const failure = result.failed[0]
-        return {
-          success: false,
-          error: failure.error?.message || `Status: ${failure.status}`,
-          statusCode: failure.status,
-        }
-      }
-      else {
-        return {
-          success: false,
-          error: 'Unknown APNs result',
-        }
-      }
     }
     catch (error) {
       return {
@@ -196,8 +209,7 @@ class APNsProvider {
     failureCount: number
   }> {
     try {
-      // Send messages concurrently with rate limiting
-      const batchSize = 100 // APNs allows up to 1000 concurrent streams
+      const batchSize = 100
       const results: APNsResponse[] = []
 
       for (let i = 0; i < messages.length; i += batchSize) {

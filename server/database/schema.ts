@@ -1,14 +1,16 @@
 import { relations } from 'drizzle-orm'
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { boolean, integer, jsonb, pgEnum, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
+import { customTimestamp, uuidv7Generator } from './shared'
 
 // Enums
 export const platformEnum = pgEnum('platform', ['IOS', 'ANDROID', 'WEB'])
 export const notificationStatusEnum = pgEnum('notification_status', ['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SCHEDULED'])
 export const deviceStatusEnum = pgEnum('device_status', ['ACTIVE', 'INACTIVE', 'EXPIRED'])
+export const deliveryStatusEnum = pgEnum('delivery_status', ['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'CLICKED'])
 
 // App table
 export const app = pgTable('app', {
-  id: uuid().primaryKey().defaultRandom(),
+  id: uuid().primaryKey().$defaultFn(uuidv7Generator),
   name: text().notNull(),
   slug: text().notNull().unique(),
   description: text(),
@@ -22,28 +24,31 @@ export const app = pgTable('app', {
   vapidPublicKey: text(),
   vapidPrivateKey: text(),
   vapidSubject: text(),
-  isActive: boolean().default(true),
-  createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow(),
+  isActive: boolean().default(true).notNull(),
+  createdAt: customTimestamp().defaultNow().notNull(),
+  updatedAt: customTimestamp().defaultNow().notNull(),
 })
 
 // Device table
 export const device = pgTable('device', {
-  id: uuid().primaryKey().defaultRandom(),
+  id: uuid().primaryKey().$defaultFn(uuidv7Generator),
   appId: uuid().notNull().references(() => app.id, { onDelete: 'cascade' }),
   token: text().notNull(),
   platform: platformEnum().notNull(),
   userId: text(),
-  status: deviceStatusEnum().default('ACTIVE'),
+  status: deviceStatusEnum().default('ACTIVE').notNull(),
   metadata: jsonb(),
-  lastSeenAt: timestamp(),
-  createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow(),
-})
+  lastSeenAt: customTimestamp(),
+  createdAt: customTimestamp().defaultNow().notNull(),
+  updatedAt: customTimestamp().defaultNow().notNull(),
+}, table => ({
+  // Unique constraint: one token per app per user
+  uniqueAppTokenUser: unique().on(table.appId, table.token, table.userId),
+}))
 
 // Notification table
 export const notification = pgTable('notification', {
-  id: uuid().primaryKey().defaultRandom(),
+  id: uuid().primaryKey().$defaultFn(uuidv7Generator),
   appId: uuid().notNull().references(() => app.id, { onDelete: 'cascade' }),
   title: text().notNull(),
   body: text().notNull(),
@@ -53,38 +58,41 @@ export const notification = pgTable('notification', {
   clickAction: text(),
   icon: text(),
   image: text(),
+  imageUrl: text(),
   targetDevices: jsonb(), // Array of device IDs or filters
   platforms: jsonb(), // Array of platforms to target
-  scheduledAt: timestamp(),
-  expiresAt: timestamp(),
-  status: notificationStatusEnum().default('PENDING'),
-  totalTargets: integer().default(0),
-  totalSent: integer().default(0),
-  totalDelivered: integer().default(0),
-  totalFailed: integer().default(0),
-  totalClicked: integer().default(0),
-  createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow(),
+  scheduledAt: customTimestamp(),
+  expiresAt: customTimestamp(),
+  status: notificationStatusEnum().default('PENDING').notNull(),
+  totalTargets: integer().default(0).notNull(),
+  totalSent: integer().default(0).notNull(),
+  totalDelivered: integer().default(0).notNull(),
+  totalFailed: integer().default(0).notNull(),
+  totalClicked: integer().default(0).notNull(),
+  sentAt: customTimestamp(),
+  createdAt: customTimestamp().defaultNow().notNull(),
+  updatedAt: customTimestamp().defaultNow().notNull(),
 })
 
 // Delivery log table
 export const deliveryLog = pgTable('deliveryLog', {
-  id: uuid().primaryKey().defaultRandom(),
+  id: uuid().primaryKey().$defaultFn(uuidv7Generator),
   notificationId: uuid().notNull().references(() => notification.id, { onDelete: 'cascade' }),
   deviceId: uuid().notNull().references(() => device.id, { onDelete: 'cascade' }),
-  status: notificationStatusEnum().notNull(),
+  status: deliveryStatusEnum().notNull(),
   providerResponse: jsonb(),
   errorMessage: text(),
   attemptCount: integer().default(1),
-  sentAt: timestamp(),
-  deliveredAt: timestamp(),
-  openedAt: timestamp(),
-  clickedAt: timestamp(),
+  sentAt: customTimestamp(),
+  deliveredAt: customTimestamp(),
+  openedAt: customTimestamp(),
+  clickedAt: customTimestamp(),
   platform: text(),
   userAgent: text(),
   appVersion: text(),
   osVersion: text(),
-  createdAt: timestamp().defaultNow(),
+  createdAt: customTimestamp().defaultNow().notNull(),
+  updatedAt: customTimestamp().defaultNow().notNull(),
 }, table => ({
   // Unique constraint: one delivery log per notification per device
   uniqueNotificationDevice: unique().on(table.notificationId, table.deviceId),
@@ -92,16 +100,16 @@ export const deliveryLog = pgTable('deliveryLog', {
 
 // API Key table (for authentication)
 export const apiKey = pgTable('apiKey', {
-  id: uuid().primaryKey().defaultRandom(),
+  id: uuid().primaryKey().$defaultFn(uuidv7Generator),
   appId: uuid().notNull().references(() => app.id, { onDelete: 'cascade' }),
   name: text().notNull(),
   key: text().notNull().unique(),
   permissions: jsonb(), // Array of permissions
   isActive: boolean().default(true),
-  lastUsedAt: timestamp(),
-  expiresAt: timestamp(),
-  createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow(),
+  lastUsedAt: customTimestamp(),
+  expiresAt: customTimestamp(),
+  createdAt: customTimestamp().defaultNow().notNull(),
+  updatedAt: customTimestamp().defaultNow().notNull(),
 })
 
 // Relations

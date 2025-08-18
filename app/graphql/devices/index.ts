@@ -1,3 +1,4 @@
+import type { RegisterDeviceInput } from '#graphql/client'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { $sdk } from '../ofetch'
 
@@ -8,7 +9,7 @@ export function useDevices(appId: Ref<string | null> | string | null) {
   return useQuery({
     key: () => ['devices', appIdValue.value],
     query: async () => {
-      const result = await $sdk.devices({ appId: appIdValue.value })
+      const result = await $sdk.devices({ appId: appIdValue.value || undefined })
       return result.data?.devices || []
     },
     enabled: () => !!appIdValue.value,
@@ -50,13 +51,7 @@ export function useRegisterDevice() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async (input: {
-      appId: string
-      token: string
-      platform: string
-      userId?: string
-      metadata?: any
-    }) => {
+    mutation: async (input: RegisterDeviceInput) => {
       const result = await $sdk.registerDevice({ input })
       return result.data?.registerDevice || null
     },

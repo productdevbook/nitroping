@@ -6,6 +6,15 @@ query apps {
     description
     isActive
     apiKey
+    fcmProjectId
+    fcmServiceAccount
+    apnsKeyId
+    apnsTeamId
+    apnsPrivateKey
+    bundleId
+    vapidSubject
+    vapidPublicKey
+    vapidPrivateKey
     createdAt
     updatedAt
     stats {
@@ -28,10 +37,14 @@ query app($id: ID!) {
     isActive
     apiKey
     fcmProjectId
+    fcmServiceAccount
     apnsKeyId
     apnsTeamId
+    apnsPrivateKey
+    bundleId
     vapidSubject
     vapidPublicKey
+    vapidPrivateKey
     createdAt
     updatedAt
     stats {
