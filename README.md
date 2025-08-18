@@ -2,6 +2,9 @@
 
 > Self-hosted push notification service built with Nuxt 4 & Nitro
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/productdevbook/nitroping.svg)](https://hub.docker.com/r/productdevbook/nitroping)
+[![Docker Image Size](https://img.shields.io/docker/image-size/productdevbook/nitroping/latest.svg)](https://hub.docker.com/r/productdevbook/nitroping)
+
 [![Version](https://img.shields.io/npm/v/nitroping.svg)](https://npmjs.org/package/nitroping)
 [![License](https://img.shields.io/npm/l/nitroping.svg)](https://github.com/productdevbook/nitroping/blob/main/LICENSE)
 
@@ -123,10 +126,27 @@ For production deployments, you can use the `prod` profile to run the applicatio
 docker compose up --profile prod -d
 ```
 
-Note: production image has to be built first.
+### 🐳 Docker Hub Image
+
+Pull the latest image from Docker Hub:
 
 ```bash
-docker build -t nitroping --target production .
+# Pull latest version
+docker pull productdevbook/nitroping:latest
+
+# Or specific version
+docker pull productdevbook/nitroping:v0.0.1
+```
+
+**Using with docker-compose.yaml:**
+```yaml
+services:
+  server:
+    image: productdevbook/nitroping:latest
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/nitroping
+    ports:
+      - "3000:3000"
 ```
 
 
@@ -156,12 +176,12 @@ docker build -t nitroping --target production .
 - [x] Web Push support
 - [x] GraphQL API
 - [x] Dashboard UI
+- [x] Docker deployment & Docker Hub publishing
 - [x] Documentation site (this website!)
 
 ### 🚧 In Progress
 - [ ] [Swift iOS SDK](https://github.com/productdevbook/nitroping/issues/14) - Native iOS development (work in progress in `ios/package`)
 - [ ] [Queue system](https://github.com/productdevbook/nitroping/issues/13) (technology choice under community discussion)
-- [ ] Docker deployment
 
 ### 📋 Planned Features
 - [ ] [Android SDK](https://github.com/productdevbook/nitroping/issues/15) - Native Android development with Kotlin
