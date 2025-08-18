@@ -16,7 +16,7 @@ services:
       - redis_data:/data
   server:
     profiles: ["prod"]
-    image: nitroping
+    image: productdevbook/nitroping:latest
     restart: always
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
