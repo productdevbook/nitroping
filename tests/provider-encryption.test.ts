@@ -45,6 +45,7 @@ MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgTest+Private+Key+Data
         apnsKeyId: 'test-key-id',
         apnsTeamId: 'test-team-id',
         apnsCertificate: encryptedPrivateKey,
+        bundleId: 'com.example.testapp',
         slug: 'test-app',
       }])
 
@@ -66,6 +67,7 @@ MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgLegacy+Key+Data
         apnsKeyId: 'test-key-id',
         apnsTeamId: 'test-team-id',
         apnsCertificate: legacyPrivateKey, // Not encrypted
+        bundleId: 'com.example.testapp',
         slug: 'test-app',
       }])
 

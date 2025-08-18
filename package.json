@@ -45,7 +45,6 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-vue-next": "^0.539.0",
     "nitro-graphql": "^1.1.3",
-    "node-apn": "^3.0.0",
     "nuxt": "^4.0.3",
     "pinia": "^3.0.3",
     "postgres": "^3.4.7",
