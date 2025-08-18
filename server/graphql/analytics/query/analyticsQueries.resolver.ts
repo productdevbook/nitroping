@@ -57,14 +57,14 @@ export const analyticsQueries = defineQuery({
           if (log.deliveredAt) {
             stats.delivered++
             if (log.sentAt) {
-              stats.deliveryTimes.push(log.deliveredAt.getTime() - log.sentAt.getTime())
+              stats.deliveryTimes.push(new Date(log.deliveredAt).getTime() - new Date(log.sentAt).getTime())
             }
           }
 
           if (log.openedAt) {
             stats.opened++
             if (log.deliveredAt) {
-              stats.openTimes.push(log.openedAt.getTime() - log.deliveredAt.getTime())
+              stats.openTimes.push(new Date(log.openedAt).getTime() - new Date(log.deliveredAt).getTime())
             }
           }
 
@@ -179,14 +179,14 @@ export const analyticsQueries = defineQuery({
           if (log.deliveredAt) {
             stats.delivered++
             if (log.sentAt) {
-              stats.deliveryTimes.push(log.deliveredAt.getTime() - log.sentAt.getTime())
+              stats.deliveryTimes.push(new Date(log.deliveredAt).getTime() - new Date(log.sentAt).getTime())
             }
           }
 
           if (log.openedAt) {
             stats.opened++
             if (log.deliveredAt) {
-              stats.openTimes.push(log.openedAt.getTime() - log.deliveredAt.getTime())
+              stats.openTimes.push(new Date(log.openedAt).getTime() - new Date(log.deliveredAt).getTime())
             }
           }
 
