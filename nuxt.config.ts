@@ -36,6 +36,14 @@ export default defineNuxtConfig({
     },
   },
 
+  $development: {
+    vite: {
+      server: {
+        allowedHosts: true,
+      },
+    },
+  },
+
   shadcn: {
     /**
      * Prefix for all the imported component

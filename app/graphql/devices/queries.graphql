@@ -3,6 +3,7 @@ query devices($appId: ID) {
     id
     appId
     token
+    category
     platform
     userId
     status
@@ -18,6 +19,7 @@ query device($id: ID!) {
     id
     appId
     token
+    category
     platform
     userId
     status
@@ -33,6 +35,7 @@ query deviceByToken($token: String!) {
     id
     appId
     token
+    category
     platform
     userId
     status

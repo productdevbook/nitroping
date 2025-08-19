@@ -1,3 +1,11 @@
+enum DeviceCategory {
+  CHROME
+  FIREFOX
+  SAFARI
+  EDGE
+  OPERA
+}
+
 enum DevicePlatform {
   ANDROID
   IOS
@@ -15,6 +23,7 @@ type Device {
   appId: ID!
   app: App
   token: String!
+  category: DeviceCategory
   platform: DevicePlatform!
   status: DeviceStatus!
   userId: String
@@ -29,6 +38,7 @@ type Device {
 input RegisterDeviceInput {
   appId: ID!
   token: String!
+  category: DeviceCategory
   platform: DevicePlatform!
   userId: String
   metadata: JSON

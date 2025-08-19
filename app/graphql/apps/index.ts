@@ -161,12 +161,12 @@ export function useConfigureWebPush() {
 }
 
 export function useGenerateVapidKeys() {
-  return useMutation({
-    mutation: async () => {
-      // TODO: Fix generateVapidKeys method - method does not exist in SDK
-      // const result = await $sdk.generateVapidKeys()
-      // return result.data?.generateVapidKeys || null
-      throw new Error('generateVapidKeys method not implemented')
+  return useQuery({
+    key: ['generateVapidKeys'],
+    query: async () => {
+      const result = await $sdk.generateVapidKeys()
+      return result.data?.generateVapidKeys || null
     },
+    enabled: false, // Only run when manually triggered
   })
 }

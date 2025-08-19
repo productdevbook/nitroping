@@ -1,5 +1,5 @@
 {
-  "name": "nitroping",
+  "name": "@nitroping/app",
   "type": "module",
   "version": "0.0.1",
   "private": false,
@@ -45,6 +45,7 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-vue-next": "^0.539.0",
     "nitro-graphql": "^1.1.3",
+    "nitroping": "link:./sdk",
     "nuxt": "^4.0.3",
     "pinia": "^3.0.3",
     "postgres": "^3.4.7",
