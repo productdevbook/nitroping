@@ -1,5 +1,5 @@
 {
-  "name": "@nitroping/sdk",
+  "name": "nitroping",
   "type": "module",
   "version": "0.1.0",
   "description": "JavaScript/TypeScript SDK for NitroPing push notification service",
@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nitroping/nitroping.git",
+    "url": "https://github.com/productdevbook/nitroping.git",
     "directory": "sdk"
   },
   "keywords": [
@@ -36,7 +36,8 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "release": "pnpm build && pnpm publish --no-git-checks --access public"
   },
   "peerDependencies": {},
   "devDependencies": {

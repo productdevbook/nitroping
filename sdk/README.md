@@ -1,17 +1,17 @@
-# @nitroping/sdk
+# nitroping
 
 JavaScript/TypeScript SDK for NitroPing push notification service.
 
 ## Installation
 
 ```bash
-npm install @nitroping/sdk
+npm install nitroping
 ```
 
 ## Quick Start
 
 ```typescript
-import { NitroPingClient } from '@nitroping/sdk'
+import { NitroPingClient } from 'nitroping'
 
 // Initialize the client
 const client = new NitroPingClient({
@@ -136,7 +136,7 @@ self.addEventListener('notificationclick', (event) => {
 The SDK throws `NitroPingError` instances for various error conditions:
 
 ```typescript
-import { NitroPingError } from '@nitroping/sdk'
+import { NitroPingError } from 'nitroping'
 
 try {
   await client.subscribe()
