@@ -258,6 +258,7 @@ export const DevicesDocument = /*#__PURE__*/ `
     id
     appId
     token
+    category
     platform
     userId
     status
@@ -274,6 +275,7 @@ export const DeviceDocument = /*#__PURE__*/ `
     id
     appId
     token
+    category
     platform
     userId
     status
@@ -290,6 +292,7 @@ export const DeviceByTokenDocument = /*#__PURE__*/ `
     id
     appId
     token
+    category
     platform
     userId
     status

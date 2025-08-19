@@ -11,7 +11,10 @@ export type {
 } from './types.ts'
 export { NitroPingError } from './types.ts'
 export {
+  detectBrowser,
+  detectOS,
   generateUserId,
+  getBrowserVersion,
   getNotificationPermission,
   isPushSupported,
   isSecureContext,

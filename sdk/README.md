@@ -27,7 +27,8 @@ try {
     tags: ['news', 'updates'], // optional
   })
   console.log('Subscribed successfully:', device)
-} catch (error) {
+}
+catch (error) {
   console.error('Subscription failed:', error)
 }
 
@@ -98,7 +99,7 @@ You need to provide a service worker at `/sw.js` in your public directory. Here'
 // sw.js
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {}
-  
+
   const options = {
     body: data.body || 'You have a new message',
     icon: data.icon || '/favicon.ico',
@@ -114,7 +115,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  
+
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((clientList) => {
       for (const client of clientList) {
@@ -139,10 +140,12 @@ import { NitroPingError } from '@nitroping/sdk'
 
 try {
   await client.subscribe()
-} catch (error) {
+}
+catch (error) {
   if (error instanceof NitroPingError) {
     console.error('NitroPing error:', error.message, error.code)
-  } else {
+  }
+  else {
     console.error('Unknown error:', error)
   }
 }

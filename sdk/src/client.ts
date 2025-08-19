@@ -8,7 +8,11 @@ import type {
 import { NitroPingError } from './types.ts'
 import {
   apiRequest,
+  detectBrowser,
+  detectOS,
   generateUserId,
+  getBrowserVersion,
+  getCategoryFromBrowser,
   getLocalStorage,
   getNotificationPermission,
   isPushSupported,
@@ -110,13 +114,21 @@ export class NitroPingClient {
     const userId = options.userId || this.config.userId || this.getUserId()
 
     // Register device with backend
+    const browserType = detectBrowser()
+    const category = getCategoryFromBrowser(browserType)
+
     const device = await this.registerDevice({
       appId: this.config.appId,
       token: subscription.endpoint,
-      platform: 'WEB' as const,
+      // Only set category for known browsers, otherwise null
+      ...(category !== 'WEB' && { category }),
+      platform: 'WEB',
       userId,
       metadata: JSON.stringify({
         userAgent: navigator.userAgent,
+        browser: browserType,
+        browserVersion: getBrowserVersion(),
+        os: detectOS(),
         subscription: subscriptionData,
         tags: options.tags || [],
         ...options.metadata,
@@ -197,7 +209,8 @@ export class NitroPingClient {
   private async registerDevice(input: {
     appId: string
     token: string
-    platform: 'WEB'
+    category?: string
+    platform: string
     userId: string
     metadata: string
   }): Promise<DeviceRegistration> {
@@ -219,7 +232,7 @@ export class NitroPingClient {
     `
 
     const response = await apiRequest<{ data: { registerDevice: DeviceRegistration } }>(
-      `${this.config.apiUrl}/graphql`,
+      `${this.config.apiUrl}/api/graphql`,
       {
         method: 'POST',
         body: JSON.stringify({

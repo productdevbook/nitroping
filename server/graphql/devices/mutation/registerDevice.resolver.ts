@@ -28,8 +28,8 @@ export const registerDeviceMutation = defineMutation({
           })
         }
       }
-      else if (input.platform === 'ANDROID' || input.platform === 'WEB') {
-        // FCM token validation for Android and Web
+      else if (input.platform === 'ANDROID') {
+        // FCM token validation for Android
         if (cleanToken.length < 140 || cleanToken.length > 200) {
           throw createError({
             statusCode: 400,
@@ -45,6 +45,24 @@ export const registerDeviceMutation = defineMutation({
           })
         }
       }
+      else if (input.platform === 'WEB') {
+        // Web push endpoint validation - should be a valid URL
+        try {
+          const url = new URL(cleanToken)
+          if (!['http:', 'https:'].includes(url.protocol)) {
+            throw createError({
+              statusCode: 400,
+              message: 'Web push endpoint must be a valid HTTP/HTTPS URL.',
+            })
+          }
+        }
+        catch {
+          throw createError({
+            statusCode: 400,
+            message: 'Invalid web push endpoint URL format.',
+          })
+        }
+      }
 
       // Use upsert with ON CONFLICT to handle unique constraint
       const device = await db
@@ -52,6 +70,7 @@ export const registerDeviceMutation = defineMutation({
         .values({
           appId: input.appId,
           token: cleanToken,
+          category: input.category,
           platform: input.platform,
           status: 'ACTIVE',
           userId: input.userId,
@@ -61,6 +80,7 @@ export const registerDeviceMutation = defineMutation({
         .onConflictDoUpdate({
           target: [tables.device.appId, tables.device.token, tables.device.userId],
           set: {
+            category: input.category,
             metadata: input.metadata,
             status: 'ACTIVE',
             lastSeenAt: new Date().toISOString(),

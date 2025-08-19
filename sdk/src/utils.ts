@@ -134,3 +134,108 @@ export function removeLocalStorage(key: string): void {
     console.warn('Failed to remove from localStorage:', error)
   }
 }
+
+/**
+ * Detects the browser type from user agent
+ */
+export function detectBrowser(): string {
+  const userAgent = navigator.userAgent.toLowerCase()
+
+  if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
+    return 'chrome'
+  }
+  if (userAgent.includes('firefox')) {
+    return 'firefox'
+  }
+  if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+    return 'safari'
+  }
+  if (userAgent.includes('edg')) {
+    return 'edge'
+  }
+  if (userAgent.includes('opera')) {
+    return 'opera'
+  }
+
+  return 'unknown'
+}
+
+/**
+ * Detects the operating system from user agent
+ */
+export function detectOS(): string {
+  const userAgent = navigator.userAgent.toLowerCase()
+
+  if (userAgent.includes('mac')) {
+    return 'mac'
+  }
+  if (userAgent.includes('win')) {
+    return 'windows'
+  }
+  if (userAgent.includes('linux')) {
+    return 'linux'
+  }
+  if (userAgent.includes('android')) {
+    return 'android'
+  }
+  if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+    return 'ios'
+  }
+
+  return 'unknown'
+}
+
+/**
+ * Gets browser version from user agent
+ */
+export function getBrowserVersion(): string {
+  const userAgent = navigator.userAgent
+  const browser = detectBrowser()
+
+  try {
+    let match: RegExpMatchArray | null = null
+
+    switch (browser) {
+      case 'chrome':
+        match = userAgent.match(/Chrome\/(\d+\.\d+\.\d+\.\d+)/)
+        break
+      case 'firefox':
+        match = userAgent.match(/Firefox\/(\d+\.\d+)/)
+        break
+      case 'safari':
+        match = userAgent.match(/Version\/(\d+\.\d+)/)
+        break
+      case 'edge':
+        match = userAgent.match(/Edg\/(\d+\.\d+\.\d+\.\d+)/)
+        break
+      case 'opera':
+        match = userAgent.match(/OPR\/(\d+\.\d+\.\d+\.\d+)/)
+        break
+    }
+
+    return match ? match[1] : 'unknown'
+  }
+  catch {
+    return 'unknown'
+  }
+}
+
+/**
+ * Maps browser type to category enum value (only for supported browsers)
+ */
+export function getCategoryFromBrowser(browser: string): string {
+  switch (browser.toLowerCase()) {
+    case 'chrome':
+      return 'CHROME'
+    case 'firefox':
+      return 'FIREFOX'
+    case 'safari':
+      return 'SAFARI'
+    case 'edge':
+      return 'EDGE'
+    case 'opera':
+      return 'OPERA'
+    default:
+      return 'WEB' // Will be filtered out in SDK
+  }
+}

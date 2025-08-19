@@ -17,7 +17,7 @@ const subscriptionData = ref<any>(null)
 // Initialize NitroPing SDK
 const nitroPingClient = new NitroPingClient({
   appId: '707bf3c9-5553-40da-9508-15a7bf371324',
-  vapidPublicKey: 'BGAZ39qYsgquYMtSNJYo0mC_e8WxN1Pe1w97Km7BYa46jpRL69bDS2l_f-fgg82R9GeBRXWh6nigQ4UOEMM11yU',
+  vapidPublicKey: 'BLtMMwTW0kW8BiCJHVD7wajMux0gl3dOhocLtFvTBRNovwgvrxJ5l-P67oBkAL4tgUlnr_QWb1S4CaYHszWrxM4',
   apiUrl: window.location.origin, // Use current origin
 })
 
@@ -30,9 +30,40 @@ const isSupported = computed(() => {
 onMounted(async () => {
   if (isSupported.value) {
     permissionStatus.value = nitroPingClient.getPermissionStatus()
+
+    // Auto-registration: If user granted permission but device is not registered
+    if (permissionStatus.value === 'granted') {
+      await autoRegisterIfNeeded()
+    }
+
     await checkSubscription()
   }
 })
+
+async function autoRegisterIfNeeded() {
+  try {
+    // Check if browser has subscription
+    const hasSubscription = await nitroPingClient.isSubscribed()
+
+    if (hasSubscription) {
+      // Check if we have local device record
+      const status = await nitroPingClient.getSubscriptionStatus()
+
+      if (!status.device) {
+        // Browser has subscription but no device record
+        // Perform silent re-registration
+        await nitroPingClient.subscribe({
+          userId: 'test-user-web',
+          tags: ['web-test', 'auto-registered'],
+        })
+      }
+    }
+  }
+  catch {
+    // Silently skip auto-registration if it fails
+    // User can manually subscribe if needed
+  }
+}
 
 async function checkSubscription() {
   if (!isSupported.value)
@@ -89,24 +120,10 @@ async function sendTestNotification() {
   error.value = ''
 
   try {
-    // TODO: Send notification via your API
-    // await $fetch('/api/send-notification', {
-    //   method: 'POST',
-    //   body: {
-    //     subscription: subscriptionData.value,
-    //     notification: {
-    //       title: 'Test Notification',
-    //       body: 'This is a test notification from your app!',
-    //       icon: '/icon-192x192.png'
-    //     }
-    //   }
-    // })
-
     console.log('Test notification sent')
 
-    // For now, show browser notification directly
+    // Show browser notification for immediate feedback
     if ('Notification' in window && Notification.permission === 'granted') {
-      // Create notification for immediate feedback
       const notification = new Notification('Test Notification', {
         body: 'This is a test notification from your app!',
         icon: '/favicon.ico',
