@@ -65,6 +65,7 @@ jobs:
           JWT_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
           ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
           WEBHOOK_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          AUTO_MIGRATE=false
 
     - name: Test Docker image
       if: github.event_name == 'pull_request'
