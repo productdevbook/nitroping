@@ -60,6 +60,11 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        build-args: |
+          DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
+          JWT_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          WEBHOOK_SECRET=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 
     - name: Test Docker image
       if: github.event_name == 'pull_request'
