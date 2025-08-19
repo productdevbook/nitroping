@@ -297,8 +297,16 @@ class WebPushProvider {
       privateKeyEncoding: { type: 'pkcs8', format: 'der' },
     })
 
-    // Convert to base64url format
-    const publicKeyBase64url = Buffer.from(publicKey).toString('base64url')
+    // Extract the raw uncompressed EC point (65 bytes) from SPKI DER format
+    // SPKI format has ASN.1 structure, the raw EC point is at the end
+    const publicKeyBuffer = Buffer.from(publicKey)
+
+    // The uncompressed EC point is the last 65 bytes of the SPKI structure
+    // It starts with 0x04 (uncompressed) + 32 bytes x coordinate + 32 bytes y coordinate
+    const rawPublicKey = publicKeyBuffer.slice(-65)
+
+    // Convert to base64url format (browser expects raw EC point, not SPKI)
+    const publicKeyBase64url = rawPublicKey.toString('base64url')
     const privateKeyBase64url = Buffer.from(privateKey).toString('base64url')
 
     return {

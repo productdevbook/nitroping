@@ -74,3 +74,10 @@ query appBySlug($slug: String!) {
 query appExists($slug: String!) {
   appExists(slug: $slug)
 }
+
+query generateVapidKeys {
+  generateVapidKeys {
+    publicKey
+    privateKey
+  }
+}

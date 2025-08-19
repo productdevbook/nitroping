@@ -208,6 +208,14 @@ export const AppExistsDocument = /*#__PURE__*/ `
   appExists(slug: $slug)
 }
     `;
+export const GenerateVapidKeysDocument = /*#__PURE__*/ `
+    query generateVapidKeys {
+  generateVapidKeys {
+    publicKey
+    privateKey
+  }
+}
+    `;
 export const RegisterDeviceDocument = /*#__PURE__*/ `
     mutation registerDevice($input: RegisterDeviceInput!) {
   registerDevice(input: $input) {
@@ -446,6 +454,9 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     appExists(variables: Types.AppExistsQueryVariables, options?: C): Promise<ExecutionResult<Types.AppExistsQuery, E>> {
       return requester<Types.AppExistsQuery, Types.AppExistsQueryVariables>(AppExistsDocument, variables, options) as Promise<ExecutionResult<Types.AppExistsQuery, E>>;
+    },
+    generateVapidKeys(variables?: Types.GenerateVapidKeysQueryVariables, options?: C): Promise<ExecutionResult<Types.GenerateVapidKeysQuery, E>> {
+      return requester<Types.GenerateVapidKeysQuery, Types.GenerateVapidKeysQueryVariables>(GenerateVapidKeysDocument, variables, options) as Promise<ExecutionResult<Types.GenerateVapidKeysQuery, E>>;
     },
     registerDevice(variables: Types.RegisterDeviceMutationVariables, options?: C): Promise<ExecutionResult<Types.RegisterDeviceMutation, E>> {
       return requester<Types.RegisterDeviceMutation, Types.RegisterDeviceMutationVariables>(RegisterDeviceDocument, variables, options) as Promise<ExecutionResult<Types.RegisterDeviceMutation, E>>;

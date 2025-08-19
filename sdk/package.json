@@ -1,0 +1,46 @@
+{
+  "name": "@nitroping/sdk",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "JavaScript/TypeScript SDK for NitroPing push notification service",
+  "author": "NitroPing Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nitroping/nitroping.git",
+    "directory": "sdk"
+  },
+  "keywords": [
+    "push-notifications",
+    "web-push",
+    "vapid",
+    "notification",
+    "nitroping"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {},
+  "devDependencies": {
+    "tsdown": "^0.14.1",
+    "typescript": "^5.9.2"
+  }
+}

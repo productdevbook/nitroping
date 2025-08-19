@@ -24,7 +24,7 @@ const { data: appData } = useApp(appId)
 const app = computed(() => appData.value)
 
 const { mutateAsync: configureWebPushMutation, isLoading: isConfiguring } = useConfigureWebPush()
-const { mutateAsync: generateVapidKeysMutation, isLoading: isGenerating } = useGenerateVapidKeys()
+const { refetch: generateVapidKeys, isLoading: isGenerating } = useGenerateVapidKeys()
 
 // Form validation schema
 const formSchema = toTypedSchema(z.object({
@@ -57,26 +57,30 @@ watch(app, (newApp) => {
   }
 }, { immediate: true })
 
+const { success: successToast, error: errorToast } = useToast()
+
 // Generate new VAPID keys
 async function generateKeys() {
   try {
-    // TODO: Implement generateVapidKeys properly
-    // const keys = await generateVapidKeysMutation()
-    // if (keys) {
-    //   setFieldValue('publicKey', keys.publicKey)
-    //   setFieldValue('privateKey', keys.privateKey)
+    const result = await generateVapidKeys()
+    const keys = result.data
 
-    //   // Set default subject if empty
-    //   const currentSubject = (document.querySelector('[name="subject"]') as HTMLInputElement)?.value
-    //   if (!currentSubject) {
-    //     setFieldValue('subject', 'mailto:admin@example.com')
-    //   }
-    // }
-    console.log('Generate VAPID keys not implemented yet')
+    if (keys) {
+      setFieldValue('publicKey', keys.publicKey)
+      setFieldValue('privateKey', keys.privateKey)
+
+      // Set default subject if empty
+      const currentSubject = (document.querySelector('[name="subject"]') as HTMLInputElement)?.value
+      if (!currentSubject) {
+        setFieldValue('subject', 'mailto:admin@example.com')
+      }
+
+      successToast('VAPID keys generated successfully', 'New keys have been generated and populated in the form.')
+    }
   }
   catch (error) {
     console.error('Error generating VAPID keys:', error)
-    // TODO: Show error toast
+    errorToast('Failed to generate VAPID keys', 'Please try again or check your configuration.')
   }
 }
 
@@ -92,15 +96,14 @@ const onSubmit = handleSubmit(async (values) => {
       },
     })
 
-    // TODO: Show success toast
-    console.log('Web Push configured successfully')
+    successToast('Web Push configured successfully', 'Your VAPID configuration has been saved.')
 
     // Navigate back to providers page
     await router.push(`/apps/${appId.value}/providers`)
   }
   catch (error) {
     console.error('Error configuring Web Push:', error)
-    // TODO: Show error toast
+    errorToast('Failed to configure Web Push', 'Please check your settings and try again.')
   }
 })
 
