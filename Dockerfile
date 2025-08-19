@@ -10,7 +10,21 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS build
 
+# Build arguments for environment variables needed during build
+ARG DATABASE_URL
+ARG JWT_SECRET
+ARG ENCRYPTION_KEY
+ARG WEBHOOK_SECRET
+ARG AUTO_MIGRATE
+
+# Set environment variables for build
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV DATABASE_URL=$DATABASE_URL
+ENV JWT_SECRET=$JWT_SECRET
+ENV ENCRYPTION_KEY=$ENCRYPTION_KEY
+ENV WEBHOOK_SECRET=$WEBHOOK_SECRET
+ENV AUTO_MIGRATE=$AUTO_MIGRATE
+
 RUN pnpm run build
 
 FROM base AS dev
