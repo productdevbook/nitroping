@@ -1,0 +1,57 @@
+# Dependencies
+node_modules
+
+# Git and version control
+.git
+.gitignore
+.github
+
+# Development and testing
+tests
+coverage
+vitest.config.ts
+*.test.ts
+*.spec.ts
+
+# Documentation
+docs
+README.md
+CLAUDE.md
+*.md
+!package.json
+
+# Environment and configuration
+.env
+.env.*
+!.env.example
+
+# Build outputs and cache
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
+
+# IDE and editor files
+.idea
+.vscode
+.DS_Store
+*.swp
+*.swo
+
+# Mobile SDKs (not needed in Docker)
+android
+ios
+
+# Logs
+*.log
+logs
+
+# Configuration files (build-time not needed)
+eslint.config.mjs
+components.json
+graphql.config.ts
+
+# Development utilities
+nitroping
