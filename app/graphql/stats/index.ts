@@ -1,5 +1,4 @@
 import { useQuery } from '@pinia/colada'
-import { $sdk } from '../ofetch'
 
 // Stats queries
 export function useDashboardStats() {

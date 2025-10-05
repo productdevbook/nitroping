@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
-import { $sdk } from '../ofetch'
 
 // Apps queries
 export function useApps() {

@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from '@pinia/colada'
-import { $sdk } from '../ofetch'
 
 // Notification queries
 export function useNotifications(appId: Ref<string> | string) {
