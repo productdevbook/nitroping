@@ -82,6 +82,8 @@ async function copyApiKey() {
   try {
     await navigator.clipboard.writeText((app as any).value?.apiKey || '')
 
+    push.success('API key copied to clipboard!')
+
     isApiKeyCopied.value = true
 
     setTimeout(() => {
@@ -170,8 +172,10 @@ onMounted(() => {
               <Eye v-if="!showApiKey" class="h-4 w-4" />
               <EyeOff v-else class="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" :class="isApiKeyCopied ? 'text-green-600 border-green-600' : ''"
-              @click="copyApiKey">
+            <Button
+              variant="outline" size="icon" :class="isApiKeyCopied ? 'text-green-600 border-green-600' : ''"
+              @click="copyApiKey"
+            >
               <Check v-if="isApiKeyCopied" class="h-4 w-4" />
               <Copy v-else class="h-4 w-4" />
             </Button>
