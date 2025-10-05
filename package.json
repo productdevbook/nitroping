@@ -46,6 +46,7 @@
     "lucide-vue-next": "^0.544.0",
     "nitro-graphql": "^1.4.4",
     "nitroping": "^0.1.0",
+    "notivue": "^2.4.5",
     "nuxt": "^4.1.2",
     "pinia": "^3.0.3",
     "postgres": "^3.4.7",
