@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   Activity,
+  Check,
   Copy,
   Eye,
   EyeOff,
@@ -34,6 +35,7 @@ const stats = computed(() => (app as any)?.stats || {
 })
 const recentActivity = ref<any[]>([])
 const showApiKey = ref(false)
+const isApiKeyCopied = ref(false)
 
 // Methods
 function _initializeRecentActivity() {
@@ -78,8 +80,15 @@ function formatTime(timestamp: Date) {
 
 async function copyApiKey() {
   try {
-    await navigator.clipboard.writeText((app as any)?.apiKey || '')
-    // TODO: Show success toast
+    await navigator.clipboard.writeText((app as any).value?.apiKey || '')
+
+    push.success('API key copied to clipboard!')
+
+    isApiKeyCopied.value = true
+
+    setTimeout(() => {
+      isApiKeyCopied.value = false
+    }, 2000)
   }
   catch (error) {
     console.error('Failed to copy API key:', error)
@@ -158,21 +167,23 @@ onMounted(() => {
         </CardHeader>
         <CardContent>
           <div class="flex items-center space-x-2">
-            <Input
-              :model-value="showApiKey ? app.apiKey : '•'.repeat(32)"
-              readonly
-              class="font-mono"
-            />
+            <Input :model-value="showApiKey ? app.apiKey : '•'.repeat(32)" readonly class="font-mono" />
             <Button variant="outline" size="icon" @click="showApiKey = !showApiKey">
               <Eye v-if="!showApiKey" class="h-4 w-4" />
               <EyeOff v-else class="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" @click="copyApiKey">
-              <Copy class="h-4 w-4" />
+            <Button
+              variant="outline" size="icon" :class="isApiKeyCopied ? 'text-green-600 border-green-600' : ''"
+              @click="copyApiKey"
+            >
+              <Check v-if="isApiKeyCopied" class="h-4 w-4" />
+              <Copy v-else class="h-4 w-4" />
             </Button>
           </div>
           <p class="text-xs text-muted-foreground mt-2">
-            Use as: <code class="bg-muted px-1 rounded">Authorization: ApiKey {{ app.apiKey?.substring(0, 8) }}...</code>
+            Use as: <code class="bg-muted px-1 rounded">
+              Authorization: ApiKey {{ app.apiKey?.substring(0, 8) }}...
+            </code>
           </p>
         </CardContent>
       </Card>

@@ -19,7 +19,7 @@
     "db:drop": "drizzle-kit drop --config ./server/drizzle.config.ts",
     "db:up": "drizzle-kit up --config ./server/drizzle.config.ts",
     "db:check": "drizzle-kit check --config ./server/drizzle.config.ts",
-    "db:studio": "drizzle-kit studio",
+    "db:studio": "drizzle-kit studio --config ./server/drizzle.config.ts",
     "test": "vitest",
     "test:ui": "vitest --ui"
   },
