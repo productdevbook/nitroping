@@ -9,10 +9,15 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@pinia/colada-nuxt',
     'nitro-graphql/nuxt',
+    'notivue/nuxt',
   ],
   ssr: false,
 
-  css: ['~/assets/css/tailwind.css'],
+  css: [
+    '~/assets/css/tailwind.css',
+    'notivue/notification.css',
+    'notivue/animations.css',
+  ],
 
   nitro: {
     modules: ['nitro-graphql'],
