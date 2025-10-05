@@ -17,6 +17,7 @@ export default antfu(
       'CLAUDE.md',
       'ios',
       'android',
+      '**/*.md',
     ],
   },
   {

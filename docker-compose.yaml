@@ -15,7 +15,7 @@ services:
     volumes:
       - redis_data:/data
   server:
-    profiles: ["prod"]
+    profiles: [prod]
     image: productdevbook/nitroping:v0.0.1
     restart: always
     environment:
@@ -24,12 +24,12 @@ services:
     env_file:
       - .env
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       - db
       - redis
   server-dev:
-    profiles: ["dev"]
+    profiles: [dev]
     container_name: nitro_dev
     build:
       context: .
@@ -43,14 +43,13 @@ services:
     env_file:
       - .env
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       - db
       - redis
     volumes:
       - ./server:/app
       - ./app:/app/app
-
 
 volumes:
   db_data:

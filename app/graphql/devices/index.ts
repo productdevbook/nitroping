@@ -1,6 +1,5 @@
 import type { RegisterDeviceInput } from '#graphql/client'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
-import { $sdk } from '../ofetch'
 
 // Device queries
 export function useDevices(appId: Ref<string | null> | string | null) {
