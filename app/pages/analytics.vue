@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { Button } from 'abckit/shadcn/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'abckit/shadcn/select'
 import { BarChart3, CheckCircle, RefreshCw, Send, XCircle } from 'lucide-vue-next'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { useAnalyticsSummary } from '~/graphql/analytics'
 
 definePageMeta({

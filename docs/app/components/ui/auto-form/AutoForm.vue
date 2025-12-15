@@ -3,7 +3,6 @@ import type { FormContext, GenericObject } from 'vee-validate'
 import type { z, ZodAny } from 'zod'
 import type { Config, ConfigItem, Dependency, Shape } from './interface'
 import { Form } from '@/components/ui/form'
-import { toTypedSchema } from '@vee-validate/zod'
 import { computed, toRefs } from 'vue'
 import AutoFormField from './AutoFormField.vue'
 import { provideDependencies } from './dependencies'
@@ -70,7 +69,7 @@ const formComponentProps = computed(() => {
     }
   }
   else {
-    const formSchema = toTypedSchema(props.schema)
+    const formSchema = props.schema)
     return {
       keepValues: true,
       validationSchema: formSchema,
@@ -78,7 +77,7 @@ const formComponentProps = computed(() => {
       onSubmit: (val: GenericObject) => emits('submit', val as z.infer<T>),
     }
   }
-})
+}
 </script>
 
 <template>

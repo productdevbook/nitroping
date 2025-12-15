@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import { Alert, AlertDescription, AlertTitle } from 'abckit/shadcn/alert'
+import { Button } from 'abckit/shadcn/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from 'abckit/shadcn/dialog'
+import { Input } from 'abckit/shadcn/input'
+import { Label } from 'abckit/shadcn/label'
+import { Switch } from 'abckit/shadcn/switch'
+import { Textarea } from 'abckit/shadcn/textarea'
 import { AlertTriangle, Key, Loader2, Save, Trash2 } from 'lucide-vue-next'
-import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { Switch } from '~/components/ui/switch'
-import { Textarea } from '~/components/ui/textarea'
 
 definePageMeta({
   layout: 'default',

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ChevronsUpDown, FileText, LogOut, Settings } from 'lucide-vue-next'
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from 'abckit/shadcn/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,12 +8,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu'
+} from 'abckit/shadcn/dropdown-menu'
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '~/components/ui/sidebar'
+} from 'abckit/shadcn/sidebar'
+import { ChevronsUpDown, FileText, LogOut, Settings } from 'lucide-vue-next'
 
 interface User {
   name?: string

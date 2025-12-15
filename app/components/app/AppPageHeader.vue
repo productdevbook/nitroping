@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { Badge } from 'abckit/shadcn/badge'
+import { Button } from 'abckit/shadcn/button'
 import { ArrowLeft } from 'lucide-vue-next'
-import { Badge } from '~/components/ui/badge'
-import { Button } from '~/components/ui/button'
 
 interface Props {
   title: string

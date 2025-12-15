@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { Button } from 'abckit/shadcn/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
+import { Input } from 'abckit/shadcn/input'
 import {
   Activity,
   Check,
@@ -10,9 +13,6 @@ import {
   Smartphone,
   TrendingUp,
 } from 'lucide-vue-next'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Input } from '~/components/ui/input'
 
 definePageMeta({
   layout: 'default',

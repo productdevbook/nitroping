@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import type { SidebarProps } from '~/components/ui/sidebar'
+import type { SidebarProps } from 'abckit/shadcn/sidebar'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from 'abckit/shadcn/sidebar'
 import {
   BarChart3,
   FileText,
@@ -12,15 +21,6 @@ import {
 } from 'lucide-vue-next'
 import AppNavMain from '~/components/app/AppNavMain.vue'
 import AppNavUser from '~/components/app/AppNavUser.vue'
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from '~/components/ui/sidebar'
 
 const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: 'icon',

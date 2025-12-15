@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { toTypedSchema } from '@vee-validate/zod'
+import { Button } from 'abckit/shadcn/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
+
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from 'abckit/shadcn/form'
+import { Input } from 'abckit/shadcn/input'
+import { Textarea } from 'abckit/shadcn/textarea'
 import { Loader2, Plus } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
-
 import * as z from 'zod'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
-import { Textarea } from '~/components/ui/textarea'
 
 // Props
 interface Props {
@@ -26,7 +25,7 @@ const emit = defineEmits<{
 }>()
 
 // Form validation schema
-const formSchema = toTypedSchema(z.object({
+const formSchema = z.object({
   name: z.string().min(1, 'App name is required'),
   slug: z.string()
     .min(1, 'Slug is required')
@@ -34,7 +33,7 @@ const formSchema = toTypedSchema(z.object({
     .regex(/^[a-z0-9]/, 'Slug must start with a letter or number')
     .regex(/[a-z0-9]$/, 'Slug must end with a letter or number'),
   description: z.string().optional(),
-}))
+})
 
 // Form setup
 const { handleSubmit, isSubmitting, values, setFieldValue } = useForm({

@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { Badge } from 'abckit/shadcn/badge'
+import { Card, CardContent, CardHeader, CardTitle } from 'abckit/shadcn/card'
 import { AlertTriangle, Code, Terminal } from 'lucide-vue-next'
-import { Badge } from '~/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 
 definePageMeta({
   layout: 'default',

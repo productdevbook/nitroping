@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from 'abckit/shadcn/breadcrumb'
+import { Button } from 'abckit/shadcn/button'
+import ThemeToggle from 'abckit/shadcn/button/ThemeToggle.vue'
+import { Separator } from 'abckit/shadcn/separator'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from 'abckit/shadcn/sidebar'
 import { ExternalLink, Search, Zap } from 'lucide-vue-next'
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '~/components/ui/breadcrumb'
-import { Button } from '~/components/ui/button'
-import ThemeToggle from '~/components/ui/button/ThemeToggle.vue'
-import { Separator } from '~/components/ui/separator'
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '~/components/ui/sidebar'
 
 const route = useRoute()
 

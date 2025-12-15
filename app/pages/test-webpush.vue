@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { Alert, AlertDescription, AlertTitle } from 'abckit/shadcn/alert'
+import { Badge } from 'abckit/shadcn/badge'
+import { Button } from 'abckit/shadcn/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
 import { AlertTriangle, Loader2 } from 'lucide-vue-next'
 import { NitroPingClient } from 'nitroping'
-import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { Badge } from '~/components/ui/badge'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 
 const { success: successToast } = useToast()
 

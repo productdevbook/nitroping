@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { Badge } from 'abckit/shadcn/badge'
+import { Button } from 'abckit/shadcn/button'
+import { Card, CardContent, CardHeader, CardTitle } from 'abckit/shadcn/card'
+import { Input } from 'abckit/shadcn/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'abckit/shadcn/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'abckit/shadcn/table'
 import { Calendar, CheckCircle, Loader2, Search, Send, XCircle } from 'lucide-vue-next'
-import { Badge } from '~/components/ui/badge'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { Input } from '~/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
 
 definePageMeta({
   layout: 'default',

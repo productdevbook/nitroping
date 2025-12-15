@@ -41,7 +41,7 @@
   },
   "peerDependencies": {},
   "devDependencies": {
-    "tsdown": "^0.15.6",
+    "tsdown": "^0.18.0",
     "typescript": "^5.9.3"
   }
 }

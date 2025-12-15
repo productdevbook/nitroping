@@ -3,13 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: [
-    '@nuxtjs/tailwindcss',
-    'shadcn-nuxt',
-    '@nuxtjs/color-mode',
-    '@pinia/nuxt',
-    '@pinia/colada-nuxt',
-    'nitro-graphql/nuxt',
-    'notivue/nuxt',
+    'abckit',
   ],
   ssr: false,
 
@@ -58,13 +52,5 @@ export default defineNuxtConfig({
      * @default "./components/ui"
      */
     componentDir: '~/components/ui',
-  },
-
-  colorMode: {
-    classSuffix: '',
-    fallback: 'light',
-    storageKey: 'sayfa-color-mode',
-    preference: 'light', // System yerine light default
-    hid: 'nuxt-color-mode-script',
   },
 })

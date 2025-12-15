@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { toTypedSchema } from '@vee-validate/zod'
+import { Alert, AlertDescription, AlertTitle } from 'abckit/shadcn/alert'
+import { Button } from 'abckit/shadcn/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
+
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from 'abckit/shadcn/form'
+import { Input } from 'abckit/shadcn/input'
+import { Textarea } from 'abckit/shadcn/textarea'
 import { AlertTriangle, ArrowLeft, Check, FileText, Loader2, Save, Upload } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'
-
-import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
-import { Textarea } from '~/components/ui/textarea'
 
 definePageMeta({
   layout: 'default',
@@ -26,7 +25,7 @@ const app = computed(() => appData.value)
 const { mutateAsync: configureFCMMutation, isLoading: isConfiguring } = useConfigureFCM()
 
 // Form validation schema
-const formSchema = toTypedSchema(z.object({
+const formSchema = z.object({
   projectId: z.string().min(1, 'Project ID is required'),
   serviceAccount: z.string().min(1, 'Service account JSON is required').refine(
     (val) => {
@@ -40,7 +39,7 @@ const formSchema = toTypedSchema(z.object({
     },
     'Invalid service account JSON format',
   ),
-}))
+})
 
 // Form setup
 const { handleSubmit, isSubmitting, setValues, setFieldValue, values } = useForm({

@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import { Badge } from 'abckit/shadcn/badge'
+import { Button } from 'abckit/shadcn/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from 'abckit/shadcn/dialog'
+import { Input } from 'abckit/shadcn/input'
+import { Label } from 'abckit/shadcn/label'
+import { Textarea } from 'abckit/shadcn/textarea'
 import { Globe, Loader2, Package, Plus, Send, Settings, Smartphone } from 'lucide-vue-next'
-import { Badge } from '~/components/ui/badge'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { Textarea } from '~/components/ui/textarea'
 
 definePageMeta({
   layout: 'default',

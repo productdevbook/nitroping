@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { toTypedSchema } from '@vee-validate/zod'
+import { Alert, AlertDescription, AlertTitle } from 'abckit/shadcn/alert'
+import { Button } from 'abckit/shadcn/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
+
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from 'abckit/shadcn/form'
+import { Input } from 'abckit/shadcn/input'
+import { Switch } from 'abckit/shadcn/switch'
+import { Textarea } from 'abckit/shadcn/textarea'
 import { AlertTriangle, ArrowLeft, Check, FileText, Loader2, Save } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'
-
-import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form'
-import { Input } from '~/components/ui/input'
-import { Switch } from '~/components/ui/switch'
-import { Textarea } from '~/components/ui/textarea'
 
 definePageMeta({
   layout: 'default',
@@ -27,13 +26,13 @@ const app = computed(() => appData.value)
 const { mutateAsync: configureAPNsMutation, isLoading: isConfiguring } = useConfigureAPNs()
 
 // Form validation schema
-const formSchema = toTypedSchema(z.object({
+const formSchema = z.object({
   keyId: z.string().min(1, 'Key ID is required').max(10, 'Key ID should be 10 characters'),
   teamId: z.string().min(1, 'Team ID is required').max(10, 'Team ID should be 10 characters'),
   privateKey: z.string().min(1, 'Private key is required'),
   bundleId: z.string().optional(),
   isProduction: z.boolean().default(false),
-}))
+})
 
 // Form setup
 const { handleSubmit, isSubmitting, setValues } = useForm({

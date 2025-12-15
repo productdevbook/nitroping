@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ChevronRight, ExternalLink } from 'lucide-vue-next'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '~/components/ui/collapsible'
+} from 'abckit/shadcn/collapsible'
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -14,7 +13,8 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from '~/components/ui/sidebar'
+} from 'abckit/shadcn/sidebar'
+import { ChevronRight, ExternalLink } from 'lucide-vue-next'
 
 interface MenuItem {
   title: string
