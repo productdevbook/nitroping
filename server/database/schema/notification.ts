@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm'
 import { integer, jsonb, pgTable, text, uuid } from 'drizzle-orm/pg-core'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
 import { deliveryLog } from './deliveryLog'
@@ -39,3 +40,6 @@ export const notificationRelations = relations(notification, ({ one, many }) => 
   }),
   deliveryLogs: many(deliveryLog),
 }))
+
+export const selectNotificationSchema = createSelectSchema(notification)
+export const insertNotificationSchema = createInsertSchema(notification)

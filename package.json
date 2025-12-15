@@ -31,6 +31,7 @@
     "dataloader": "^2.2.3",
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",
+    "drizzle-zod": "^0.8.3",
     "graphql": "^16.12.0",
     "jsonwebtoken": "^9.0.3",
     "nitroping": "^0.1.0",

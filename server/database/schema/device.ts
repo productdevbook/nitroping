@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm'
 import { jsonb, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
 import { deliveryLog } from './deliveryLog'
@@ -28,3 +29,6 @@ export const deviceRelations = relations(device, ({ one, many }) => ({
   }),
   deliveryLogs: many(deliveryLog),
 }))
+
+export const selectDeviceSchema = createSelectSchema(device)
+export const insertDeviceSchema = createInsertSchema(device)

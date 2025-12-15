@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm'
 import { boolean, jsonb, pgTable, text, uuid } from 'drizzle-orm/pg-core'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
 
@@ -22,3 +23,6 @@ export const apiKeyRelations = relations(apiKey, ({ one }) => ({
     references: [app.id],
   }),
 }))
+
+export const selectApiKeySchema = createSelectSchema(apiKey)
+export const insertApiKeySchema = createInsertSchema(apiKey)
