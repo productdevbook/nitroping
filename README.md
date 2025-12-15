@@ -169,16 +169,16 @@ graph TB
 3. **Set up database**
    ```bash
    # Start PostgreSQL (using Docker)
-   docker run --name nitroping-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=nitroping -p 5432:5432 -d postgres:15
+   docker run --name nitroping-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=nitroping -p 5432:5432 -d postgres:18
    
    # Generate and run migrations
-   pnpm db:generate
-   pnpm db:migrate
+   bun run db:generate
+   bun run db:migrate
    ```
 
 4. **Start development server**
    ```bash
-   pnpm dev --host  # Allows access from mobile devices on same network
+   bun run dev --host  # Allows access from mobile devices on same network
    ```
    
 #### Docker
@@ -328,18 +328,18 @@ NitroPingClient.shared.registerForPushNotifications()
 
 ```bash
 # Development
-pnpm dev --host       # Start dev server (accessible from mobile devices)
-pnpm typecheck        # Type checking
-pnpm lint             # Run linter
+bun run dev --host    # Start dev server (accessible from mobile devices)
+bun run typecheck     # Type checking
+bun run lint          # Run linter
 
 # Database
-pnpm db:generate      # Generate migrations
-pnpm db:migrate       # Run migrations
-pnpm db:studio        # Open Drizzle Studio
+bun run db:generate   # Generate migrations
+bun run db:migrate    # Run migrations
+bun run db:studio     # Open Drizzle Studio
 
 # Testing
-pnpm test             # Run tests
-pnpm test:ui          # Test with UI
+bun run test          # Run tests
+bun run test:ui       # Test with UI
 ```
 
 ## 🤝 Contributing
@@ -381,7 +381,7 @@ We welcome all contributions! Whether you're fixing bugs, adding features, or im
 # Clone and setup
 git clone https://github.com/productdevbook/nitroping.git
 cd nitroping
-pnpm install
+bun install
 
 # Setup environment
 cp .env.example .env
@@ -391,12 +391,12 @@ cp .env.example .env
 docker run -d --name nitroping-db \
   -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_DB=nitroping \
-  -p 5432:5432 postgres:15
+  -p 5432:5432 postgres:18
 
-pnpm db:generate && pnpm db:migrate
+bun run db:generate && bun run db:migrate
 
 # Start development
-pnpm dev --host
+bun run dev --host
 ```
 
 ## 🗺️ Roadmap

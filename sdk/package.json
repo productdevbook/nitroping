@@ -35,7 +35,7 @@
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "release": "pnpm build && pnpm publish --no-git-checks --access public"
+    "release": "bun run build && bun publish --no-git-checks --access public"
   },
   "peerDependencies": {},
   "devDependencies": {
