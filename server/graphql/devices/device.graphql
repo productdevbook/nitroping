@@ -28,7 +28,10 @@ type Device {
   status: DeviceStatus!
   userId: String
   metadata: JSON
-  
+
+  # Relations
+  deliveryLogs: [DeliveryLog!]
+
   # Timestamps
   createdAt: Timestamp!
   updatedAt: Timestamp!

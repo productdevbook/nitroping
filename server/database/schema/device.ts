@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm'
-import { jsonb, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
+import { pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { customTimestamp, uuidv7Generator } from '../shared'
+import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
 import { deliveryLog } from './deliveryLog'
 import { categoryEnum, deviceStatusEnum, platformEnum } from './enums'
@@ -14,7 +14,7 @@ export const device = pgTable('device', {
   platform: platformEnum().notNull(),
   userId: text(),
   status: deviceStatusEnum().default('ACTIVE').notNull(),
-  metadata: jsonb(),
+  metadata: customJsonb(),
   lastSeenAt: customTimestamp(),
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),

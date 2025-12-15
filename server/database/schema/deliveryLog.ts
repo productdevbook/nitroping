@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm'
-import { integer, jsonb, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
+import { integer, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { customTimestamp, uuidv7Generator } from '../shared'
+import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { device } from './device'
 import { deliveryStatusEnum } from './enums'
 import { notification } from './notification'
@@ -11,7 +11,7 @@ export const deliveryLog = pgTable('deliveryLog', {
   notificationId: uuid().notNull().references(() => notification.id, { onDelete: 'cascade' }),
   deviceId: uuid().notNull().references(() => device.id, { onDelete: 'cascade' }),
   status: deliveryStatusEnum().notNull(),
-  providerResponse: jsonb(),
+  providerResponse: customJsonb(),
   errorMessage: text(),
   attemptCount: integer().default(1),
   sentAt: customTimestamp(),

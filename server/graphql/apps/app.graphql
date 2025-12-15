@@ -5,7 +5,7 @@ type App {
   description: String
   isActive: Boolean!
   apiKey: String!
-  
+
   # Push Provider Configuration
   fcmProjectId: String
   fcmServiceAccount: String
@@ -16,10 +16,15 @@ type App {
   vapidSubject: String
   vapidPublicKey: String
   vapidPrivateKey: String
-  
+
+  # Relations
+  devices: [Device!]
+  notifications: [Notification!]
+  apiKeys: [ApiKey!]
+
   # Statistics
   stats: AppStats
-  
+
   # Timestamps
   createdAt: Timestamp!
   updatedAt: Timestamp!

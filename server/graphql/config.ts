@@ -1,5 +1,5 @@
 import * as tables from '~~/server/database/schema'
-import { createDataLoaders } from '~~/server/utils/dataloaders'
+import { createDataLoaders } from '~~/server/graphql/loaders'
 import { useDatabase } from '~~/server/utils/useDatabase'
 
 export default defineGraphQLConfig({

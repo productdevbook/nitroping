@@ -1,0 +1,15 @@
+type ApiKey {
+  id: ID!
+  appId: ID!
+  app: App
+  name: String!
+  key: String!
+  permissions: JSON
+  isActive: Boolean
+  lastUsedAt: Timestamp
+  expiresAt: Timestamp
+
+  # Timestamps
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}

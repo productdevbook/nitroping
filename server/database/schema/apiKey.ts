@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm'
-import { boolean, jsonb, pgTable, text, uuid } from 'drizzle-orm/pg-core'
+import { boolean, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { customTimestamp, uuidv7Generator } from '../shared'
+import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
 
 export const apiKey = pgTable('apiKey', {
@@ -9,7 +9,7 @@ export const apiKey = pgTable('apiKey', {
   appId: uuid().notNull().references(() => app.id, { onDelete: 'cascade' }),
   name: text().notNull(),
   key: text().notNull().unique(),
-  permissions: jsonb(),
+  permissions: customJsonb(),
   isActive: boolean().default(true),
   lastUsedAt: customTimestamp(),
   expiresAt: customTimestamp(),

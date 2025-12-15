@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm'
-import { integer, jsonb, pgTable, text, uuid } from 'drizzle-orm/pg-core'
+import { integer, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { customTimestamp, uuidv7Generator } from '../shared'
+import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
 import { deliveryLog } from './deliveryLog'
 import { notificationStatusEnum } from './enums'
@@ -11,15 +11,15 @@ export const notification = pgTable('notification', {
   appId: uuid().notNull().references(() => app.id, { onDelete: 'cascade' }),
   title: text().notNull(),
   body: text().notNull(),
-  data: jsonb(),
+  data: customJsonb(),
   badge: integer(),
   sound: text(),
   clickAction: text(),
   icon: text(),
   image: text(),
   imageUrl: text(),
-  targetDevices: jsonb(),
-  platforms: jsonb(),
+  targetDevices: customJsonb(),
+  platforms: customJsonb(),
   scheduledAt: customTimestamp(),
   expiresAt: customTimestamp(),
   status: notificationStatusEnum().default('PENDING').notNull(),
