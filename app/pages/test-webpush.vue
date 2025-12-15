@@ -37,7 +37,8 @@ const hasWebPushConfig = computed(() => {
 
 // Browser support check
 const isSupported = computed(() => {
-  if (typeof window === 'undefined') return false
+  if (typeof window === 'undefined')
+    return false
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
 })
 
@@ -91,7 +92,8 @@ async function fetchApps() {
 }
 
 function initializeClient() {
-  if (!selectedApp.value?.vapidPublicKey) return
+  if (!selectedApp.value?.vapidPublicKey)
+    return
 
   nitroPingClient = new NitroPingClient({
     appId: selectedApp.value.id,
@@ -101,7 +103,8 @@ function initializeClient() {
 }
 
 async function checkSubscription() {
-  if (!isSupported.value || !nitroPingClient) return
+  if (!isSupported.value || !nitroPingClient)
+    return
 
   try {
     const status = await nitroPingClient.getSubscriptionStatus()
@@ -114,7 +117,8 @@ async function checkSubscription() {
 }
 
 async function subscribeToPush() {
-  if (!isSupported.value || !nitroPingClient) return
+  if (!isSupported.value || !nitroPingClient)
+    return
 
   isLoading.value = true
   error.value = ''
@@ -143,7 +147,8 @@ async function subscribeToPush() {
 }
 
 async function unsubscribeFromPush() {
-  if (!nitroPingClient) return
+  if (!nitroPingClient)
+    return
 
   isLoading.value = true
   error.value = ''
@@ -171,7 +176,8 @@ async function unsubscribeFromPush() {
 }
 
 async function sendTestNotification() {
-  if (!isSubscribed.value || !selectedAppId.value) return
+  if (!isSubscribed.value || !selectedAppId.value)
+    return
 
   isLoading.value = true
   error.value = ''
