@@ -6,6 +6,7 @@ import { Input } from 'abckit/shadcn/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'abckit/shadcn/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'abckit/shadcn/table'
 import { Calendar, CheckCircle, Loader2, Search, Send, XCircle } from 'lucide-vue-next'
+import { useNotificationApi } from '~/graphql/notifications'
 
 definePageMeta({
   layout: 'default',
@@ -18,7 +19,7 @@ const appId = computed(() => route.params.id as string)
 const { data: appData } = useApp(appId)
 const app = computed(() => appData.value)
 
-const { data: notificationsData, isLoading: notificationsLoading } = useNotifications(appId)
+const { data: notificationsData, isLoading: notificationsLoading } = useNotificationApi(appId)
 const notifications = computed(() => notificationsData.value || [])
 
 // Reactive data

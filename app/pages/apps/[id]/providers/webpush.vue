@@ -8,7 +8,7 @@ import { Input } from 'abckit/shadcn/input'
 import { Textarea } from 'abckit/shadcn/textarea'
 import { AlertTriangle, ArrowLeft, Check, FileText, Key, Loader2, RefreshCw, Save } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
-import * as z from 'zod'
+import { z } from 'zod'
 
 definePageMeta({
   layout: 'default',

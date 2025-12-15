@@ -9,7 +9,7 @@ import { Switch } from 'abckit/shadcn/switch'
 import { Textarea } from 'abckit/shadcn/textarea'
 import { AlertTriangle, ArrowLeft, Check, FileText, Loader2, Save } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
-import * as z from 'zod'
+import { z } from 'zod'
 
 definePageMeta({
   layout: 'default',

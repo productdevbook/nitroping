@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@pinia/colada'
 
 // Notification queries
-export function useNotifications(appId: Ref<string> | string) {
+export function useNotificationApi(appId: Ref<string> | string) {
   return useQuery({
     key: () => ['notifications', unref(appId)],
     query: async () => {

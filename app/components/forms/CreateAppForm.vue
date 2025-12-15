@@ -7,7 +7,7 @@ import { Input } from 'abckit/shadcn/input'
 import { Textarea } from 'abckit/shadcn/textarea'
 import { Loader2, Plus } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
-import * as z from 'zod'
+import { z } from 'zod'
 
 // Props
 interface Props {
