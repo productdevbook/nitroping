@@ -1,3 +1,5 @@
+import { defineQuery } from 'nitro-graphql/utils/define'
+
 export const appsQuery = defineQuery({
   apps: {
     resolve: async (_parent, args, { context }) => {

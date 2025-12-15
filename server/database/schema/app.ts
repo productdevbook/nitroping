@@ -1,9 +1,9 @@
 import { relations } from 'drizzle-orm'
 import { boolean, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { customTimestamp, uuidv7Generator } from '../shared'
+import { apiKey } from './apiKey'
 import { device } from './device'
 import { notification } from './notification'
-import { apiKey } from './apiKey'
 
 export const app = pgTable('app', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),

@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { defineQuery } from 'nitro-graphql/utils/define'
 
 export const deliveryLogsQuery = defineQuery({
   deliveryLogs: {

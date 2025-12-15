@@ -1,4 +1,6 @@
-export const deliveryLogFieldsResolver = defineType({
+import { defineField } from 'nitro-graphql/utils/define'
+
+export const deliveryLogFieldsResolver = defineField({
   DeliveryLog: {
     notification: {
       resolve: async (parent, _args, { context }) => {

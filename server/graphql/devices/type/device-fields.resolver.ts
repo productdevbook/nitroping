@@ -1,4 +1,6 @@
-export const deviceFieldsResolver = defineType({
+import { defineField } from 'nitro-graphql/utils/define'
+
+export const deviceFieldsResolver = defineField({
   Device: {
     app: {
       resolve: async (parent, _args, { context }) => {

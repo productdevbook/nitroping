@@ -1,3 +1,5 @@
+import { defineMutation } from 'nitro-graphql/utils/define'
+
 export const registerDeviceMutation = defineMutation({
   registerDevice: {
     resolve: async (_parent, { input }, { context }) => {

@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { defineMutation } from 'nitro-graphql/utils/define'
 import { encryptSensitiveData } from '~~/server/utils/crypto'
 
 export const configureAPNsMutation = defineMutation({

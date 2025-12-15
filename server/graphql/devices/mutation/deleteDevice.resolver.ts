@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+import { defineMutation } from 'nitro-graphql/utils/define'
 
 export const deleteDeviceMutation = defineMutation({
   deleteDevice: {

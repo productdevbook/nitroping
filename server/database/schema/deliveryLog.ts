@@ -1,9 +1,9 @@
 import { relations } from 'drizzle-orm'
 import { integer, jsonb, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
 import { customTimestamp, uuidv7Generator } from '../shared'
+import { device } from './device'
 import { deliveryStatusEnum } from './enums'
 import { notification } from './notification'
-import { device } from './device'
 
 export const deliveryLog = pgTable('deliveryLog', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),
