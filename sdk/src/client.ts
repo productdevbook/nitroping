@@ -124,12 +124,14 @@ export class NitroPingClient {
       ...(category !== 'WEB' && { category }),
       platform: 'WEB',
       userId,
+      // WebPush subscription keys for encryption
+      webPushP256dh: subscriptionData.keys.p256dh,
+      webPushAuth: subscriptionData.keys.auth,
       metadata: JSON.stringify({
         userAgent: navigator.userAgent,
         browser: browserType,
         browserVersion: getBrowserVersion(),
         os: detectOS(),
-        subscription: subscriptionData,
         tags: options.tags || [],
         ...options.metadata,
       }),
@@ -212,6 +214,8 @@ export class NitroPingClient {
     category?: string
     platform: string
     userId: string
+    webPushP256dh: string
+    webPushAuth: string
     metadata: string
   }): Promise<DeviceRegistration> {
     const query = `
@@ -222,6 +226,8 @@ export class NitroPingClient {
           token
           platform
           userId
+          webPushP256dh
+          webPushAuth
           metadata
           status
           lastSeenAt

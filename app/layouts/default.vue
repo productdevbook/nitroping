@@ -20,6 +20,8 @@ const pageTitle = computed(() => {
     return 'Send Notification'
   if (path.startsWith('/devices'))
     return 'Device Testing'
+  if (path.startsWith('/test-webpush'))
+    return 'Web Push Test'
   if (path.startsWith('/docs'))
     return 'Documentation'
   if (path.startsWith('/settings'))

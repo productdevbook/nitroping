@@ -15,6 +15,9 @@ export const device = pgTable('device', {
   userId: text(),
   status: deviceStatusEnum().default('ACTIVE').notNull(),
   metadata: customJsonb(),
+  // WebPush subscription keys (required for Web Push encryption)
+  webPushP256dh: text(),
+  webPushAuth: text(),
   lastSeenAt: customTimestamp(),
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),

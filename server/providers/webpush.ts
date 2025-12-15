@@ -61,8 +61,9 @@ class WebPushProvider {
 
   private async generateVapidHeaders(audience: string): Promise<Record<string, string>> {
     try {
-      const jwt = await import('jsonwebtoken')
-      const _crypto = await import('node:crypto')
+      const jwtModule = await import('jsonwebtoken')
+      const crypto = await import('node:crypto')
+      const jwt = jwtModule.default || jwtModule
 
       const now = Math.floor(Date.now() / 1000)
       const payload = {
@@ -71,9 +72,30 @@ class WebPushProvider {
         sub: this.config.vapidSubject,
       }
 
-      // Convert VAPID private key from base64url to PEM format
-      const privateKeyBuffer = Buffer.from(this.config.privateKey, 'base64url')
-      const privateKeyPem = this.convertToPem(privateKeyBuffer)
+      // Detect format: base64 starts with "MIG" (PKCS#8 header), base64url uses - and _
+      let privateKeyBuffer: Buffer
+      if (this.config.privateKey.startsWith('MIG') || this.config.privateKey.includes('+') || this.config.privateKey.includes('/')) {
+        // Standard base64 (PKCS#8 DER)
+        privateKeyBuffer = Buffer.from(this.config.privateKey, 'base64')
+      }
+      else if (this.config.privateKey.includes('-') || this.config.privateKey.includes('_')) {
+        // base64url
+        privateKeyBuffer = Buffer.from(this.config.privateKey, 'base64url')
+      }
+      else {
+        // Try base64 first (more common for PKCS#8)
+        privateKeyBuffer = Buffer.from(this.config.privateKey, 'base64')
+      }
+
+      // Import the key properly using Node.js crypto
+      const privateKey = crypto.createPrivateKey({
+        key: privateKeyBuffer,
+        format: 'der',
+        type: 'pkcs8',
+      })
+
+      // Export as PEM for jsonwebtoken
+      const privateKeyPem = privateKey.export({ type: 'pkcs8', format: 'pem' }) as string
 
       const token = jwt.sign(payload, privateKeyPem, {
         algorithm: 'ES256',
@@ -104,55 +126,84 @@ class WebPushProvider {
   }> {
     const crypto = await import('node:crypto')
 
-    // Generate a new key pair for this message
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
+    // Generate a new key pair for this message (as KeyObjects - modern Node.js approach)
+    const { publicKey: localPublicKeyObj, privateKey: localPrivateKeyObj } = crypto.generateKeyPairSync('ec', {
       namedCurve: 'prime256v1',
-      publicKeyEncoding: { type: 'spki', format: 'der' },
-      privateKeyEncoding: { type: 'pkcs8', format: 'der' },
     })
 
-    // Extract the subscriber's public key
-    const subscriberPublicKey = Buffer.from(subscription.keys.p256dh, 'base64url')
-    const authSecret = Buffer.from(subscription.keys.auth, 'base64url')
+    // Export local public key as uncompressed EC point (65 bytes)
+    const localPublicKeySpki = localPublicKeyObj.export({ type: 'spki', format: 'der' }) as Buffer
+    const localPublicKey = Buffer.from(localPublicKeySpki).slice(-65)
 
-    // Generate a random salt
+    // Import subscriber's public key as KeyObject
+    const subscriberPublicKeyRaw = Buffer.from(subscription.keys.p256dh, 'base64url')
+    // Reconstruct SPKI format for the subscriber's public key (P-256 SPKI header + raw key)
+    const spkiHeader = Buffer.from([
+      0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01,
+      0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07, 0x03, 0x42, 0x00,
+    ])
+    const subscriberSpki = Buffer.concat([spkiHeader, subscriberPublicKeyRaw])
+    const subscriberPublicKeyObj = crypto.createPublicKey({ key: subscriberSpki, format: 'der', type: 'spki' })
+
+    const authSecret = Buffer.from(subscription.keys.auth, 'base64url')
     const salt = crypto.randomBytes(16)
 
-    // Perform ECDH
-    const sharedSecret = crypto.createECDH('prime256v1')
-    sharedSecret.setPrivateKey(privateKey)
-    const shared = sharedSecret.computeSecret(subscriberPublicKey)
+    // Modern ECDH using diffieHellman() with KeyObjects
+    const sharedSecret = crypto.diffieHellman({
+      privateKey: localPrivateKeyObj,
+      publicKey: subscriberPublicKeyObj,
+    })
 
-    // Derive encryption keys using HKDF
-    const _context = Buffer.concat([
-      Buffer.from('WebPush: info\x00', 'utf8'),
-      subscriberPublicKey,
-      Buffer.from(publicKey),
+    // RFC 8291: Derive IKM using HKDF with auth secret
+    // info = "WebPush: info\0" || ua_public || as_public
+    const keyInfoBuffer = Buffer.concat([
+      Buffer.from('WebPush: info\0', 'utf8'),
+      subscriberPublicKeyRaw,
+      localPublicKey,
     ])
 
-    const prk = crypto.createHmac('sha256', authSecret).update(shared).digest()
-    const contentEncryptionKey = await this.hkdfExpand(prk, Buffer.from('Content-Encoding: aes128gcm\x00', 'utf8'), 16)
-    const nonce = await this.hkdfExpand(prk, Buffer.from('Content-Encoding: nonce\x00', 'utf8'), 12)
+    // Step 1: IKM = HKDF(sharedSecret, authSecret, keyInfoBuffer, 32)
+    const ikm = crypto.hkdfSync('sha256', sharedSecret, authSecret, keyInfoBuffer, 32)
 
-    // Encrypt the payload
-    const cipher = crypto.createCipheriv('aes-128-gcm', contentEncryptionKey, nonce)
+    // Step 2: PRK = HKDF-Extract(salt, IKM) - just HMAC, not full HKDF
+    const prk = crypto.createHmac('sha256', salt).update(Buffer.from(ikm)).digest()
 
-    const ciphertext = cipher.update(payload, 'utf8')
-    cipher.final()
+    // Step 3: Derive CEK and nonce using HKDF-Expand
+    const cekInfo = Buffer.from('Content-Encoding: aes128gcm\0', 'utf8')
+    const nonceInfo = Buffer.from('Content-Encoding: nonce\0', 'utf8')
+    const contentEncryptionKey = await this.hkdfExpand(prk, cekInfo, 16)
+    const nonce = await this.hkdfExpand(prk, nonceInfo, 12)
 
+    // Add padding delimiter (0x02) and encrypt
+    const paddedPayload = Buffer.concat([Buffer.from(payload, 'utf8'), Buffer.from([0x02])])
+
+    const cipher = crypto.createCipheriv('aes-128-gcm', Buffer.from(contentEncryptionKey), Buffer.from(nonce))
+    const encrypted = Buffer.concat([cipher.update(paddedPayload), cipher.final()])
     const authTag = cipher.getAuthTag()
-    const finalCiphertext = Buffer.concat([ciphertext, authTag])
+
+    // Build aes128gcm record: salt(16) + rs(4) + idlen(1) + keyid(65) + encrypted + authTag
+    const recordSize = Buffer.alloc(4)
+    recordSize.writeUInt32BE(4096, 0) // Record size
+
+    const body = Buffer.concat([
+      salt, // 16 bytes
+      recordSize, // 4 bytes
+      Buffer.from([65]), // Key ID length (1 byte)
+      localPublicKey, // 65 bytes (uncompressed EC point)
+      encrypted,
+      authTag, // 16 bytes
+    ])
 
     return {
-      ciphertext: finalCiphertext,
+      ciphertext: body,
       salt,
-      localPublicKey: Buffer.from(publicKey),
+      localPublicKey,
     }
   }
 
   private async hkdfExpand(prk: Buffer, info: Buffer, length: number): Promise<Buffer> {
-    const crypto = await import('node:crypto')
-    const hmac = crypto.createHmac('sha256', prk)
+    const { createHmac } = await import('node:crypto')
+    const hmac = createHmac('sha256', prk)
     hmac.update(info)
     hmac.update(Buffer.from([1]))
     return hmac.digest().slice(0, length)
@@ -199,19 +250,10 @@ class WebPushProvider {
         }
       }
       else {
-        let errorMessage = `HTTP ${response.status}`
-        try {
-          const errorText = await response.text()
-          if (errorText)
-            errorMessage = errorText
-        }
-        catch {
-          // Ignore text parse errors
-        }
-
+        const responseText = await response.text()
         return {
           success: false,
-          error: errorMessage,
+          error: responseText || `HTTP ${response.status}`,
           statusCode: response.status,
         }
       }
@@ -265,14 +307,25 @@ class WebPushProvider {
     }
   }
 
-  convertNotificationPayload(payload: NotificationPayload, subscription: WebPushSubscription): WebPushMessage {
+  convertNotificationPayload(
+    payload: NotificationPayload,
+    subscription: WebPushSubscription,
+    notificationId?: string,
+    deviceId?: string,
+  ): WebPushMessage {
     const webPushPayload: WebPushPayload = {
       title: payload.title,
       body: payload.body,
       icon: payload.icon,
       image: payload.image,
       tag: payload.clickAction,
-      data: payload.data,
+      data: {
+        ...payload.data,
+        // Add tracking IDs for service worker
+        nitroping_notification_id: notificationId,
+        nitroping_device_id: deviceId,
+        clickAction: payload.clickAction,
+      },
       timestamp: Date.now(),
       requireInteraction: false,
       silent: false,

@@ -1,17 +1,21 @@
 services:
   db:
-    image: postgres:18
+    image: postgres:17
     container_name: postgres_db
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - '5432:5432'
     volumes:
       - db_data:/var/lib/postgresql/data
   redis:
     image: redis:latest
     restart: always
+    ports:
+      - '6379:6379'
     volumes:
       - redis_data:/data
   server:

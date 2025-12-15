@@ -81,14 +81,54 @@ export const notificationMutations = defineMutation({
 
             for (const device of (devices as any[])) {
               try {
-                const message = provider.convertNotificationPayload({
+                // Build notification payload
+                const notificationPayload = {
                   title: input.title,
                   body: input.body,
                   data: input.data ? JSON.parse(input.data) : undefined,
                   badge: input.badge,
                   sound: input.sound,
                   clickAction: input.clickAction,
-                }, device.token, newNotification[0].id, device.id)
+                }
+
+                // WebPush requires subscription object with keys
+                let message
+                if (platform === 'web') {
+                  // Validate WebPush keys exist - skip device if missing
+                  if (!device.webPushP256dh || !device.webPushAuth) {
+                    console.warn(`[Notification] Skipping device ${device.id}: WebPush keys missing (p256dh/auth). Device needs to re-subscribe.`)
+                    totalFailed++
+                    deliveryLogs.push({
+                      notificationId: newNotification[0].id,
+                      deviceId: device.id,
+                      status: 'FAILED' as const,
+                      errorMessage: 'WebPush subscription keys missing. Device needs to re-subscribe.',
+                      sentAt: null,
+                    })
+                    continue
+                  }
+                  message = (provider as any).convertNotificationPayload(
+                    notificationPayload,
+                    {
+                      endpoint: device.token,
+                      keys: {
+                        p256dh: device.webPushP256dh,
+                        auth: device.webPushAuth,
+                      },
+                    },
+                    newNotification[0].id,
+                    device.id,
+                  )
+                }
+                else {
+                  // APNs and FCM use device token
+                  message = (provider as any).convertNotificationPayload(
+                    notificationPayload,
+                    device.token,
+                    newNotification[0].id,
+                    device.id,
+                  )
+                }
 
                 const result = await (provider as any).sendMessage(message)
 

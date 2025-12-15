@@ -3,71 +3,105 @@ import { Alert, AlertDescription, AlertTitle } from 'abckit/shadcn/alert'
 import { Badge } from 'abckit/shadcn/badge'
 import { Button } from 'abckit/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
-import { AlertTriangle, Loader2 } from 'lucide-vue-next'
+import { Label } from 'abckit/shadcn/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'abckit/shadcn/select'
 import { NitroPingClient } from 'nitroping'
 
-const { success: successToast } = useToast()
+const { success: successToast, error: errorToast } = useToast()
 
+// App selection state
+const apps = ref<Array<{ id: string, name: string, slug: string, vapidPublicKey: string | null }>>([])
+const selectedAppId = ref<string>('')
+const isLoadingApps = ref(true)
+
+// Push subscription state
 const isLoading = ref(false)
 const error = ref('')
 const permissionStatus = ref<NotificationPermission>('default')
 const isSubscribed = ref(false)
 const subscriptionData = ref<any>(null)
+const showSubscriptionDetails = ref(false)
 
-// Initialize NitroPing SDK
-const nitroPingClient = new NitroPingClient({
-  appId: '707bf3c9-5553-40da-9508-15a7bf371324',
-  vapidPublicKey: 'BLtMMwTW0kW8BiCJHVD7wajMux0gl3dOhocLtFvTBRNovwgvrxJ5l-P67oBkAL4tgUlnr_QWb1S4CaYHszWrxM4',
-  apiUrl: window.location.origin, // Use current origin
+// NitroPing client (initialized when app is selected)
+let nitroPingClient: NitroPingClient | null = null
+
+// Selected app computed
+const selectedApp = computed(() => {
+  return apps.value.find(app => app.id === selectedAppId.value)
 })
 
-// Browser support check using SDK
+// Check if selected app has WebPush configured
+const hasWebPushConfig = computed(() => {
+  return selectedApp.value?.vapidPublicKey != null
+})
+
+// Browser support check
 const isSupported = computed(() => {
-  return nitroPingClient.isSupported()
+  if (typeof window === 'undefined') return false
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
 })
 
-// Check current permission status and subscription
+// Fetch apps on mount
 onMounted(async () => {
+  await fetchApps()
   if (isSupported.value) {
-    permissionStatus.value = nitroPingClient.getPermissionStatus()
+    permissionStatus.value = Notification.permission
+  }
+})
 
-    // Auto-registration: If user granted permission but device is not registered
-    if (permissionStatus.value === 'granted') {
-      await autoRegisterIfNeeded()
-    }
-
+// Watch for app selection changes
+watch(selectedAppId, async (newAppId) => {
+  if (newAppId && hasWebPushConfig.value) {
+    initializeClient()
     await checkSubscription()
   }
+  else {
+    nitroPingClient = null
+    isSubscribed.value = false
+    subscriptionData.value = null
+  }
 })
 
-async function autoRegisterIfNeeded() {
+async function fetchApps() {
+  isLoadingApps.value = true
   try {
-    // Check if browser has subscription
-    const hasSubscription = await nitroPingClient.isSubscribed()
+    const response = await fetch('/api/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `query { apps { id name slug vapidPublicKey } }`,
+      }),
+    })
+    const result = await response.json()
+    apps.value = result.data?.apps || []
 
-    if (hasSubscription) {
-      // Check if we have local device record
-      const status = await nitroPingClient.getSubscriptionStatus()
-
-      if (!status.device) {
-        // Browser has subscription but no device record
-        // Perform silent re-registration
-        await nitroPingClient.subscribe({
-          userId: 'test-user-web',
-          tags: ['web-test', 'auto-registered'],
-        })
-      }
+    // Auto-select first app with WebPush configured
+    const appWithWebPush = apps.value.find(app => app.vapidPublicKey)
+    if (appWithWebPush) {
+      selectedAppId.value = appWithWebPush.id
     }
   }
-  catch {
-    // Silently skip auto-registration if it fails
-    // User can manually subscribe if needed
+  catch (err) {
+    console.error('Failed to fetch apps:', err)
+    errorToast('Error', 'Failed to load apps')
+  }
+  finally {
+    isLoadingApps.value = false
   }
 }
 
+function initializeClient() {
+  if (!selectedApp.value?.vapidPublicKey) return
+
+  nitroPingClient = new NitroPingClient({
+    appId: selectedApp.value.id,
+    vapidPublicKey: selectedApp.value.vapidPublicKey,
+    apiUrl: window.location.origin,
+  })
+}
+
 async function checkSubscription() {
-  if (!isSupported.value)
-    return
+  if (!isSupported.value || !nitroPingClient) return
 
   try {
     const status = await nitroPingClient.getSubscriptionStatus()
@@ -80,24 +114,20 @@ async function checkSubscription() {
 }
 
 async function subscribeToPush() {
-  if (!isSupported.value)
-    return
+  if (!isSupported.value || !nitroPingClient) return
 
   isLoading.value = true
   error.value = ''
 
   try {
-    // Use SDK to subscribe
     const device = await nitroPingClient.subscribe({
       userId: 'test-user-web',
       tags: ['web-test'],
     })
 
-    // Update UI state
-    permissionStatus.value = nitroPingClient.getPermissionStatus()
+    permissionStatus.value = Notification.permission
     isSubscribed.value = true
 
-    // Get updated subscription status
     const status = await nitroPingClient.getSubscriptionStatus()
     subscriptionData.value = status.subscription
 
@@ -112,28 +142,79 @@ async function subscribeToPush() {
   }
 }
 
-async function sendTestNotification() {
-  if (!isSubscribed.value || !subscriptionData.value)
-    return
+async function unsubscribeFromPush() {
+  if (!nitroPingClient) return
 
   isLoading.value = true
   error.value = ''
 
   try {
-    console.log('Test notification sent')
+    await nitroPingClient.unsubscribe()
 
-    // Show browser notification for immediate feedback
-    if ('Notification' in window && Notification.permission === 'granted') {
-      const notification = new Notification('Test Notification', {
-        body: 'This is a test notification from your app!',
-        icon: '/favicon.ico',
-      })
-      // Auto-close after 5 seconds
-      setTimeout(() => notification.close(), 5000)
+    // Clear local storage for this app
+    const storageKey = `nitroping_${selectedAppId.value}`
+    localStorage.removeItem(storageKey)
+    localStorage.removeItem(`${storageKey}_userId`)
+
+    isSubscribed.value = false
+    subscriptionData.value = null
+
+    successToast('Unsubscribed', 'Successfully unsubscribed from push notifications')
+  }
+  catch (err) {
+    error.value = `Failed to unsubscribe: ${(err as Error).message}`
+    console.error('Unsubscribe failed:', err)
+  }
+  finally {
+    isLoading.value = false
+  }
+}
+
+async function sendTestNotification() {
+  if (!isSubscribed.value || !selectedAppId.value) return
+
+  isLoading.value = true
+  error.value = ''
+
+  try {
+    // Send notification via GraphQL
+    const response = await fetch('/api/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          mutation SendNotification($input: SendNotificationInput!) {
+            sendNotification(input: $input) {
+              id
+              title
+              totalSent
+              totalFailed
+            }
+          }
+        `,
+        variables: {
+          input: {
+            appId: selectedAppId.value,
+            title: 'Test Notification',
+            body: 'This is a test notification from NitroPing!',
+            platforms: ['WEB'],
+          },
+        },
+      }),
+    })
+
+    const result = await response.json()
+
+    if (result.errors) {
+      throw new Error(result.errors[0]?.message || 'Failed to send notification')
     }
+
+    const notification = result.data?.sendNotification
+    successToast('Notification Sent', `Sent: ${notification.totalSent}, Failed: ${notification.totalFailed}`)
   }
   catch (err) {
     error.value = `Failed to send notification: ${(err as Error).message}`
+    errorToast('Error', (err as Error).message)
   }
   finally {
     isLoading.value = false
@@ -149,28 +230,78 @@ definePageMeta({
   <div class="container mx-auto p-6">
     <div class="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 class="text-3xl font-bold mb-2">Web Push Test</h1>
-        <p class="text-muted-foreground">Test web push notifications</p>
+        <h1 class="text-3xl font-bold mb-2">
+          Web Push Test
+        </h1>
+        <p class="text-muted-foreground">
+          Test web push notifications
+        </p>
       </div>
 
+      <!-- App Selection -->
       <Card>
         <CardHeader>
-          <CardTitle>Push Notification Test</CardTitle>
-          <CardDescription>Test web push notifications with automatic configuration</CardDescription>
+          <CardTitle>Select App</CardTitle>
+          <CardDescription>Choose an app with WebPush configured</CardDescription>
         </CardHeader>
         <CardContent class="space-y-4">
-          <div class="space-y-2">
-            <p class="text-sm text-muted-foreground">
-              App ID: <code class="bg-muted px-1 rounded">707bf3c9-5553-40da-9508-15a7bf371324</code>
+          <div class="flex items-center gap-4">
+            <div class="flex-1">
+              <Label>App</Label>
+              <Select v-model="selectedAppId" :disabled="isLoadingApps">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an app..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    v-for="app in apps"
+                    :key="app.id"
+                    :value="app.id"
+                    :disabled="!app.vapidPublicKey"
+                  >
+                    {{ app.name }}
+                    <span v-if="!app.vapidPublicKey" class="text-muted-foreground ml-2">(No WebPush)</span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" size="icon" :disabled="isLoadingApps" @click="fetchApps">
+              <Icon name="lucide:refresh-cw" :class="{ 'animate-spin': isLoadingApps }" class="size-4" />
+            </Button>
+          </div>
+
+          <div v-if="selectedApp" class="text-sm space-y-1">
+            <p class="text-muted-foreground">
+              App ID: <code class="bg-muted px-1 rounded">{{ selectedApp.id }}</code>
             </p>
-            <p class="text-sm text-muted-foreground">
-              User ID: <code class="bg-muted px-1 rounded">test-user-web</code>
+            <p class="text-muted-foreground">
+              Slug: <code class="bg-muted px-1 rounded">{{ selectedApp.slug }}</code>
+            </p>
+            <p v-if="selectedApp.vapidPublicKey" class="text-muted-foreground">
+              VAPID Key: <code class="bg-muted px-1 rounded text-xs">{{ selectedApp.vapidPublicKey.slice(0, 20) }}...</code>
             </p>
           </div>
+
+          <Alert v-if="apps.length === 0 && !isLoadingApps" variant="destructive">
+            <Icon name="lucide:alert-triangle" class="size-4" />
+            <AlertTitle>No Apps Found</AlertTitle>
+            <AlertDescription>
+              Create an app first and configure WebPush (VAPID keys).
+            </AlertDescription>
+          </Alert>
+
+          <Alert v-if="selectedApp && !hasWebPushConfig">
+            <Icon name="lucide:alert-triangle" class="size-4" />
+            <AlertTitle>WebPush Not Configured</AlertTitle>
+            <AlertDescription>
+              This app doesn't have VAPID keys configured. Go to app settings to configure WebPush.
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
 
-      <Card>
+      <!-- Subscribe Section -->
+      <Card v-if="selectedApp && hasWebPushConfig">
         <CardHeader>
           <CardTitle>Subscribe to Notifications</CardTitle>
           <CardDescription>Enable push notifications for this device</CardDescription>
@@ -178,11 +309,21 @@ definePageMeta({
         <CardContent class="space-y-4">
           <div class="flex items-center space-x-4">
             <Button
-              :disabled="isLoading || !isSupported || isSubscribed"
+              v-if="!isSubscribed"
+              :disabled="isLoading || !isSupported"
               @click="subscribeToPush"
             >
-              <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin" />
-              {{ isSubscribed ? 'Subscribed' : 'Enable Notifications' }}
+              <Icon v-if="isLoading" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
+              Enable Notifications
+            </Button>
+            <Button
+              v-else
+              variant="destructive"
+              :disabled="isLoading"
+              @click="unsubscribeFromPush"
+            >
+              <Icon v-if="isLoading" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
+              Unsubscribe
             </Button>
             <Badge :variant="isSubscribed ? 'default' : 'secondary'">
               {{ isSubscribed ? 'Active' : 'Not Active' }}
@@ -190,36 +331,48 @@ definePageMeta({
           </div>
 
           <div v-if="isSubscribed" class="space-y-2">
-            <h4 class="font-medium">Subscription Details:</h4>
-            <div class="bg-muted p-3 rounded text-xs overflow-auto">
+            <div class="flex items-center justify-between">
+              <h4 class="font-medium">
+                Subscription Details:
+              </h4>
+              <Button variant="ghost" size="sm" @click="showSubscriptionDetails = !showSubscriptionDetails">
+                <Icon :name="showSubscriptionDetails ? 'lucide:eye-off' : 'lucide:eye'" class="size-4 mr-1" />
+                {{ showSubscriptionDetails ? 'Hide' : 'Show' }}
+              </Button>
+            </div>
+            <div v-if="showSubscriptionDetails" class="bg-muted p-3 rounded text-xs overflow-auto max-h-40">
               <pre>{{ JSON.stringify(subscriptionData, null, 2) }}</pre>
+            </div>
+            <div v-else class="bg-muted p-3 rounded text-xs text-muted-foreground">
+              ••••••••••••••••••••
             </div>
           </div>
 
           <Alert v-if="!isSupported">
-            <AlertTriangle class="h-4 w-4" />
+            <Icon name="lucide:alert-triangle" class="size-4" />
             <AlertTitle>Not Supported</AlertTitle>
             <AlertDescription>
               Your browser doesn't support push notifications or you're not using HTTPS.
             </AlertDescription>
           </Alert>
 
-          <Alert v-if="error">
-            <AlertTriangle class="h-4 w-4" />
+          <Alert v-if="error" variant="destructive">
+            <Icon name="lucide:alert-triangle" class="size-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{{ error }}</AlertDescription>
           </Alert>
         </CardContent>
       </Card>
 
+      <!-- Send Test Notification -->
       <Card v-if="isSubscribed">
         <CardHeader>
           <CardTitle>Send Test Notification</CardTitle>
-          <CardDescription>Send a test notification to this device</CardDescription>
+          <CardDescription>Send a real push notification to all subscribed devices</CardDescription>
         </CardHeader>
         <CardContent>
           <Button :disabled="isLoading" @click="sendTestNotification">
-            <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin" />
+            <Icon v-if="isLoading" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
             Send Test Notification
           </Button>
         </CardContent>

@@ -8,6 +8,13 @@
       "when": 1755586900648,
       "tag": "0000_legal_captain_america",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765814809642,
+      "tag": "0001_striped_black_panther",
+      "breakpoints": true
     }
   ]
 }

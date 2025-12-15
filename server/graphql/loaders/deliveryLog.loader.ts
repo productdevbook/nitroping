@@ -1,7 +1,7 @@
+import type { Database } from './types'
 import DataLoader from 'dataloader'
 import { inArray } from 'drizzle-orm'
 import * as tables from '~~/server/database/schema'
-import type { Database } from './types'
 
 export function createDeliveryLogLoader(db: Database) {
   return new DataLoader<string, typeof tables.deliveryLog.$inferSelect | null>(

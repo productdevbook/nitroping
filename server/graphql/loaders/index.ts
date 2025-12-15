@@ -1,9 +1,9 @@
+import type { Database, DataLoaders } from './types'
 import { createApiKeyLoader, createApiKeysByAppLoader } from './apiKey.loader'
 import { createAppLoader } from './app.loader'
 import { createDeliveryLogLoader, createDeliveryLogsByDeviceLoader, createDeliveryLogsByNotificationLoader } from './deliveryLog.loader'
 import { createDeviceLoader, createDevicesByAppLoader } from './device.loader'
 import { createNotificationLoader, createNotificationsByAppLoader } from './notification.loader'
-import type { Database, DataLoaders } from './types'
 
 export type { DataLoaders } from './types'
 

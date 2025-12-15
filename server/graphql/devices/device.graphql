@@ -28,6 +28,9 @@ type Device {
   status: DeviceStatus!
   userId: String
   metadata: JSON
+  # WebPush subscription keys (only for WEB platform)
+  webPushP256dh: String
+  webPushAuth: String
 
   # Relations
   deliveryLogs: [DeliveryLog!]
@@ -45,6 +48,9 @@ input RegisterDeviceInput {
   platform: DevicePlatform!
   userId: String
   metadata: JSON
+  # WebPush subscription keys (required for WEB platform)
+  webPushP256dh: String
+  webPushAuth: String
 }
 
 input UpdateDeviceInput {

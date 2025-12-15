@@ -64,6 +64,14 @@ export const registerDeviceMutation = defineMutation({
             message: 'Invalid web push endpoint URL format.',
           })
         }
+
+        // WebPush subscription keys are required for Web platform
+        if (!input.webPushP256dh || !input.webPushAuth) {
+          throw createError({
+            statusCode: 400,
+            message: 'WebPush subscription requires p256dh and auth keys for encryption.',
+          })
+        }
       }
 
       // Use upsert with ON CONFLICT to handle unique constraint
@@ -77,6 +85,8 @@ export const registerDeviceMutation = defineMutation({
           status: 'ACTIVE',
           userId: input.userId,
           metadata: input.metadata,
+          webPushP256dh: input.webPushP256dh,
+          webPushAuth: input.webPushAuth,
           lastSeenAt: new Date().toISOString(),
         })
         .onConflictDoUpdate({
@@ -84,6 +94,8 @@ export const registerDeviceMutation = defineMutation({
           set: {
             category: input.category,
             metadata: input.metadata,
+            webPushP256dh: input.webPushP256dh,
+            webPushAuth: input.webPushAuth,
             status: 'ACTIVE',
             lastSeenAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),

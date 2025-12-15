@@ -25,6 +25,8 @@ export interface DeviceRegistration {
   token: string
   platform: 'WEB'
   userId?: string
+  webPushP256dh?: string
+  webPushAuth?: string
   metadata?: string
   status: 'ACTIVE' | 'INACTIVE'
   lastSeenAt: string

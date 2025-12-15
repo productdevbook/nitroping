@@ -11,6 +11,7 @@ import {
 } from 'abckit/shadcn/sidebar'
 import {
   BarChart3,
+  Bell,
   FileText,
   Github,
   Home,
@@ -62,6 +63,12 @@ const navTools = computed(() => [
     url: '/devices',
     icon: Smartphone,
     isActive: route.path.startsWith('/devices'),
+  },
+  {
+    title: 'Web Push Test',
+    url: '/test-webpush',
+    icon: Bell,
+    isActive: route.path.startsWith('/test-webpush'),
   },
 ])
 
