@@ -1,7 +1,7 @@
 {
   "name": "nitroping",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "JavaScript/TypeScript SDK for NitroPing push notification service",
   "author": "NitroPing Team",
   "license": "MIT",
@@ -23,14 +23,12 @@
       "import": "./dist/index.js"
     }
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "build": "tsdown",

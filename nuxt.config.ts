@@ -1,12 +1,13 @@
+import type { NitroGraphQLOptions } from 'nitro-graphql'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+  devtools: { enabled: false },
   modules: [
     'abckit',
   ],
   ssr: false,
-
   css: [
     '~/assets/css/tailwind.css',
     'notivue/notification.css',
@@ -31,26 +32,6 @@ export default defineNuxtConfig({
           },
         },
       },
-    },
-  },
-
-  $development: {
-    vite: {
-      server: {
-        allowedHosts: true,
-      },
-    },
-  },
-
-  shadcn: {
-    /**
-     * Prefix for all the imported component
-     */
-    prefix: '',
-    /**
-     * Directory that the component lives in.
-     * @default "./components/ui"
-     */
-    componentDir: '~/components/ui',
+    } as NitroGraphQLOptions,
   },
 })

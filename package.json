@@ -33,6 +33,7 @@
     "drizzle-orm": "^0.45.1",
     "graphql": "^16.12.0",
     "jsonwebtoken": "^9.0.3",
+    "nitroping": "^0.1.0",
     "nuxt": "^4.2.2",
     "postgres": "^3.4.7",
     "undici": "^7.16.0",
