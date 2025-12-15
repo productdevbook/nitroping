@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Badge } from 'abckit/shadcn/badge'
 import { Card, CardContent, CardHeader, CardTitle } from 'abckit/shadcn/card'
-import { AlertTriangle, Code, Terminal } from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'default',
@@ -162,7 +161,7 @@ onMounted(() => {
 
                 <div class="bg-amber-50 dark:bg-amber-950 p-4 rounded-lg">
                   <div class="flex items-start space-x-2">
-                    <AlertTriangle class="h-5 w-5 text-amber-600 mt-0.5" />
+                    <Icon name="lucide:alert-triangle" class="h-5 w-5 text-amber-600 mt-0.5" />
                     <div>
                       <h4 class="font-medium text-amber-900 dark:text-amber-100">Security</h4>
                       <p class="text-sm text-amber-800 dark:text-amber-200">Keep your API key secure and never expose it in client-side code.</p>
@@ -298,7 +297,7 @@ onMounted(() => {
           <Card class="mb-6">
             <CardHeader>
               <CardTitle class="flex items-center space-x-2">
-                <Code class="h-5 w-5" />
+                <Icon name="lucide:code" class="h-5 w-5" />
                 <span>JavaScript / Node.js</span>
               </CardTitle>
             </CardHeader>
@@ -351,7 +350,7 @@ async function sendNotification(title, body, data = {}) {
           <Card class="mb-6">
             <CardHeader>
               <CardTitle class="flex items-center space-x-2">
-                <Code class="h-5 w-5" />
+                <Icon name="lucide:code" class="h-5 w-5" />
                 <span>Python</span>
               </CardTitle>
             </CardHeader>
@@ -404,7 +403,7 @@ result = np.send_notification('Hello', 'World!')</code></pre>
           <Card>
             <CardHeader>
               <CardTitle class="flex items-center space-x-2">
-                <Terminal class="h-5 w-5" />
+                <Icon name="lucide:terminal" class="h-5 w-5" />
                 <span>cURL</span>
               </CardTitle>
             </CardHeader>

@@ -14,7 +14,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from 'abckit/shadcn/sidebar'
-import { ChevronsUpDown, FileText, LogOut, Settings } from 'lucide-vue-next'
 
 interface User {
   name?: string
@@ -62,7 +61,7 @@ function handleLogout() {
               <span class="truncate font-semibold">{{ user.name || 'User' }}</span>
               <span class="truncate text-xs">{{ user.email || 'No email' }}</span>
             </div>
-            <ChevronsUpDown class="ml-auto size-4" />
+            <Icon name="lucide:chevrons-up-down" class="ml-auto size-4" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -89,20 +88,20 @@ function handleLogout() {
           <DropdownMenuGroup>
             <DropdownMenuItem as-child>
               <NuxtLink to="/settings">
-                <Settings class="size-4 mr-2" />
+                <Icon name="lucide:settings" class="size-4 mr-2" />
                 Settings
               </NuxtLink>
             </DropdownMenuItem>
             <DropdownMenuItem as-child>
               <NuxtLink to="/docs">
-                <FileText class="size-4 mr-2" />
+                <Icon name="lucide:file-text" class="size-4 mr-2" />
                 Documentation
               </NuxtLink>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="handleLogout">
-            <LogOut class="size-4 mr-2" />
+            <Icon name="lucide:log-out" class="size-4 mr-2" />
             Log out
           </DropdownMenuItem>
         </DropdownMenuContent>

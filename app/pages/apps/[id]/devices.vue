@@ -8,7 +8,6 @@ import { Input } from 'abckit/shadcn/input'
 import { Label } from 'abckit/shadcn/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'abckit/shadcn/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'abckit/shadcn/table'
-import { CheckCircle, Loader2, Plus, RefreshCw, Search, Smartphone, XCircle } from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'default',
@@ -440,11 +439,11 @@ function refreshDevices() {
         </div>
         <div class="flex space-x-2">
           <Button variant="outline" :disabled="devicesLoading" @click="refreshDevices">
-            <RefreshCw class="mr-2 h-4 w-4" :class="{ 'animate-spin': devicesLoading }" />
+            <Icon name="lucide:refresh-cw" class="mr-2 size-4" :class="{ 'animate-spin': devicesLoading }" />
             Refresh
           </Button>
           <Button @click="showRegisterDevice = true">
-            <Plus class="mr-2 h-4 w-4" />
+            <Icon name="lucide:plus" class="mr-2 size-4" />
             Register Device
           </Button>
         </div>
@@ -455,7 +454,7 @@ function refreshDevices() {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Total Devices</CardTitle>
-            <Smartphone class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:smartphone" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold">{{ deviceStats.total }}</div>
@@ -468,7 +467,7 @@ function refreshDevices() {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Active Devices</CardTitle>
-            <CheckCircle class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:check-circle" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold">{{ deviceStats.active }}</div>
@@ -481,7 +480,7 @@ function refreshDevices() {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Seen Today</CardTitle>
-            <RefreshCw class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:refresh-cw" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold">{{ deviceStats.seenToday }}</div>
@@ -494,7 +493,7 @@ function refreshDevices() {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Platform Mix</CardTitle>
-            <Smartphone class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:smartphone" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="space-y-1">
@@ -546,7 +545,7 @@ function refreshDevices() {
           <div class="flex flex-col sm:flex-row gap-4">
             <div class="flex-1">
               <div class="relative">
-                <Search class="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Icon name="lucide:search" class="absolute left-3 top-3 size-4 text-muted-foreground" />
                 <Input
                   v-model="searchQuery"
                   placeholder="Search devices by token, platform, or user ID..."
@@ -581,11 +580,11 @@ function refreshDevices() {
         </CardHeader>
         <CardContent>
           <div v-if="devicesLoading" class="flex items-center justify-center py-8">
-            <Loader2 class="h-6 w-6 animate-spin" />
+            <Icon name="lucide:loader-2" class="h-6 w-6 animate-spin" />
           </div>
 
           <div v-else-if="filteredDevices.length === 0" class="text-center py-8 text-muted-foreground">
-            <Smartphone class="mx-auto h-12 w-12 mb-4 opacity-50" />
+            <Icon name="lucide:smartphone" class="mx-auto h-12 w-12 mb-4 opacity-50" />
             <p class="text-lg font-medium mb-2">No devices found</p>
             <p class="text-sm">{{ devices.length === 0 ? 'Register your first device to get started.' : 'Try adjusting your search filters.' }}</p>
           </div>
@@ -648,8 +647,8 @@ function refreshDevices() {
                 </TableCell>
                 <TableCell>
                   <Badge :variant="device.status === 'ACTIVE' ? 'default' : 'secondary'" class="flex items-center space-x-1">
-                    <CheckCircle v-if="device.status === 'ACTIVE'" class="h-3 w-3" />
-                    <XCircle v-else class="h-3 w-3" />
+                    <Icon v-if="device.status === 'ACTIVE'" name="lucide:check-circle" class="h-3 w-3" />
+                    <Icon v-else name="lucide:x-circle" class="h-3 w-3" />
                     <span>{{ device.status === 'ACTIVE' ? 'Active' : 'Inactive' }}</span>
                   </Badge>
                 </TableCell>
@@ -717,7 +716,7 @@ function refreshDevices() {
         <DialogFooter>
           <Button variant="outline" @click="showRegisterDevice = false">Cancel</Button>
           <Button :disabled="isRegisteringDevice || !deviceForm.token" @click="registerDevice">
-            <Loader2 v-if="isRegisteringDevice" class="mr-2 h-4 w-4 animate-spin" />
+            <Icon v-if="isRegisteringDevice" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
             Register Device
           </Button>
         </DialogFooter>
@@ -727,6 +726,6 @@ function refreshDevices() {
 
   <!-- Loading State -->
   <div v-else class="flex items-center justify-center h-64">
-    <Loader2 class="h-8 w-8 animate-spin" />
+    <Icon name="lucide:loader-2" class="h-8 w-8 animate-spin" />
   </div>
 </template>

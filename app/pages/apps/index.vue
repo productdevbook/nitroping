@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from 'abckit/shadcn/input'
 import { Label } from 'abckit/shadcn/label'
 import { Textarea } from 'abckit/shadcn/textarea'
-import { Globe, Loader2, Package, Plus, Send, Settings, Smartphone } from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'default',
@@ -70,7 +69,7 @@ async function sendTest() {
         <p class="text-muted-foreground">Manage your push notification applications</p>
       </div>
       <Button @click="navigateTo('/apps/create')">
-        <Plus class="mr-2 h-4 w-4" />
+        <Icon name="lucide:plus" class="mr-2 size-4" />
         Create App
       </Button>
     </div>
@@ -82,7 +81,7 @@ async function sendTest() {
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <div class="h-10 w-10 rounded-lg bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center">
-                <Package class="h-5 w-5 text-primary-foreground" />
+                <Icon name="lucide:package" class="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
                 <CardTitle class="text-lg">{{ app.name }}</CardTitle>
@@ -115,15 +114,15 @@ async function sendTest() {
               <p class="text-sm font-medium">Configured Providers</p>
               <div class="flex space-x-2">
                 <Badge v-if="app.fcmProjectId" variant="outline" class="text-xs">
-                  <Smartphone class="w-3 h-3 mr-1" />
+                  <Icon name="lucide:smartphone" class="w-3 h-3 mr-1" />
                   FCM
                 </Badge>
                 <Badge v-if="app.apnsKeyId" variant="outline" class="text-xs">
-                  <Smartphone class="w-3 h-3 mr-1" />
+                  <Icon name="lucide:smartphone" class="w-3 h-3 mr-1" />
                   APNs
                 </Badge>
                 <Badge v-if="app.vapidPublicKey" variant="outline" class="text-xs">
-                  <Globe class="w-3 h-3 mr-1" />
+                  <Icon name="lucide:globe" class="w-3 h-3 mr-1" />
                   Web Push
                 </Badge>
                 <Badge v-if="!app.fcmProjectId && !app.apnsKeyId && !app.vapidPublicKey" variant="secondary" class="text-xs">
@@ -138,12 +137,12 @@ async function sendTest() {
           <div class="flex space-x-2">
             <Button variant="outline" size="sm" as-child class="flex-1">
               <NuxtLink :to="`/apps/${app.id}`">
-                <Settings class="w-4 h-4 mr-2" />
+                <Icon name="lucide:settings" class="size-4 mr-2" />
                 Manage
               </NuxtLink>
             </Button>
             <Button variant="outline" size="sm" @click="sendTestNotification(app)">
-              <Send class="w-4 h-4 mr-2" />
+              <Icon name="lucide:send" class="size-4 mr-2" />
               Test
             </Button>
           </div>
@@ -153,11 +152,11 @@ async function sendTest() {
 
     <!-- Empty State -->
     <div v-else class="text-center py-12">
-      <Package class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+      <Icon name="lucide:package" class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
       <h3 class="text-lg font-medium mb-2">No applications yet</h3>
       <p class="text-muted-foreground mb-6">Create your first app to start sending push notifications</p>
       <Button @click="navigateTo('/apps/create')">
-        <Plus class="mr-2 h-4 w-4" />
+        <Icon name="lucide:plus" class="mr-2 size-4" />
         Create Your First App
       </Button>
     </div>
@@ -195,8 +194,8 @@ async function sendTest() {
           <DialogFooter>
             <Button type="button" variant="outline" @click="showTestDialog = false">Cancel</Button>
             <Button type="submit" :disabled="!testNotification.title || !testNotification.body || testLoading">
-              <Loader2 v-if="testLoading" class="w-4 h-4 mr-2 animate-spin" />
-              <Send class="w-4 h-4 mr-2" />
+              <Icon v-if="testLoading" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
+              <Icon name="lucide:send" class="size-4 mr-2" />
               Send Test
             </Button>
           </DialogFooter>

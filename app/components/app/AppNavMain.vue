@@ -14,12 +14,11 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from 'abckit/shadcn/sidebar'
-import { ChevronRight, ExternalLink } from 'lucide-vue-next'
 
 interface MenuItem {
   title: string
   url: string
-  icon?: any
+  icon?: string
   isActive: boolean
   items?: Array<{
     title: string
@@ -45,9 +44,9 @@ defineProps<{
             <Collapsible :default-open="item.isActive" class="group/collapsible">
               <SidebarMenuButton as-child :tooltip="item.title">
                 <CollapsibleTrigger class="w-full">
-                  <component :is="item.icon" v-if="item.icon" class="size-4" />
+                  <Icon v-if="item.icon" :name="item.icon" class="size-4" />
                   <span>{{ item.title }}</span>
-                  <ChevronRight class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  <Icon name="lucide:chevron-right" class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                 </CollapsibleTrigger>
               </SidebarMenuButton>
               <CollapsibleContent>
@@ -69,13 +68,13 @@ defineProps<{
             <SidebarMenuButton as-child :is-active="item.isActive" :tooltip="item.title">
               <!-- External link -->
               <a v-if="item.url.startsWith('http')" :href="item.url" target="_blank" rel="noopener noreferrer">
-                <component :is="item.icon" v-if="item.icon" class="size-4" />
+                <Icon v-if="item.icon" :name="item.icon" class="size-4" />
                 <span>{{ item.title }}</span>
-                <ExternalLink class="size-3 ml-auto" />
+                <Icon name="lucide:external-link" class="size-3 ml-auto" />
               </a>
               <!-- Internal link -->
               <NuxtLink v-else :to="item.url">
-                <component :is="item.icon" v-if="item.icon" class="size-4" />
+                <Icon v-if="item.icon" :name="item.icon" class="size-4" />
                 <span>{{ item.title }}</span>
               </NuxtLink>
             </SidebarMenuButton>

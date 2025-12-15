@@ -7,7 +7,6 @@ import { Input } from 'abckit/shadcn/input'
 import { Label } from 'abckit/shadcn/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'abckit/shadcn/select'
 import { Textarea } from 'abckit/shadcn/textarea'
-import { ChevronDown, Loader2, Send, Smartphone } from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'default',
@@ -185,7 +184,7 @@ function resetForm() {
                 <CollapsibleTrigger as-child>
                   <Button variant="ghost" class="w-full justify-between">
                     Advanced Options
-                    <ChevronDown class="h-4 w-4" />
+                    <Icon name="lucide:chevron-down" class="size-4" />
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent class="space-y-4 pt-4">
@@ -328,8 +327,8 @@ function resetForm() {
               <!-- Submit -->
               <div class="flex space-x-2">
                 <Button type="submit" :disabled="!form.appId || !form.title || !form.body || isSendingNotification" class="flex-1">
-                  <Loader2 v-if="isSendingNotification" class="w-4 h-4 mr-2 animate-spin" />
-                  <Send class="w-4 h-4 mr-2" />
+                  <Icon v-if="isSendingNotification" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
+                  <Icon name="lucide:send" class="size-4 mr-2" />
                   {{ scheduleType === 'now' ? 'Send Now' : 'Schedule' }}
                 </Button>
                 <Button type="button" variant="outline" @click="resetForm">
@@ -351,7 +350,7 @@ function resetForm() {
             <!-- Mobile Preview -->
             <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 space-y-3">
               <div class="flex items-center space-x-2 text-xs text-muted-foreground">
-                <Smartphone class="h-3 w-3" />
+                <Icon name="lucide:smartphone" class="h-3 w-3" />
                 <span>Mobile Notification</span>
               </div>
 

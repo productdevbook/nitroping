@@ -7,7 +7,6 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { Input } from 'abckit/shadcn/input'
 import { Switch } from 'abckit/shadcn/switch'
 import { Textarea } from 'abckit/shadcn/textarea'
-import { AlertTriangle, ArrowLeft, Check, FileText, Loader2, Save } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 
@@ -103,7 +102,7 @@ const hasExistingConfig = computed(() => {
     <!-- Page Header -->
     <div class="flex items-center space-x-4 mb-8">
       <Button variant="ghost" size="icon" @click="goBack">
-        <ArrowLeft class="h-4 w-4" />
+        <Icon name="lucide:arrow-left" class="size-4" />
       </Button>
       <div>
         <h1 class="text-3xl font-bold mb-1">Configure Apple APNs</h1>
@@ -117,7 +116,7 @@ const hasExistingConfig = computed(() => {
       <Card v-if="hasExistingConfig">
         <CardHeader>
           <CardTitle class="flex items-center space-x-2">
-            <Check class="h-5 w-5 text-green-600" />
+            <Icon name="lucide:check" class="h-5 w-5 text-green-600" />
             <span>APNs Currently Configured</span>
           </CardTitle>
           <CardDescription>Your app is currently set up to send push notifications to iOS devices</CardDescription>
@@ -277,7 +276,7 @@ MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg...
 
             <!-- Security Warning -->
             <Alert>
-              <AlertTriangle class="h-4 w-4" />
+              <Icon name="lucide:alert-triangle" class="size-4" />
               <AlertTitle>Security Notice</AlertTitle>
               <AlertDescription>
                 Your private key will be encrypted and securely stored. We recommend using environment-specific keys and rotating them regularly.
@@ -291,8 +290,8 @@ MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg...
                 :disabled="isSubmitting || isConfiguring"
                 class="flex-1"
               >
-                <Loader2 v-if="isSubmitting || isConfiguring" class="w-4 h-4 mr-2 animate-spin" />
-                <Save v-else class="w-4 h-4 mr-2" />
+                <Icon v-if="isSubmitting || isConfiguring" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
+                <Icon v-else name="lucide:save" class="size-4 mr-2" />
                 {{ hasExistingConfig ? 'Update Configuration' : 'Save Configuration' }}
               </Button>
               <Button type="button" variant="outline" @click="goBack">
@@ -315,7 +314,7 @@ MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg...
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
             >
-              <FileText class="h-4 w-4" />
+              <Icon name="lucide:file-text" class="size-4" />
               <span>Apple APNs Documentation</span>
             </a>
             <a
@@ -323,7 +322,7 @@ MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg...
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
             >
-              <FileText class="h-4 w-4" />
+              <Icon name="lucide:file-text" class="size-4" />
               <span>Manage APNs Auth Keys</span>
             </a>
           </div>
@@ -334,7 +333,7 @@ MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg...
 
   <!-- Loading State -->
   <div v-else class="flex items-center justify-center h-64">
-    <Loader2 class="h-8 w-8 animate-spin" />
+    <Icon name="lucide:loader-2" class="h-8 w-8 animate-spin" />
   </div>
 </template>
 

@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from 'abckit/shadcn/card'
 import { Input } from 'abckit/shadcn/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'abckit/shadcn/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'abckit/shadcn/table'
-import { Calendar, CheckCircle, Loader2, Search, Send, XCircle } from 'lucide-vue-next'
 import { useNotificationApi } from '~/graphql/notifications'
 
 definePageMeta({
@@ -96,17 +95,17 @@ const notificationStats = computed(() => {
 function getStatusBadge(status: string) {
   switch (status) {
     case 'DELIVERED':
-      return { variant: 'default' as const, icon: CheckCircle, text: 'Delivered' }
+      return { variant: 'default' as const, iconName: 'lucide:check-circle', text: 'Delivered' }
     case 'SENT':
-      return { variant: 'secondary' as const, icon: Send, text: 'Sent' }
+      return { variant: 'secondary' as const, iconName: 'lucide:send', text: 'Sent' }
     case 'PENDING':
-      return { variant: 'outline' as const, icon: Loader2, text: 'Pending' }
+      return { variant: 'outline' as const, iconName: 'lucide:loader-2', text: 'Pending' }
     case 'SCHEDULED':
-      return { variant: 'outline' as const, icon: Calendar, text: 'Scheduled' }
+      return { variant: 'outline' as const, iconName: 'lucide:calendar', text: 'Scheduled' }
     case 'FAILED':
-      return { variant: 'destructive' as const, icon: XCircle, text: 'Failed' }
+      return { variant: 'destructive' as const, iconName: 'lucide:x-circle', text: 'Failed' }
     default:
-      return { variant: 'secondary' as const, icon: Send, text: 'Unknown' }
+      return { variant: 'secondary' as const, iconName: 'lucide:send', text: 'Unknown' }
   }
 }
 
@@ -172,11 +171,11 @@ function refreshNotifications() {
         </div>
         <div class="flex space-x-2">
           <Button variant="outline" :disabled="notificationsLoading" @click="refreshNotifications">
-            <Send class="mr-2 h-4 w-4" :class="{ 'animate-pulse': notificationsLoading }" />
+            <Icon name="lucide:send" class="mr-2 size-4" :class="{ 'animate-pulse': notificationsLoading }" />
             Refresh
           </Button>
           <Button @click="navigateTo('/send')">
-            <Send class="mr-2 h-4 w-4" />
+            <Icon name="lucide:send" class="mr-2 size-4" />
             Send New
           </Button>
         </div>
@@ -187,7 +186,7 @@ function refreshNotifications() {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Total Sent</CardTitle>
-            <Send class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:send" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold">{{ notificationStats.total }}</div>
@@ -197,7 +196,7 @@ function refreshNotifications() {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Delivered</CardTitle>
-            <CheckCircle class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:check-circle" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold text-green-600">{{ notificationStats.totalDelivered }}</div>
@@ -207,7 +206,7 @@ function refreshNotifications() {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Failed</CardTitle>
-            <XCircle class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:x-circle" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold text-red-600">{{ notificationStats.totalFailed }}</div>
@@ -217,7 +216,7 @@ function refreshNotifications() {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Delivery Rate</CardTitle>
-            <Calendar class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:calendar" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold">{{ notificationStats.deliveryRate }}%</div>
@@ -231,7 +230,7 @@ function refreshNotifications() {
           <div class="flex flex-col sm:flex-row gap-4">
             <div class="flex-1">
               <div class="relative">
-                <Search class="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Icon name="lucide:search" class="absolute left-3 top-3 size-4 text-muted-foreground" />
                 <Input
                   v-model="searchQuery"
                   placeholder="Search notifications by title or content..."
@@ -274,11 +273,11 @@ function refreshNotifications() {
         </CardHeader>
         <CardContent>
           <div v-if="notificationsLoading" class="flex items-center justify-center py-8">
-            <Loader2 class="h-6 w-6 animate-spin" />
+            <Icon name="lucide:loader-2" class="h-6 w-6 animate-spin" />
           </div>
 
           <div v-else-if="filteredNotifications.length === 0" class="text-center py-8 text-muted-foreground">
-            <Send class="mx-auto h-12 w-12 mb-4 opacity-50" />
+            <Icon name="lucide:send" class="mx-auto h-12 w-12 mb-4 opacity-50" />
             <p class="text-lg font-medium mb-2">No notifications found</p>
             <p class="text-sm">{{ notifications.length === 0 ? 'Send your first notification to get started.' : 'Try adjusting your search filters.' }}</p>
           </div>
@@ -304,7 +303,7 @@ function refreshNotifications() {
                 </TableCell>
                 <TableCell>
                   <Badge :variant="getStatusBadge(notification.status).variant">
-                    <component :is="getStatusBadge(notification.status).icon" class="mr-1 h-3 w-3" />
+                    <Icon :name="getStatusBadge(notification.status).iconName" class="mr-1 h-3 w-3" />
                     {{ getStatusBadge(notification.status).text }}
                   </Badge>
                 </TableCell>
@@ -340,6 +339,6 @@ function refreshNotifications() {
 
   <!-- Loading State -->
   <div v-else class="flex items-center justify-center h-64">
-    <Loader2 class="h-8 w-8 animate-spin" />
+    <Icon name="lucide:loader-2" class="h-8 w-8 animate-spin" />
   </div>
 </template>

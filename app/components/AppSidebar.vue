@@ -9,17 +9,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from 'abckit/shadcn/sidebar'
-import {
-  BarChart3,
-  Bell,
-  FileText,
-  Github,
-  Home,
-  Package,
-  Send,
-  Smartphone,
-  Zap,
-} from 'lucide-vue-next'
 import AppNavMain from '~/components/app/AppNavMain.vue'
 import AppNavUser from '~/components/app/AppNavUser.vue'
 
@@ -34,19 +23,19 @@ const navMain = computed(() => [
   {
     title: 'Dashboard',
     url: '/',
-    icon: Home,
+    icon: 'lucide:home',
     isActive: route.path === '/',
   },
   {
     title: 'Applications',
     url: '/apps',
-    icon: Package,
+    icon: 'lucide:package',
     isActive: route.path.startsWith('/apps'),
   },
   {
     title: 'Analytics',
     url: '/analytics',
-    icon: BarChart3,
+    icon: 'lucide:bar-chart-3',
     isActive: route.path.startsWith('/analytics'),
   },
 ])
@@ -55,19 +44,19 @@ const navTools = computed(() => [
   {
     title: 'Send Notification',
     url: '/send',
-    icon: Send,
+    icon: 'lucide:send',
     isActive: route.path.startsWith('/send'),
   },
   {
     title: 'Device Testing',
     url: '/devices',
-    icon: Smartphone,
+    icon: 'lucide:smartphone',
     isActive: route.path.startsWith('/devices'),
   },
   {
     title: 'Web Push Test',
     url: '/test-webpush',
-    icon: Bell,
+    icon: 'lucide:bell',
     isActive: route.path.startsWith('/test-webpush'),
   },
 ])
@@ -76,13 +65,13 @@ const navHelp = computed(() => [
   {
     title: 'Documentation',
     url: '/docs',
-    icon: FileText,
+    icon: 'lucide:file-text',
     isActive: route.path.startsWith('/docs'),
   },
   {
     title: 'GitHub',
     url: 'https://github.com/productdevbook/nitroping',
-    icon: Github,
+    icon: 'lucide:github',
     isActive: false,
   },
 ])
@@ -103,7 +92,7 @@ const userData = computed(() => ({
           <SidebarMenuButton size="lg" as-child>
             <NuxtLink to="/">
               <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <Zap class="size-4" />
+                <Icon name="lucide:zap" class="size-4" />
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">NitroPing</span>

@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abcki
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from 'abckit/shadcn/form'
 import { Input } from 'abckit/shadcn/input'
 import { Textarea } from 'abckit/shadcn/textarea'
-import { Loader2, Plus } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 
@@ -139,8 +138,8 @@ watch(() => values.name, (newName) => {
             :disabled="isSubmitting || _props.loading"
             class="flex-1"
           >
-            <Loader2 v-if="isSubmitting || _props.loading" class="w-4 h-4 mr-2 animate-spin" />
-            <Plus class="w-4 h-4 mr-2" />
+            <Icon v-if="isSubmitting || _props.loading" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
+            <Icon name="lucide:plus" class="size-4 mr-2" />
             Create App
           </Button>
           <Button type="button" variant="outline" @click="$emit('cancel')">

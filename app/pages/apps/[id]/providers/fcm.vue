@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abcki
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from 'abckit/shadcn/form'
 import { Input } from 'abckit/shadcn/input'
 import { Textarea } from 'abckit/shadcn/textarea'
-import { AlertTriangle, ArrowLeft, Check, FileText, Loader2, Save, Upload } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 
@@ -145,7 +144,7 @@ const serviceAccountInfo = computed(() => {
     <!-- Page Header -->
     <div class="flex items-center space-x-4 mb-8">
       <Button variant="ghost" size="icon" @click="goBack">
-        <ArrowLeft class="h-4 w-4" />
+        <Icon name="lucide:arrow-left" class="size-4" />
       </Button>
       <div>
         <h1 class="text-3xl font-bold mb-1">Configure Firebase FCM</h1>
@@ -159,7 +158,7 @@ const serviceAccountInfo = computed(() => {
       <Card v-if="hasExistingConfig">
         <CardHeader>
           <CardTitle class="flex items-center space-x-2">
-            <Check class="h-5 w-5 text-green-600" />
+            <Icon name="lucide:check" class="h-5 w-5 text-green-600" />
             <span>FCM Currently Configured</span>
           </CardTitle>
           <CardDescription>Your app is currently set up to send push notifications to Android devices</CardDescription>
@@ -250,7 +249,7 @@ const serviceAccountInfo = computed(() => {
                 <div class="space-y-3">
                   <!-- File Upload Button -->
                   <Button type="button" variant="outline" :disabled="isSubmitting || isConfiguring" @click="triggerFileUpload">
-                    <Upload class="mr-2 h-4 w-4" />
+                    <Icon name="lucide:upload" class="mr-2 size-4" />
                     Upload JSON File
                   </Button>
                   <input
@@ -294,7 +293,7 @@ const serviceAccountInfo = computed(() => {
 
             <!-- Security Warning -->
             <Alert>
-              <AlertTriangle class="h-4 w-4" />
+              <Icon name="lucide:alert-triangle" class="size-4" />
               <AlertTitle>Security Notice</AlertTitle>
               <AlertDescription>
                 Your service account credentials will be encrypted and securely stored. Never share these credentials publicly or commit them to version control.
@@ -308,8 +307,8 @@ const serviceAccountInfo = computed(() => {
                 :disabled="isSubmitting || isConfiguring"
                 class="flex-1"
               >
-                <Loader2 v-if="isSubmitting || isConfiguring" class="w-4 h-4 mr-2 animate-spin" />
-                <Save v-else class="w-4 h-4 mr-2" />
+                <Icon v-if="isSubmitting || isConfiguring" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
+                <Icon v-else name="lucide:save" class="size-4 mr-2" />
                 {{ hasExistingConfig ? 'Update Configuration' : 'Save Configuration' }}
               </Button>
               <Button type="button" variant="outline" @click="goBack">
@@ -332,7 +331,7 @@ const serviceAccountInfo = computed(() => {
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
             >
-              <FileText class="h-4 w-4" />
+              <Icon name="lucide:file-text" class="size-4" />
               <span>Firebase Cloud Messaging Documentation</span>
             </a>
             <a
@@ -340,7 +339,7 @@ const serviceAccountInfo = computed(() => {
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
             >
-              <FileText class="h-4 w-4" />
+              <Icon name="lucide:file-text" class="size-4" />
               <span>Firebase Console</span>
             </a>
             <a
@@ -348,7 +347,7 @@ const serviceAccountInfo = computed(() => {
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
             >
-              <FileText class="h-4 w-4" />
+              <Icon name="lucide:file-text" class="size-4" />
               <span>Server Authentication Guide</span>
             </a>
           </div>
@@ -359,7 +358,7 @@ const serviceAccountInfo = computed(() => {
 
   <!-- Loading State -->
   <div v-else class="flex items-center justify-center h-64">
-    <Loader2 class="h-8 w-8 animate-spin" />
+    <Icon name="lucide:loader-2" class="h-8 w-8 animate-spin" />
   </div>
 </template>
 

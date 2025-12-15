@@ -7,7 +7,6 @@ import { Input } from 'abckit/shadcn/input'
 import { Label } from 'abckit/shadcn/label'
 import { Switch } from 'abckit/shadcn/switch'
 import { Textarea } from 'abckit/shadcn/textarea'
-import { AlertTriangle, Key, Loader2, Save, Trash2 } from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'default',
@@ -179,8 +178,8 @@ const canDelete = computed(() => {
               :disabled="!isFormDirty || isUpdatingApp || !appForm.name.trim()"
               @click="updateApp"
             >
-              <Loader2 v-if="isUpdatingApp" class="mr-2 h-4 w-4 animate-spin" />
-              <Save v-else class="mr-2 h-4 w-4" />
+              <Icon v-if="isUpdatingApp" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
+              <Icon v-else name="lucide:save" class="mr-2 size-4" />
               Save Changes
             </Button>
           </div>
@@ -203,13 +202,13 @@ const canDelete = computed(() => {
               <p class="text-xs text-muted-foreground">Created: {{ new Date(app.createdAt).toLocaleDateString() }}</p>
             </div>
             <Button variant="outline" :disabled="isRegeneratingKey" @click="showRegenerateDialog = true">
-              <Key class="mr-2 h-4 w-4" />
+              <Icon name="lucide:key" class="mr-2 size-4" />
               Regenerate
             </Button>
           </div>
 
           <Alert>
-            <AlertTriangle class="h-4 w-4" />
+            <Icon name="lucide:alert-triangle" class="size-4" />
             <AlertTitle>Warning</AlertTitle>
             <AlertDescription>
               Regenerating your API key will invalidate the current key. Make sure to update your applications with the new key.
@@ -257,7 +256,7 @@ const canDelete = computed(() => {
               </p>
             </div>
             <Button variant="destructive" :disabled="isDeletingApp" @click="showDeleteDialog = true">
-              <Trash2 class="mr-2 h-4 w-4" />
+              <Icon name="lucide:trash-2" class="mr-2 size-4" />
               Delete App
             </Button>
           </div>
@@ -275,7 +274,7 @@ const canDelete = computed(() => {
           </DialogDescription>
         </DialogHeader>
         <Alert>
-          <AlertTriangle class="h-4 w-4" />
+          <Icon name="lucide:alert-triangle" class="size-4" />
           <AlertTitle>This action cannot be undone</AlertTitle>
           <AlertDescription>
             Your current API key will stop working immediately after regeneration.
@@ -284,8 +283,8 @@ const canDelete = computed(() => {
         <DialogFooter>
           <Button variant="outline" @click="showRegenerateDialog = false">Cancel</Button>
           <Button :disabled="isRegeneratingKey" @click="regenerateApiKey">
-            <Loader2 v-if="isRegeneratingKey" class="mr-2 h-4 w-4 animate-spin" />
-            <Key v-else class="mr-2 h-4 w-4" />
+            <Icon v-if="isRegeneratingKey" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
+            <Icon v-else name="lucide:key" class="mr-2 size-4" />
             Regenerate Key
           </Button>
         </DialogFooter>
@@ -303,7 +302,7 @@ const canDelete = computed(() => {
         </DialogHeader>
         <div class="space-y-4">
           <Alert variant="destructive">
-            <AlertTriangle class="h-4 w-4" />
+            <Icon name="lucide:alert-triangle" class="size-4" />
             <AlertTitle>Warning</AlertTitle>
             <AlertDescription>
               This will delete all devices, notifications, and settings associated with this app.
@@ -323,8 +322,8 @@ const canDelete = computed(() => {
         <DialogFooter>
           <Button variant="outline" @click="showDeleteDialog = false">Cancel</Button>
           <Button variant="destructive" :disabled="!canDelete || isDeletingApp" @click="deleteApp">
-            <Loader2 v-if="isDeletingApp" class="mr-2 h-4 w-4 animate-spin" />
-            <Trash2 v-else class="mr-2 h-4 w-4" />
+            <Icon v-if="isDeletingApp" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
+            <Icon v-else name="lucide:trash-2" class="mr-2 size-4" />
             Delete Application
           </Button>
         </DialogFooter>
@@ -334,6 +333,6 @@ const canDelete = computed(() => {
 
   <!-- Loading State -->
   <div v-else class="flex items-center justify-center h-64">
-    <Loader2 class="h-8 w-8 animate-spin" />
+    <Icon name="lucide:loader-2" class="h-8 w-8 animate-spin" />
   </div>
 </template>

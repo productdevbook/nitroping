@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from 'abckit/shadcn/input'
 import { Label } from 'abckit/shadcn/label'
 import { Textarea } from 'abckit/shadcn/textarea'
-import { ArrowLeft, Download, Send } from 'lucide-vue-next'
 
 interface Props {
   app: any
@@ -37,7 +36,7 @@ async function sendTestNotification() {
   <div class="flex items-center justify-between mb-8">
     <div class="flex items-center space-x-4">
       <Button variant="ghost" size="icon" @click="$router.back()">
-        <ArrowLeft class="h-4 w-4" />
+        <Icon name="lucide:arrow-left" class="size-4" />
       </Button>
       <div>
         <h1 class="text-3xl font-bold mb-1">{{ app.name }}</h1>
@@ -49,11 +48,11 @@ async function sendTestNotification() {
     </div>
     <div class="flex space-x-2">
       <Button variant="outline" @click="showSendTest = true">
-        <Send class="mr-2 h-4 w-4" />
+        <Icon name="lucide:send" class="mr-2 size-4" />
         Send Test
       </Button>
       <Button variant="outline">
-        <Download class="mr-2 h-4 w-4" />
+        <Icon name="lucide:download" class="mr-2 size-4" />
         Export Data
       </Button>
     </div>

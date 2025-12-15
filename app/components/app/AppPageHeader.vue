@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Badge } from 'abckit/shadcn/badge'
 import { Button } from 'abckit/shadcn/button'
-import { ArrowLeft } from 'lucide-vue-next'
 
 interface Props {
   title: string
@@ -25,7 +24,7 @@ const _emit = defineEmits<{
   <div class="mb-8">
     <div class="flex items-center space-x-4 mb-4">
       <Button v-if="showBackButton" variant="ghost" size="icon" @click="$emit('back')">
-        <ArrowLeft class="h-4 w-4" />
+        <Icon name="lucide:arrow-left" class="size-4" />
       </Button>
       <div class="flex-1">
         <div class="flex items-center space-x-3 mb-1">

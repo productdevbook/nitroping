@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abcki
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from 'abckit/shadcn/form'
 import { Input } from 'abckit/shadcn/input'
 import { Textarea } from 'abckit/shadcn/textarea'
-import { AlertTriangle, ArrowLeft, Check, FileText, Key, Loader2, RefreshCw, Save } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 
@@ -124,7 +123,7 @@ const hasExistingConfig = computed(() => {
     <!-- Page Header -->
     <div class="flex items-center space-x-4 mb-8">
       <Button variant="ghost" size="icon" @click="goBack">
-        <ArrowLeft class="h-4 w-4" />
+        <Icon name="lucide:arrow-left" class="size-4" />
       </Button>
       <div>
         <h1 class="text-3xl font-bold mb-1">Configure Web Push</h1>
@@ -138,7 +137,7 @@ const hasExistingConfig = computed(() => {
       <Card v-if="hasExistingConfig">
         <CardHeader>
           <CardTitle class="flex items-center space-x-2">
-            <Check class="h-5 w-5 text-green-600" />
+            <Icon name="lucide:check" class="h-5 w-5 text-green-600" />
             <span>Web Push Currently Configured</span>
           </CardTitle>
           <CardDescription>Your app is currently set up to send push notifications to web browsers</CardDescription>
@@ -206,8 +205,8 @@ const hasExistingConfig = computed(() => {
               :disabled="isGenerating || isSubmitting || isConfiguring"
               @click="generateKeys"
             >
-              <Loader2 v-if="isGenerating" class="mr-2 h-4 w-4 animate-spin" />
-              <Key v-else class="mr-2 h-4 w-4" />
+              <Icon v-if="isGenerating" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
+              <Icon v-else name="lucide:key" class="mr-2 size-4" />
               Generate New Keys
             </Button>
           </div>
@@ -274,7 +273,7 @@ const hasExistingConfig = computed(() => {
 
             <!-- Key Generation Help -->
             <Alert>
-              <RefreshCw class="h-4 w-4" />
+              <Icon name="lucide:refresh-cw" class="size-4" />
               <AlertTitle>Need VAPID Keys?</AlertTitle>
               <AlertDescription>
                 If you don't have VAPID keys yet, click "Generate New Keys" above to create a new key pair automatically.
@@ -283,7 +282,7 @@ const hasExistingConfig = computed(() => {
 
             <!-- Security Warning -->
             <Alert>
-              <AlertTriangle class="h-4 w-4" />
+              <Icon name="lucide:alert-triangle" class="size-4" />
               <AlertTitle>Security Notice</AlertTitle>
               <AlertDescription>
                 Your private key will be encrypted and securely stored. The public key will be used in your web app's client code to subscribe users to push notifications.
@@ -297,8 +296,8 @@ const hasExistingConfig = computed(() => {
                 :disabled="isSubmitting || isConfiguring"
                 class="flex-1"
               >
-                <Loader2 v-if="isSubmitting || isConfiguring" class="w-4 h-4 mr-2 animate-spin" />
-                <Save v-else class="w-4 h-4 mr-2" />
+                <Icon v-if="isSubmitting || isConfiguring" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
+                <Icon v-else name="lucide:save" class="size-4 mr-2" />
                 {{ hasExistingConfig ? 'Update Configuration' : 'Save Configuration' }}
               </Button>
               <Button type="button" variant="outline" @click="goBack">
@@ -355,7 +354,7 @@ await fetch('/api/v1/devices/register', {
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
             >
-              <FileText class="h-4 w-4" />
+              <Icon name="lucide:file-text" class="size-4" />
               <span>MDN Push API Documentation</span>
             </a>
             <a
@@ -363,7 +362,7 @@ await fetch('/api/v1/devices/register', {
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
             >
-              <FileText class="h-4 w-4" />
+              <Icon name="lucide:file-text" class="size-4" />
               <span>Web Push Notifications Guide</span>
             </a>
             <a
@@ -371,7 +370,7 @@ await fetch('/api/v1/devices/register', {
               target="_blank"
               class="flex items-center space-x-2 text-sm text-primary hover:underline"
             >
-              <FileText class="h-4 w-4" />
+              <Icon name="lucide:file-text" class="size-4" />
               <span>VAPID Specification (RFC 8292)</span>
             </a>
           </div>
@@ -382,7 +381,7 @@ await fetch('/api/v1/devices/register', {
 
   <!-- Loading State -->
   <div v-else class="flex items-center justify-center h-64">
-    <Loader2 class="h-8 w-8 animate-spin" />
+    <Icon name="lucide:loader-2" class="h-8 w-8 animate-spin" />
   </div>
 </template>
 

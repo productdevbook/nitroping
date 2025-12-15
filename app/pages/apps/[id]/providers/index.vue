@@ -2,7 +2,6 @@
 import { Badge } from 'abckit/shadcn/badge'
 import { Button } from 'abckit/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
-import { Globe, Loader2, Smartphone } from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'default',
@@ -50,7 +49,7 @@ function configureWebPush() {
           <CardHeader>
             <div class="flex items-center space-x-3">
               <div class="h-10 w-10 rounded-lg bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
-                <Smartphone class="h-5 w-5 text-orange-600" />
+                <Icon name="lucide:smartphone" class="h-5 w-5 text-orange-600" />
               </div>
               <div>
                 <CardTitle>Firebase FCM</CardTitle>
@@ -83,7 +82,7 @@ function configureWebPush() {
           <CardHeader>
             <div class="flex items-center space-x-3">
               <div class="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                <Smartphone class="h-5 w-5 text-blue-600" />
+                <Icon name="lucide:smartphone" class="h-5 w-5 text-blue-600" />
               </div>
               <div>
                 <CardTitle>Apple APNs</CardTitle>
@@ -117,7 +116,7 @@ function configureWebPush() {
           <CardHeader>
             <div class="flex items-center space-x-3">
               <div class="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                <Globe class="h-5 w-5 text-green-600" />
+                <Icon name="lucide:globe" class="h-5 w-5 text-green-600" />
               </div>
               <div>
                 <CardTitle>Web Push</CardTitle>
@@ -189,6 +188,6 @@ function configureWebPush() {
 
   <!-- Loading State -->
   <div v-else class="flex items-center justify-center h-64">
-    <Loader2 class="h-8 w-8 animate-spin" />
+    <Icon name="lucide:loader-2" class="h-8 w-8 animate-spin" />
   </div>
 </template>

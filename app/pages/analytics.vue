@@ -2,7 +2,6 @@
 import { Button } from 'abckit/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'abckit/shadcn/select'
-import { BarChart3, CheckCircle, RefreshCw, Send, XCircle } from 'lucide-vue-next'
 import { useAnalyticsSummary } from '~/graphql/analytics'
 
 definePageMeta({
@@ -140,7 +139,7 @@ function refreshData() {
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle class="text-sm font-medium">Total Sent</CardTitle>
-          <Send class="h-4 w-4 text-muted-foreground" />
+          <Icon name="lucide:send" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ metrics.totalSent.toLocaleString() }}</div>
@@ -153,7 +152,7 @@ function refreshData() {
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle class="text-sm font-medium">Delivered</CardTitle>
-          <CheckCircle class="h-4 w-4 text-muted-foreground" />
+          <Icon name="lucide:check-circle" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ metrics.delivered.toLocaleString() }}</div>
@@ -166,7 +165,7 @@ function refreshData() {
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle class="text-sm font-medium">Opened</CardTitle>
-          <CheckCircle class="h-4 w-4 text-muted-foreground" />
+          <Icon name="lucide:check-circle" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ metrics.opened.toLocaleString() }}</div>
@@ -179,7 +178,7 @@ function refreshData() {
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle class="text-sm font-medium">Clicked</CardTitle>
-          <XCircle class="h-4 w-4 text-muted-foreground" />
+          <Icon name="lucide:x-circle" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ metrics.clicked.toLocaleString() }}</div>
@@ -200,7 +199,7 @@ function refreshData() {
         <CardContent>
           <div class="h-80 flex items-center justify-center text-muted-foreground">
             <div class="text-center">
-              <BarChart3 class="h-12 w-12 mx-auto mb-4" />
+              <Icon name="lucide:bar-chart-3" class="h-12 w-12 mx-auto mb-4" />
               <p>Chart visualization would go here</p>
               <p class="text-sm">Integration with chart library needed</p>
             </div>
@@ -242,14 +241,14 @@ function refreshData() {
             <CardDescription>Latest sent notifications and their status</CardDescription>
           </div>
           <Button variant="outline" @click="refreshData">
-            <RefreshCw class="w-4 h-4 mr-2" />
+            <Icon name="lucide:refresh-cw" class="size-4 mr-2" />
             Refresh
           </Button>
         </div>
       </CardHeader>
       <CardContent>
         <div class="text-center py-8 text-muted-foreground">
-          <BarChart3 class="h-12 w-12 mx-auto mb-4" />
+          <Icon name="lucide:bar-chart-3" class="h-12 w-12 mx-auto mb-4" />
           <p>Recent notifications feature</p>
           <p class="text-sm">Coming soon...</p>
         </div>

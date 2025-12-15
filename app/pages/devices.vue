@@ -8,7 +8,6 @@ import { Input } from 'abckit/shadcn/input'
 import { Label } from 'abckit/shadcn/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'abckit/shadcn/select'
 import { Textarea } from 'abckit/shadcn/textarea'
-import { CheckCircle, Loader2, RefreshCw, Search, Send, Smartphone, XCircle } from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'default',
@@ -293,8 +292,8 @@ onMounted(() => {
             </div>
 
             <Button type="submit" :disabled="!registrationForm.appId || !registrationForm.token || !registrationForm.platform || isRegisteringDevice" class="w-full">
-              <Loader2 v-if="isRegisteringDevice" class="w-4 h-4 mr-2 animate-spin" />
-              <Smartphone class="w-4 h-4 mr-2" />
+              <Icon v-if="isRegisteringDevice" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
+              <Icon name="lucide:smartphone" class="size-4 mr-2" />
               Register Device
             </Button>
           </form>
@@ -335,8 +334,8 @@ onMounted(() => {
             </div>
 
             <Button type="submit" :disabled="!testForm.appId || !testForm.token || testLoading" class="w-full">
-              <Loader2 v-if="testLoading" class="w-4 h-4 mr-2 animate-spin" />
-              <Search class="w-4 h-4 mr-2" />
+              <Icon v-if="testLoading" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
+              <Icon name="lucide:search" class="size-4 mr-2" />
               Test Token
             </Button>
           </form>
@@ -344,8 +343,8 @@ onMounted(() => {
           <!-- Test Results -->
           <div v-if="testResult" class="mt-4 p-4 rounded-lg" :class="testResult.success ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'">
             <div class="flex items-center space-x-2 mb-2">
-              <CheckCircle v-if="testResult.success" class="h-5 w-5 text-green-600" />
-              <XCircle v-else class="h-5 w-5 text-red-600" />
+              <Icon v-if="testResult.success" name="lucide:check-circle" class="h-5 w-5 text-green-600" />
+              <Icon v-else name="lucide:x-circle" class="h-5 w-5 text-red-600" />
               <span class="font-medium">{{ testResult.success ? 'Token Valid' : 'Token Invalid' }}</span>
             </div>
             <p class="text-sm text-muted-foreground">{{ testResult.message }}</p>
@@ -370,7 +369,7 @@ onMounted(() => {
             <CardDescription>Latest device registrations across all apps</CardDescription>
           </div>
           <Button variant="outline" @click="loadRecentDevices">
-            <RefreshCw class="w-4 h-4 mr-2" />
+            <Icon name="lucide:refresh-cw" class="size-4 mr-2" />
             Refresh
           </Button>
         </div>
@@ -380,7 +379,7 @@ onMounted(() => {
           <div v-for="device in recentDevices" :key="device.id" class="flex items-center justify-between p-4 border rounded-lg">
             <div class="flex items-center space-x-4">
               <div class="h-10 w-10 rounded-lg flex items-center justify-center" :class="getPlatformBg(device.platform)">
-                <Smartphone class="h-5 w-5" :class="getPlatformText(device.platform)" />
+                <Icon name="lucide:smartphone" class="h-5 w-5" :class="getPlatformText(device.platform)" />
               </div>
               <div>
                 <p class="font-medium">{{ device.appName }}</p>
@@ -393,14 +392,14 @@ onMounted(() => {
                 {{ device.status }}
               </Badge>
               <Button variant="outline" size="sm" @click="sendTestToDevice(device)">
-                <Send class="w-4 h-4 mr-1" />
+                <Icon name="lucide:send" class="size-4 mr-1" />
                 Test
               </Button>
             </div>
           </div>
         </div>
         <div v-else class="text-center py-8">
-          <Smartphone class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <Icon name="lucide:smartphone" class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <p class="text-muted-foreground">No devices registered yet</p>
         </div>
       </CardContent>
@@ -436,7 +435,7 @@ onMounted(() => {
           <DialogFooter>
             <Button type="button" variant="outline" @click="showTestDeviceDialog = false">Cancel</Button>
             <Button type="submit" :disabled="!deviceTestForm.title || !deviceTestForm.body || deviceTestLoading">
-              <Loader2 v-if="deviceTestLoading" class="w-4 h-4 mr-2 animate-spin" />
+              <Icon v-if="deviceTestLoading" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
               Send Test
             </Button>
           </DialogFooter>

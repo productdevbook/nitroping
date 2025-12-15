@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Activity, Cog, Globe, Smartphone, TrendingUp } from 'lucide-vue-next'
-
 interface Props {
   appId: string
 }
@@ -12,31 +10,31 @@ const navigationItems = [
   {
     name: 'Overview',
     href: `/apps/${_props.appId}`,
-    icon: TrendingUp,
+    icon: 'lucide:trending-up',
     current: route.path === `/apps/${_props.appId}`,
   },
   {
     name: 'Push Providers',
     href: `/apps/${_props.appId}/providers`,
-    icon: Globe,
+    icon: 'lucide:globe',
     current: route.path === `/apps/${_props.appId}/providers`,
   },
   {
     name: 'Devices',
     href: `/apps/${_props.appId}/devices`,
-    icon: Smartphone,
+    icon: 'lucide:smartphone',
     current: route.path === `/apps/${_props.appId}/devices`,
   },
   {
     name: 'Notifications',
     href: `/apps/${_props.appId}/notifications`,
-    icon: Activity,
+    icon: 'lucide:activity',
     current: route.path === `/apps/${_props.appId}/notifications`,
   },
   {
     name: 'Settings',
     href: `/apps/${_props.appId}/settings`,
-    icon: Cog,
+    icon: 'lucide:cog',
     current: route.path === `/apps/${_props.appId}/settings`,
   },
 ]
@@ -55,7 +53,7 @@ const navigationItems = [
           : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border',
       ]"
     >
-      <component :is="item.icon" class="mr-2 h-4 w-4" />
+      <Icon :name="item.icon" class="mr-2 size-4" />
       {{ item.name }}
     </NuxtLink>
   </nav>

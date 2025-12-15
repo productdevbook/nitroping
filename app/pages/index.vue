@@ -6,7 +6,6 @@ import { Input } from 'abckit/shadcn/input'
 import { Label } from 'abckit/shadcn/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'abckit/shadcn/select'
 import { Textarea } from 'abckit/shadcn/textarea'
-import { Activity, Plus, Send, Smartphone, TrendingUp } from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'default',
@@ -83,11 +82,11 @@ async function sendTestNotification() {
         </div>
         <div class="flex gap-2">
           <Button variant="outline" @click="navigateTo('/apps')">
-            <Activity class="mr-2 h-4 w-4" />
+            <Icon name="lucide:activity" class="mr-2 size-4" />
             View Apps
           </Button>
           <Button @click="navigateTo('/apps/create')">
-            <Plus class="mr-2 h-4 w-4" />
+            <Icon name="lucide:plus" class="mr-2 size-4" />
             Create App
           </Button>
         </div>
@@ -99,7 +98,7 @@ async function sendTestNotification() {
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle class="text-sm font-medium">Total Apps</CardTitle>
-          <Activity class="h-4 w-4 text-muted-foreground" />
+          <Icon name="lucide:activity" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ stats?.totalApps || 0 }}</div>
@@ -109,7 +108,7 @@ async function sendTestNotification() {
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle class="text-sm font-medium">Active Devices</CardTitle>
-          <Smartphone class="h-4 w-4 text-muted-foreground" />
+          <Icon name="lucide:smartphone" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ stats?.activeDevices || 0 }}</div>
@@ -119,7 +118,7 @@ async function sendTestNotification() {
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle class="text-sm font-medium">Notifications Sent</CardTitle>
-          <Send class="h-4 w-4 text-muted-foreground" />
+          <Icon name="lucide:send" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ stats?.notificationsSent || 0 }}</div>
@@ -130,7 +129,7 @@ async function sendTestNotification() {
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle class="text-sm font-medium">Delivery Rate</CardTitle>
-          <TrendingUp class="h-4 w-4 text-muted-foreground" />
+          <Icon name="lucide:trending-up" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ stats?.deliveryRate || 0 }}%</div>
@@ -157,7 +156,7 @@ async function sendTestNotification() {
             <div v-for="app in recentApps" :key="app.id" class="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 cursor-pointer" @click="navigateTo(`/apps/${app.id}`)">
               <div class="flex items-center space-x-3">
                 <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Activity class="h-5 w-5 text-primary" />
+                  <Icon name="lucide:activity" class="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p class="font-medium">{{ app.name }}</p>
@@ -170,7 +169,7 @@ async function sendTestNotification() {
             </div>
           </div>
           <div v-else class="text-center py-8">
-            <Activity class="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+            <Icon name="lucide:activity" class="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
             <p class="text-sm text-muted-foreground">No apps created yet</p>
             <Button variant="outline" size="sm" class="mt-2" @click="navigateTo('/apps/create')">
               Create First App
@@ -203,7 +202,7 @@ async function sendTestNotification() {
                     'bg-red-100 text-red-600': notification.status === 'FAILED',
                   }"
                 >
-                  <Send class="h-4 w-4" />
+                  <Icon name="lucide:send" class="size-4" />
                 </div>
               </div>
               <div class="flex-1 min-w-0">
@@ -237,7 +236,7 @@ async function sendTestNotification() {
             </div>
           </div>
           <div v-else class="text-center py-8">
-            <Send class="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
+            <Icon name="lucide:send" class="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
             <p class="text-sm text-muted-foreground">No notifications sent yet</p>
             <Button variant="outline" size="sm" class="mt-2" @click="showSendNotification = true">
               Send First Notification
@@ -329,8 +328,8 @@ async function sendTestNotification() {
             :disabled="!testNotification.appId || !testNotification.title || !testNotification.body || isSending"
             @click="sendTestNotification"
           >
-            <Send v-if="!isSending" class="mr-2 h-4 w-4" />
-            <div v-else class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <Icon v-if="!isSending" name="lucide:send" class="mr-2 size-4" />
+            <div v-else class="mr-2 size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
             {{ isSending ? 'Sending...' : 'Send Notification' }}
           </Button>
         </DialogFooter>

@@ -2,17 +2,6 @@
 import { Button } from 'abckit/shadcn/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'abckit/shadcn/card'
 import { Input } from 'abckit/shadcn/input'
-import {
-  Activity,
-  Check,
-  Copy,
-  Eye,
-  EyeOff,
-  Loader2,
-  Send,
-  Smartphone,
-  TrendingUp,
-} from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'default',
@@ -115,7 +104,7 @@ onMounted(() => {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Total Devices</CardTitle>
-            <Smartphone class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:smartphone" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold">{{ stats.totalDevices }}</div>
@@ -128,7 +117,7 @@ onMounted(() => {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Notifications Sent</CardTitle>
-            <Send class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:send" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold">{{ stats.sentToday }}</div>
@@ -139,7 +128,7 @@ onMounted(() => {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">Delivery Rate</CardTitle>
-            <TrendingUp class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:trending-up" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold">{{ stats.deliveryRate }}%</div>
@@ -150,7 +139,7 @@ onMounted(() => {
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle class="text-sm font-medium">API Calls</CardTitle>
-            <Activity class="h-4 w-4 text-muted-foreground" />
+            <Icon name="lucide:activity" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold">{{ stats.apiCalls }}</div>
@@ -169,15 +158,15 @@ onMounted(() => {
           <div class="flex items-center space-x-2">
             <Input :model-value="showApiKey ? app.apiKey : '•'.repeat(32)" readonly class="font-mono" />
             <Button variant="outline" size="icon" @click="showApiKey = !showApiKey">
-              <Eye v-if="!showApiKey" class="h-4 w-4" />
-              <EyeOff v-else class="h-4 w-4" />
+              <Icon v-if="!showApiKey" name="lucide:eye" class="size-4" />
+              <Icon v-else name="lucide:eye-off" class="size-4" />
             </Button>
             <Button
               variant="outline" size="icon" :class="isApiKeyCopied ? 'text-green-600 border-green-600' : ''"
               @click="copyApiKey"
             >
-              <Check v-if="isApiKeyCopied" class="h-4 w-4" />
-              <Copy v-else class="h-4 w-4" />
+              <Icon v-if="isApiKeyCopied" name="lucide:check" class="size-4" />
+              <Icon v-else name="lucide:copy" class="size-4" />
             </Button>
           </div>
           <p class="text-xs text-muted-foreground mt-2">
@@ -210,6 +199,6 @@ onMounted(() => {
 
   <!-- Loading State -->
   <div v-else class="flex items-center justify-center h-64">
-    <Loader2 class="h-8 w-8 animate-spin" />
+    <Icon name="lucide:loader-2" class="h-8 w-8 animate-spin" />
   </div>
 </template>

@@ -4,7 +4,6 @@ import { Button } from 'abckit/shadcn/button'
 import ThemeToggle from 'abckit/shadcn/button/ThemeToggle.vue'
 import { Separator } from 'abckit/shadcn/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from 'abckit/shadcn/sidebar'
-import { ExternalLink, Search, Zap } from 'lucide-vue-next'
 
 const route = useRoute()
 
@@ -50,7 +49,7 @@ function handleViewDocs() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <Zap class="h-4 w-4 mr-1" />
+                  <Icon name="lucide:zap" class="size-4 mr-1" />
                   NitroPing
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
@@ -62,10 +61,10 @@ function handleViewDocs() {
             <div class="flex-1"></div>
             <div class="flex items-center space-x-2">
               <Button variant="ghost" size="sm">
-                <Search class="h-4 w-4" />
+                <Icon name="lucide:search" class="size-4" />
               </Button>
               <Button variant="outline" size="sm" @click="handleViewDocs">
-                <ExternalLink class="h-4 w-4 mr-2" />
+                <Icon name="lucide:external-link" class="size-4 mr-2" />
                 API Docs
               </Button>
               <ThemeToggle />
