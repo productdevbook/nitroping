@@ -24,6 +24,10 @@ export default defineNuxtConfig({
       tasks: true,
     },
     modules: ['nitro-graphql'],
+    serverAssets: [{
+      baseName: 'migrations',
+      dir: './database/migrations', // Relative to Nitro srcDir (server/)
+    }],
     graphql: {
       framework: 'graphql-yoga',
       codegen: {
