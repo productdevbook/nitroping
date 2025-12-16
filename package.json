@@ -27,7 +27,7 @@
     "@internationalized/date": "^3.10.0",
     "@tanstack/vue-table": "^8.21.3",
     "@types/jsonwebtoken": "^9.0.10",
-    "abckit": "^0.0.28",
+    "abckit": "^0.0.30",
     "bullmq": "^5.66.0",
     "dataloader": "^2.2.3",
     "drizzle-kit": "^0.31.8",

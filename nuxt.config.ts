@@ -13,6 +13,11 @@ export default defineNuxtConfig({
     'notivue/notification.css',
     'notivue/animations.css',
   ],
+  abckit: {
+    modules: {
+      graphql: true,
+    },
+  },
 
   nitro: {
     experimental: {

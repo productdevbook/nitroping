@@ -20,10 +20,12 @@ services:
       - redis_data:/data
   server:
     profiles: [prod]
-    image: productdevbook/nitroping:v0.0.1
+    image: ghcr.io/productdevbook/nitroping:latest
     restart: always
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       NITRO_HOST: 0.0.0.0
     env_file:
       - .env
