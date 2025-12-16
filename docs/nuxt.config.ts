@@ -8,4 +8,10 @@ export default defineNuxtConfig({
   ssr: true,
 
   css: ['~/assets/css/tailwind.css'],
+  abckit: {
+    modules: {
+      graphql: false,
+      ionic: false,
+    },
+  },
 })
