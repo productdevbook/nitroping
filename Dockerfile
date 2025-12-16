@@ -2,8 +2,14 @@ FROM oven/bun:1 AS base
 
 WORKDIR /app
 
+# Copy package files and local SDK workspace
 COPY package.json bun.lock ./
+COPY sdk ./sdk
 
+# Build SDK first
+RUN cd sdk && bun install && bun run build && cd ..
+
+# Install main app dependencies
 RUN bun install --frozen-lockfile
 
 COPY . .
