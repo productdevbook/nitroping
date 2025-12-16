@@ -56,5 +56,6 @@ graphql.config.ts
 # Development utilities
 # nitroping  # SDK needed for build
 
-# Include SDK for build
-sdk
+# Include SDK for build (don't ignore)
+!sdk
+!sdk/**
