@@ -55,7 +55,7 @@ jobs:
           type=raw,value=latest-amd64,enable={{is_default_branch}}
 
     - name: Build and push AMD64 Docker image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile
@@ -114,7 +114,7 @@ jobs:
           type=raw,value=latest-arm64,enable={{is_default_branch}}
 
     - name: Build and push ARM64 Docker image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile
@@ -181,18 +181,20 @@ jobs:
 
     - name: Create and push Docker Hub manifest
       run: |
-        for tag in ${{ steps.meta-dockerhub.outputs.tags }}; do
+        echo '${{ steps.meta-dockerhub.outputs.tags }}' | while IFS= read -r tag; do
+          [ -z "$tag" ] && continue
           docker buildx imagetools create \
-            --tag ${tag} \
-            ${tag}-amd64 \
-            ${tag}-arm64
+            --tag "${tag}" \
+            "${tag}-amd64" \
+            "${tag}-arm64"
         done
 
     - name: Create and push GHCR manifest
       run: |
-        for tag in ${{ steps.meta-ghcr.outputs.tags }}; do
+        echo '${{ steps.meta-ghcr.outputs.tags }}' | while IFS= read -r tag; do
+          [ -z "$tag" ] && continue
           docker buildx imagetools create \
-            --tag ${tag} \
-            ${tag}-amd64 \
-            ${tag}-arm64
+            --tag "${tag}" \
+            "${tag}-amd64" \
+            "${tag}-arm64"
         done
