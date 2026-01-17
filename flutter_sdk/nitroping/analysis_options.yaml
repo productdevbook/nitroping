@@ -1,0 +1,8 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    prefer_single_quotes: true
+    always_declare_return_types: true
+    prefer_final_locals: true
+    avoid_print: false  # Allow print for debug logging
