@@ -1,4 +1,4 @@
-import { ref, readonly } from 'vue'
+import { readonly, ref } from 'vue'
 
 interface ToastMessage {
   id: string

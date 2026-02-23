@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
-import { ref, computed, onMounted } from 'vue'
 import type { DevicePlatform } from '#graphql/client'
+import { computed, onMounted, ref } from 'vue'
+import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -216,8 +216,12 @@ onMounted(() => {
   <div>
     <!-- Header -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold mb-2">Device Testing</h1>
-      <p class="text-muted-foreground">Test device registration and token validation</p>
+      <h1 class="text-3xl font-bold mb-2">
+        Device Testing
+      </h1>
+      <p class="text-muted-foreground">
+        Test device registration and token validation
+      </p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -264,9 +268,15 @@ onMounted(() => {
                   <SelectValue placeholder="Select platform" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="android">Android (FCM)</SelectItem>
-                  <SelectItem value="ios">iOS (APNs)</SelectItem>
-                  <SelectItem value="web">Web (Web Push)</SelectItem>
+                  <SelectItem value="android">
+                    Android (FCM)
+                  </SelectItem>
+                  <SelectItem value="ios">
+                    iOS (APNs)
+                  </SelectItem>
+                  <SelectItem value="web">
+                    Web (Web Push)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -346,12 +356,16 @@ onMounted(() => {
               <Icon v-else name="lucide:x-circle" class="h-5 w-5 text-red-600" />
               <span class="font-medium">{{ testResult.success ? 'Token Valid' : 'Token Invalid' }}</span>
             </div>
-            <p class="text-sm text-muted-foreground">{{ testResult.message }}</p>
+            <p class="text-sm text-muted-foreground">
+              {{ testResult.message }}
+            </p>
             <div v-if="testResult.success && testResult.device" class="mt-3 space-y-1 text-sm">
               <p><strong>Device ID:</strong> {{ testResult.device.id }}</p>
               <p><strong>Platform:</strong> {{ testResult.device.platform }}</p>
               <p><strong>Status:</strong> {{ testResult.device.status }}</p>
-              <p v-if="testResult.device.userId"><strong>User ID:</strong> {{ testResult.device.userId }}</p>
+              <p v-if="testResult.device.userId">
+                <strong>User ID:</strong> {{ testResult.device.userId }}
+              </p>
               <p><strong>Last Seen:</strong> {{ formatDate(testResult.device.lastSeenAt) }}</p>
             </div>
           </div>
@@ -381,9 +395,15 @@ onMounted(() => {
                 <Icon name="lucide:smartphone" class="h-5 w-5" :class="getPlatformText(device.platform)" />
               </div>
               <div>
-                <p class="font-medium">{{ device.appName }}</p>
-                <p class="text-sm text-muted-foreground">{{ device.platform }} • {{ device.userId || 'Anonymous' }}</p>
-                <p class="text-xs text-muted-foreground">Registered {{ formatDate(device.createdAt) }}</p>
+                <p class="font-medium">
+                  {{ device.appName }}
+                </p>
+                <p class="text-sm text-muted-foreground">
+                  {{ device.platform }} • {{ device.userId || 'Anonymous' }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  Registered {{ formatDate(device.createdAt) }}
+                </p>
               </div>
             </div>
             <div class="flex items-center space-x-2">
@@ -399,7 +419,9 @@ onMounted(() => {
         </div>
         <div v-else class="text-center py-8">
           <Icon name="lucide:smartphone" class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <p class="text-muted-foreground">No devices registered yet</p>
+          <p class="text-muted-foreground">
+            No devices registered yet
+          </p>
         </div>
       </CardContent>
     </Card>
@@ -432,7 +454,9 @@ onMounted(() => {
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" @click="showTestDeviceDialog = false">Cancel</Button>
+            <Button type="button" variant="outline" @click="showTestDeviceDialog = false">
+              Cancel
+            </Button>
             <Button type="submit" :disabled="!deviceTestForm.title || !deviceTestForm.body || deviceTestLoading">
               <Icon v-if="deviceTestLoading" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
               Send Test

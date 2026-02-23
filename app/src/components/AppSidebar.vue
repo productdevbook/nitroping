@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
+import type { SidebarProps } from '~/components/ui/sidebar'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import type { SidebarProps } from '~/components/ui/sidebar'
+import AppNavMain from '~/components/app/AppNavMain.vue'
+import AppNavUser from '~/components/app/AppNavUser.vue'
+import Icon from '~/components/common/Icon.vue'
 import {
   Sidebar,
   SidebarContent,
@@ -12,8 +14,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '~/components/ui/sidebar'
-import AppNavMain from '~/components/app/AppNavMain.vue'
-import AppNavUser from '~/components/app/AppNavUser.vue'
 
 const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: 'icon',

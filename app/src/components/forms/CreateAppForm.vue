@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
+import { useForm } from 'vee-validate'
 import { watch } from 'vue'
+import { z } from 'zod'
+import Icon from '~/components/common/Icon.vue'
+
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { Textarea } from '~/components/ui/textarea'
-import { useForm } from 'vee-validate'
-import { z } from 'zod'
 
 // Props
 interface Props {
@@ -81,7 +81,9 @@ watch(() => values.name, (newName) => {
         <!-- App Name -->
         <FormField v-slot="{ componentField }" name="name">
           <FormItem>
-            <FormLabel class="required">App Name</FormLabel>
+            <FormLabel class="required">
+              App Name
+            </FormLabel>
             <FormControl>
               <Input
                 v-bind="componentField"
@@ -99,7 +101,9 @@ watch(() => values.name, (newName) => {
         <!-- App Slug -->
         <FormField v-slot="{ componentField }" name="slug">
           <FormItem>
-            <FormLabel class="required">Slug</FormLabel>
+            <FormLabel class="required">
+              Slug
+            </FormLabel>
             <FormControl>
               <Input
                 v-bind="componentField"

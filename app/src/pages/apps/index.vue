@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -67,8 +67,12 @@ async function sendTest() {
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-3xl font-bold mb-2">Applications</h1>
-        <p class="text-muted-foreground">Manage your push notification applications</p>
+        <h1 class="text-3xl font-bold mb-2">
+          Applications
+        </h1>
+        <p class="text-muted-foreground">
+          Manage your push notification applications
+        </p>
       </div>
       <Button @click="router.push('/apps/create')">
         <Icon name="lucide:plus" class="mr-2 size-4" />
@@ -86,15 +90,21 @@ async function sendTest() {
                 <Icon name="lucide:package" class="h-5 w-5 text-primary-foreground" />
               </div>
               <div>
-                <CardTitle class="text-lg">{{ app.name }}</CardTitle>
-                <p class="text-sm text-muted-foreground">{{ app.slug }}</p>
+                <CardTitle class="text-lg">
+                  {{ app.name }}
+                </CardTitle>
+                <p class="text-sm text-muted-foreground">
+                  {{ app.slug }}
+                </p>
               </div>
             </div>
             <Badge :variant="app.isActive ? 'default' : 'secondary'">
               {{ app.isActive ? 'Active' : 'Inactive' }}
             </Badge>
           </div>
-          <CardDescription v-if="app.description">{{ app.description }}</CardDescription>
+          <CardDescription v-if="app.description">
+            {{ app.description }}
+          </CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -102,18 +112,28 @@ async function sendTest() {
             <!-- Quick Stats -->
             <div class="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p class="text-muted-foreground">Devices</p>
-                <p class="font-semibold">{{ app.stats?.totalDevices || 0 }}</p>
+                <p class="text-muted-foreground">
+                  Devices
+                </p>
+                <p class="font-semibold">
+                  {{ app.stats?.totalDevices || 0 }}
+                </p>
               </div>
               <div>
-                <p class="text-muted-foreground">Sent Today</p>
-                <p class="font-semibold">{{ app.stats?.sentToday || 0 }}</p>
+                <p class="text-muted-foreground">
+                  Sent Today
+                </p>
+                <p class="font-semibold">
+                  {{ app.stats?.sentToday || 0 }}
+                </p>
               </div>
             </div>
 
             <!-- Provider Status -->
             <div class="space-y-2">
-              <p class="text-sm font-medium">Configured Providers</p>
+              <p class="text-sm font-medium">
+                Configured Providers
+              </p>
               <div class="flex space-x-2">
                 <Badge v-if="app.fcmProjectId" variant="outline" class="text-xs">
                   <Icon name="lucide:smartphone" class="w-3 h-3 mr-1" />
@@ -155,8 +175,12 @@ async function sendTest() {
     <!-- Empty State -->
     <div v-else class="text-center py-12">
       <Icon name="lucide:package" class="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-      <h3 class="text-lg font-medium mb-2">No applications yet</h3>
-      <p class="text-muted-foreground mb-6">Create your first app to start sending push notifications</p>
+      <h3 class="text-lg font-medium mb-2">
+        No applications yet
+      </h3>
+      <p class="text-muted-foreground mb-6">
+        Create your first app to start sending push notifications
+      </p>
       <Button @click="router.push('/apps/create')">
         <Icon name="lucide:plus" class="mr-2 size-4" />
         Create Your First App
@@ -194,7 +218,9 @@ async function sendTest() {
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" @click="showTestDialog = false">Cancel</Button>
+            <Button type="button" variant="outline" @click="showTestDialog = false">
+              Cancel
+            </Button>
             <Button type="submit" :disabled="!testNotification.title || !testNotification.body || testLoading">
               <Icon v-if="testLoading" name="lucide:loader-2" class="size-4 mr-2 animate-spin" />
               <Icon name="lucide:send" class="size-4 mr-2" />

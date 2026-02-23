@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import AppNavigation from '~/components/app/AppNavigation.vue'
-import { ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useApp, useUpdateApp, useRegenerateApiKey, useDeleteApp } from '~/graphql'
+import Icon from '~/components/common/Icon.vue'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -13,6 +12,7 @@ import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Switch } from '~/components/ui/switch'
 import { Textarea } from '~/components/ui/textarea'
+import { useApp, useDeleteApp, useRegenerateApiKey, useUpdateApp } from '~/graphql'
 
 const route = useRoute()
 const router = useRouter()
@@ -122,8 +122,12 @@ const canDelete = computed(() => {
     <!-- Settings Content -->
     <div class="space-y-6">
       <div>
-        <h2 class="text-2xl font-bold mb-2">App Settings</h2>
-        <p class="text-muted-foreground">Configure your application settings and preferences.</p>
+        <h2 class="text-2xl font-bold mb-2">
+          App Settings
+        </h2>
+        <p class="text-muted-foreground">
+          Configure your application settings and preferences.
+        </p>
       </div>
 
       <!-- General Settings -->
@@ -151,7 +155,9 @@ const canDelete = computed(() => {
                 readonly
                 class="bg-muted"
               />
-              <p class="text-xs text-muted-foreground">Slug cannot be changed after creation</p>
+              <p class="text-xs text-muted-foreground">
+                Slug cannot be changed after creation
+              </p>
             </div>
           </div>
 
@@ -174,7 +180,9 @@ const canDelete = computed(() => {
             />
             <Label for="app-active">App is active</Label>
           </div>
-          <p class="text-xs text-muted-foreground">Inactive apps cannot receive or send notifications</p>
+          <p class="text-xs text-muted-foreground">
+            Inactive apps cannot receive or send notifications
+          </p>
 
           <div class="flex justify-end">
             <Button
@@ -198,11 +206,15 @@ const canDelete = computed(() => {
         <CardContent class="space-y-4">
           <div class="flex items-center justify-between p-4 border rounded-lg">
             <div class="space-y-1">
-              <h4 class="font-medium">Current API Key</h4>
+              <h4 class="font-medium">
+                Current API Key
+              </h4>
               <p class="text-sm text-muted-foreground">
                 Key ID: <code class="bg-muted px-1 rounded">{{ app.apiKey?.substring(0, 12) }}...</code>
               </p>
-              <p class="text-xs text-muted-foreground">Created: {{ new Date(app.createdAt).toLocaleDateString() }}</p>
+              <p class="text-xs text-muted-foreground">
+                Created: {{ new Date(app.createdAt).toLocaleDateString() }}
+              </p>
             </div>
             <Button variant="outline" :disabled="isRegeneratingKey" @click="showRegenerateDialog = true">
               <Icon name="lucide:key" class="mr-2 size-4" />
@@ -230,15 +242,21 @@ const canDelete = computed(() => {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="space-y-2">
               <Label class="text-sm font-medium">Total Devices</Label>
-              <div class="text-2xl font-bold">{{ app.stats?.totalDevices || 0 }}</div>
+              <div class="text-2xl font-bold">
+                {{ app.stats?.totalDevices || 0 }}
+              </div>
             </div>
             <div class="space-y-2">
               <Label class="text-sm font-medium">Notifications Sent</Label>
-              <div class="text-2xl font-bold">{{ app.stats?.sentToday || 0 }}</div>
+              <div class="text-2xl font-bold">
+                {{ app.stats?.sentToday || 0 }}
+              </div>
             </div>
             <div class="space-y-2">
               <Label class="text-sm font-medium">API Calls</Label>
-              <div class="text-2xl font-bold">{{ app.stats?.apiCalls || 0 }}</div>
+              <div class="text-2xl font-bold">
+                {{ app.stats?.apiCalls || 0 }}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -247,13 +265,17 @@ const canDelete = computed(() => {
       <!-- Danger Zone -->
       <Card class="border-destructive">
         <CardHeader>
-          <CardTitle class="text-destructive">Danger Zone</CardTitle>
+          <CardTitle class="text-destructive">
+            Danger Zone
+          </CardTitle>
           <CardDescription>Irreversible and destructive actions</CardDescription>
         </CardHeader>
         <CardContent class="space-y-4">
           <div class="flex items-center justify-between p-4 border border-destructive rounded-lg">
             <div class="space-y-1">
-              <h4 class="font-medium text-destructive">Delete Application</h4>
+              <h4 class="font-medium text-destructive">
+                Delete Application
+              </h4>
               <p class="text-sm text-muted-foreground">
                 Permanently delete this application and all its data. This action cannot be undone.
               </p>
@@ -284,7 +306,9 @@ const canDelete = computed(() => {
           </AlertDescription>
         </Alert>
         <DialogFooter>
-          <Button variant="outline" @click="showRegenerateDialog = false">Cancel</Button>
+          <Button variant="outline" @click="showRegenerateDialog = false">
+            Cancel
+          </Button>
           <Button :disabled="isRegeneratingKey" @click="regenerateApiKey">
             <Icon v-if="isRegeneratingKey" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
             <Icon v-else name="lucide:key" class="mr-2 size-4" />
@@ -323,7 +347,9 @@ const canDelete = computed(() => {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" @click="showDeleteDialog = false">Cancel</Button>
+          <Button variant="outline" @click="showDeleteDialog = false">
+            Cancel
+          </Button>
           <Button variant="destructive" :disabled="!canDelete || isDeletingApp" @click="deleteApp">
             <Icon v-if="isDeletingApp" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
             <Icon v-else name="lucide:trash-2" class="mr-2 size-4" />

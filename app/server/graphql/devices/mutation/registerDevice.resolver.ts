@@ -1,5 +1,5 @@
-import { HTTPError } from 'nitro/h3'
 import { defineMutation } from 'nitro-graphql/define'
+import { HTTPError } from 'nitro/h3'
 
 export const registerDeviceMutation = defineMutation({
   registerDevice: {

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useApp } from '~/graphql'
+import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
+import AppNavigation from '~/components/app/AppNavigation.vue'
+import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
+import { useApp } from '~/graphql'
 
 const route = useRoute()
 const router = useRouter()
@@ -42,8 +42,12 @@ function configureWebPush() {
     <!-- Providers Content -->
     <div class="space-y-6">
       <div>
-        <h2 class="text-2xl font-bold mb-2">Push Providers</h2>
-        <p class="text-muted-foreground">Configure your push notification providers to start sending notifications.</p>
+        <h2 class="text-2xl font-bold mb-2">
+          Push Providers
+        </h2>
+        <p class="text-muted-foreground">
+          Configure your push notification providers to start sending notifications.
+        </p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -66,12 +70,18 @@ function configureWebPush() {
             </Badge>
 
             <div v-if="app.fcmProjectId" class="space-y-2">
-              <p class="text-sm"><strong>Project ID:</strong> {{ app.fcmProjectId }}</p>
-              <p class="text-sm text-muted-foreground">Service account configured</p>
+              <p class="text-sm">
+                <strong>Project ID:</strong> {{ app.fcmProjectId }}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                Service account configured
+              </p>
             </div>
 
             <div v-else class="space-y-2">
-              <p class="text-sm text-muted-foreground">Configure Firebase Cloud Messaging to send notifications to Android devices.</p>
+              <p class="text-sm text-muted-foreground">
+                Configure Firebase Cloud Messaging to send notifications to Android devices.
+              </p>
             </div>
 
             <Button variant="outline" size="sm" class="w-full" @click="configureFCM">
@@ -99,13 +109,21 @@ function configureWebPush() {
             </Badge>
 
             <div v-if="app.apnsKeyId" class="space-y-2">
-              <p class="text-sm"><strong>Key ID:</strong> {{ app.apnsKeyId }}</p>
-              <p class="text-sm"><strong>Team ID:</strong> {{ app.apnsTeamId }}</p>
-              <p class="text-sm text-muted-foreground">Private key configured</p>
+              <p class="text-sm">
+                <strong>Key ID:</strong> {{ app.apnsKeyId }}
+              </p>
+              <p class="text-sm">
+                <strong>Team ID:</strong> {{ app.apnsTeamId }}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                Private key configured
+              </p>
             </div>
 
             <div v-else class="space-y-2">
-              <p class="text-sm text-muted-foreground">Configure Apple Push Notification service to send notifications to iOS devices.</p>
+              <p class="text-sm text-muted-foreground">
+                Configure Apple Push Notification service to send notifications to iOS devices.
+              </p>
             </div>
 
             <Button variant="outline" size="sm" class="w-full" @click="configureAPNs">
@@ -133,12 +151,18 @@ function configureWebPush() {
             </Badge>
 
             <div v-if="app.vapidPublicKey" class="space-y-2">
-              <p class="text-sm"><strong>Subject:</strong> {{ app.vapidSubject }}</p>
-              <p class="text-sm text-muted-foreground">VAPID keys configured</p>
+              <p class="text-sm">
+                <strong>Subject:</strong> {{ app.vapidSubject }}
+              </p>
+              <p class="text-sm text-muted-foreground">
+                VAPID keys configured
+              </p>
             </div>
 
             <div v-else class="space-y-2">
-              <p class="text-sm text-muted-foreground">Configure Web Push to send notifications to web browsers.</p>
+              <p class="text-sm text-muted-foreground">
+                Configure Web Push to send notifications to web browsers.
+              </p>
             </div>
 
             <Button variant="outline" size="sm" class="w-full" @click="configureWebPush">
@@ -157,7 +181,9 @@ function configureWebPush() {
         <CardContent class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="space-y-2">
-              <h4 class="font-medium text-orange-600">Firebase FCM</h4>
+              <h4 class="font-medium text-orange-600">
+                Firebase FCM
+              </h4>
               <ol class="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                 <li>Create a Firebase project</li>
                 <li>Generate a service account key</li>
@@ -166,7 +192,9 @@ function configureWebPush() {
               </ol>
             </div>
             <div class="space-y-2">
-              <h4 class="font-medium text-blue-600">Apple APNs</h4>
+              <h4 class="font-medium text-blue-600">
+                Apple APNs
+              </h4>
               <ol class="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                 <li>Create an Apple Developer account</li>
                 <li>Generate APNs Auth Key</li>
@@ -175,7 +203,9 @@ function configureWebPush() {
               </ol>
             </div>
             <div class="space-y-2">
-              <h4 class="font-medium text-green-600">Web Push</h4>
+              <h4 class="font-medium text-green-600">
+                Web Push
+              </h4>
               <ol class="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                 <li>Generate VAPID keys</li>
                 <li>Set subject (email or URL)</li>

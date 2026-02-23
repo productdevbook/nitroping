@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import Icon from '~/components/common/Icon.vue'
-import { ref, computed } from 'vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
-import { useApps, useAnalyticsSummary } from '~/graphql'
+import { useAnalyticsSummary, useApps } from '~/graphql'
 
 // API queries
 const { data: appsData, isLoading: _appsLoading } = useApps()
@@ -103,8 +103,12 @@ function refreshData() {
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-3xl font-bold mb-2">Analytics</h1>
-        <p class="text-muted-foreground">Track notification performance and delivery metrics</p>
+        <h1 class="text-3xl font-bold mb-2">
+          Analytics
+        </h1>
+        <p class="text-muted-foreground">
+          Track notification performance and delivery metrics
+        </p>
       </div>
       <div class="flex space-x-2">
         <Select v-model="selectedApp">
@@ -112,7 +116,9 @@ function refreshData() {
             <SelectValue placeholder="All apps" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All apps</SelectItem>
+            <SelectItem value="all">
+              All apps
+            </SelectItem>
             <SelectItem v-for="app in (apps || [])" :key="app.id" :value="app.id">
               {{ app.name }}
             </SelectItem>
@@ -123,10 +129,18 @@ function refreshData() {
             <SelectValue placeholder="Time range" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="1d">Last 24h</SelectItem>
-            <SelectItem value="7d">Last 7 days</SelectItem>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="90d">Last 90 days</SelectItem>
+            <SelectItem value="1d">
+              Last 24h
+            </SelectItem>
+            <SelectItem value="7d">
+              Last 7 days
+            </SelectItem>
+            <SelectItem value="30d">
+              Last 30 days
+            </SelectItem>
+            <SelectItem value="90d">
+              Last 90 days
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -136,11 +150,15 @@ function refreshData() {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Total Sent</CardTitle>
+          <CardTitle class="text-sm font-medium">
+            Total Sent
+          </CardTitle>
           <Icon name="lucide:send" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ metrics.totalSent.toLocaleString() }}</div>
+          <div class="text-2xl font-bold">
+            {{ metrics.totalSent.toLocaleString() }}
+          </div>
           <p class="text-xs text-muted-foreground">
             Total notifications sent
           </p>
@@ -149,11 +167,15 @@ function refreshData() {
 
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Delivered</CardTitle>
+          <CardTitle class="text-sm font-medium">
+            Delivered
+          </CardTitle>
           <Icon name="lucide:check-circle" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ metrics.delivered.toLocaleString() }}</div>
+          <div class="text-2xl font-bold">
+            {{ metrics.delivered.toLocaleString() }}
+          </div>
           <p class="text-xs text-muted-foreground">
             {{ metrics.deliveryRate.toFixed(1) }}% delivery rate
           </p>
@@ -162,11 +184,15 @@ function refreshData() {
 
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Opened</CardTitle>
+          <CardTitle class="text-sm font-medium">
+            Opened
+          </CardTitle>
           <Icon name="lucide:check-circle" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ metrics.opened.toLocaleString() }}</div>
+          <div class="text-2xl font-bold">
+            {{ metrics.opened.toLocaleString() }}
+          </div>
           <p class="text-xs text-muted-foreground">
             {{ metrics.openRate.toFixed(1) }}% open rate
           </p>
@@ -175,11 +201,15 @@ function refreshData() {
 
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Clicked</CardTitle>
+          <CardTitle class="text-sm font-medium">
+            Clicked
+          </CardTitle>
           <Icon name="lucide:x-circle" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ metrics.clicked.toLocaleString() }}</div>
+          <div class="text-2xl font-bold">
+            {{ metrics.clicked.toLocaleString() }}
+          </div>
           <p class="text-xs text-muted-foreground">
             {{ metrics.clickRate.toFixed(1) }}% click rate
           </p>
@@ -199,7 +229,9 @@ function refreshData() {
             <div class="text-center">
               <Icon name="lucide:bar-chart-3" class="h-12 w-12 mx-auto mb-4" />
               <p>Chart visualization would go here</p>
-              <p class="text-sm">Integration with chart library needed</p>
+              <p class="text-sm">
+                Integration with chart library needed
+              </p>
             </div>
           </div>
         </CardContent>
@@ -215,11 +247,13 @@ function refreshData() {
           <div class="space-y-4">
             <div v-for="platform in platformStats" :key="platform.name" class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
-                <div class="w-4 h-4 rounded" :style="{ backgroundColor: platform.color }"></div>
+                <div class="w-4 h-4 rounded" :style="{ backgroundColor: platform.color }" />
                 <span class="font-medium">{{ platform.name }}</span>
               </div>
               <div class="text-right">
-                <div class="font-bold">{{ platform.count.toLocaleString() }}</div>
+                <div class="font-bold">
+                  {{ platform.count.toLocaleString() }}
+                </div>
                 <div class="text-sm text-muted-foreground">
                   {{ platform.deliveryRate.toFixed(1) }}% delivery • {{ platform.openRate.toFixed(1) }}% open
                 </div>
@@ -248,7 +282,9 @@ function refreshData() {
         <div class="text-center py-8 text-muted-foreground">
           <Icon name="lucide:bar-chart-3" class="h-12 w-12 mx-auto mb-4" />
           <p>Recent notifications feature</p>
-          <p class="text-sm">Coming soon...</p>
+          <p class="text-sm">
+            Coming soon...
+          </p>
         </div>
       </CardContent>
     </Card>
@@ -263,12 +299,20 @@ function refreshData() {
         <div class="space-y-3">
           <div v-for="error in commonErrors" :key="error.type" class="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950 rounded-lg">
             <div>
-              <p class="font-medium text-red-900 dark:text-red-100">{{ error.message }}</p>
-              <p class="text-sm text-red-700 dark:text-red-300">{{ error.description }}</p>
+              <p class="font-medium text-red-900 dark:text-red-100">
+                {{ error.message }}
+              </p>
+              <p class="text-sm text-red-700 dark:text-red-300">
+                {{ error.description }}
+              </p>
             </div>
             <div class="text-right">
-              <div class="font-bold text-red-900 dark:text-red-100">{{ error.count }}</div>
-              <div class="text-xs text-red-700 dark:text-red-300">occurrences</div>
+              <div class="font-bold text-red-900 dark:text-red-100">
+                {{ error.count }}
+              </div>
+              <div class="text-xs text-red-700 dark:text-red-300">
+                occurrences
+              </div>
             </div>
           </div>
         </div>

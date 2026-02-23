@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
+import { useForm } from 'vee-validate'
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useApp, useConfigureAPNs } from '~/graphql'
+import { z } from 'zod'
+import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
+import Icon from '~/components/common/Icon.vue'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { Switch } from '~/components/ui/switch'
 import { Textarea } from '~/components/ui/textarea'
-import { useForm } from 'vee-validate'
-import { z } from 'zod'
+import { useApp, useConfigureAPNs } from '~/graphql'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,8 +106,12 @@ const hasExistingConfig = computed(() => {
         <Icon name="lucide:arrow-left" class="size-4" />
       </Button>
       <div>
-        <h1 class="text-3xl font-bold mb-1">Configure Apple APNs</h1>
-        <p class="text-muted-foreground">Set up push notifications for iOS devices</p>
+        <h1 class="text-3xl font-bold mb-1">
+          Configure Apple APNs
+        </h1>
+        <p class="text-muted-foreground">
+          Set up push notifications for iOS devices
+        </p>
       </div>
     </div>
 
@@ -124,9 +128,15 @@ const hasExistingConfig = computed(() => {
         </CardHeader>
         <CardContent>
           <div class="space-y-2">
-            <p class="text-sm"><strong>Key ID:</strong> {{ app.apnsKeyId }}</p>
-            <p class="text-sm"><strong>Team ID:</strong> {{ app.apnsTeamId }}</p>
-            <p class="text-sm text-muted-foreground">Private key is securely stored and encrypted.</p>
+            <p class="text-sm">
+              <strong>Key ID:</strong> {{ app.apnsKeyId }}
+            </p>
+            <p class="text-sm">
+              <strong>Team ID:</strong> {{ app.apnsTeamId }}
+            </p>
+            <p class="text-sm text-muted-foreground">
+              Private key is securely stored and encrypted.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -142,29 +152,45 @@ const hasExistingConfig = computed(() => {
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">1</span>
               <div>
-                <p class="font-medium">Login to Apple Developer Console</p>
-                <p class="text-muted-foreground">Go to developer.apple.com and sign in with your developer account</p>
+                <p class="font-medium">
+                  Login to Apple Developer Console
+                </p>
+                <p class="text-muted-foreground">
+                  Go to developer.apple.com and sign in with your developer account
+                </p>
               </div>
             </li>
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">2</span>
               <div>
-                <p class="font-medium">Create APNs Auth Key</p>
-                <p class="text-muted-foreground">Navigate to Keys section and create a new key with APNs service enabled</p>
+                <p class="font-medium">
+                  Create APNs Auth Key
+                </p>
+                <p class="text-muted-foreground">
+                  Navigate to Keys section and create a new key with APNs service enabled
+                </p>
               </div>
             </li>
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">3</span>
               <div>
-                <p class="font-medium">Download .p8 file</p>
-                <p class="text-muted-foreground">Download the private key file and note your Key ID and Team ID</p>
+                <p class="font-medium">
+                  Download .p8 file
+                </p>
+                <p class="text-muted-foreground">
+                  Download the private key file and note your Key ID and Team ID
+                </p>
               </div>
             </li>
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">4</span>
               <div>
-                <p class="font-medium">Configure below</p>
-                <p class="text-muted-foreground">Enter your credentials in the form below</p>
+                <p class="font-medium">
+                  Configure below
+                </p>
+                <p class="text-muted-foreground">
+                  Enter your credentials in the form below
+                </p>
               </div>
             </li>
           </ol>
@@ -182,7 +208,9 @@ const hasExistingConfig = computed(() => {
             <!-- Key ID -->
             <FormField v-slot="{ componentField }" name="keyId">
               <FormItem>
-                <FormLabel class="required">Key ID</FormLabel>
+                <FormLabel class="required">
+                  Key ID
+                </FormLabel>
                 <FormControl>
                   <Input
                     v-bind="componentField"
@@ -201,7 +229,9 @@ const hasExistingConfig = computed(() => {
             <!-- Team ID -->
             <FormField v-slot="{ componentField }" name="teamId">
               <FormItem>
-                <FormLabel class="required">Team ID</FormLabel>
+                <FormLabel class="required">
+                  Team ID
+                </FormLabel>
                 <FormControl>
                   <Input
                     v-bind="componentField"
@@ -220,7 +250,9 @@ const hasExistingConfig = computed(() => {
             <!-- Private Key -->
             <FormField v-slot="{ componentField }" name="privateKey">
               <FormItem>
-                <FormLabel class="required">Private Key (.p8 file content)</FormLabel>
+                <FormLabel class="required">
+                  Private Key (.p8 file content)
+                </FormLabel>
                 <FormControl>
                   <Textarea
                     v-bind="componentField"
@@ -261,7 +293,9 @@ MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg...
             <FormField v-slot="{ componentField }" name="isProduction">
               <FormItem class="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div class="space-y-0.5">
-                  <FormLabel class="text-base">Production Environment</FormLabel>
+                  <FormLabel class="text-base">
+                    Production Environment
+                  </FormLabel>
                   <FormDescription>
                     Use Apple's production APNs servers (recommended for live apps)
                   </FormDescription>

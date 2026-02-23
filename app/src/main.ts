@@ -1,12 +1,12 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
 import { PiniaColada } from '@pinia/colada'
 import { createNotivue } from 'notivue'
+import { createPinia } from 'pinia'
+import { createApp } from 'vue'
+import App from './App.vue'
+import { router } from './router'
 import 'notivue/notifications.css'
 import 'notivue/animations.css'
 import './style.css'
-import App from './App.vue'
-import { router } from './router'
 
 const notivue = createNotivue({
   position: 'top-center',

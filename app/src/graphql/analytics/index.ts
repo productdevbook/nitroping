@@ -1,6 +1,6 @@
-import { computed, unref } from 'vue'
 import type { Ref } from 'vue'
 import { useQuery } from '@pinia/colada'
+import { computed, unref } from 'vue'
 import { $sdk } from '../default/ofetch'
 
 export function useNotificationAnalytics(notificationId: Ref<string> | string) {

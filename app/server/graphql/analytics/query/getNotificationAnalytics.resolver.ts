@@ -1,6 +1,6 @@
-import { HTTPError } from 'nitro/h3'
 import { eq } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
+import { HTTPError } from 'nitro/h3'
 
 export const getNotificationAnalyticsQuery = defineQuery({
   getNotificationAnalytics: {

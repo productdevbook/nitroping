@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppSidebar from '~/components/AppSidebar.vue'
+import ThemeToggle from '~/components/ThemeToggle.vue'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '~/components/ui/breadcrumb'
 import { Button } from '~/components/ui/button'
 import { Separator } from '~/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '~/components/ui/sidebar'
-import AppSidebar from '~/components/AppSidebar.vue'
-import ThemeToggle from '~/components/ThemeToggle.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useDashboardStats, useApps, useRecentNotifications, useSendNotification } from '~/graphql'
+import Icon from '~/components/common/Icon.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
@@ -10,6 +9,7 @@ import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Textarea } from '~/components/ui/textarea'
+import { useApps, useDashboardStats, useRecentNotifications, useSendNotification } from '~/graphql'
 
 const router = useRouter()
 
@@ -73,8 +73,12 @@ async function sendTestNotification() {
     <div class="mb-8">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 class="text-3xl sm:text-4xl font-bold mb-2">Welcome to NitroPing</h1>
-          <p class="text-muted-foreground">Manage your push notifications with ease</p>
+          <h1 class="text-3xl sm:text-4xl font-bold mb-2">
+            Welcome to NitroPing
+          </h1>
+          <p class="text-muted-foreground">
+            Manage your push notifications with ease
+          </p>
         </div>
         <div class="flex gap-2">
           <Button variant="outline" @click="router.push('/apps')">
@@ -93,43 +97,63 @@ async function sendTestNotification() {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Total Apps</CardTitle>
+          <CardTitle class="text-sm font-medium">
+            Total Apps
+          </CardTitle>
           <Icon name="lucide:activity" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ stats?.totalApps || 0 }}</div>
+          <div class="text-2xl font-bold">
+            {{ stats?.totalApps || 0 }}
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Active Devices</CardTitle>
+          <CardTitle class="text-sm font-medium">
+            Active Devices
+          </CardTitle>
           <Icon name="lucide:smartphone" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ stats?.activeDevices || 0 }}</div>
+          <div class="text-2xl font-bold">
+            {{ stats?.activeDevices || 0 }}
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Notifications Sent</CardTitle>
+          <CardTitle class="text-sm font-medium">
+            Notifications Sent
+          </CardTitle>
           <Icon name="lucide:send" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ stats?.notificationsSent || 0 }}</div>
-          <p class="text-xs text-muted-foreground">Last 24 hours</p>
+          <div class="text-2xl font-bold">
+            {{ stats?.notificationsSent || 0 }}
+          </div>
+          <p class="text-xs text-muted-foreground">
+            Last 24 hours
+          </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle class="text-sm font-medium">Delivery Rate</CardTitle>
+          <CardTitle class="text-sm font-medium">
+            Delivery Rate
+          </CardTitle>
           <Icon name="lucide:trending-up" class="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div class="text-2xl font-bold">{{ stats?.deliveryRate || 0 }}%</div>
-          <p class="text-xs text-muted-foreground">Last 24 hours</p>
+          <div class="text-2xl font-bold">
+            {{ stats?.deliveryRate || 0 }}%
+          </div>
+          <p class="text-xs text-muted-foreground">
+            Last 24 hours
+          </p>
         </CardContent>
       </Card>
     </div>
@@ -155,18 +179,24 @@ async function sendTestNotification() {
                   <Icon name="lucide:activity" class="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p class="font-medium">{{ app.name }}</p>
-                  <p class="text-sm text-muted-foreground">{{ app.description || 'No description' }}</p>
+                  <p class="font-medium">
+                    {{ app.name }}
+                  </p>
+                  <p class="text-sm text-muted-foreground">
+                    {{ app.description || 'No description' }}
+                  </p>
                 </div>
               </div>
               <div class="text-right">
-                <div class="w-2 h-2 rounded-full" :class="app.isActive ? 'bg-green-500' : 'bg-gray-400'"></div>
+                <div class="w-2 h-2 rounded-full" :class="app.isActive ? 'bg-green-500' : 'bg-gray-400'" />
               </div>
             </div>
           </div>
           <div v-else class="text-center py-8">
             <Icon name="lucide:activity" class="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p class="text-sm text-muted-foreground">No apps created yet</p>
+            <p class="text-sm text-muted-foreground">
+              No apps created yet
+            </p>
             <Button variant="outline" size="sm" class="mt-2" @click="router.push('/apps/create')">
               Create First App
             </Button>
@@ -202,8 +232,12 @@ async function sendTestNotification() {
                 </div>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="font-medium truncate">{{ notification.title }}</p>
-                <p class="text-sm text-muted-foreground truncate">{{ notification.body }}</p>
+                <p class="font-medium truncate">
+                  {{ notification.title }}
+                </p>
+                <p class="text-sm text-muted-foreground truncate">
+                  {{ notification.body }}
+                </p>
                 <div class="flex items-center space-x-2 mt-1">
                   <span
                     class="text-xs px-2 py-1 rounded-full" :class="{
@@ -233,7 +267,9 @@ async function sendTestNotification() {
           </div>
           <div v-else class="text-center py-8">
             <Icon name="lucide:send" class="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p class="text-sm text-muted-foreground">No notifications sent yet</p>
+            <p class="text-sm text-muted-foreground">
+              No notifications sent yet
+            </p>
             <Button variant="outline" size="sm" class="mt-2" @click="showSendNotification = true">
               Send First Notification
             </Button>
@@ -250,31 +286,55 @@ async function sendTestNotification() {
       </CardHeader>
       <CardContent class="space-y-4">
         <div class="flex items-start space-x-4">
-          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">1</div>
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            1
+          </div>
           <div>
-            <h4 class="font-medium">Create an App</h4>
-            <p class="text-sm text-muted-foreground">Register your application and get API credentials</p>
+            <h4 class="font-medium">
+              Create an App
+            </h4>
+            <p class="text-sm text-muted-foreground">
+              Register your application and get API credentials
+            </p>
           </div>
         </div>
         <div class="flex items-start space-x-4">
-          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">2</div>
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            2
+          </div>
           <div>
-            <h4 class="font-medium">Configure Providers</h4>
-            <p class="text-sm text-muted-foreground">Set up FCM, APNs, or Web Push credentials</p>
+            <h4 class="font-medium">
+              Configure Providers
+            </h4>
+            <p class="text-sm text-muted-foreground">
+              Set up FCM, APNs, or Web Push credentials
+            </p>
           </div>
         </div>
         <div class="flex items-start space-x-4">
-          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">3</div>
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            3
+          </div>
           <div>
-            <h4 class="font-medium">Register Devices</h4>
-            <p class="text-sm text-muted-foreground">Use the API to register user devices</p>
+            <h4 class="font-medium">
+              Register Devices
+            </h4>
+            <p class="text-sm text-muted-foreground">
+              Use the API to register user devices
+            </p>
           </div>
         </div>
         <div class="flex items-start space-x-4">
-          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">4</div>
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            4
+          </div>
           <div>
-            <h4 class="font-medium">Send Notifications</h4>
-            <p class="text-sm text-muted-foreground">Start sending push notifications to your users</p>
+            <h4 class="font-medium">
+              Send Notifications
+            </h4>
+            <p class="text-sm text-muted-foreground">
+              Start sending push notifications to your users
+            </p>
           </div>
         </div>
       </CardContent>
@@ -319,7 +379,9 @@ async function sendTestNotification() {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" @click="showSendNotification = false">Cancel</Button>
+          <Button variant="outline" @click="showSendNotification = false">
+            Cancel
+          </Button>
           <Button
             :disabled="!testNotification.appId || !testNotification.title || !testNotification.body || isSending"
             @click="sendTestNotification"

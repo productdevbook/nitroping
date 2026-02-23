@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import { ref, computed, watch } from 'vue'
+import { useForm } from 'vee-validate'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useApp, useConfigureFCM } from '~/graphql'
+import { z } from 'zod'
+import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
+import Icon from '~/components/common/Icon.vue'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { Textarea } from '~/components/ui/textarea'
-import { useForm } from 'vee-validate'
-import { z } from 'zod'
+import { useApp, useConfigureFCM } from '~/graphql'
 
 const route = useRoute()
 const router = useRouter()
@@ -148,8 +148,12 @@ const serviceAccountInfo = computed(() => {
         <Icon name="lucide:arrow-left" class="size-4" />
       </Button>
       <div>
-        <h1 class="text-3xl font-bold mb-1">Configure Firebase FCM</h1>
-        <p class="text-muted-foreground">Set up push notifications for Android devices</p>
+        <h1 class="text-3xl font-bold mb-1">
+          Configure Firebase FCM
+        </h1>
+        <p class="text-muted-foreground">
+          Set up push notifications for Android devices
+        </p>
       </div>
     </div>
 
@@ -166,8 +170,12 @@ const serviceAccountInfo = computed(() => {
         </CardHeader>
         <CardContent>
           <div class="space-y-2">
-            <p class="text-sm"><strong>Project ID:</strong> {{ app.fcmProjectId }}</p>
-            <p class="text-sm text-muted-foreground">Service account credentials are securely stored and encrypted.</p>
+            <p class="text-sm">
+              <strong>Project ID:</strong> {{ app.fcmProjectId }}
+            </p>
+            <p class="text-sm text-muted-foreground">
+              Service account credentials are securely stored and encrypted.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -183,21 +191,31 @@ const serviceAccountInfo = computed(() => {
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">1</span>
               <div>
-                <p class="font-medium">Go to Firebase Console</p>
-                <p class="text-muted-foreground">Visit console.firebase.google.com and select your project</p>
+                <p class="font-medium">
+                  Go to Firebase Console
+                </p>
+                <p class="text-muted-foreground">
+                  Visit console.firebase.google.com and select your project
+                </p>
               </div>
             </li>
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">2</span>
               <div>
-                <p class="font-medium">Navigate to Project Settings</p>
-                <p class="text-muted-foreground">Click the gear icon and select "Project settings"</p>
+                <p class="font-medium">
+                  Navigate to Project Settings
+                </p>
+                <p class="text-muted-foreground">
+                  Click the gear icon and select "Project settings"
+                </p>
               </div>
             </li>
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">3</span>
               <div>
-                <p class="font-medium">Generate Firebase Admin SDK Key</p>
+                <p class="font-medium">
+                  Generate Firebase Admin SDK Key
+                </p>
                 <div class="text-muted-foreground space-y-1">
                   <p>• Click "Service accounts" tab</p>
                   <p>• Find "Firebase Admin SDK" section</p>
@@ -209,8 +227,12 @@ const serviceAccountInfo = computed(() => {
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">4</span>
               <div>
-                <p class="font-medium">Download JSON file</p>
-                <p class="text-muted-foreground">Download the service account JSON file and upload it below</p>
+                <p class="font-medium">
+                  Download JSON file
+                </p>
+                <p class="text-muted-foreground">
+                  Download the service account JSON file and upload it below
+                </p>
               </div>
             </li>
           </ol>
@@ -228,7 +250,9 @@ const serviceAccountInfo = computed(() => {
             <!-- Project ID -->
             <FormField v-slot="{ componentField }" name="projectId">
               <FormItem>
-                <FormLabel class="required">Project ID</FormLabel>
+                <FormLabel class="required">
+                  Project ID
+                </FormLabel>
                 <FormControl>
                   <Input
                     v-bind="componentField"
@@ -246,7 +270,9 @@ const serviceAccountInfo = computed(() => {
             <!-- Service Account JSON -->
             <FormField v-slot="{ componentField }" name="serviceAccount">
               <FormItem>
-                <FormLabel class="required">Service Account JSON</FormLabel>
+                <FormLabel class="required">
+                  Service Account JSON
+                </FormLabel>
                 <div class="space-y-3">
                   <!-- File Upload Button -->
                   <Button type="button" variant="outline" :disabled="isSubmitting || isConfiguring" @click="triggerFileUpload">
@@ -259,7 +285,7 @@ const serviceAccountInfo = computed(() => {
                     accept=".json,application/json"
                     class="hidden"
                     @change="handleFileUpload"
-                  />
+                  >
 
                   <!-- Manual Textarea -->
                   <FormControl>
@@ -282,7 +308,9 @@ const serviceAccountInfo = computed(() => {
             <!-- Service Account Info (if valid JSON) -->
             <Card v-if="serviceAccountInfo" class="bg-muted/50">
               <CardHeader>
-                <CardTitle class="text-sm">Service Account Information</CardTitle>
+                <CardTitle class="text-sm">
+                  Service Account Information
+                </CardTitle>
               </CardHeader>
               <CardContent class="space-y-2 text-sm">
                 <p><strong>Project ID:</strong> {{ serviceAccountInfo.project_id }}</p>

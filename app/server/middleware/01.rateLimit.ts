@@ -1,4 +1,4 @@
-import { HTTPError, defineEventHandler, getHeader, getQuery, getRequestIP, setHeader } from 'nitro/h3'
+import { defineEventHandler, getHeader, getQuery, getRequestIP, HTTPError, setHeader } from 'nitro/h3'
 import { getRateLimiter } from '../utils/rateLimiter'
 
 export default defineEventHandler(async (event) => {

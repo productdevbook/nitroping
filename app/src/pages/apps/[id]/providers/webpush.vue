@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
+import { useForm } from 'vee-validate'
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useApp, useConfigureWebPush, useGenerateVapidKeys } from '~/graphql'
-import { useToast } from '~/composables/useToast'
+import { z } from 'zod'
+import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
+import Icon from '~/components/common/Icon.vue'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -12,8 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/com
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { Textarea } from '~/components/ui/textarea'
-import { useForm } from 'vee-validate'
-import { z } from 'zod'
+import { useToast } from '~/composables/useToast'
+import { useApp, useConfigureWebPush, useGenerateVapidKeys } from '~/graphql'
 
 const route = useRoute()
 const router = useRouter()
@@ -128,8 +128,12 @@ const hasExistingConfig = computed(() => {
         <Icon name="lucide:arrow-left" class="size-4" />
       </Button>
       <div>
-        <h1 class="text-3xl font-bold mb-1">Configure Web Push</h1>
-        <p class="text-muted-foreground">Set up push notifications for web browsers</p>
+        <h1 class="text-3xl font-bold mb-1">
+          Configure Web Push
+        </h1>
+        <p class="text-muted-foreground">
+          Set up push notifications for web browsers
+        </p>
       </div>
     </div>
 
@@ -146,9 +150,15 @@ const hasExistingConfig = computed(() => {
         </CardHeader>
         <CardContent>
           <div class="space-y-2">
-            <p class="text-sm"><strong>Subject:</strong> {{ app.vapidSubject }}</p>
-            <p class="text-sm"><strong>Public Key:</strong> {{ app.vapidPublicKey?.substring(0, 32) }}...</p>
-            <p class="text-sm text-muted-foreground">Private key is securely stored and encrypted.</p>
+            <p class="text-sm">
+              <strong>Subject:</strong> {{ app.vapidSubject }}
+            </p>
+            <p class="text-sm">
+              <strong>Public Key:</strong> {{ app.vapidPublicKey?.substring(0, 32) }}...
+            </p>
+            <p class="text-sm text-muted-foreground">
+              Private key is securely stored and encrypted.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -164,29 +174,45 @@ const hasExistingConfig = computed(() => {
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">1</span>
               <div>
-                <p class="font-medium">Generate VAPID Keys</p>
-                <p class="text-muted-foreground">Click "Generate New Keys" below to create a public/private key pair</p>
+                <p class="font-medium">
+                  Generate VAPID Keys
+                </p>
+                <p class="text-muted-foreground">
+                  Click "Generate New Keys" below to create a public/private key pair
+                </p>
               </div>
             </li>
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">2</span>
               <div>
-                <p class="font-medium">Set Subject</p>
-                <p class="text-muted-foreground">Provide a contact email or website URL for identification</p>
+                <p class="font-medium">
+                  Set Subject
+                </p>
+                <p class="text-muted-foreground">
+                  Provide a contact email or website URL for identification
+                </p>
               </div>
             </li>
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">3</span>
               <div>
-                <p class="font-medium">Use Public Key in Client</p>
-                <p class="text-muted-foreground">Use the public key in your web app's service worker for subscriptions</p>
+                <p class="font-medium">
+                  Use Public Key in Client
+                </p>
+                <p class="text-muted-foreground">
+                  Use the public key in your web app's service worker for subscriptions
+                </p>
               </div>
             </li>
             <li class="flex items-start space-x-3">
               <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">4</span>
               <div>
-                <p class="font-medium">Test Notifications</p>
-                <p class="text-muted-foreground">Register devices and test push notifications from your dashboard</p>
+                <p class="font-medium">
+                  Test Notifications
+                </p>
+                <p class="text-muted-foreground">
+                  Register devices and test push notifications from your dashboard
+                </p>
               </div>
             </li>
           </ol>
@@ -218,7 +244,9 @@ const hasExistingConfig = computed(() => {
             <!-- Subject -->
             <FormField v-slot="{ componentField }" name="subject">
               <FormItem>
-                <FormLabel class="required">Subject</FormLabel>
+                <FormLabel class="required">
+                  Subject
+                </FormLabel>
                 <FormControl>
                   <Input
                     v-bind="componentField"
@@ -236,7 +264,9 @@ const hasExistingConfig = computed(() => {
             <!-- Public Key -->
             <FormField v-slot="{ componentField }" name="publicKey">
               <FormItem>
-                <FormLabel class="required">VAPID Public Key</FormLabel>
+                <FormLabel class="required">
+                  VAPID Public Key
+                </FormLabel>
                 <FormControl>
                   <Textarea
                     v-bind="componentField"
@@ -256,7 +286,9 @@ const hasExistingConfig = computed(() => {
             <!-- Private Key -->
             <FormField v-slot="{ componentField }" name="privateKey">
               <FormItem>
-                <FormLabel class="required">VAPID Private Key</FormLabel>
+                <FormLabel class="required">
+                  VAPID Private Key
+                </FormLabel>
                 <FormControl>
                   <Textarea
                     v-bind="componentField"
@@ -319,7 +351,9 @@ const hasExistingConfig = computed(() => {
         <CardContent>
           <div class="space-y-4">
             <div>
-              <h4 class="font-medium mb-2">Service Worker Registration</h4>
+              <h4 class="font-medium mb-2">
+                Service Worker Registration
+              </h4>
               <pre class="bg-muted p-3 rounded text-xs overflow-x-auto"><code>// Register service worker and subscribe to push
 const registration = await navigator.serviceWorker.register('/sw.js');
 const subscription = await registration.pushManager.subscribe({

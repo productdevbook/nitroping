@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import AppPageHeader from '~/components/app/AppPageHeader.vue'
 import CreateAppForm from '~/components/forms/CreateAppForm.vue'
-import { useRouter } from 'vue-router'
-import { useCreateApp } from '~/graphql'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { useCreateApp } from '~/graphql'
 
 const router = useRouter()
 
@@ -58,24 +58,42 @@ function goBack() {
         <CardContent>
           <div class="space-y-3">
             <div class="flex items-start space-x-3">
-              <div class="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">1</div>
+              <div class="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                1
+              </div>
               <div>
-                <p class="font-medium">Configure Push Providers</p>
-                <p class="text-sm text-muted-foreground">Set up FCM, APNs, or Web Push credentials for your platforms</p>
+                <p class="font-medium">
+                  Configure Push Providers
+                </p>
+                <p class="text-sm text-muted-foreground">
+                  Set up FCM, APNs, or Web Push credentials for your platforms
+                </p>
               </div>
             </div>
             <div class="flex items-start space-x-3">
-              <div class="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">2</div>
+              <div class="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                2
+              </div>
               <div>
-                <p class="font-medium">Get API Key</p>
-                <p class="text-sm text-muted-foreground">Use the generated API key to authenticate your requests</p>
+                <p class="font-medium">
+                  Get API Key
+                </p>
+                <p class="text-sm text-muted-foreground">
+                  Use the generated API key to authenticate your requests
+                </p>
               </div>
             </div>
             <div class="flex items-start space-x-3">
-              <div class="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">3</div>
+              <div class="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                3
+              </div>
               <div>
-                <p class="font-medium">Register Devices</p>
-                <p class="text-sm text-muted-foreground">Start registering user devices to receive notifications</p>
+                <p class="font-medium">
+                  Register Devices
+                </p>
+                <p class="text-sm text-muted-foreground">
+                  Start registering user devices to receive notifications
+                </p>
               </div>
             </div>
           </div>

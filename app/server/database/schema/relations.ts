@@ -7,7 +7,7 @@ import { notification } from './notification'
 
 const schema = { app, apiKey, device, notification, deliveryLog }
 
-export const relations = defineRelations(schema, (helpers) => ({
+export const relations = defineRelations(schema, helpers => ({
   app: {
     devices: helpers.many.device({
       from: helpers.app.id,

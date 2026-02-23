@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { usePush } from 'notivue'
-import Icon from '~/components/common/Icon.vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import AppNavigation from '~/components/app/AppNavigation.vue'
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useApp } from '~/graphql'
+import Icon from '~/components/common/Icon.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
+import { useApp } from '~/graphql'
 
 const route = useRoute()
 const appId = computed(() => route.params.id as string)
@@ -107,11 +107,15 @@ onMounted(() => {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Total Devices</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Total Devices
+            </CardTitle>
             <Icon name="lucide:smartphone" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ stats.totalDevices }}</div>
+            <div class="text-2xl font-bold">
+              {{ stats.totalDevices }}
+            </div>
             <p class="text-xs text-muted-foreground">
               <span class="text-green-600">+{{ stats.newDevicesToday }}</span> today
             </p>
@@ -120,34 +124,52 @@ onMounted(() => {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Notifications Sent</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Notifications Sent
+            </CardTitle>
             <Icon name="lucide:send" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ stats.sentToday }}</div>
-            <p class="text-xs text-muted-foreground">Last 24 hours</p>
+            <div class="text-2xl font-bold">
+              {{ stats.sentToday }}
+            </div>
+            <p class="text-xs text-muted-foreground">
+              Last 24 hours
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Delivery Rate</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Delivery Rate
+            </CardTitle>
             <Icon name="lucide:trending-up" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ stats.deliveryRate }}%</div>
-            <p class="text-xs text-muted-foreground">Last 24 hours</p>
+            <div class="text-2xl font-bold">
+              {{ stats.deliveryRate }}%
+            </div>
+            <p class="text-xs text-muted-foreground">
+              Last 24 hours
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">API Calls</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              API Calls
+            </CardTitle>
             <Icon name="lucide:activity" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ stats.apiCalls }}</div>
-            <p class="text-xs text-muted-foreground">Last 24 hours</p>
+            <div class="text-2xl font-bold">
+              {{ stats.apiCalls }}
+            </div>
+            <p class="text-xs text-muted-foreground">
+              Last 24 hours
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -189,10 +211,12 @@ onMounted(() => {
         <CardContent>
           <div class="space-y-4">
             <div v-for="activity in recentActivity" :key="activity.id" class="flex items-center space-x-4 text-sm">
-              <div class="w-2 h-2 rounded-full" :class="getActivityColor(activity.type)"></div>
+              <div class="w-2 h-2 rounded-full" :class="getActivityColor(activity.type)" />
               <div class="flex-1">
                 <p>{{ activity.message }}</p>
-                <p class="text-muted-foreground">{{ formatTime(activity.timestamp) }}</p>
+                <p class="text-muted-foreground">
+                  {{ formatTime(activity.timestamp) }}
+                </p>
               </div>
             </div>
           </div>

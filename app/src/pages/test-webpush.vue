@@ -1,14 +1,14 @@
 <script setup lang="ts">
+import { NitroPingClient } from 'nitroping'
+import { computed, onMounted, ref, watch } from 'vue'
 import Icon from '~/components/common/Icon.vue'
-import { ref, computed, watch, onMounted } from 'vue'
-import { useToast } from '~/composables/useToast'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
-import { NitroPingClient } from 'nitroping'
+import { useToast } from '~/composables/useToast'
 
 const { success: successToast, error: errorToast } = useToast()
 

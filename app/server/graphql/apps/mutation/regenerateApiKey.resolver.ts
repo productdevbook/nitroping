@@ -1,7 +1,7 @@
-import { HTTPError } from 'nitro/h3'
+import { generateApiKey } from '#server/utils/auth'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
-import { generateApiKey } from '#server/utils/auth'
+import { HTTPError } from 'nitro/h3'
 
 export const regenerateApiKeyMutation = defineMutation({
   regenerateApiKey: {

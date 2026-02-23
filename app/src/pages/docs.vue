@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import Icon from '~/components/common/Icon.vue'
-import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Badge } from '~/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 
@@ -84,8 +84,12 @@ onMounted(() => {
   <div>
     <!-- Header -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold mb-2">API Documentation</h1>
-      <p class="text-muted-foreground">Complete guide to integrating with NitroPing API</p>
+      <h1 class="text-3xl font-bold mb-2">
+        API Documentation
+      </h1>
+      <p class="text-muted-foreground">
+        Complete guide to integrating with NitroPing API
+      </p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -93,7 +97,9 @@ onMounted(() => {
       <div class="lg:col-span-1">
         <Card class="sticky top-4">
           <CardHeader>
-            <CardTitle class="text-lg">Contents</CardTitle>
+            <CardTitle class="text-lg">
+              Contents
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <nav class="space-y-2">
@@ -114,21 +120,27 @@ onMounted(() => {
       <div class="lg:col-span-3 space-y-8">
         <!-- Getting Started -->
         <section id="getting-started">
-          <h2 class="text-2xl font-bold mb-4">Getting Started</h2>
+          <h2 class="text-2xl font-bold mb-4">
+            Getting Started
+          </h2>
           <Card>
             <CardContent class="pt-6">
               <div class="space-y-4">
                 <p>Welcome to the NitroPing API! This RESTful API allows you to send push notifications to iOS, Android, and Web devices.</p>
 
                 <div class="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
-                  <h4 class="font-medium mb-2">Base URL</h4>
+                  <h4 class="font-medium mb-2">
+                    Base URL
+                  </h4>
                   <code class="text-sm bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded">
                     {{ baseUrl }}/api/v1
                   </code>
                 </div>
 
                 <div>
-                  <h4 class="font-medium mb-2">Prerequisites</h4>
+                  <h4 class="font-medium mb-2">
+                    Prerequisites
+                  </h4>
                   <ol class="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
                     <li>Create an application in the NitroPing dashboard</li>
                     <li>Configure push providers (FCM, APNs, or Web Push)</li>
@@ -143,15 +155,21 @@ onMounted(() => {
 
         <!-- Authentication -->
         <section id="authentication">
-          <h2 class="text-2xl font-bold mb-4">Authentication</h2>
+          <h2 class="text-2xl font-bold mb-4">
+            Authentication
+          </h2>
           <Card>
             <CardContent class="pt-6">
               <div class="space-y-4">
                 <p>All API requests require authentication using your application's API key.</p>
 
                 <div>
-                  <h4 class="font-medium mb-2">API Key Authentication</h4>
-                  <p class="text-sm text-muted-foreground mb-3">Include your API key in the Authorization header:</p>
+                  <h4 class="font-medium mb-2">
+                    API Key Authentication
+                  </h4>
+                  <p class="text-sm text-muted-foreground mb-3">
+                    Include your API key in the Authorization header:
+                  </p>
                   <div class="bg-gray-50 dark:bg-gray-950 p-4 rounded-lg">
                     <code class="text-sm">Authorization: ApiKey YOUR_API_KEY</code>
                   </div>
@@ -161,8 +179,12 @@ onMounted(() => {
                   <div class="flex items-start space-x-2">
                     <Icon name="lucide:alert-triangle" class="h-5 w-5 text-amber-600 mt-0.5" />
                     <div>
-                      <h4 class="font-medium text-amber-900 dark:text-amber-100">Security</h4>
-                      <p class="text-sm text-amber-800 dark:text-amber-200">Keep your API key secure and never expose it in client-side code.</p>
+                      <h4 class="font-medium text-amber-900 dark:text-amber-100">
+                        Security
+                      </h4>
+                      <p class="text-sm text-amber-800 dark:text-amber-200">
+                        Keep your API key secure and never expose it in client-side code.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -173,7 +195,9 @@ onMounted(() => {
 
         <!-- Device Registration -->
         <section id="device-registration">
-          <h2 class="text-2xl font-bold mb-4">Device Registration</h2>
+          <h2 class="text-2xl font-bold mb-4">
+            Device Registration
+          </h2>
           <Card>
             <CardContent class="pt-6">
               <div class="space-y-6">
@@ -181,11 +205,15 @@ onMounted(() => {
 
                 <div>
                   <div class="flex items-center space-x-2 mb-3">
-                    <Badge variant="outline" class="font-mono">POST</Badge>
+                    <Badge variant="outline" class="font-mono">
+                      POST
+                    </Badge>
                     <code class="text-sm">/devices/register</code>
                   </div>
 
-                  <h4 class="font-medium mb-2">Request Body</h4>
+                  <h4 class="font-medium mb-2">
+                    Request Body
+                  </h4>
                   <div class="bg-gray-50 dark:bg-gray-950 p-4 rounded-lg overflow-x-auto">
                     <pre class="text-sm"><code>{
   "token": "device_push_token_here",
@@ -200,7 +228,9 @@ onMounted(() => {
                 </div>
 
                 <div>
-                  <h4 class="font-medium mb-2">Response</h4>
+                  <h4 class="font-medium mb-2">
+                    Response
+                  </h4>
                   <div class="bg-gray-50 dark:bg-gray-950 p-4 rounded-lg overflow-x-auto">
                     <pre class="text-sm"><code>{
   "success": true,
@@ -214,7 +244,9 @@ onMounted(() => {
                 </div>
 
                 <div>
-                  <h4 class="font-medium mb-2">Platform-specific Tokens</h4>
+                  <h4 class="font-medium mb-2">
+                    Platform-specific Tokens
+                  </h4>
                   <div class="space-y-2 text-sm">
                     <div><strong>Android (FCM):</strong> Registration token from Firebase SDK</div>
                     <div><strong>iOS (APNs):</strong> Device token in hexadecimal format</div>
@@ -228,7 +260,9 @@ onMounted(() => {
 
         <!-- Sending Notifications -->
         <section id="sending-notifications">
-          <h2 class="text-2xl font-bold mb-4">Sending Notifications</h2>
+          <h2 class="text-2xl font-bold mb-4">
+            Sending Notifications
+          </h2>
           <Card>
             <CardContent class="pt-6">
               <div class="space-y-6">
@@ -236,11 +270,15 @@ onMounted(() => {
 
                 <div>
                   <div class="flex items-center space-x-2 mb-3">
-                    <Badge variant="outline" class="font-mono">POST</Badge>
+                    <Badge variant="outline" class="font-mono">
+                      POST
+                    </Badge>
                     <code class="text-sm">/notifications/send</code>
                   </div>
 
-                  <h4 class="font-medium mb-2">Request Body</h4>
+                  <h4 class="font-medium mb-2">
+                    Request Body
+                  </h4>
                   <div class="bg-gray-50 dark:bg-gray-950 p-4 rounded-lg overflow-x-auto">
                     <pre class="text-sm"><code>{
   "title": "Hello World!",
@@ -267,7 +305,9 @@ onMounted(() => {
                 </div>
 
                 <div>
-                  <h4 class="font-medium mb-2">Response</h4>
+                  <h4 class="font-medium mb-2">
+                    Response
+                  </h4>
                   <div class="bg-gray-50 dark:bg-gray-950 p-4 rounded-lg overflow-x-auto">
                     <pre class="text-sm"><code>{
   "success": true,
@@ -289,7 +329,9 @@ onMounted(() => {
 
         <!-- SDKs and Examples -->
         <section id="sdks">
-          <h2 class="text-2xl font-bold mb-4">SDKs & Examples</h2>
+          <h2 class="text-2xl font-bold mb-4">
+            SDKs & Examples
+          </h2>
 
           <!-- JavaScript/Node.js -->
           <Card class="mb-6">
@@ -433,7 +475,9 @@ curl -X POST {{ baseUrl }}/api/v1/notifications/send \
 
         <!-- Error Codes -->
         <section id="errors">
-          <h2 class="text-2xl font-bold mb-4">Error Codes</h2>
+          <h2 class="text-2xl font-bold mb-4">
+            Error Codes
+          </h2>
           <Card>
             <CardContent class="pt-6">
               <div class="space-y-4">
@@ -450,10 +494,14 @@ curl -X POST {{ baseUrl }}/api/v1/notifications/send \
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div v-for="error in errorCodes" :key="error.code" class="border rounded-lg p-4">
                     <div class="flex items-center space-x-2 mb-2">
-                      <Badge variant="outline">{{ error.code }}</Badge>
+                      <Badge variant="outline">
+                        {{ error.code }}
+                      </Badge>
                       <span class="font-medium">{{ error.message }}</span>
                     </div>
-                    <p class="text-sm text-muted-foreground">{{ error.description }}</p>
+                    <p class="text-sm text-muted-foreground">
+                      {{ error.description }}
+                    </p>
                   </div>
                 </div>
               </div>

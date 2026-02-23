@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import Icon from '~/components/common/Icon.vue'
 import { useRoute } from 'vue-router'
+import Icon from '~/components/common/Icon.vue'
 
 interface Props {
   appId: string

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import AppNavigation from '~/components/app/AppNavigation.vue'
-import { ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
@@ -167,8 +167,12 @@ function refreshNotifications() {
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-2xl font-bold mb-2">Notification History</h2>
-          <p class="text-muted-foreground">View and manage your sent notifications and their delivery status.</p>
+          <h2 class="text-2xl font-bold mb-2">
+            Notification History
+          </h2>
+          <p class="text-muted-foreground">
+            View and manage your sent notifications and their delivery status.
+          </p>
         </div>
         <div class="flex space-x-2">
           <Button variant="outline" :disabled="notificationsLoading" @click="refreshNotifications">
@@ -186,41 +190,57 @@ function refreshNotifications() {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Total Sent</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Total Sent
+            </CardTitle>
             <Icon name="lucide:send" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ notificationStats.total }}</div>
+            <div class="text-2xl font-bold">
+              {{ notificationStats.total }}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Delivered</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Delivered
+            </CardTitle>
             <Icon name="lucide:check-circle" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold text-green-600">{{ notificationStats.totalDelivered }}</div>
+            <div class="text-2xl font-bold text-green-600">
+              {{ notificationStats.totalDelivered }}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Failed</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Failed
+            </CardTitle>
             <Icon name="lucide:x-circle" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold text-red-600">{{ notificationStats.totalFailed }}</div>
+            <div class="text-2xl font-bold text-red-600">
+              {{ notificationStats.totalFailed }}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Delivery Rate</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Delivery Rate
+            </CardTitle>
             <Icon name="lucide:calendar" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ notificationStats.deliveryRate }}%</div>
+            <div class="text-2xl font-bold">
+              {{ notificationStats.deliveryRate }}%
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -244,12 +264,24 @@ function refreshNotifications() {
                 <SelectValue placeholder="All status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All status</SelectItem>
-                <SelectItem value="DELIVERED">Delivered</SelectItem>
-                <SelectItem value="SENT">Sent</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                <SelectItem value="FAILED">Failed</SelectItem>
+                <SelectItem value="all">
+                  All status
+                </SelectItem>
+                <SelectItem value="DELIVERED">
+                  Delivered
+                </SelectItem>
+                <SelectItem value="SENT">
+                  Sent
+                </SelectItem>
+                <SelectItem value="PENDING">
+                  Pending
+                </SelectItem>
+                <SelectItem value="SCHEDULED">
+                  Scheduled
+                </SelectItem>
+                <SelectItem value="FAILED">
+                  Failed
+                </SelectItem>
               </SelectContent>
             </Select>
             <Select v-model="selectedTimeRange">
@@ -257,10 +289,18 @@ function refreshNotifications() {
                 <SelectValue placeholder="Time range" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="24h">Last 24h</SelectItem>
-                <SelectItem value="7d">Last 7 days</SelectItem>
-                <SelectItem value="30d">Last 30 days</SelectItem>
-                <SelectItem value="all">All time</SelectItem>
+                <SelectItem value="24h">
+                  Last 24h
+                </SelectItem>
+                <SelectItem value="7d">
+                  Last 7 days
+                </SelectItem>
+                <SelectItem value="30d">
+                  Last 30 days
+                </SelectItem>
+                <SelectItem value="all">
+                  All time
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -279,8 +319,12 @@ function refreshNotifications() {
 
           <div v-else-if="filteredNotifications.length === 0" class="text-center py-8 text-muted-foreground">
             <Icon name="lucide:send" class="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p class="text-lg font-medium mb-2">No notifications found</p>
-            <p class="text-sm">{{ notifications.length === 0 ? 'Send your first notification to get started.' : 'Try adjusting your search filters.' }}</p>
+            <p class="text-lg font-medium mb-2">
+              No notifications found
+            </p>
+            <p class="text-sm">
+              {{ notifications.length === 0 ? 'Send your first notification to get started.' : 'Try adjusting your search filters.' }}
+            </p>
           </div>
 
           <Table v-else>
@@ -298,8 +342,12 @@ function refreshNotifications() {
               <TableRow v-for="notification in filteredNotifications" :key="notification.id">
                 <TableCell>
                   <div class="space-y-1">
-                    <p class="font-medium">{{ notification.title }}</p>
-                    <p class="text-sm text-muted-foreground line-clamp-2">{{ notification.body }}</p>
+                    <p class="font-medium">
+                      {{ notification.title }}
+                    </p>
+                    <p class="text-sm text-muted-foreground line-clamp-2">
+                      {{ notification.body }}
+                    </p>
                   </div>
                 </TableCell>
                 <TableCell>

@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
+import type { DevicePlatform } from '#graphql/client'
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import AppNavigation from '~/components/app/AppNavigation.vue'
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { useApp, useDevices, useRegisterDevice } from '~/graphql'
-import type { DevicePlatform } from '#graphql/client'
+import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
@@ -14,6 +13,7 @@ import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
+import { useApp, useDevices, useRegisterDevice } from '~/graphql'
 
 const route = useRoute()
 const appId = computed(() => route.params.id as string)
@@ -436,8 +436,12 @@ function refreshDevices() {
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-2xl font-bold mb-2">Registered Devices</h2>
-          <p class="text-muted-foreground">Manage devices that can receive push notifications.</p>
+          <h2 class="text-2xl font-bold mb-2">
+            Registered Devices
+          </h2>
+          <p class="text-muted-foreground">
+            Manage devices that can receive push notifications.
+          </p>
         </div>
         <div class="flex space-x-2">
           <Button variant="outline" :disabled="devicesLoading" @click="refreshDevices">
@@ -455,11 +459,15 @@ function refreshDevices() {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Total Devices</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Total Devices
+            </CardTitle>
             <Icon name="lucide:smartphone" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ deviceStats.total }}</div>
+            <div class="text-2xl font-bold">
+              {{ deviceStats.total }}
+            </div>
             <div class="text-xs text-muted-foreground mt-1">
               🍎{{ deviceStats.ios }} 🤖{{ deviceStats.android }} 🌐{{ deviceStats.web }}
             </div>
@@ -468,11 +476,15 @@ function refreshDevices() {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Active Devices</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Active Devices
+            </CardTitle>
             <Icon name="lucide:check-circle" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ deviceStats.active }}</div>
+            <div class="text-2xl font-bold">
+              {{ deviceStats.active }}
+            </div>
             <div class="text-xs text-muted-foreground mt-1">
               {{ Math.round((deviceStats.active / deviceStats.total) * 100) || 0 }}% active rate
             </div>
@@ -481,11 +493,15 @@ function refreshDevices() {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Seen Today</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Seen Today
+            </CardTitle>
             <Icon name="lucide:refresh-cw" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">{{ deviceStats.seenToday }}</div>
+            <div class="text-2xl font-bold">
+              {{ deviceStats.seenToday }}
+            </div>
             <div class="text-xs text-muted-foreground mt-1">
               Last 24 hours
             </div>
@@ -494,7 +510,9 @@ function refreshDevices() {
 
         <Card>
           <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">Platform Mix</CardTitle>
+            <CardTitle class="text-sm font-medium">
+              Platform Mix
+            </CardTitle>
             <Icon name="lucide:smartphone" class="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -560,15 +578,33 @@ function refreshDevices() {
                 <SelectValue placeholder="All platforms" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All platforms</SelectItem>
-                <SelectItem value="WEB">🌐 All Web</SelectItem>
-                <SelectItem value="CHROME">🌐 Chrome</SelectItem>
-                <SelectItem value="FIREFOX">🦊 Firefox</SelectItem>
-                <SelectItem value="SAFARI">🧭 Safari</SelectItem>
-                <SelectItem value="EDGE">🌊 Edge</SelectItem>
-                <SelectItem value="OPERA">🎭 Opera</SelectItem>
-                <SelectItem value="IOS">🍎 iOS</SelectItem>
-                <SelectItem value="ANDROID">🤖 Android</SelectItem>
+                <SelectItem value="all">
+                  All platforms
+                </SelectItem>
+                <SelectItem value="WEB">
+                  🌐 All Web
+                </SelectItem>
+                <SelectItem value="CHROME">
+                  🌐 Chrome
+                </SelectItem>
+                <SelectItem value="FIREFOX">
+                  🦊 Firefox
+                </SelectItem>
+                <SelectItem value="SAFARI">
+                  🧭 Safari
+                </SelectItem>
+                <SelectItem value="EDGE">
+                  🌊 Edge
+                </SelectItem>
+                <SelectItem value="OPERA">
+                  🎭 Opera
+                </SelectItem>
+                <SelectItem value="IOS">
+                  🍎 iOS
+                </SelectItem>
+                <SelectItem value="ANDROID">
+                  🤖 Android
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -587,20 +623,30 @@ function refreshDevices() {
 
           <div v-else-if="filteredDevices.length === 0" class="text-center py-8 text-muted-foreground">
             <Icon name="lucide:smartphone" class="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p class="text-lg font-medium mb-2">No devices found</p>
-            <p class="text-sm">{{ devices.length === 0 ? 'Register your first device to get started.' : 'Try adjusting your search filters.' }}</p>
+            <p class="text-lg font-medium mb-2">
+              No devices found
+            </p>
+            <p class="text-sm">
+              {{ devices.length === 0 ? 'Register your first device to get started.' : 'Try adjusting your search filters.' }}
+            </p>
           </div>
 
           <Table v-else>
             <TableHeader>
               <TableRow>
-                <TableHead class="w-[180px]">Platform</TableHead>
-                <TableHead class="w-[120px]">Browser/OS</TableHead>
+                <TableHead class="w-[180px]">
+                  Platform
+                </TableHead>
+                <TableHead class="w-[120px]">
+                  Browser/OS
+                </TableHead>
                 <TableHead>Token</TableHead>
                 <TableHead>User ID</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Seen</TableHead>
-                <TableHead class="w-[100px]">Actions</TableHead>
+                <TableHead class="w-[100px]">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -611,7 +657,9 @@ function refreshDevices() {
                       <span class="text-2xl">{{ getPlatformIcon(device.category || null, device.platform, device.metadata) }}</span>
                     </div>
                     <div class="min-w-0 flex-1">
-                      <div class="font-medium text-sm">{{ getBasePlatformName(device.platform) }}</div>
+                      <div class="font-medium text-sm">
+                        {{ getBasePlatformName(device.platform) }}
+                      </div>
                       <div class="text-xs text-muted-foreground">
                         {{ getPlatformDescription(device.platform, device.metadata) }}
                       </div>
@@ -620,7 +668,9 @@ function refreshDevices() {
                 </TableCell>
                 <TableCell>
                   <div class="text-sm">
-                    <div class="font-medium">{{ getBrowserDisplayName(device.category || null, device.platform, device.metadata) }}</div>
+                    <div class="font-medium">
+                      {{ getBrowserDisplayName(device.category || null, device.platform, device.metadata) }}
+                    </div>
                     <div class="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
                       <span v-if="getBrowserVersion(device.metadata)">{{ getBrowserVersion(device.metadata) }}</span>
                       <span v-if="getOSInfo(device.metadata)" class="text-blue-600">• {{ getOSInfo(device.metadata) }}</span>
@@ -640,11 +690,15 @@ function refreshDevices() {
                 <TableCell>
                   <div v-if="device.userId" class="flex items-center space-x-1">
                     <span class="text-sm font-medium">{{ device.userId }}</span>
-                    <Badge variant="outline" class="text-[10px] px-1">User</Badge>
+                    <Badge variant="outline" class="text-[10px] px-1">
+                      User
+                    </Badge>
                   </div>
                   <div v-else class="flex items-center space-x-1">
                     <span class="text-muted-foreground text-sm">Anonymous</span>
-                    <Badge variant="secondary" class="text-[10px] px-1">Guest</Badge>
+                    <Badge variant="secondary" class="text-[10px] px-1">
+                      Guest
+                    </Badge>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -656,7 +710,9 @@ function refreshDevices() {
                 </TableCell>
                 <TableCell>
                   <div class="text-sm">
-                    <div class="font-medium">{{ formatLastSeen(device.lastSeenAt) }}</div>
+                    <div class="font-medium">
+                      {{ formatLastSeen(device.lastSeenAt) }}
+                    </div>
                     <div class="text-xs text-muted-foreground">
                       {{ device.createdAt ? formatDate(new Date(device.createdAt)) : 'Unknown' }}
                     </div>
@@ -700,9 +756,15 @@ function refreshDevices() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="WEB">Web</SelectItem>
-                <SelectItem value="IOS">iOS</SelectItem>
-                <SelectItem value="ANDROID">Android</SelectItem>
+                <SelectItem value="WEB">
+                  Web
+                </SelectItem>
+                <SelectItem value="IOS">
+                  iOS
+                </SelectItem>
+                <SelectItem value="ANDROID">
+                  Android
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -716,7 +778,9 @@ function refreshDevices() {
           </div>
         </form>
         <DialogFooter>
-          <Button variant="outline" @click="showRegisterDevice = false">Cancel</Button>
+          <Button variant="outline" @click="showRegisterDevice = false">
+            Cancel
+          </Button>
           <Button :disabled="isRegisteringDevice || !deviceForm.token" @click="registerDevice">
             <Icon v-if="isRegisteringDevice" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
             Register Device

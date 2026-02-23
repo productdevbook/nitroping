@@ -1,7 +1,7 @@
 import type { H3Event } from 'nitro/h3'
 import { and, eq } from 'drizzle-orm'
-import { HTTPError, getHeader } from 'nitro/h3'
 import jwt from 'jsonwebtoken'
+import { getHeader, HTTPError } from 'nitro/h3'
 import { getDatabase } from '../database/connection'
 import { apiKey, app } from '../database/schema'
 

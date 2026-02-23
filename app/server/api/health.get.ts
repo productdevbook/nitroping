@@ -1,4 +1,5 @@
 import { defineEventHandler } from 'nitro/h3'
+
 export default defineEventHandler(async (_event) => {
   return {
     status: 'ok',

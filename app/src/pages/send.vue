@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import Icon from '~/components/common/Icon.vue'
-import { ref, computed } from 'vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Checkbox } from '~/components/ui/checkbox'
@@ -117,8 +117,12 @@ function resetForm() {
   <div>
     <!-- Header -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold mb-2">Send Notification</h1>
-      <p class="text-muted-foreground">Send push notifications to your registered devices</p>
+      <h1 class="text-3xl font-bold mb-2">
+        Send Notification
+      </h1>
+      <p class="text-muted-foreground">
+        Send push notifications to your registered devices
+      </p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

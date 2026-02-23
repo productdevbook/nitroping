@@ -1,6 +1,6 @@
-import type DataLoader from 'dataloader'
 import type { getDatabase } from '#server/database/connection'
 import type * as tables from '#server/database/schema'
+import type DataLoader from 'dataloader'
 
 export type Database = ReturnType<typeof getDatabase>
 

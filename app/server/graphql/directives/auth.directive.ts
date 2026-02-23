@@ -1,5 +1,5 @@
-import { HTTPError } from 'nitro/h3'
 import { verifyApiKey } from '#server/utils/auth'
+import { HTTPError } from 'nitro/h3'
 
 export function createAuthDirective() {
   return {

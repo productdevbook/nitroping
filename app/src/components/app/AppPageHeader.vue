@@ -29,10 +29,16 @@ const _emit = defineEmits<{
       </Button>
       <div class="flex-1">
         <div class="flex items-center space-x-3 mb-1">
-          <h1 class="text-3xl font-bold">{{ title }}</h1>
-          <Badge v-if="badge" :variant="badgeVariant">{{ badge }}</Badge>
+          <h1 class="text-3xl font-bold">
+            {{ title }}
+          </h1>
+          <Badge v-if="badge" :variant="badgeVariant">
+            {{ badge }}
+          </Badge>
         </div>
-        <p v-if="subtitle" class="text-muted-foreground">{{ subtitle }}</p>
+        <p v-if="subtitle" class="text-muted-foreground">
+          {{ subtitle }}
+        </p>
       </div>
       <div v-if="$slots.actions" class="flex items-center space-x-2">
         <slot name="actions" />

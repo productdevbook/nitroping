@@ -1,5 +1,5 @@
-import { definePlugin } from 'nitro'
 import { and, eq, inArray, lte } from 'drizzle-orm'
+import { definePlugin } from 'nitro'
 import { getDatabase } from '../database/connection'
 import { device, notification } from '../database/schema'
 import { addSendNotificationJob } from '../queues/notification.queue'

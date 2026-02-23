@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import Icon from '~/components/common/Icon.vue'
 import { useRouter } from 'vue-router'
+import Icon from '~/components/common/Icon.vue'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import {
   DropdownMenu,

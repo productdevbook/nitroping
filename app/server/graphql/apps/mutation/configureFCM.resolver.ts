@@ -1,7 +1,7 @@
-import { HTTPError } from 'nitro/h3'
+import { encryptSensitiveData } from '#server/utils/crypto'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
-import { encryptSensitiveData } from '#server/utils/crypto'
+import { HTTPError } from 'nitro/h3'
 
 export const configureFCMMutation = defineMutation({
   configureFCM: {

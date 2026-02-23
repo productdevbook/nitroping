@@ -1,6 +1,6 @@
-import { HTTPError } from 'nitro/h3'
 import { and, count, eq, inArray } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
+import { HTTPError } from 'nitro/h3'
 
 export const scheduleNotificationMutation = defineMutation({
   scheduleNotification: {

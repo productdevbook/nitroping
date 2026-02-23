@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import Icon from '~/components/common/Icon.vue'
 import { useRouter } from 'vue-router'
+import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
@@ -44,8 +44,12 @@ async function sendTestNotification() {
         <Icon name="lucide:arrow-left" class="size-4" />
       </Button>
       <div>
-        <h1 class="text-3xl font-bold mb-1">{{ app.name }}</h1>
-        <p class="text-muted-foreground">{{ app.slug }}</p>
+        <h1 class="text-3xl font-bold mb-1">
+          {{ app.name }}
+        </h1>
+        <p class="text-muted-foreground">
+          {{ app.slug }}
+        </p>
       </div>
       <Badge :variant="app.isActive ? 'default' : 'secondary'">
         {{ app.isActive ? 'Active' : 'Inactive' }}
@@ -90,8 +94,12 @@ async function sendTestNotification() {
         </div>
       </div>
       <DialogFooter>
-        <Button variant="outline" @click="showSendTest = false">Cancel</Button>
-        <Button @click="sendTestNotification">Send Test</Button>
+        <Button variant="outline" @click="showSendTest = false">
+          Cancel
+        </Button>
+        <Button @click="sendTestNotification">
+          Send Test
+        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
