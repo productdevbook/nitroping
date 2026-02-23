@@ -1,9 +1,7 @@
-import { relations } from 'drizzle-orm'
 import { integer, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
-import { deliveryLog } from './deliveryLog'
 import { notificationStatusEnum } from './enums'
 
 export const notification = pgTable('notification', {
@@ -32,14 +30,6 @@ export const notification = pgTable('notification', {
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),
 })
-
-export const notificationRelations = relations(notification, ({ one, many }) => ({
-  app: one(app, {
-    fields: [notification.appId],
-    references: [app.id],
-  }),
-  deliveryLogs: many(deliveryLog),
-}))
 
 export const selectNotificationSchema = createSelectSchema(notification)
 export const insertNotificationSchema = createInsertSchema(notification)

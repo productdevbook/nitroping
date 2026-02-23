@@ -1,3 +1,4 @@
+import { defineEventHandler, getHeader } from 'nitro/h3'
 import { getRateLimiter } from '../utils/rateLimiter'
 
 export default defineEventHandler(async (event) => {

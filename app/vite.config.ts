@@ -50,6 +50,7 @@ export default defineConfig({
       routesDir: 'server/routes',
       alias: {
         '#server': resolve(__dirname, './server'),
+        '~~/server': resolve(__dirname, './server'),
       },
       experimental: {
         tasks: true,
@@ -84,6 +85,7 @@ export default defineConfig({
       '~': fileURLToPath(new URL('./src', import.meta.url)),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '#server': fileURLToPath(new URL('./server', import.meta.url)),
+      '~~/server': fileURLToPath(new URL('./server', import.meta.url)),
       '#graphql/client': fileURLToPath(
         new URL('./.graphql/nitro-graphql-client.d.ts', import.meta.url),
       ),

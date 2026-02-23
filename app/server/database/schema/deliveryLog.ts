@@ -1,4 +1,3 @@
-import { relations } from 'drizzle-orm'
 import { integer, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
@@ -26,17 +25,6 @@ export const deliveryLog = pgTable('deliveryLog', {
   updatedAt: customTimestamp().defaultNow().notNull(),
 }, table => ({
   uniqueNotificationDevice: unique().on(table.notificationId, table.deviceId),
-}))
-
-export const deliveryLogRelations = relations(deliveryLog, ({ one }) => ({
-  notification: one(notification, {
-    fields: [deliveryLog.notificationId],
-    references: [notification.id],
-  }),
-  device: one(device, {
-    fields: [deliveryLog.deviceId],
-    references: [device.id],
-  }),
 }))
 
 export const selectDeliveryLogSchema = createSelectSchema(deliveryLog)

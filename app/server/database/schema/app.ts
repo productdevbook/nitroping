@@ -1,10 +1,6 @@
-import { relations } from 'drizzle-orm'
 import { boolean, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customTimestamp, uuidv7Generator } from '../shared'
-import { apiKey } from './apiKey'
-import { device } from './device'
-import { notification } from './notification'
 
 export const app = pgTable('app', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),
@@ -25,12 +21,6 @@ export const app = pgTable('app', {
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),
 })
-
-export const appRelations = relations(app, ({ many }) => ({
-  devices: many(device),
-  notifications: many(notification),
-  apiKeys: many(apiKey),
-}))
 
 export const selectAppSchema = createSelectSchema(app)
 export const insertAppSchema = createInsertSchema(app)

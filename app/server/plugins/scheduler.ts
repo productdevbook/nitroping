@@ -1,3 +1,4 @@
+import { definePlugin } from 'nitro'
 import { and, eq, inArray, lte } from 'drizzle-orm'
 import { getDatabase } from '../database/connection'
 import { device, notification } from '../database/schema'
@@ -157,7 +158,7 @@ function stopScheduler() {
   }
 }
 
-export default defineNitroPlugin((nitroApp) => {
+export default definePlugin((nitroApp) => {
   // Only start scheduler if enabled
   if (process.env.SCHEDULER_ENABLED === 'false') {
     console.log('[Scheduler] Disabled via environment variable')

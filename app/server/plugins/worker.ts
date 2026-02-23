@@ -1,6 +1,7 @@
+import { definePlugin } from 'nitro'
 import { startNotificationWorker, stopNotificationWorker } from '../workers/notification.worker'
 
-export default defineNitroPlugin((nitroApp) => {
+export default definePlugin((nitroApp) => {
   // Only start worker if not in test environment
   if (process.env.NODE_ENV === 'test') {
     console.log('[WorkerPlugin] Skipping worker in test environment')
