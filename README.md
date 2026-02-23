@@ -1,7 +1,7 @@
 <h1 align="center">🚀 NitroPing</h1>
 
 <p align="center">
-  <strong>Self-hosted push notification service built with Nuxt 4 & Nitro</strong>
+  <strong>Self-hosted push notification service built with Vite, Vue 3 & Nitro</strong>
 </p>
 
 <p align="center">
@@ -48,7 +48,7 @@
 <td>
 
 **🏗️ Modern Stack**
-- Nuxt 4 & Nitro
+- Vite + Vue 3 & Nitro
 - GraphQL API
 - PostgreSQL
 - TypeScript
@@ -172,13 +172,13 @@ graph TB
    docker run --name nitroping-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=nitroping -p 5432:5432 -d postgres:18
    
    # Generate and run migrations
-   bun run db:generate
-   bun run db:migrate
+   pnpm db:generate
+   pnpm db:migrate
    ```
 
 4. **Start development server**
    ```bash
-   bun run dev --host  # Allows access from mobile devices on same network
+   pnpm dev --host  # Allows access from mobile devices on same network
    ```
    
 #### Docker
@@ -317,10 +317,11 @@ NitroPingClient.shared.registerForPushNotifications()
 
 ### Tech Stack
 
-- **Framework**: Nuxt 4 with Nitro
-- **Database**: PostgreSQL with Drizzle ORM  
+- **Frontend**: Vite + Vue 3
+- **Backend**: Nitro
+- **Database**: PostgreSQL with Drizzle ORM
 - **API**: GraphQL via [Nitro GraphQL](https://github.com/productdevbook/nitro-graphql)
-- **UI**: shadcn-nuxt + Tailwind CSS v4
+- **UI**: shadcn/vue + Tailwind CSS v4
 - **Testing**: Vitest
 - **Linting**: @antfu/eslint-config
 
@@ -328,18 +329,17 @@ NitroPingClient.shared.registerForPushNotifications()
 
 ```bash
 # Development
-bun run dev --host    # Start dev server (accessible from mobile devices)
-bun run typecheck     # Type checking
-bun run lint          # Run linter
+pnpm dev --host    # Start dev server (accessible from mobile devices)
+pnpm typecheck     # Type checking
+pnpm lint          # Run linter
 
 # Database
-bun run db:generate   # Generate migrations
-bun run db:migrate    # Run migrations
-bun run db:studio     # Open Drizzle Studio
+pnpm db:generate   # Generate migrations
+pnpm db:migrate    # Run migrations
+pnpm db:studio     # Open Drizzle Studio
 
-# Testing
-bun run test          # Run tests
-bun run test:ui       # Test with UI
+# Build
+pnpm build         # Build for production
 ```
 
 ## 🤝 Contributing
@@ -380,8 +380,8 @@ We welcome all contributions! Whether you're fixing bugs, adding features, or im
 ```bash
 # Clone and setup
 git clone https://github.com/productdevbook/nitroping.git
-cd nitroping
-bun install
+cd nitroping/app
+pnpm install
 
 # Setup environment
 cp .env.example .env
@@ -393,10 +393,10 @@ docker run -d --name nitroping-db \
   -e POSTGRES_DB=nitroping \
   -p 5432:5432 postgres:18
 
-bun run db:generate && bun run db:migrate
+pnpm db:generate && pnpm db:migrate
 
 # Start development
-bun run dev --host
+pnpm dev --host
 ```
 
 ## 🗺️ Roadmap
@@ -404,7 +404,7 @@ bun run dev --host
 <details>
 <summary><strong>✅ Completed Features</strong></summary>
 
-- Core service architecture with Nuxt 4
+- Core service architecture with Vite + Vue 3 & Nitro
 - Multi-platform push providers (APNs, FCM, Web Push)
 - GraphQL API with type safety
 - Dashboard UI with analytics
