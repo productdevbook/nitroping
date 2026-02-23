@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/utils/define'
-import { encryptSensitiveData } from '~~/server/utils/crypto'
+import { encryptSensitiveData } from '#server/utils/crypto'
 
 export const configureWebPushMutation = defineMutation({
   configureWebPush: {

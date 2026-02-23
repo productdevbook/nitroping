@@ -1,5 +1,5 @@
 import { defineMutation } from 'nitro-graphql/utils/define'
-import { generateApiKey } from '~~/server/utils/auth'
+import { generateApiKey } from '#server/utils/auth'
 
 export const createAppMutation = defineMutation({
   createApp: {

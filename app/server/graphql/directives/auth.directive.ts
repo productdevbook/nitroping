@@ -1,4 +1,4 @@
-import { verifyApiKey } from '~~/server/utils/auth'
+import { verifyApiKey } from '#server/utils/auth'
 
 export function createAuthDirective() {
   return {

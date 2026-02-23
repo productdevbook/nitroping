@@ -1,7 +1,7 @@
 import type { Database } from './types'
 import DataLoader from 'dataloader'
 import { inArray } from 'drizzle-orm'
-import * as tables from '~~/server/database/schema'
+import * as tables from '#server/database/schema'
 
 export function createApiKeyLoader(db: Database) {
   return new DataLoader<string, typeof tables.apiKey.$inferSelect | null>(

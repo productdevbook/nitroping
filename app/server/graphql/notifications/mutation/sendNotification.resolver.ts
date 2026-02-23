@@ -1,6 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/utils/define'
-import { getProviderForApp } from '~~/server/providers'
+import { getProviderForApp } from '#server/providers'
 
 export const notificationMutations = defineMutation({
   sendNotification: {

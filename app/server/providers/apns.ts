@@ -1,4 +1,4 @@
-import type { NotificationPayload } from '~~/server/utils/validation'
+import type { NotificationPayload } from '#server/utils/validation'
 
 export interface APNsConfig {
   keyId: string
