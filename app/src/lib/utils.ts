@@ -8,13 +8,10 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getImageUrl(path: string | null | undefined): string {
   if (!path)
-    return '/images/book-placeholder.svg'
+    return ''
 
-  // If already a full URL, return as is
-  if (path.startsWith('http://') || path.startsWith('https://')) {
+  if (path.startsWith('http://') || path.startsWith('https://'))
     return path
-  }
 
-  // Add CDN prefix for S3 paths
-  return `https://cdn.sayfa.app/${path}`
+  return `https://nitroping.dev/${path}`
 }
