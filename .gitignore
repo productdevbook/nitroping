@@ -6,6 +6,10 @@
 .cache
 dist
 
+# TypeScript build info
+app/tsconfig.tsbuildinfo
+tsconfig.tsbuildinfo
+
 # Node dependencies
 node_modules
 
