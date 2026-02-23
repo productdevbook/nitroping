@@ -1,0 +1,119 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import type { SidebarProps } from '~/components/ui/sidebar'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '~/components/ui/sidebar'
+import AppNavMain from '~/components/app/AppNavMain.vue'
+import AppNavUser from '~/components/app/AppNavUser.vue'
+
+const props = withDefaults(defineProps<SidebarProps>(), {
+  collapsible: 'icon',
+})
+
+const route = useRoute()
+
+// Navigation items
+const navMain = computed(() => [
+  {
+    title: 'Dashboard',
+    url: '/',
+    icon: 'lucide:home',
+    isActive: route.path === '/',
+  },
+  {
+    title: 'Applications',
+    url: '/apps',
+    icon: 'lucide:package',
+    isActive: route.path.startsWith('/apps'),
+  },
+  {
+    title: 'Analytics',
+    url: '/analytics',
+    icon: 'lucide:bar-chart-3',
+    isActive: route.path.startsWith('/analytics'),
+  },
+])
+
+const navTools = computed(() => [
+  {
+    title: 'Send Notification',
+    url: '/send',
+    icon: 'lucide:send',
+    isActive: route.path.startsWith('/send'),
+  },
+  {
+    title: 'Device Testing',
+    url: '/devices',
+    icon: 'lucide:smartphone',
+    isActive: route.path.startsWith('/devices'),
+  },
+  {
+    title: 'Web Push Test',
+    url: '/test-webpush',
+    icon: 'lucide:bell',
+    isActive: route.path.startsWith('/test-webpush'),
+  },
+])
+
+const navHelp = computed(() => [
+  {
+    title: 'Documentation',
+    url: '/docs',
+    icon: 'lucide:file-text',
+    isActive: route.path.startsWith('/docs'),
+  },
+  {
+    title: 'GitHub',
+    url: 'https://github.com/productdevbook/nitroping',
+    icon: 'lucide:github',
+    isActive: false,
+  },
+])
+
+// User data
+const userData = computed(() => ({
+  name: 'Admin User',
+  email: 'admin@nitroping.dev',
+  avatar: '/placeholder-avatar.jpg',
+}))
+</script>
+
+<template>
+  <Sidebar v-bind="props">
+    <SidebarHeader>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" as-child>
+            <RouterLink to="/">
+              <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <Icon name="lucide:zap" class="size-4" />
+              </div>
+              <div class="grid flex-1 text-left text-sm leading-tight">
+                <span class="truncate font-semibold">NitroPing</span>
+                <span class="truncate text-xs">Push Notifications</span>
+              </div>
+            </RouterLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarHeader>
+
+    <SidebarContent>
+      <AppNavMain :items="navMain" label="Main" />
+      <AppNavMain :items="navTools" label="Tools" />
+      <AppNavMain :items="navHelp" label="Help" />
+    </SidebarContent>
+
+    <SidebarFooter>
+      <AppNavUser :user="userData" />
+    </SidebarFooter>
+  </Sidebar>
+</template>

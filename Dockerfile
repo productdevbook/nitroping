@@ -1,49 +1,44 @@
-FROM oven/bun:1 AS base
+FROM node:22-alpine AS base
 
 WORKDIR /app
 
-# Copy package files and local SDK workspace
-COPY package.json bun.lock ./
-COPY sdk ./sdk
+RUN npm install -g pnpm@10.30.0
 
-# Build SDK first
-RUN cd sdk && bun install && bun run build && cd ..
+# Copy app package files
+COPY app/package.json app/pnpm-lock.yaml* ./
 
-# Install main app dependencies
-RUN bun install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
-COPY . .
+COPY app .
 
 FROM base AS build
 
-# Build arguments for environment variables needed during build
 ARG DATABASE_URL
 ARG JWT_SECRET
 ARG ENCRYPTION_KEY
 ARG WEBHOOK_SECRET
 ARG AUTO_MIGRATE
 
-# Set environment variables for build
 ENV DATABASE_URL=$DATABASE_URL
 ENV JWT_SECRET=$JWT_SECRET
 ENV ENCRYPTION_KEY=$ENCRYPTION_KEY
 ENV WEBHOOK_SECRET=$WEBHOOK_SECRET
 ENV AUTO_MIGRATE=$AUTO_MIGRATE
 
-RUN bun run build
+RUN pnpm run build
 
 FROM base AS dev
 
-EXPOSE 3000
+EXPOSE 3100
 
-CMD ["bun", "run", "dev"]
+CMD ["pnpm", "run", "dev"]
 
-FROM oven/bun:1-alpine AS production
+FROM node:22-alpine AS production
 
 WORKDIR /app
 
 COPY --from=build /app/.output /app
 
-EXPOSE 3000
+EXPOSE 3100
 
-CMD ["bun", "run", "/app/server/index.mjs"]
+CMD ["node", "/app/server/index.mjs"]
