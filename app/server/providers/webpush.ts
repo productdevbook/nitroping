@@ -111,14 +111,6 @@ class WebPushProvider {
     }
   }
 
-  private convertToPem(buffer: Buffer): string {
-    const base64 = buffer.toString('base64')
-    const pemHeader = '-----BEGIN PRIVATE KEY-----\n'
-    const pemFooter = '\n-----END PRIVATE KEY-----'
-    const pemBody = base64.match(/.{1,64}/g)?.join('\n') || base64
-    return pemHeader + pemBody + pemFooter
-  }
-
   private async encryptPayload(payload: string, subscription: WebPushSubscription): Promise<{
     ciphertext: Buffer
     salt: Buffer
@@ -278,7 +270,7 @@ class WebPushProvider {
         return {
           success: false,
           error: responseText || `HTTP ${response.status}`,
-          status: response.status,
+          statusCode: response.status,
         }
       }
     }

@@ -138,7 +138,7 @@ async function processScheduledNotification(job: Job<ProcessScheduledJobData>) {
       return { success: false, reason: 'not_found' }
     }
 
-    const notif = notificationResult[0]
+    const notif = notificationResult[0]!
 
     // Check if still scheduled (not cancelled)
     if (notif.status !== 'SCHEDULED') {

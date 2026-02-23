@@ -172,7 +172,7 @@ function refreshNotifications() {
         </div>
         <div class="flex space-x-2">
           <Button variant="outline" :disabled="notificationsLoading" @click="refreshNotifications">
-            <Icon name="lucide:send" class="mr-2 size-4" :class="{ 'animate-pulse': notificationsLoading }" />
+            <Icon name="lucide:send" :class="`mr-2 size-4${notificationsLoading ? ' animate-pulse' : ''}`" />
             Refresh
           </Button>
           <Button @click="router.push('/send')">

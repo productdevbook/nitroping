@@ -29,7 +29,7 @@ export const scheduleNotificationMutation = defineMutation({
           sound: input.sound,
           badge: input.badge,
           status: 'SCHEDULED',
-          scheduledAt: new Date(input.scheduledAt).toISOString(),
+          scheduledAt: new Date(input.scheduledAt as string).toISOString(),
           totalTargets: 0, // Will be calculated
           totalSent: 0,
           totalDelivered: 0,
@@ -37,6 +37,8 @@ export const scheduleNotificationMutation = defineMutation({
           totalClicked: 0,
         })
         .returning()
+
+      const insertedNotification = newNotification[0]!
 
       // Get target devices count for statistics
       let targetDevicesCount = 0
@@ -69,10 +71,10 @@ export const scheduleNotificationMutation = defineMutation({
       await db
         .update(tables.notification)
         .set({ totalTargets: targetDevicesCount })
-        .where(eq(tables.notification.id, newNotification[0].id))
+        .where(eq(tables.notification.id, insertedNotification.id))
 
       return {
-        ...newNotification[0],
+        ...insertedNotification,
         totalTargets: targetDevicesCount,
       }
     },

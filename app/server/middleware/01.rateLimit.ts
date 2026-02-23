@@ -1,4 +1,4 @@
-import { HTTPError, defineEventHandler, getHeader } from 'nitro/h3'
+import { HTTPError, defineEventHandler, getHeader, getQuery, getRequestIP, setHeader } from 'nitro/h3'
 import { getRateLimiter } from '../utils/rateLimiter'
 
 export default defineEventHandler(async (event) => {
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     || null
 
   // If no API key, use IP address for rate limiting
-  const rateLimitKey = apiKey || getClientIP(event) || 'anonymous'
+  const rateLimitKey = apiKey || getRequestIP(event) || 'anonymous'
 
   const limiter = getRateLimiter()
   const result = await limiter.isAllowed(rateLimitKey)
@@ -31,7 +31,6 @@ export default defineEventHandler(async (event) => {
   if (!result.allowed) {
     throw new HTTPError({
       status: 429,
-      message: 'Too Many Requests',
       message: 'Rate limit exceeded. Please try again later.',
     })
   }
@@ -39,19 +38,3 @@ export default defineEventHandler(async (event) => {
   // Consume rate limit
   await limiter.consume(rateLimitKey)
 })
-
-function getClientIP(event: any): string | null {
-  // Check various headers for client IP
-  const forwardedFor = getHeader(event, 'x-forwarded-for')
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim()
-  }
-
-  const realIP = getHeader(event, 'x-real-ip')
-  if (realIP) {
-    return realIP
-  }
-
-  // Fallback to remote address
-  return event.node?.req?.socket?.remoteAddress || null
-}

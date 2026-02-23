@@ -37,8 +37,8 @@ export const statsQuery = defineQuery({
         .from(tables.deliveryLog)
         .where(gte(tables.deliveryLog.createdAt, yesterdayIso))
 
-      const deliveryRate = deliveryRateResult[0]?.total > 0
-        ? (deliveryRateResult[0].delivered / deliveryRateResult[0].total) * 100
+      const deliveryRate = (deliveryRateResult[0]?.total ?? 0) > 0
+        ? (deliveryRateResult[0]!.delivered / deliveryRateResult[0]!.total) * 100
         : 0
 
       return {

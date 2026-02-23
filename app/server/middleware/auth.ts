@@ -3,7 +3,7 @@ import { extractAuthFromEvent } from '../utils/auth'
 
 export default defineEventHandler(async (event) => {
   // Skip auth for health check and public routes
-  const url = getRouterParam(event, '_') || event.node.req.url || ''
+  const url = getRouterParam(event, '_') || event.path || ''
 
   const publicRoutes = [
     '/api/health',

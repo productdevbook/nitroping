@@ -5,7 +5,7 @@ export const platformSchema = z.enum(['IOS', 'ANDROID', 'WEB'])
 export const notificationPayloadSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   body: z.string().min(1, 'Body is required'),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.string(), z.any()).optional(),
   badge: z.number().int().min(0).optional(),
   sound: z.string().optional(),
   clickAction: z.string().optional(),
@@ -22,7 +22,7 @@ export const deviceRegistrationSchema = z.object({
   platform: platformSchema,
   appId: z.string().uuid(),
   userId: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 export const appCreateSchema = z.object({

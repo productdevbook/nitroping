@@ -11,23 +11,25 @@ export const notificationMutations = defineMutation({
       const newNotification = await db
         .insert(tables.notification)
         .values({
-          appId: input.appId,
-          title: input.title,
-          body: input.body,
-          data: input.data,
-          imageUrl: input.imageUrl,
-          clickAction: input.clickAction,
-          sound: input.sound,
-          badge: input.badge,
-          status: input.scheduledAt ? 'SCHEDULED' : 'PENDING',
-          scheduledAt: input.scheduledAt,
-          totalTargets: 0, // Will be calculated
+          appId: input.appId as string,
+          title: input.title as string,
+          body: input.body as string,
+          data: input.data as any,
+          imageUrl: input.imageUrl as string | undefined,
+          clickAction: input.clickAction as string | undefined,
+          sound: input.sound as string | undefined,
+          badge: input.badge as number | undefined,
+          status: (input.scheduledAt ? 'SCHEDULED' : 'PENDING') as 'SCHEDULED' | 'PENDING',
+          scheduledAt: input.scheduledAt as string | undefined,
+          totalTargets: 0,
           totalSent: 0,
           totalDelivered: 0,
           totalFailed: 0,
           totalClicked: 0,
         })
         .returning()
+
+      const insertedNotification = newNotification[0]!
 
       // Get target devices
       let targetDevices = []
@@ -57,7 +59,7 @@ export const notificationMutations = defineMutation({
       await db
         .update(tables.notification)
         .set({ totalTargets: targetDevices.length })
-        .where(eq(tables.notification.id, newNotification[0].id))
+        .where(eq(tables.notification.id, insertedNotification.id))
 
       // Send notifications to devices
       let totalSent = 0
@@ -99,7 +101,7 @@ export const notificationMutations = defineMutation({
                     console.warn(`[Notification] Skipping device ${device.id}: WebPush keys missing (p256dh/auth). Device needs to re-subscribe.`)
                     totalFailed++
                     deliveryLogs.push({
-                      notificationId: newNotification[0].id,
+                      notificationId: insertedNotification.id,
                       deviceId: device.id,
                       status: 'FAILED' as const,
                       errorMessage: 'WebPush subscription keys missing. Device needs to re-subscribe.',
@@ -116,7 +118,7 @@ export const notificationMutations = defineMutation({
                         auth: device.webPushAuth,
                       },
                     },
-                    newNotification[0].id,
+                    insertedNotification.id,
                     device.id,
                   )
                 }
@@ -125,7 +127,7 @@ export const notificationMutations = defineMutation({
                   message = (provider as any).convertNotificationPayload(
                     notificationPayload,
                     device.token,
-                    newNotification[0].id,
+                    insertedNotification.id,
                     device.id,
                   )
                 }
@@ -142,7 +144,7 @@ export const notificationMutations = defineMutation({
 
                 // Create delivery log
                 deliveryLogs.push({
-                  notificationId: newNotification[0].id,
+                  notificationId: insertedNotification.id,
                   deviceId: device.id,
                   status: result.success ? ('SENT' as const) : ('FAILED' as const),
                   errorMessage: result.error,
@@ -154,7 +156,7 @@ export const notificationMutations = defineMutation({
                 totalFailed++
                 console.error(`[Notification] Device error for ${device.id}:`, deviceError)
                 deliveryLogs.push({
-                  notificationId: newNotification[0].id,
+                  notificationId: insertedNotification.id,
                   deviceId: device.id,
                   status: 'FAILED' as const,
                   errorMessage: deviceError instanceof Error ? deviceError.message : 'Unknown error',
@@ -169,7 +171,7 @@ export const notificationMutations = defineMutation({
             console.error(`[Notification] Provider error for platform ${platform}:`, providerError)
             for (const device of (devices as any[])) {
               deliveryLogs.push({
-                notificationId: newNotification[0].id,
+                notificationId: insertedNotification.id,
                 deviceId: device.id,
                 status: 'FAILED' as const,
                 errorMessage: `Provider error: ${providerError instanceof Error ? providerError.message : 'Unknown provider error'}`,
@@ -193,11 +195,11 @@ export const notificationMutations = defineMutation({
             status: 'SENT',
             sentAt: new Date().toISOString(),
           })
-          .where(eq(tables.notification.id, newNotification[0].id))
+          .where(eq(tables.notification.id, insertedNotification.id))
       }
 
       return {
-        ...newNotification[0],
+        ...insertedNotification,
         totalTargets: targetDevices.length,
         totalSent,
         totalFailed,

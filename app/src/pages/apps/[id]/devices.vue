@@ -441,7 +441,7 @@ function refreshDevices() {
         </div>
         <div class="flex space-x-2">
           <Button variant="outline" :disabled="devicesLoading" @click="refreshDevices">
-            <Icon name="lucide:refresh-cw" class="mr-2 size-4" :class="{ 'animate-spin': devicesLoading }" />
+            <Icon name="lucide:refresh-cw" :class="`mr-2 size-4${devicesLoading ? ' animate-spin' : ''}`" />
             Refresh
           </Button>
           <Button @click="showRegisterDevice = true">

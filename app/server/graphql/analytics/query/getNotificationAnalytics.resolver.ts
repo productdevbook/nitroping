@@ -23,7 +23,7 @@ export const getNotificationAnalyticsQuery = defineQuery({
           })
         }
 
-        const notif = notification[0]
+        const notif = notification[0]!
 
         // Get delivery logs for this notification
         const deliveryLogs = await db
