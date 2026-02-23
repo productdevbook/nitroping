@@ -6,6 +6,10 @@
 .cache
 dist
 
+# TypeScript build info
+app/tsconfig.tsbuildinfo
+tsconfig.tsbuildinfo
+
 # Node dependencies
 node_modules
 
@@ -22,6 +26,9 @@ logs
 .env
 .env.*
 !.env.example
+app/.env
+app/.env.*
+!app/.env.example
 coverage
 
 # iOS Development

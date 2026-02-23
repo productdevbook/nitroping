@@ -1,0 +1,27 @@
+{
+  "extends": "nitro/tsconfig",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./src/*"],
+      "@/*": ["./src/*"],
+      "#server/*": ["./server/*"],
+      "#graphql/client": ["./.graphql/types/nitro-graphql-client.d.ts", "./.graphql/nitro-graphql-client.d.ts"],
+      "#graphql/server": ["./.graphql/types/nitro-graphql-server.d.ts", "./.graphql/nitro-graphql-server.d.ts"],
+      "#graphql/*": ["./.graphql/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "server/**/*.ts",
+    "vite.config.ts",
+    "env.d.ts",
+    ".graphql/**/*.ts",
+    ".graphql/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
