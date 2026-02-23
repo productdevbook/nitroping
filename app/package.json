@@ -15,7 +15,8 @@
     "db:generate": "drizzle-kit generate --config ./server/drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config ./server/drizzle.config.ts",
     "db:push": "drizzle-kit push --config ./server/drizzle.config.ts",
-    "db:studio": "drizzle-kit studio --config ./server/drizzle.config.ts"
+    "db:studio": "drizzle-kit studio --config ./server/drizzle.config.ts",
+    "graphql:codegen": "vite build"
   },
   "dependencies": {
     "@iconify-json/hugeicons": "^1.2.23",

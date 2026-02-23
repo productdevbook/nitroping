@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 import { encryptSensitiveData } from '#server/utils/crypto'
@@ -16,8 +17,8 @@ export const configureAPNsMutation = defineMutation({
         .limit(1)
 
       if (app.length === 0) {
-        throw createError({
-          statusCode: 404,
+        throw new HTTPError({
+          status: 404,
           message: 'App not found',
         })
       }

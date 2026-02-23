@@ -1,4 +1,4 @@
-import { defineEventHandler, getHeader } from 'nitro/h3'
+import { HTTPError, defineEventHandler, getHeader } from 'nitro/h3'
 import { getRateLimiter } from '../utils/rateLimiter'
 
 export default defineEventHandler(async (event) => {
@@ -29,9 +29,9 @@ export default defineEventHandler(async (event) => {
   setHeader(event, 'X-RateLimit-Reset', Math.floor(result.resetAt / 1000).toString())
 
   if (!result.allowed) {
-    throw createError({
-      statusCode: 429,
-      statusMessage: 'Too Many Requests',
+    throw new HTTPError({
+      status: 429,
+      message: 'Too Many Requests',
       message: 'Rate limit exceeded. Please try again later.',
     })
   }

@@ -278,7 +278,7 @@ class WebPushProvider {
         return {
           success: false,
           error: responseText || `HTTP ${response.status}`,
-          statusCode: response.status,
+          status: response.status,
         }
       }
     }

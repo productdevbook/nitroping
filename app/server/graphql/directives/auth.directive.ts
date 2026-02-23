@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { verifyApiKey } from '#server/utils/auth'
 
 export function createAuthDirective() {
@@ -10,17 +11,17 @@ export function createAuthDirective() {
         || context.event?.node?.req?.headers?.['x-api-key']
 
       if (!apiKey) {
-        throw createError({
-          statusCode: 401,
-          statusMessage: 'API key required',
+        throw new HTTPError({
+          status: 401,
+          message: 'API key required',
         })
       }
 
       const app = await verifyApiKey(apiKey)
       if (!app) {
-        throw createError({
-          statusCode: 401,
-          statusMessage: 'Invalid API key',
+        throw new HTTPError({
+          status: 401,
+          message: 'Invalid API key',
         })
       }
 

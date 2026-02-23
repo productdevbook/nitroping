@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
@@ -15,16 +16,16 @@ export const cancelNotificationMutation = defineMutation({
         .limit(1)
 
       if (!notification[0]) {
-        throw createError({
-          statusCode: 404,
+        throw new HTTPError({
+          status: 404,
           message: 'Notification not found',
         })
       }
 
       // Only scheduled or pending notifications can be cancelled
       if (!['scheduled', 'pending'].includes(notification[0].status)) {
-        throw createError({
-          statusCode: 400,
+        throw new HTTPError({
+          status: 400,
           message: 'Only scheduled or pending notifications can be cancelled',
         })
       }

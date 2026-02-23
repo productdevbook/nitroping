@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
@@ -6,7 +7,7 @@ export const updateAppMutation = defineMutation({
     resolve: async (_parent, { id, input }, { context }) => {
       // Uncomment this line to require authentication:
       // const app = await requireAuth(context)
-      // if (app.id !== id) throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
+      // if (app.id !== id) throw new HTTPError({ status: 403, message: 'Forbidden' })
 
       const { useDatabase, tables } = context
       const db = useDatabase()
@@ -21,8 +22,8 @@ export const updateAppMutation = defineMutation({
         .returning()
 
       if (updatedApp.length === 0) {
-        throw createError({
-          statusCode: 404,
+        throw new HTTPError({
+          status: 404,
           message: 'App not found',
         })
       }

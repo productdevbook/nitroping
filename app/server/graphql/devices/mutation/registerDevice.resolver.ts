@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { defineMutation } from 'nitro-graphql/define'
 
 export const registerDeviceMutation = defineMutation({
@@ -16,16 +17,16 @@ export const registerDeviceMutation = defineMutation({
       if (input.platform === 'IOS') {
         // APNS token validation (64 characters, hex string)
         if (cleanToken.length !== 64) {
-          throw createError({
-            statusCode: 400,
+          throw new HTTPError({
+            status: 400,
             message: `Invalid APNS token length: ${cleanToken.length}. Expected 64 characters.`,
           })
         }
 
         // APNS tokens are hex strings
         if (!/^[0-9a-f]+$/i.test(cleanToken)) {
-          throw createError({
-            statusCode: 400,
+          throw new HTTPError({
+            status: 400,
             message: 'Invalid APNS token format. Token should be a 64-character hex string.',
           })
         }
@@ -33,16 +34,16 @@ export const registerDeviceMutation = defineMutation({
       else if (input.platform === 'ANDROID') {
         // FCM token validation for Android
         if (cleanToken.length < 140 || cleanToken.length > 200) {
-          throw createError({
-            statusCode: 400,
+          throw new HTTPError({
+            status: 400,
             message: `Invalid FCM token length: ${cleanToken.length}. Expected 140-200 characters.`,
           })
         }
 
         // FCM tokens should not contain spaces or special characters except - and _
         if (!/^[\w-]+$/.test(cleanToken)) {
-          throw createError({
-            statusCode: 400,
+          throw new HTTPError({
+            status: 400,
             message: 'Invalid FCM token format. Token contains invalid characters.',
           })
         }
@@ -52,23 +53,23 @@ export const registerDeviceMutation = defineMutation({
         try {
           const url = new URL(cleanToken)
           if (!['http:', 'https:'].includes(url.protocol)) {
-            throw createError({
-              statusCode: 400,
+            throw new HTTPError({
+              status: 400,
               message: 'Web push endpoint must be a valid HTTP/HTTPS URL.',
             })
           }
         }
         catch {
-          throw createError({
-            statusCode: 400,
+          throw new HTTPError({
+            status: 400,
             message: 'Invalid web push endpoint URL format.',
           })
         }
 
         // WebPush subscription keys are required for Web platform
         if (!input.webPushP256dh || !input.webPushAuth) {
-          throw createError({
-            statusCode: 400,
+          throw new HTTPError({
+            status: 400,
             message: 'WebPush subscription requires p256dh and auth keys for encryption.',
           })
         }

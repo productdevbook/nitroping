@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 import { encryptSensitiveData } from '#server/utils/crypto'
@@ -16,8 +17,8 @@ export const configureFCMMutation = defineMutation({
         .limit(1)
 
       if (app.length === 0) {
-        throw createError({
-          statusCode: 404,
+        throw new HTTPError({
+          status: 404,
           message: 'App not found',
         })
       }
@@ -27,8 +28,8 @@ export const configureFCMMutation = defineMutation({
         JSON.parse(input.serviceAccount)
       }
       catch {
-        throw createError({
-          statusCode: 400,
+        throw new HTTPError({
+          status: 400,
           message: 'Invalid service account JSON format',
         })
       }

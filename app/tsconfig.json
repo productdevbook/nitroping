@@ -15,7 +15,8 @@
     "src/**/*.vue",
     "server/**/*.ts",
     "vite.config.ts",
-    "env.d.ts"
+    "env.d.ts",
+    ".graphql/**/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 import { encryptSensitiveData } from '#server/utils/crypto'
@@ -16,16 +17,16 @@ export const configureWebPushMutation = defineMutation({
         .limit(1)
 
       if (app.length === 0) {
-        throw createError({
-          statusCode: 404,
+        throw new HTTPError({
+          status: 404,
           message: 'App not found',
         })
       }
 
       // Validate subject format
       if (!input.subject.startsWith('mailto:') && !input.subject.startsWith('https://')) {
-        throw createError({
-          statusCode: 400,
+        throw new HTTPError({
+          status: 400,
           message: 'Subject must be a mailto: email or https: URL',
         })
       }

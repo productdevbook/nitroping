@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { and, count, eq, inArray } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
@@ -9,8 +10,8 @@ export const scheduleNotificationMutation = defineMutation({
 
       // Ensure scheduledAt is provided for scheduled notifications
       if (!input.scheduledAt) {
-        throw createError({
-          statusCode: 400,
+        throw new HTTPError({
+          status: 400,
           message: 'scheduledAt is required for scheduled notifications',
         })
       }

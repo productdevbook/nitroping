@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 import { generateApiKey } from '#server/utils/auth'
@@ -20,8 +21,8 @@ export const regenerateApiKeyMutation = defineMutation({
         .returning()
 
       if (updatedApp.length === 0) {
-        throw createError({
-          statusCode: 404,
+        throw new HTTPError({
+          status: 404,
           message: 'App not found',
         })
       }

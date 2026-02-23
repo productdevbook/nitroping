@@ -1,6 +1,6 @@
-import type { H3Event } from 'h3'
+import type { H3Event } from 'nitro/h3'
 import { and, eq } from 'drizzle-orm'
-import { createError, getHeader } from 'h3'
+import { HTTPError, getHeader } from 'nitro/h3'
 import jwt from 'jsonwebtoken'
 import { getDatabase } from '../database/connection'
 import { apiKey, app } from '../database/schema'
@@ -109,9 +109,9 @@ export async function extractAuthFromEvent(event: H3Event) {
   const authHeader = getHeader(event, 'authorization')
 
   if (!authHeader) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Authorization header required',
+    throw new HTTPError({
+      status: 401,
+      message: 'Authorization header required',
     })
   }
 
@@ -121,9 +121,9 @@ export async function extractAuthFromEvent(event: H3Event) {
     const payload = verifyJWT(token)
 
     if (!payload) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Invalid or expired JWT token',
+      throw new HTTPError({
+        status: 401,
+        message: 'Invalid or expired JWT token',
       })
     }
 
@@ -135,9 +135,9 @@ export async function extractAuthFromEvent(event: H3Event) {
     const keyData = await validateApiKey(apiKeyValue)
 
     if (!keyData) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Invalid or expired API key',
+      throw new HTTPError({
+        status: 401,
+        message: 'Invalid or expired API key',
       })
     }
 
@@ -149,9 +149,9 @@ export async function extractAuthFromEvent(event: H3Event) {
     }
   }
   else {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Invalid authorization format. Use "Bearer <jwt>" or "ApiKey <key>"',
+    throw new HTTPError({
+      status: 401,
+      message: 'Invalid authorization format. Use "Bearer <jwt>" or "ApiKey <key>"',
     })
   }
 }

@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { eq } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
 
@@ -16,8 +17,8 @@ export const getNotificationAnalyticsQuery = defineQuery({
           .limit(1)
 
         if (!notification.length) {
-          throw createError({
-            statusCode: 404,
+          throw new HTTPError({
+            status: 404,
             message: 'Notification not found',
           })
         }

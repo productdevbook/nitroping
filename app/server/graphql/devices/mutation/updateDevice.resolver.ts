@@ -1,3 +1,4 @@
+import { HTTPError } from 'nitro/h3'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
@@ -17,8 +18,8 @@ export const updateDeviceMutation = defineMutation({
         .returning()
 
       if (updatedDevice.length === 0) {
-        throw createError({
-          statusCode: 404,
+        throw new HTTPError({
+          status: 404,
           message: 'Device not found',
         })
       }
