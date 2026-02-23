@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import Icon from '~/components/common/Icon.vue'
+import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
+import AppNavigation from '~/components/app/AppNavigation.vue'
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Badge } from '~/components/ui/badge'
@@ -7,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
-import { useNotificationApi } from '~/graphql/notifications'
+import { useApp, useNotificationApi } from '~/graphql'
 
 const route = useRoute()
 const router = useRouter()

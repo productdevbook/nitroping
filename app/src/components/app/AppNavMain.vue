@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Icon from '~/components/common/Icon.vue'
 import {
   Collapsible,
   CollapsibleContent,

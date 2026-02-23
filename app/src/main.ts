@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { PiniaColada } from '@pinia/colada'
 import { createNotivue } from 'notivue'
 import 'notivue/notifications.css'
 import 'notivue/animations.css'
@@ -21,6 +22,7 @@ const pinia = createPinia()
 const app = createApp(App)
 
 app.use(pinia)
+app.use(PiniaColada)
 app.use(router)
 app.use(notivue)
 

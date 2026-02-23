@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Icon from '~/components/common/Icon.vue'
 import { ref, computed, onMounted } from 'vue'
 import type { DevicePlatform } from '#graphql/client'
 import { Badge } from '~/components/ui/badge'
@@ -9,6 +10,7 @@ import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Textarea } from '~/components/ui/textarea'
+import { useApps, useRegisterDevice } from '~/graphql'
 
 // API queries
 const { data: appsData, isLoading: _appsLoading } = useApps()

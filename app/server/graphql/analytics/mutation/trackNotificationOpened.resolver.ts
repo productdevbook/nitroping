@@ -1,4 +1,4 @@
-import { defineMutation } from 'nitro-graphql/utils/define'
+import { defineMutation } from 'nitro-graphql/define'
 
 export const trackNotificationOpenedMutation = defineMutation({
   trackNotificationOpened: {

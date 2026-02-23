@@ -1,4 +1,4 @@
-import { defineQuery } from 'nitro-graphql/utils/define'
+import { defineQuery } from 'nitro-graphql/define'
 import { WebPushProvider } from '#server/providers/webpush'
 
 export const generateVapidKeysQuery = defineQuery({

@@ -1,0 +1,349 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+directive @auth on FIELD_DEFINITION
+
+directive @hasRole(role: String!) on FIELD_DEFINITION
+
+type AnalyticsData {
+  date: String!
+  sent: Int!
+  delivered: Int!
+  failed: Int!
+  clicked: Int!
+}
+
+type ApiKey {
+  id: ID!
+  appId: ID!
+  app: App
+  name: String!
+  key: String!
+  permissions: JSON
+  isActive: Boolean
+  lastUsedAt: Timestamp
+  expiresAt: Timestamp
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type App {
+  id: ID!
+  name: String!
+  slug: String!
+  description: String
+  isActive: Boolean!
+  apiKey: String!
+  fcmProjectId: String
+  fcmServiceAccount: String
+  apnsKeyId: String
+  apnsTeamId: String
+  apnsPrivateKey: String
+  bundleId: String
+  vapidSubject: String
+  vapidPublicKey: String
+  vapidPrivateKey: String
+  devices: [Device!]
+  notifications: [Notification!]
+  apiKeys: [ApiKey!]
+  stats: AppStats
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type AppStats {
+  totalDevices: Int!
+  activeDevices: Int!
+  newDevicesToday: Int!
+  sentToday: Int!
+  deliveryRate: Float!
+  apiCalls: Int!
+}
+
+input ConfigureAPNsInput {
+  keyId: String!
+  teamId: String!
+  privateKey: String!
+  bundleId: String
+  isProduction: Boolean
+}
+
+input ConfigureFCMInput {
+  projectId: String!
+  serviceAccount: String!
+}
+
+input ConfigureWebPushInput {
+  subject: String!
+  publicKey: String!
+  privateKey: String!
+}
+
+input CreateAppInput {
+  name: String!
+  slug: String!
+  description: String
+}
+
+type DashboardStats {
+  totalApps: Int!
+  activeDevices: Int!
+  notificationsSent: Int!
+  deliveryRate: Float!
+}
+
+type DeliveryLog {
+  id: ID!
+  notificationId: ID!
+  notification: Notification
+  deviceId: ID!
+  device: Device
+  status: DeliveryStatus!
+  errorMessage: String
+  clickedAt: Timestamp
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  CLICKED
+}
+
+type Device {
+  id: ID!
+  appId: ID!
+  app: App
+  token: String!
+  category: DeviceCategory
+  platform: DevicePlatform!
+  status: DeviceStatus!
+  userId: String
+  metadata: JSON
+  webPushP256dh: String
+  webPushAuth: String
+  deliveryLogs: [DeliveryLog!]
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  lastSeenAt: Timestamp
+}
+
+enum DeviceCategory {
+  CHROME
+  FIREFOX
+  SAFARI
+  EDGE
+  OPERA
+}
+
+enum DevicePlatform {
+  ANDROID
+  IOS
+  WEB
+}
+
+enum DeviceStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+type EngagementMetrics {
+  totalNotifications: Int!
+  totalSent: Int!
+  totalDelivered: Int!
+  totalOpened: Int!
+  totalClicked: Int!
+  overallDeliveryRate: Float!
+  overallOpenRate: Float!
+  overallClickRate: Float!
+  platformBreakdown: [PlatformMetrics!]!
+}
+
+scalar JSON
+
+type Mutation {
+  _empty: String
+  cancelNotification(id: ID!): Boolean!
+  configureAPNs(id: ID!, input: ConfigureAPNsInput!): App!
+  configureFCM(id: ID!, input: ConfigureFCMInput!): App!
+  configureWebPush(id: ID!, input: ConfigureWebPushInput!): App!
+  createApp(input: CreateAppInput!): App!
+  deleteApp(id: ID!): Boolean!
+  deleteDevice(id: ID!): Boolean!
+  regenerateApiKey(id: ID!): App!
+  registerDevice(input: RegisterDeviceInput!): Device!
+  scheduleNotification(input: SendNotificationInput!): Notification!
+  sendNotification(input: SendNotificationInput!): Notification!
+  trackNotificationClicked(input: TrackEventInput!): TrackEventResponse!
+  trackNotificationDelivered(input: TrackEventInput!): TrackEventResponse!
+  trackNotificationOpened(input: TrackEventInput!): TrackEventResponse!
+  updateApp(id: ID!, input: UpdateAppInput!): App!
+  updateDevice(id: ID!, input: UpdateDeviceInput!): Device!
+}
+
+type Notification {
+  id: ID!
+  appId: ID!
+  app: App
+  title: String!
+  body: String!
+  data: JSON
+  imageUrl: String
+  clickAction: String
+  sound: String
+  badge: Int
+  status: NotificationStatus!
+  targetDevices: JSON
+  platforms: JSON
+  scheduledAt: Timestamp
+  totalTargets: Int!
+  totalSent: Int!
+  totalDelivered: Int!
+  totalFailed: Int!
+  totalClicked: Int!
+  deliveryLogs: [DeliveryLog!]
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  sentAt: Timestamp
+}
+
+type NotificationAnalytics {
+  notificationId: ID!
+  sentCount: Int!
+  deliveredCount: Int!
+  openedCount: Int!
+  clickedCount: Int!
+  deliveryRate: Float!
+  openRate: Float!
+  clickRate: Float!
+  platformBreakdown: [PlatformMetrics!]!
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  SCHEDULED
+}
+
+type PageInfo {
+  page: Int!
+  limit: Int!
+  totalPages: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type PlatformMetrics {
+  platform: String!
+  sent: Int!
+  delivered: Int!
+  opened: Int!
+  clicked: Int!
+  avgDeliveryTime: Float
+  avgOpenTime: Float
+}
+
+type PlatformStats {
+  platform: DevicePlatform!
+  deviceCount: Int!
+  notificationsSent: Int!
+  deliveryRate: Float!
+}
+
+type Query {
+  _empty: String
+  analyticsData(appId: ID, days: Int = 7): [AnalyticsData!]!
+  app(id: ID!): App
+  appBySlug(slug: String!): App
+  appExists(slug: String!): Boolean!
+  appStats(appId: ID!): AppStats
+  apps: [App!]!
+  dashboardStats: DashboardStats!
+  deliveryLogs(notificationId: ID): [DeliveryLog!]!
+  device(id: ID!): Device
+  deviceByToken(token: String!): Device
+  devices(appId: ID): [Device!]!
+  generateVapidKeys: VapidKeys!
+  getEngagementMetrics(appId: ID!, timeRange: String): EngagementMetrics
+  getNotificationAnalytics(notificationId: ID!): NotificationAnalytics
+  notification(id: ID!): Notification
+  notifications(appId: ID): [Notification!]!
+  platformStats(appId: ID): [PlatformStats!]!
+}
+
+input RegisterDeviceInput {
+  appId: ID!
+  token: String!
+  category: DeviceCategory
+  platform: DevicePlatform!
+  userId: String
+  metadata: JSON
+  webPushP256dh: String
+  webPushAuth: String
+}
+
+input SendNotificationInput {
+  appId: ID!
+  title: String!
+  body: String!
+  data: JSON
+  imageUrl: String
+  clickAction: String
+  sound: String
+  badge: Int
+  targetDevices: JSON
+  platforms: JSON
+  scheduledAt: Timestamp
+}
+
+scalar Timestamp
+
+input TrackEventInput {
+  notificationId: ID!
+  deviceId: ID!
+  platform: String
+  userAgent: String
+  appVersion: String
+  osVersion: String
+}
+
+type TrackEventResponse {
+  success: Boolean!
+  message: String
+}
+
+input UpdateAppInput {
+  name: String
+  description: String
+  isActive: Boolean
+  fcmProjectId: String
+  fcmServiceAccount: String
+  apnsKeyId: String
+  apnsTeamId: String
+  apnsPrivateKey: String
+  bundleId: String
+  vapidSubject: String
+  vapidPublicKey: String
+  vapidPrivateKey: String
+}
+
+input UpdateDeviceInput {
+  status: DeviceStatus
+  userId: String
+  metadata: JSON
+}
+
+type VapidKeys {
+  publicKey: String!
+  privateKey: String!
+}

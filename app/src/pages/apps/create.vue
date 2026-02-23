@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import AppPageHeader from '~/components/app/AppPageHeader.vue'
+import CreateAppForm from '~/components/forms/CreateAppForm.vue'
 import { useRouter } from 'vue-router'
+import { useCreateApp } from '~/graphql'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 
 const router = useRouter()
@@ -41,7 +44,7 @@ function goBack() {
     />
 
     <div class="max-w-2xl">
-      <FormsCreateAppForm
+      <CreateAppForm
         :loading="isCreatingApp"
         @submit="handleSubmit"
         @cancel="goBack"

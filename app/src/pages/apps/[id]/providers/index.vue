@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import Icon from '~/components/common/Icon.vue'
+import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
+import AppNavigation from '~/components/app/AppNavigation.vue'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useApp } from '~/graphql'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'

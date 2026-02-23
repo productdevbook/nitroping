@@ -1,5 +1,5 @@
 import { and, eq, isNotNull } from 'drizzle-orm'
-import { defineMutation } from 'nitro-graphql/utils/define'
+import { defineMutation } from 'nitro-graphql/define'
 
 export const trackNotificationClickedMutation = defineMutation({
   trackNotificationClicked: {

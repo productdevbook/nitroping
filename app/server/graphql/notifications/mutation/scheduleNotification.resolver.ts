@@ -1,5 +1,5 @@
 import { and, count, eq, inArray } from 'drizzle-orm'
-import { defineMutation } from 'nitro-graphql/utils/define'
+import { defineMutation } from 'nitro-graphql/define'
 
 export const scheduleNotificationMutation = defineMutation({
   scheduleNotification: {

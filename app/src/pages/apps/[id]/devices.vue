@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import Icon from '~/components/common/Icon.vue'
+import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
+import AppNavigation from '~/components/app/AppNavigation.vue'
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useApp, useDevices, useRegisterDevice } from '~/graphql'
 import type { DevicePlatform } from '#graphql/client'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'

@@ -33,13 +33,14 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
+    "postinstall": "tsdown",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "release": "bun run build && bun publish --no-git-checks --access public"
   },
   "peerDependencies": {},
   "devDependencies": {
-    "tsdown": "^0.18.0",
+    "tsdown": "^0.20.3",
     "typescript": "^5.9.3"
   }
 }

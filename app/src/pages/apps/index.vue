@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Icon from '~/components/common/Icon.vue'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Badge } from '~/components/ui/badge'
@@ -8,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Textarea } from '~/components/ui/textarea'
+import { useApps } from '~/graphql'
 
 const router = useRouter()
 

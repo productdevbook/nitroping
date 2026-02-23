@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import Icon from '~/components/common/Icon.vue'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useDashboardStats, useApps, useRecentNotifications, useSendNotification } from '~/graphql'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'

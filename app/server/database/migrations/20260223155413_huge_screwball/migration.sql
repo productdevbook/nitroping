@@ -1,28 +1,27 @@
-CREATE TYPE "public"."category" AS ENUM('CHROME', 'FIREFOX', 'SAFARI', 'EDGE', 'OPERA');--> statement-breakpoint
-CREATE TYPE "public"."delivery_status" AS ENUM('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'CLICKED');--> statement-breakpoint
-CREATE TYPE "public"."device_status" AS ENUM('ACTIVE', 'INACTIVE', 'EXPIRED');--> statement-breakpoint
-CREATE TYPE "public"."notification_status" AS ENUM('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SCHEDULED');--> statement-breakpoint
-CREATE TYPE "public"."platform" AS ENUM('IOS', 'ANDROID', 'WEB');--> statement-breakpoint
+CREATE TYPE "category" AS ENUM('CHROME', 'FIREFOX', 'SAFARI', 'EDGE', 'OPERA');--> statement-breakpoint
+CREATE TYPE "delivery_status" AS ENUM('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'CLICKED');--> statement-breakpoint
+CREATE TYPE "device_status" AS ENUM('ACTIVE', 'INACTIVE', 'EXPIRED');--> statement-breakpoint
+CREATE TYPE "notification_status" AS ENUM('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SCHEDULED');--> statement-breakpoint
+CREATE TYPE "platform" AS ENUM('IOS', 'ANDROID', 'WEB');--> statement-breakpoint
 CREATE TABLE "apiKey" (
-	"id" uuid PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY,
 	"appId" uuid NOT NULL,
 	"name" text NOT NULL,
-	"key" text NOT NULL,
+	"key" text NOT NULL UNIQUE,
 	"permissions" jsonb,
 	"isActive" boolean DEFAULT true,
 	"lastUsedAt" timestamp(3) with time zone,
 	"expiresAt" timestamp(3) with time zone,
 	"createdAt" timestamp(3) with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp(3) with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "apiKey_key_unique" UNIQUE("key")
+	"updatedAt" timestamp(3) with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "app" (
-	"id" uuid PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY,
 	"name" text NOT NULL,
-	"slug" text NOT NULL,
+	"slug" text NOT NULL UNIQUE,
 	"description" text,
-	"apiKey" text NOT NULL,
+	"apiKey" text NOT NULL UNIQUE,
 	"fcmServerKey" text,
 	"fcmProjectId" text,
 	"apnsCertificate" text,
@@ -34,13 +33,11 @@ CREATE TABLE "app" (
 	"vapidSubject" text,
 	"isActive" boolean DEFAULT true NOT NULL,
 	"createdAt" timestamp(3) with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp(3) with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "app_slug_unique" UNIQUE("slug"),
-	CONSTRAINT "app_apiKey_unique" UNIQUE("apiKey")
+	"updatedAt" timestamp(3) with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "deliveryLog" (
-	"id" uuid PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY,
 	"notificationId" uuid NOT NULL,
 	"deviceId" uuid NOT NULL,
 	"status" "delivery_status" NOT NULL,
@@ -61,14 +58,16 @@ CREATE TABLE "deliveryLog" (
 );
 --> statement-breakpoint
 CREATE TABLE "device" (
-	"id" uuid PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY,
 	"appId" uuid NOT NULL,
 	"token" text NOT NULL,
 	"category" "category",
 	"platform" "platform" NOT NULL,
 	"userId" text,
-	"status" "device_status" DEFAULT 'ACTIVE' NOT NULL,
+	"status" "device_status" DEFAULT 'ACTIVE'::"device_status" NOT NULL,
 	"metadata" jsonb,
+	"webPushP256dh" text,
+	"webPushAuth" text,
 	"lastSeenAt" timestamp(3) with time zone,
 	"createdAt" timestamp(3) with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp(3) with time zone DEFAULT now() NOT NULL,
@@ -76,7 +75,7 @@ CREATE TABLE "device" (
 );
 --> statement-breakpoint
 CREATE TABLE "notification" (
-	"id" uuid PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY,
 	"appId" uuid NOT NULL,
 	"title" text NOT NULL,
 	"body" text NOT NULL,
@@ -91,7 +90,7 @@ CREATE TABLE "notification" (
 	"platforms" jsonb,
 	"scheduledAt" timestamp(3) with time zone,
 	"expiresAt" timestamp(3) with time zone,
-	"status" "notification_status" DEFAULT 'PENDING' NOT NULL,
+	"status" "notification_status" DEFAULT 'PENDING'::"notification_status" NOT NULL,
 	"totalTargets" integer DEFAULT 0 NOT NULL,
 	"totalSent" integer DEFAULT 0 NOT NULL,
 	"totalDelivered" integer DEFAULT 0 NOT NULL,
@@ -102,8 +101,8 @@ CREATE TABLE "notification" (
 	"updatedAt" timestamp(3) with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "apiKey" ADD CONSTRAINT "apiKey_appId_app_id_fk" FOREIGN KEY ("appId") REFERENCES "public"."app"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "deliveryLog" ADD CONSTRAINT "deliveryLog_notificationId_notification_id_fk" FOREIGN KEY ("notificationId") REFERENCES "public"."notification"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "deliveryLog" ADD CONSTRAINT "deliveryLog_deviceId_device_id_fk" FOREIGN KEY ("deviceId") REFERENCES "public"."device"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "device" ADD CONSTRAINT "device_appId_app_id_fk" FOREIGN KEY ("appId") REFERENCES "public"."app"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "notification" ADD CONSTRAINT "notification_appId_app_id_fk" FOREIGN KEY ("appId") REFERENCES "public"."app"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "apiKey" ADD CONSTRAINT "apiKey_appId_app_id_fkey" FOREIGN KEY ("appId") REFERENCES "app"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "deliveryLog" ADD CONSTRAINT "deliveryLog_notificationId_notification_id_fkey" FOREIGN KEY ("notificationId") REFERENCES "notification"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "deliveryLog" ADD CONSTRAINT "deliveryLog_deviceId_device_id_fkey" FOREIGN KEY ("deviceId") REFERENCES "device"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "device" ADD CONSTRAINT "device_appId_app_id_fkey" FOREIGN KEY ("appId") REFERENCES "app"("id") ON DELETE CASCADE;--> statement-breakpoint
+ALTER TABLE "notification" ADD CONSTRAINT "notification_appId_app_id_fkey" FOREIGN KEY ("appId") REFERENCES "app"("id") ON DELETE CASCADE;

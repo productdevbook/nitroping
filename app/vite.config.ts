@@ -9,7 +9,7 @@ import pkg from './package.json' with { type: 'json' }
 
 export default defineConfig({
   server: {
-    port: Number(process.env.PORT ?? 3100),
+    port: Number(process.env.PORT ?? 3412),
     allowedHosts: [
       'localhost',
       'nitroping.localhost',
@@ -30,7 +30,6 @@ export default defineConfig({
         enabled: true,
         websocket: { enabled: true },
       },
-      skipLocalScan: true,
       sdk: {
         enabled: true,
         main: './.graphql/default/sdk.ts',

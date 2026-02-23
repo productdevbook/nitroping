@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import Icon from '~/components/common/Icon.vue'
+import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useApp, useConfigureFCM } from '~/graphql'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'

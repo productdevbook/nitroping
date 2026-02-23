@@ -1,5 +1,5 @@
 import { and, eq, gte, sql } from 'drizzle-orm'
-import { defineField } from 'nitro-graphql/utils/define'
+import { defineField } from 'nitro-graphql/define'
 
 export const appFieldsResolver = defineField({
   App: {

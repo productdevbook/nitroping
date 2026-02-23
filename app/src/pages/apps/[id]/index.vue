@@ -1,12 +1,18 @@
 <script setup lang="ts">
+import { usePush } from 'notivue'
+import Icon from '~/components/common/Icon.vue'
+import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
+import AppNavigation from '~/components/app/AppNavigation.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useApp } from '~/graphql'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
 
 const route = useRoute()
 const appId = computed(() => route.params.id as string)
+const push = usePush()
 
 // API queries
 const { data: appData } = useApp(appId)

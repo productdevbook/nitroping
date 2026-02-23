@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm'
-import { defineQuery } from 'nitro-graphql/utils/define'
+import { defineQuery } from 'nitro-graphql/define'
 
 export const getEngagementMetricsQuery = defineQuery({
   getEngagementMetrics: {

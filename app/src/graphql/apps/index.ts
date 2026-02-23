@@ -1,4 +1,7 @@
+import { ref, isRef } from 'vue'
+import type { Ref } from 'vue'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
+import { $sdk } from '../default/ofetch'
 
 // Apps queries
 export function useApps() {

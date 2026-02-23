@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Icon from '~/components/common/Icon.vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Badge } from '~/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'

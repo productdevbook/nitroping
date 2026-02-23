@@ -1,5 +1,5 @@
 import { count, eq, gte, sql } from 'drizzle-orm'
-import { defineQuery } from 'nitro-graphql/utils/define'
+import { defineQuery } from 'nitro-graphql/define'
 
 export const statsQuery = defineQuery({
   dashboardStats: {

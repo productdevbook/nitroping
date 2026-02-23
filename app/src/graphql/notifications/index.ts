@@ -1,4 +1,7 @@
+import { unref } from 'vue'
+import type { Ref } from 'vue'
 import { useMutation, useQuery } from '@pinia/colada'
+import { $sdk } from '../default/ofetch'
 
 // Notification queries
 export function useNotificationApi(appId: Ref<string> | string) {

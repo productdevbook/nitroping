@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Icon from '~/components/common/Icon.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { SidebarProps } from '~/components/ui/sidebar'

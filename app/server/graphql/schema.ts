@@ -1,4 +1,4 @@
-import { defineSchema } from 'nitro-graphql/utils/define'
+import { defineSchema } from 'nitro-graphql/define'
 import { selectApiKeySchema } from '#server/database/schema/apiKey'
 import { selectAppSchema } from '#server/database/schema/app'
 import { selectDeliveryLogSchema } from '#server/database/schema/deliveryLog'

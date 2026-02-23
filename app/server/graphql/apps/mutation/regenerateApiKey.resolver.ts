@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { defineMutation } from 'nitro-graphql/utils/define'
+import { defineMutation } from 'nitro-graphql/define'
 import { generateApiKey } from '#server/utils/auth'
 
 export const regenerateApiKeyMutation = defineMutation({

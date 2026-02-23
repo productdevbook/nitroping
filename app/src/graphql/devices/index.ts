@@ -1,5 +1,8 @@
+import { ref } from 'vue'
+import type { Ref } from 'vue'
 import type { RegisterDeviceInput } from '#graphql/client'
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
+import { $sdk } from '../default/ofetch'
 
 // Device queries
 export function useDevices(appId: Ref<string | null> | string | null) {

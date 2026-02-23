@@ -1,4 +1,4 @@
-import { defineField } from 'nitro-graphql/utils/define'
+import { defineField } from 'nitro-graphql/define'
 
 export const notificationFieldsResolver = defineField({
   Notification: {

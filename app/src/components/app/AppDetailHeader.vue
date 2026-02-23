@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import Icon from '~/components/common/Icon.vue'
 import { useRouter } from 'vue-router'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
