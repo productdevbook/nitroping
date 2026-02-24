@@ -7,7 +7,6 @@ import { MiniMap } from '@vue-flow/minimap'
 import { computed, markRaw, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
 import { Button } from '~/components/ui/button'
 import DelayNode from '~/components/workflow/nodes/DelayNode.vue'
 import FilterNode from '~/components/workflow/nodes/FilterNode.vue'
@@ -142,8 +141,7 @@ async function saveWorkflow() {
   <div class="flex flex-col h-screen">
     <div class="flex-none px-6 pt-4 pb-0">
       <AppDetailHeader :app="app" />
-      <AppNavigation :app-id="appId" />
-    </div>
+      </div>
 
     <div class="flex-none px-6 py-3 flex items-center justify-between border-b">
       <div>

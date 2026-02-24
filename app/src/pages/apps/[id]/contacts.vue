@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent } from '~/components/ui/card'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
@@ -46,7 +45,6 @@ async function handleDelete(id: string) {
 <template>
   <div>
     <AppDetailHeader :app="app" />
-    <AppNavigation :app-id="appId" />
 
     <div class="flex items-center justify-between mb-6">
       <div>

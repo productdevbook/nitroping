@@ -2,7 +2,6 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
 import Icon from '~/components/common/Icon.vue'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
@@ -117,7 +116,6 @@ const canDelete = computed(() => {
     <AppDetailHeader :app="app" />
 
     <!-- Navigation -->
-    <AppNavigation :app-id="appId" />
 
     <!-- Settings Content -->
     <div class="space-y-6">

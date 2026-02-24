@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent } from '~/components/ui/card'
 import { Checkbox } from '~/components/ui/checkbox'
@@ -67,7 +66,6 @@ async function handleCreate() {
 <template>
   <div>
     <AppDetailHeader :app="app" />
-    <AppNavigation :app-id="appId" />
 
     <div class="flex items-center justify-between mb-6">
       <div>

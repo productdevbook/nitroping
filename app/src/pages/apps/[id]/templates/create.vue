@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
@@ -44,7 +43,6 @@ async function handleCreate() {
 <template>
   <div>
     <AppDetailHeader :app="app" />
-    <AppNavigation :app-id="appId" />
 
     <div class="mb-6">
       <h2 class="text-xl font-semibold">

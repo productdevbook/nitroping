@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
 
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -57,7 +56,6 @@ async function toggleStatus(wf: any) {
 <template>
   <div>
     <AppDetailHeader :app="app" />
-    <AppNavigation :app-id="appId" />
 
     <div class="flex items-center justify-between mb-6">
       <div>

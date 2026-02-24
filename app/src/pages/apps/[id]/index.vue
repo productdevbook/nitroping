@@ -3,7 +3,6 @@ import { usePush } from 'notivue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
 import Icon from '~/components/common/Icon.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -99,7 +98,6 @@ onMounted(() => {
     <AppDetailHeader :app="app" />
 
     <!-- Navigation -->
-    <AppNavigation :app-id="appId" />
 
     <!-- Overview Content -->
     <div class="space-y-6">

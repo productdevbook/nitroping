@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
 import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -37,7 +36,6 @@ function configureWebPush() {
     <AppDetailHeader :app="app" />
 
     <!-- Navigation -->
-    <AppNavigation :app-id="appId" />
 
     <!-- Providers Content -->
     <div class="space-y-6">
