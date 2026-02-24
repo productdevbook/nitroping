@@ -12,7 +12,7 @@ if (!JWT_SECRET) {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('[Auth] JWT_SECRET environment variable must be set in production')
   }
-  // eslint-disable-next-line no-console
+
   console.warn('[Auth] WARNING: JWT_SECRET is not set. Using insecure default – set JWT_SECRET before deploying to production.')
 }
 

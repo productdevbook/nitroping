@@ -6,8 +6,8 @@
       "~/*": ["./src/*"],
       "@/*": ["./src/*"],
       "#server/*": ["./server/*"],
-      "#graphql/client": ["./.graphql/types/nitro-graphql-client.d.ts", "./.graphql/nitro-graphql-client.d.ts"],
-      "#graphql/server": ["./.graphql/types/nitro-graphql-server.d.ts", "./.graphql/nitro-graphql-server.d.ts"],
+      "#graphql/client": ["./.graphql/nitro-graphql-client.d.ts"],
+      "#graphql/server": ["./.graphql/nitro-graphql-server.d.ts"],
       "#graphql/*": ["./.graphql/*"]
     }
   },
