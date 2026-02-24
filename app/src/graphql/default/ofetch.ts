@@ -1,7 +1,7 @@
 // This file is auto-generated once by nitro-graphql for quick start
 // You can modify this file according to your needs
-import type { Requester } from './sdk'
-import { getSdk } from './sdk'
+import type { Requester } from '#graphql/default/sdk'
+import { getSdk } from '#graphql/default/sdk'
 
 export function createGraphQLClient(endpoint: string): Requester {
   return async <R>(doc: string, vars?: any): Promise<R> => {

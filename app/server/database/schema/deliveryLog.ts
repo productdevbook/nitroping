@@ -1,4 +1,4 @@
-import { index, integer, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
+import { index, integer, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { device } from './device'

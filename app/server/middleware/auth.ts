@@ -1,4 +1,4 @@
-import { defineEventHandler, getQuery, HTTPError } from 'nitro/h3'
+import { defineEventHandler } from 'nitro/h3'
 import { extractAuthFromEvent } from '../utils/auth'
 
 export default defineEventHandler(async (event) => {

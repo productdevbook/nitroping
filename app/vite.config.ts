@@ -24,7 +24,7 @@ export default defineConfig({
     // graphql() must be BEFORE nitro()
     graphql({
       serverDir: 'server',
-      clientDir: './server/.graphql',
+      clientDir: './src/graphql',
       framework: 'graphql-yoga',
       subscriptions: {
         enabled: true,
