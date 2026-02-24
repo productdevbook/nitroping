@@ -1,9 +1,9 @@
-import { defineEventHandler, getRouterParam } from 'nitro/h3'
+import { defineEventHandler, getQuery, HTTPError } from 'nitro/h3'
 import { extractAuthFromEvent } from '../utils/auth'
 
 export default defineEventHandler(async (event) => {
   // Skip auth for health check and public routes
-  const url = getRouterParam(event, '_') || event.path || ''
+  const pathname = event.url.pathname
 
   const publicRoutes = [
     '/api/health',
@@ -11,9 +11,9 @@ export default defineEventHandler(async (event) => {
     '/api/v1/apps/create',
   ]
 
-  const isPublicRoute = publicRoutes.some(route => url.startsWith(route))
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
 
-  if (isPublicRoute || !url.startsWith('/api/v1/')) {
+  if (isPublicRoute || !pathname.startsWith('/api/v1/')) {
     return
   }
 

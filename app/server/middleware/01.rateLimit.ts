@@ -1,9 +1,9 @@
-import { defineEventHandler, getHeader, getQuery, getRequestIP, HTTPError, setHeader } from 'nitro/h3'
+import { defineEventHandler, getQuery, getRequestIP, HTTPError } from 'nitro/h3'
 import { getRateLimiter } from '../utils/rateLimiter'
 
 export default defineEventHandler(async (event) => {
   // Only apply rate limiting to GraphQL endpoint
-  if (!event.path.startsWith('/api/graphql')) {
+  if (!event.url.pathname.startsWith('/api/graphql')) {
     return
   }
 
@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Get API key from header or query
-  const apiKey = getHeader(event, 'x-api-key')
+  const apiKey = event.req.headers.get('x-api-key')
     || getQuery(event).apiKey as string
     || null
 
@@ -25,9 +25,9 @@ export default defineEventHandler(async (event) => {
   const result = await limiter.consume(rateLimitKey)
 
   // Set rate limit headers
-  setHeader(event, 'X-RateLimit-Limit', result.limit.toString())
-  setHeader(event, 'X-RateLimit-Remaining', result.remaining.toString())
-  setHeader(event, 'X-RateLimit-Reset', Math.floor(result.resetAt / 1000).toString())
+  event.res.headers.set('X-RateLimit-Limit', result.limit.toString())
+  event.res.headers.set('X-RateLimit-Remaining', result.remaining.toString())
+  event.res.headers.set('X-RateLimit-Reset', Math.floor(result.resetAt / 1000).toString())
 
   if (!result.allowed) {
     throw new HTTPError({

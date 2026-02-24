@@ -2,7 +2,7 @@ import type { H3Event } from 'nitro/h3'
 import { randomBytes } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import jwt from 'jsonwebtoken'
-import { getHeader, HTTPError } from 'nitro/h3'
+import { HTTPError } from 'nitro/h3'
 import { getDatabase } from '../database/connection'
 import { apiKey, app } from '../database/schema'
 
@@ -113,7 +113,7 @@ export async function verifyApiKey(apiKeyValue: string) {
 }
 
 export async function extractAuthFromEvent(event: H3Event) {
-  const authHeader = getHeader(event, 'authorization')
+  const authHeader = event.req.headers.get('authorization')
 
   if (!authHeader) {
     throw new HTTPError({
