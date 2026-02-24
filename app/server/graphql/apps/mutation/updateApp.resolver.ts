@@ -1,6 +1,8 @@
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 import { HTTPError } from 'nitro/h3'
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 
 export const updateAppMutation = defineMutation({
   updateApp: {
@@ -9,7 +11,6 @@ export const updateAppMutation = defineMutation({
       // const app = await requireAuth(context)
       // if (app.id !== id) throw new HTTPError({ status: 403, message: 'Forbidden' })
 
-      const { useDatabase, tables } = context
       const db = useDatabase()
 
       const updatedApp = await db

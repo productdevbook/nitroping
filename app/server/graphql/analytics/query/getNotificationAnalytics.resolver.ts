@@ -1,11 +1,12 @@
 import { eq } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
 import { HTTPError } from 'nitro/h3'
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 
 export const getNotificationAnalyticsQuery = defineQuery({
   getNotificationAnalytics: {
     resolve: async (_parent, { notificationId }, { context }) => {
-      const { useDatabase, tables } = context
       const db = useDatabase()
 
       try {

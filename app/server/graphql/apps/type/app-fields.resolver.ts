@@ -1,5 +1,7 @@
 import { and, eq, gte, sql } from 'drizzle-orm'
 import { defineField } from 'nitro-graphql/define'
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 
 export const appFieldsResolver = defineField({
   App: {
@@ -31,7 +33,6 @@ export const appFieldsResolver = defineField({
 
     stats: {
       resolve: async (parent, _args, { context }) => {
-        const { useDatabase, tables } = context
         const db = useDatabase()
 
         const today = new Date()

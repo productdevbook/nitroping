@@ -2,11 +2,12 @@ import { generateApiKey } from '#server/utils/auth'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 import { HTTPError } from 'nitro/h3'
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 
 export const regenerateApiKeyMutation = defineMutation({
   regenerateApiKey: {
     resolve: async (_parent, { id }, { context }) => {
-      const { useDatabase, tables } = context
       const db = useDatabase()
 
       const newApiKey = await generateApiKey()

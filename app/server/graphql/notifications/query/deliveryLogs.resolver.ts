@@ -1,10 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 
 export const deliveryLogsQuery = defineQuery({
   deliveryLogs: {
     resolve: async (_parent, { notificationId, limit = 50, offset = 0 }, { context }) => {
-      const { useDatabase, tables } = context
       const db = useDatabase()
 
       const query = db

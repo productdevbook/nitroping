@@ -1,10 +1,11 @@
 import { count, eq, gte, sql } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 
 export const statsQuery = defineQuery({
   dashboardStats: {
     resolve: async (_parent, _args, { context }) => {
-      const { useDatabase, tables } = context
       const db = useDatabase()
 
       const yesterday = new Date()

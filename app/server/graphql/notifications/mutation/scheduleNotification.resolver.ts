@@ -1,11 +1,12 @@
 import { and, count, eq, inArray } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 import { HTTPError } from 'nitro/h3'
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 
 export const scheduleNotificationMutation = defineMutation({
   scheduleNotification: {
     resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
       const db = useDatabase()
 
       // Ensure scheduledAt is provided for scheduled notifications
