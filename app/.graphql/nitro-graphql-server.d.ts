@@ -478,6 +478,8 @@ export interface QueryAppStatsArgs {
 
 export interface QueryDeliveryLogsArgs {
   notificationId?: InputMaybe<Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 }
 
 
@@ -493,6 +495,8 @@ export interface QueryDeviceByTokenArgs {
 
 export interface QueryDevicesArgs {
   appId?: InputMaybe<Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 }
 
 
@@ -514,6 +518,8 @@ export interface QueryNotificationArgs {
 
 export interface QueryNotificationsArgs {
   appId?: InputMaybe<Scalars['ID']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 }
 
 
@@ -951,15 +957,15 @@ export type QueryResolvers<ContextType = H3Event, ParentType extends ResolversPa
   appStats?: Resolver<Maybe<ResolversTypes['AppStats']>, ParentType, ContextType, RequireFields<QueryAppStatsArgs, 'appId'>>;
   apps?: Resolver<Array<ResolversTypes['App']>, ParentType, ContextType>;
   dashboardStats?: Resolver<ResolversTypes['DashboardStats'], ParentType, ContextType>;
-  deliveryLogs?: Resolver<Array<ResolversTypes['DeliveryLog']>, ParentType, ContextType, Partial<QueryDeliveryLogsArgs>>;
+  deliveryLogs?: Resolver<Array<ResolversTypes['DeliveryLog']>, ParentType, ContextType, RequireFields<QueryDeliveryLogsArgs, 'limit' | 'offset'>>;
   device?: Resolver<Maybe<ResolversTypes['Device']>, ParentType, ContextType, RequireFields<QueryDeviceArgs, 'id'>>;
   deviceByToken?: Resolver<Maybe<ResolversTypes['Device']>, ParentType, ContextType, RequireFields<QueryDeviceByTokenArgs, 'token'>>;
-  devices?: Resolver<Array<ResolversTypes['Device']>, ParentType, ContextType, Partial<QueryDevicesArgs>>;
+  devices?: Resolver<Array<ResolversTypes['Device']>, ParentType, ContextType, RequireFields<QueryDevicesArgs, 'limit' | 'offset'>>;
   generateVapidKeys?: Resolver<ResolversTypes['VapidKeys'], ParentType, ContextType>;
   getEngagementMetrics?: Resolver<Maybe<ResolversTypes['EngagementMetrics']>, ParentType, ContextType, RequireFields<QueryGetEngagementMetricsArgs, 'appId'>>;
   getNotificationAnalytics?: Resolver<Maybe<ResolversTypes['NotificationAnalytics']>, ParentType, ContextType, RequireFields<QueryGetNotificationAnalyticsArgs, 'notificationId'>>;
   notification?: Resolver<Maybe<ResolversTypes['Notification']>, ParentType, ContextType, RequireFields<QueryNotificationArgs, 'id'>>;
-  notifications?: Resolver<Array<ResolversTypes['Notification']>, ParentType, ContextType, Partial<QueryNotificationsArgs>>;
+  notifications?: Resolver<Array<ResolversTypes['Notification']>, ParentType, ContextType, RequireFields<QueryNotificationsArgs, 'limit' | 'offset'>>;
   platformStats?: Resolver<Array<ResolversTypes['PlatformStats']>, ParentType, ContextType, Partial<QueryPlatformStatsArgs>>;
 };
 

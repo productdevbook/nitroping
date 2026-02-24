@@ -269,15 +269,15 @@ type Query {
   appStats(appId: ID!): AppStats
   apps: [App!]!
   dashboardStats: DashboardStats!
-  deliveryLogs(notificationId: ID): [DeliveryLog!]!
+  deliveryLogs(notificationId: ID, limit: Int = 50, offset: Int = 0): [DeliveryLog!]!
   device(id: ID!): Device
   deviceByToken(token: String!): Device
-  devices(appId: ID): [Device!]!
+  devices(appId: ID, limit: Int = 50, offset: Int = 0): [Device!]!
   generateVapidKeys: VapidKeys!
   getEngagementMetrics(appId: ID!, timeRange: String): EngagementMetrics
   getNotificationAnalytics(notificationId: ID!): NotificationAnalytics
   notification(id: ID!): Notification
-  notifications(appId: ID): [Notification!]!
+  notifications(appId: ID, limit: Int = 50, offset: Int = 0): [Notification!]!
   platformStats(appId: ID): [PlatformStats!]!
 }
 
