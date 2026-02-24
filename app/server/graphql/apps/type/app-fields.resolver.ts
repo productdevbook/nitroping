@@ -3,6 +3,11 @@ import { defineField } from 'nitro-graphql/define'
 
 export const appFieldsResolver = defineField({
   App: {
+    // Never return raw credential values to clients – even encrypted ones.
+    fcmServiceAccount: { resolve: () => null },
+    apnsPrivateKey: { resolve: () => null },
+    vapidPrivateKey: { resolve: () => null },
+
     devices: {
       resolve: async (parent, _args, { context }) => {
         const { dataloaders } = context
