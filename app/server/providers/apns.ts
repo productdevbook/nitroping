@@ -60,6 +60,30 @@ export interface APNsResponse {
   statusCode?: number
 }
 
+// Module-level HTTP/2 connection pool – one persistent connection per endpoint.
+// APNs supports up to 1500 concurrent streams per connection, so a single
+// connection is sufficient for most workloads and avoids the overhead of
+// creating a new TCP+TLS session for every notification.
+const connectionPool = new Map<string, import('node:http2').ClientHttp2Session>()
+
+async function getPooledConnection(endpoint: string): Promise<import('node:http2').ClientHttp2Session> {
+  const http2 = await import('node:http2')
+  const existing = connectionPool.get(endpoint)
+  if (existing && !existing.destroyed && !existing.closed) {
+    return existing
+  }
+
+  const session = http2.connect(endpoint)
+  session.on('error', () => connectionPool.delete(endpoint))
+  session.on('goaway', () => {
+    session.close()
+    connectionPool.delete(endpoint)
+  })
+  session.on('close', () => connectionPool.delete(endpoint))
+  connectionPool.set(endpoint, session)
+  return session
+}
+
 class APNsProvider {
   private config: APNsConfig
   private jwtToken: string | null = null
@@ -110,11 +134,10 @@ class APNsProvider {
 
   async sendMessage(message: APNsMessage): Promise<APNsResponse> {
     try {
-      const http2 = await import('node:http2')
       const jwt = await this.generateJWT()
       const endpoint = this.getAPNsEndpoint()
 
-      const client = http2.connect(endpoint)
+      const client = await getPooledConnection(endpoint)
 
       const headers: Record<string, string> = {
         ':method': 'POST',
@@ -172,7 +195,6 @@ class APNsProvider {
         })
 
         req.on('end', () => {
-          client.close()
           if (responseData && !req.destroyed) {
             try {
               const errorResponse = JSON.parse(responseData)
