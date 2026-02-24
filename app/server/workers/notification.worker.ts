@@ -1,7 +1,7 @@
 import type { Job } from 'bullmq'
 import type { ProcessScheduledJobData, RetryNotificationJobData, SendNotificationJobData } from '../queues/notification.queue'
 import { Worker } from 'bullmq'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { getDatabase } from '../database/connection'
 import { deliveryLog, notification } from '../database/schema'
 import { getProviderForApp } from '../providers'
@@ -65,20 +65,16 @@ async function processSendNotification(job: Job<SendNotificationJobData>) {
 
     // Update notification statistics
     if (result.success) {
-      await db.execute(`
-        UPDATE notification
-        SET "totalSent" = "totalSent" + 1,
-            "updatedAt" = NOW()
-        WHERE id = '${notificationId}'
-      `)
+      await db
+        .update(notification)
+        .set({ totalSent: sql`"totalSent" + 1`, updatedAt: new Date().toISOString() })
+        .where(eq(notification.id, notificationId))
     }
     else {
-      await db.execute(`
-        UPDATE notification
-        SET "totalFailed" = "totalFailed" + 1,
-            "updatedAt" = NOW()
-        WHERE id = '${notificationId}'
-      `)
+      await db
+        .update(notification)
+        .set({ totalFailed: sql`"totalFailed" + 1`, updatedAt: new Date().toISOString() })
+        .where(eq(notification.id, notificationId))
 
       // Queue for retry if not max attempts
       if (job.attemptsMade < MAX_RETRY_ATTEMPTS) {
@@ -105,12 +101,10 @@ async function processSendNotification(job: Job<SendNotificationJobData>) {
     })
 
     // Update failed count
-    await db.execute(`
-      UPDATE notification
-      SET "totalFailed" = "totalFailed" + 1,
-          "updatedAt" = NOW()
-      WHERE id = '${notificationId}'
-    `)
+    await db
+      .update(notification)
+      .set({ totalFailed: sql`"totalFailed" + 1`, updatedAt: new Date().toISOString() })
+      .where(eq(notification.id, notificationId))
 
     throw error
   }
