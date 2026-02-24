@@ -32,7 +32,7 @@ export const appFieldsResolver = defineField({
     },
 
     stats: {
-      resolve: async (parent, _args, { context }) => {
+      resolve: async (parent, _args, _ctx) => {
         const db = useDatabase()
 
         const today = new Date()
