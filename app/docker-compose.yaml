@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:18
+    image: postgres:17
     container_name: postgres_db
     restart: always
     environment:
@@ -10,7 +10,7 @@ services:
     ports:
       - '5433:5432'
     volumes:
-      - db_data:/var/lib/postgresql
+      - db_data:/var/lib/postgresql/data
   redis:
     image: redis:latest
     restart: always
