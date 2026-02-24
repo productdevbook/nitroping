@@ -493,7 +493,97 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     },
     dashboardStats(variables?: Types.DashboardStatsQueryVariables, options?: C): Promise<ExecutionResult<Types.DashboardStatsQuery, E>> {
       return requester<Types.DashboardStatsQuery, Types.DashboardStatsQueryVariables>(DashboardStatsDocument, variables, options) as Promise<ExecutionResult<Types.DashboardStatsQuery, E>>;
-    }
+    },
+    channels(variables: Types.ChannelsQueryVariables, options?: C): Promise<ExecutionResult<Types.ChannelsQuery, E>> {
+      return requester<Types.ChannelsQuery, Types.ChannelsQueryVariables>(`query channels($appId: ID!, $type: ChannelType) { channels(appId: $appId, type: $type) { id appId name type isActive createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.ChannelsQuery, E>>;
+    },
+    channel(variables: Types.ChannelQueryVariables, options?: C): Promise<ExecutionResult<Types.ChannelQuery, E>> {
+      return requester<Types.ChannelQuery, Types.ChannelQueryVariables>(`query channel($id: ID!) { channel(id: $id) { id appId name type isActive createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.ChannelQuery, E>>;
+    },
+    createChannel(variables: Types.CreateChannelMutationVariables, options?: C): Promise<ExecutionResult<Types.CreateChannelMutation, E>> {
+      return requester<Types.CreateChannelMutation, Types.CreateChannelMutationVariables>(`mutation createChannel($input: CreateChannelInput!) { createChannel(input: $input) { id appId name type isActive createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.CreateChannelMutation, E>>;
+    },
+    updateChannel(variables: Types.UpdateChannelMutationVariables, options?: C): Promise<ExecutionResult<Types.UpdateChannelMutation, E>> {
+      return requester<Types.UpdateChannelMutation, Types.UpdateChannelMutationVariables>(`mutation updateChannel($id: ID!, $input: UpdateChannelInput!) { updateChannel(id: $id, input: $input) { id name type isActive updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.UpdateChannelMutation, E>>;
+    },
+    deleteChannel(variables: Types.DeleteChannelMutationVariables, options?: C): Promise<ExecutionResult<Types.DeleteChannelMutation, E>> {
+      return requester<Types.DeleteChannelMutation, Types.DeleteChannelMutationVariables>(`mutation deleteChannel($id: ID!) { deleteChannel(id: $id) }`, variables, options) as Promise<ExecutionResult<Types.DeleteChannelMutation, E>>;
+    },
+    subscribers(variables: Types.SubscribersQueryVariables, options?: C): Promise<ExecutionResult<Types.SubscribersQuery, E>> {
+      return requester<Types.SubscribersQuery, Types.SubscribersQueryVariables>(`query subscribers($appId: ID!, $limit: Int, $offset: Int) { subscribers(appId: $appId, limit: $limit, offset: $offset) { id appId externalId email phone locale metadata createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.SubscribersQuery, E>>;
+    },
+    subscriber(variables: Types.SubscriberQueryVariables, options?: C): Promise<ExecutionResult<Types.SubscriberQuery, E>> {
+      return requester<Types.SubscriberQuery, Types.SubscriberQueryVariables>(`query subscriber($id: ID!) { subscriber(id: $id) { id appId externalId email phone locale metadata createdAt updatedAt preferences { id category channelType enabled } } }`, variables, options) as Promise<ExecutionResult<Types.SubscriberQuery, E>>;
+    },
+    subscriberByExternalId(variables: Types.SubscriberByExternalIdQueryVariables, options?: C): Promise<ExecutionResult<Types.SubscriberByExternalIdQuery, E>> {
+      return requester<Types.SubscriberByExternalIdQuery, Types.SubscriberByExternalIdQueryVariables>(`query subscriberByExternalId($appId: ID!, $externalId: String!) { subscriberByExternalId(appId: $appId, externalId: $externalId) { id appId externalId email phone locale metadata createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.SubscriberByExternalIdQuery, E>>;
+    },
+    createSubscriber(variables: Types.CreateSubscriberMutationVariables, options?: C): Promise<ExecutionResult<Types.CreateSubscriberMutation, E>> {
+      return requester<Types.CreateSubscriberMutation, Types.CreateSubscriberMutationVariables>(`mutation createSubscriber($input: CreateSubscriberInput!) { createSubscriber(input: $input) { id appId externalId email phone locale createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.CreateSubscriberMutation, E>>;
+    },
+    updateSubscriber(variables: Types.UpdateSubscriberMutationVariables, options?: C): Promise<ExecutionResult<Types.UpdateSubscriberMutation, E>> {
+      return requester<Types.UpdateSubscriberMutation, Types.UpdateSubscriberMutationVariables>(`mutation updateSubscriber($id: ID!, $input: UpdateSubscriberInput!) { updateSubscriber(id: $id, input: $input) { id externalId email phone locale updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.UpdateSubscriberMutation, E>>;
+    },
+    deleteSubscriber(variables: Types.DeleteSubscriberMutationVariables, options?: C): Promise<ExecutionResult<Types.DeleteSubscriberMutation, E>> {
+      return requester<Types.DeleteSubscriberMutation, Types.DeleteSubscriberMutationVariables>(`mutation deleteSubscriber($id: ID!) { deleteSubscriber(id: $id) }`, variables, options) as Promise<ExecutionResult<Types.DeleteSubscriberMutation, E>>;
+    },
+    upsertSubscriberDevice(variables: Types.UpsertSubscriberDeviceMutationVariables, options?: C): Promise<ExecutionResult<Types.UpsertSubscriberDeviceMutation, E>> {
+      return requester<Types.UpsertSubscriberDeviceMutation, Types.UpsertSubscriberDeviceMutationVariables>(`mutation upsertSubscriberDevice($input: UpsertSubscriberDeviceInput!) { upsertSubscriberDevice(input: $input) }`, variables, options) as Promise<ExecutionResult<Types.UpsertSubscriberDeviceMutation, E>>;
+    },
+    updateSubscriberPreference(variables: Types.UpdateSubscriberPreferenceMutationVariables, options?: C): Promise<ExecutionResult<Types.UpdateSubscriberPreferenceMutation, E>> {
+      return requester<Types.UpdateSubscriberPreferenceMutation, Types.UpdateSubscriberPreferenceMutationVariables>(`mutation updateSubscriberPreference($input: UpdateSubscriberPreferenceInput!) { updateSubscriberPreference(input: $input) { id subscriberId category channelType enabled updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.UpdateSubscriberPreferenceMutation, E>>;
+    },
+    templates(variables: Types.TemplatesQueryVariables, options?: C): Promise<ExecutionResult<Types.TemplatesQuery, E>> {
+      return requester<Types.TemplatesQuery, Types.TemplatesQueryVariables>(`query templates($appId: ID!, $channelType: ChannelType) { templates(appId: $appId, channelType: $channelType) { id appId channelId name channelType subject body htmlBody createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.TemplatesQuery, E>>;
+    },
+    template(variables: Types.TemplateQueryVariables, options?: C): Promise<ExecutionResult<Types.TemplateQuery, E>> {
+      return requester<Types.TemplateQuery, Types.TemplateQueryVariables>(`query template($id: ID!) { template(id: $id) { id appId channelId name channelType subject body htmlBody createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.TemplateQuery, E>>;
+    },
+    createTemplate(variables: Types.CreateTemplateMutationVariables, options?: C): Promise<ExecutionResult<Types.CreateTemplateMutation, E>> {
+      return requester<Types.CreateTemplateMutation, Types.CreateTemplateMutationVariables>(`mutation createTemplate($input: CreateTemplateInput!) { createTemplate(input: $input) { id appId channelId name channelType subject body htmlBody createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.CreateTemplateMutation, E>>;
+    },
+    updateTemplate(variables: Types.UpdateTemplateMutationVariables, options?: C): Promise<ExecutionResult<Types.UpdateTemplateMutation, E>> {
+      return requester<Types.UpdateTemplateMutation, Types.UpdateTemplateMutationVariables>(`mutation updateTemplate($id: ID!, $input: UpdateTemplateInput!) { updateTemplate(id: $id, input: $input) { id name subject body htmlBody updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.UpdateTemplateMutation, E>>;
+    },
+    deleteTemplate(variables: Types.DeleteTemplateMutationVariables, options?: C): Promise<ExecutionResult<Types.DeleteTemplateMutation, E>> {
+      return requester<Types.DeleteTemplateMutation, Types.DeleteTemplateMutationVariables>(`mutation deleteTemplate($id: ID!) { deleteTemplate(id: $id) }`, variables, options) as Promise<ExecutionResult<Types.DeleteTemplateMutation, E>>;
+    },
+    workflows(variables: Types.WorkflowsQueryVariables, options?: C): Promise<ExecutionResult<Types.WorkflowsQuery, E>> {
+      return requester<Types.WorkflowsQuery, Types.WorkflowsQueryVariables>(`query workflows($appId: ID!, $status: WorkflowStatus) { workflows(appId: $appId, status: $status) { id appId name triggerIdentifier triggerType status flowLayout createdAt updatedAt steps { id nodeId type order config } } }`, variables, options) as Promise<ExecutionResult<Types.WorkflowsQuery, E>>;
+    },
+    workflow(variables: Types.WorkflowQueryVariables, options?: C): Promise<ExecutionResult<Types.WorkflowQuery, E>> {
+      return requester<Types.WorkflowQuery, Types.WorkflowQueryVariables>(`query workflow($id: ID!) { workflow(id: $id) { id appId name triggerIdentifier triggerType status flowLayout createdAt updatedAt steps { id nodeId type order config } } }`, variables, options) as Promise<ExecutionResult<Types.WorkflowQuery, E>>;
+    },
+    workflowExecutions(variables: Types.WorkflowExecutionsQueryVariables, options?: C): Promise<ExecutionResult<Types.WorkflowExecutionsQuery, E>> {
+      return requester<Types.WorkflowExecutionsQuery, Types.WorkflowExecutionsQueryVariables>(`query workflowExecutions($workflowId: ID!, $limit: Int, $offset: Int) { workflowExecutions(workflowId: $workflowId, limit: $limit, offset: $offset) { id workflowId subscriberId triggerIdentifier payload status currentStepOrder errorMessage startedAt completedAt createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.WorkflowExecutionsQuery, E>>;
+    },
+    createWorkflow(variables: Types.CreateWorkflowMutationVariables, options?: C): Promise<ExecutionResult<Types.CreateWorkflowMutation, E>> {
+      return requester<Types.CreateWorkflowMutation, Types.CreateWorkflowMutationVariables>(`mutation createWorkflow($input: CreateWorkflowInput!) { createWorkflow(input: $input) { id appId name triggerIdentifier triggerType status flowLayout createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.CreateWorkflowMutation, E>>;
+    },
+    updateWorkflow(variables: Types.UpdateWorkflowMutationVariables, options?: C): Promise<ExecutionResult<Types.UpdateWorkflowMutation, E>> {
+      return requester<Types.UpdateWorkflowMutation, Types.UpdateWorkflowMutationVariables>(`mutation updateWorkflow($id: ID!, $input: UpdateWorkflowInput!) { updateWorkflow(id: $id, input: $input) { id name triggerIdentifier triggerType status flowLayout updatedAt steps { id nodeId type order config } } }`, variables, options) as Promise<ExecutionResult<Types.UpdateWorkflowMutation, E>>;
+    },
+    deleteWorkflow(variables: Types.DeleteWorkflowMutationVariables, options?: C): Promise<ExecutionResult<Types.DeleteWorkflowMutation, E>> {
+      return requester<Types.DeleteWorkflowMutation, Types.DeleteWorkflowMutationVariables>(`mutation deleteWorkflow($id: ID!) { deleteWorkflow(id: $id) }`, variables, options) as Promise<ExecutionResult<Types.DeleteWorkflowMutation, E>>;
+    },
+    triggerWorkflow(variables: Types.TriggerWorkflowMutationVariables, options?: C): Promise<ExecutionResult<Types.TriggerWorkflowMutation, E>> {
+      return requester<Types.TriggerWorkflowMutation, Types.TriggerWorkflowMutationVariables>(`mutation triggerWorkflow($input: TriggerWorkflowInput!) { triggerWorkflow(input: $input) { id workflowId status triggerIdentifier startedAt createdAt } }`, variables, options) as Promise<ExecutionResult<Types.TriggerWorkflowMutation, E>>;
+    },
+    hooks(variables: Types.HooksQueryVariables, options?: C): Promise<ExecutionResult<Types.HooksQuery, E>> {
+      return requester<Types.HooksQuery, Types.HooksQueryVariables>(`query hooks($appId: ID!) { hooks(appId: $appId) { id appId name url events isActive createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.HooksQuery, E>>;
+    },
+    hook(variables: Types.HookQueryVariables, options?: C): Promise<ExecutionResult<Types.HookQuery, E>> {
+      return requester<Types.HookQuery, Types.HookQueryVariables>(`query hook($id: ID!) { hook(id: $id) { id appId name url events isActive createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.HookQuery, E>>;
+    },
+    createHook(variables: Types.CreateHookMutationVariables, options?: C): Promise<ExecutionResult<Types.CreateHookMutation, E>> {
+      return requester<Types.CreateHookMutation, Types.CreateHookMutationVariables>(`mutation createHook($input: CreateHookInput!) { createHook(input: $input) { id appId name url events isActive createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.CreateHookMutation, E>>;
+    },
+    updateHook(variables: Types.UpdateHookMutationVariables, options?: C): Promise<ExecutionResult<Types.UpdateHookMutation, E>> {
+      return requester<Types.UpdateHookMutation, Types.UpdateHookMutationVariables>(`mutation updateHook($id: ID!, $input: UpdateHookInput!) { updateHook(id: $id, input: $input) { id name url events isActive updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.UpdateHookMutation, E>>;
+    },
+    deleteHook(variables: Types.DeleteHookMutationVariables, options?: C): Promise<ExecutionResult<Types.DeleteHookMutation, E>> {
+      return requester<Types.DeleteHookMutation, Types.DeleteHookMutationVariables>(`mutation deleteHook($id: ID!) { deleteHook(id: $id) }`, variables, options) as Promise<ExecutionResult<Types.DeleteHookMutation, E>>;
+    },
   };
 }
 export type Sdk = ReturnType<typeof getSdk>;

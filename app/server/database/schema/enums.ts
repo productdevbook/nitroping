@@ -15,3 +15,23 @@ export const notificationStatusEnum = pgEnum('notification_status', ['PENDING', 
 export const deviceStatusEnum = pgEnum('device_status', ['ACTIVE', 'INACTIVE', 'EXPIRED'])
 
 export const deliveryStatusEnum = pgEnum('delivery_status', ['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'CLICKED'])
+
+// Multi-channel platform enums
+export const channelTypeEnum = pgEnum('channelType', ['PUSH', 'EMAIL', 'SMS', 'IN_APP'])
+
+export const workflowStatusEnum = pgEnum('workflowStatus', ['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED'])
+
+export const workflowStepTypeEnum = pgEnum('workflowStepType', ['SEND', 'DELAY', 'FILTER', 'DIGEST', 'BRANCH'])
+
+export const workflowTriggerTypeEnum = pgEnum('workflowTriggerType', ['EVENT', 'SCHEDULED', 'MANUAL'])
+
+export const workflowExecutionStatusEnum = pgEnum('workflowExecutionStatus', ['RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED'])
+
+export const hookEventEnum = pgEnum('hookEvent', [
+  'NOTIFICATION_SENT',
+  'NOTIFICATION_DELIVERED',
+  'NOTIFICATION_FAILED',
+  'NOTIFICATION_CLICKED',
+  'WORKFLOW_COMPLETED',
+  'WORKFLOW_FAILED',
+])

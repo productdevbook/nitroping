@@ -1,0 +1,84 @@
+type Workflow {
+  id: ID!
+  appId: ID!
+  name: String!
+  triggerIdentifier: String!
+  triggerType: WorkflowTriggerType!
+  status: WorkflowStatus!
+  flowLayout: JSON
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+
+  # Relations
+  steps: [WorkflowStep!]
+}
+
+type WorkflowStep {
+  id: ID!
+  workflowId: ID!
+  nodeId: String
+  type: WorkflowStepType!
+  order: Int!
+  config: JSON
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type WorkflowExecution {
+  id: ID!
+  workflowId: ID!
+  subscriberId: ID
+  triggerIdentifier: String!
+  payload: JSON
+  status: WorkflowExecutionStatus!
+  currentStepOrder: Int!
+  errorMessage: String
+  startedAt: Timestamp!
+  completedAt: Timestamp
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+input CreateWorkflowInput {
+  appId: ID!
+  name: String!
+  triggerIdentifier: String!
+  triggerType: WorkflowTriggerType
+  steps: [WorkflowStepInput!]
+  flowLayout: JSON
+}
+
+input UpdateWorkflowInput {
+  name: String
+  triggerIdentifier: String
+  triggerType: WorkflowTriggerType
+  status: WorkflowStatus
+  steps: [WorkflowStepInput!]
+  flowLayout: JSON
+}
+
+input WorkflowStepInput {
+  nodeId: String
+  type: WorkflowStepType!
+  order: Int!
+  config: JSON
+}
+
+input TriggerWorkflowInput {
+  workflowId: ID!
+  subscriberId: ID
+  payload: JSON
+}
+
+extend type Query {
+  workflows(appId: ID!, status: WorkflowStatus): [Workflow!]!
+  workflow(id: ID!): Workflow
+  workflowExecutions(workflowId: ID!, limit: Int = 50, offset: Int = 0): [WorkflowExecution!]!
+}
+
+extend type Mutation {
+  createWorkflow(input: CreateWorkflowInput!): Workflow!
+  updateWorkflow(id: ID!, input: UpdateWorkflowInput!): Workflow!
+  deleteWorkflow(id: ID!): Boolean!
+  triggerWorkflow(input: TriggerWorkflowInput!): WorkflowExecution!
+}

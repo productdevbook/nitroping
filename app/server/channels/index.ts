@@ -1,0 +1,83 @@
+import type { Channel } from './types'
+import { getDatabase } from '#server/database/connection'
+import * as tables from '#server/database/schema'
+import { decryptSensitiveData, isDataEncrypted } from '#server/utils/crypto'
+import { and, eq } from 'drizzle-orm'
+import { EmailChannel } from './email.channel'
+
+export type { Channel, ChannelMessage, ChannelResult } from './types'
+export { EmailChannel } from './email.channel'
+export { PushChannel } from './push.channel'
+
+/**
+ * Load a channel by its DB id and return a ready-to-use Channel instance.
+ */
+export async function getChannelById(channelId: string): Promise<Channel> {
+  const db = getDatabase()
+
+  const rows = await db
+    .select()
+    .from(tables.channel)
+    .where(eq(tables.channel.id, channelId))
+    .limit(1)
+
+  if (!rows[0]) {
+    throw new Error(`Channel not found: ${channelId}`)
+  }
+
+  return buildChannel(rows[0])
+}
+
+/**
+ * Load the first active channel of a given type for an app.
+ */
+export async function getChannelForApp(
+  appId: string,
+  type: 'PUSH' | 'EMAIL' | 'SMS' | 'IN_APP',
+): Promise<Channel> {
+  const db = getDatabase()
+
+  const rows = await db
+    .select()
+    .from(tables.channel)
+    .where(
+      and(
+        eq(tables.channel.appId, appId),
+        eq(tables.channel.type, type),
+        eq(tables.channel.isActive, true),
+      ),
+    )
+    .limit(1)
+
+  if (!rows[0]) {
+    throw new Error(`No active ${type} channel configured for app ${appId}`)
+  }
+
+  return buildChannel(rows[0])
+}
+
+function buildChannel(row: typeof tables.channel.$inferSelect): Channel {
+  const rawConfig = row.config as any
+
+  switch (row.type) {
+    case 'EMAIL': {
+      if (!rawConfig) {
+        throw new Error('Email channel is missing config')
+      }
+
+      // Decrypt sensitive fields if encrypted
+      const config = { ...rawConfig }
+      if (config.pass && isDataEncrypted(config.pass)) {
+        config.pass = decryptSensitiveData(config.pass)
+      }
+      if (config.apiKey && isDataEncrypted(config.apiKey)) {
+        config.apiKey = decryptSensitiveData(config.apiKey)
+      }
+
+      return new EmailChannel(config)
+    }
+
+    default:
+      throw new Error(`Cannot instantiate channel of type ${row.type} via this factory`)
+  }
+}

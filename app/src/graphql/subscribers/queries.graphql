@@ -1,0 +1,47 @@
+query subscribers($appId: ID!, $limit: Int, $offset: Int) {
+  subscribers(appId: $appId, limit: $limit, offset: $offset) {
+    id
+    appId
+    externalId
+    email
+    phone
+    locale
+    metadata
+    createdAt
+    updatedAt
+  }
+}
+
+query subscriber($id: ID!) {
+  subscriber(id: $id) {
+    id
+    appId
+    externalId
+    email
+    phone
+    locale
+    metadata
+    createdAt
+    updatedAt
+    preferences {
+      id
+      category
+      channelType
+      enabled
+    }
+  }
+}
+
+query subscriberByExternalId($appId: ID!, $externalId: String!) {
+  subscriberByExternalId(appId: $appId, externalId: $externalId) {
+    id
+    appId
+    externalId
+    email
+    phone
+    locale
+    metadata
+    createdAt
+    updatedAt
+  }
+}

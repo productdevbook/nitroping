@@ -1,0 +1,25 @@
+query hooks($appId: ID!) {
+  hooks(appId: $appId) {
+    id
+    appId
+    name
+    url
+    events
+    isActive
+    createdAt
+    updatedAt
+  }
+}
+
+query hook($id: ID!) {
+  hook(id: $id) {
+    id
+    appId
+    name
+    url
+    events
+    isActive
+    createdAt
+    updatedAt
+  }
+}

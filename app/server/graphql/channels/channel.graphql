@@ -1,0 +1,36 @@
+type Channel {
+  id: ID!
+  appId: ID!
+  name: String!
+  type: ChannelType!
+  # config always resolves to null for security — never expose credentials
+  config: JSON
+  isActive: Boolean!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+input CreateChannelInput {
+  appId: ID!
+  name: String!
+  type: ChannelType!
+  # Accepts SMTP/Resend config — stored encrypted
+  config: JSON
+}
+
+input UpdateChannelInput {
+  name: String
+  config: JSON
+  isActive: Boolean
+}
+
+extend type Query {
+  channels(appId: ID!, type: ChannelType): [Channel!]!
+  channel(id: ID!): Channel
+}
+
+extend type Mutation {
+  createChannel(input: CreateChannelInput!): Channel!
+  updateChannel(id: ID!, input: UpdateChannelInput!): Channel!
+  deleteChannel(id: ID!): Boolean!
+}

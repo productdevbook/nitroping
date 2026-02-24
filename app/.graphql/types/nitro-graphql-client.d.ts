@@ -701,3 +701,115 @@ export type DashboardStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type DashboardStatsQuery = { __typename?: 'Query', dashboardStats: { __typename?: 'DashboardStats', totalApps: number, activeDevices: number, notificationsSent: number, deliveryRate: number } };
+
+// --- Channels ---
+export type ChannelsQueryVariables = Exact<{
+  appId: Scalars['ID']['input'];
+  type?: InputMaybe<ChannelType>;
+}>;
+export type ChannelsQuery = { __typename?: 'Query', channels: Array<{ __typename?: 'Channel', id: string, appId: string, name: string, type: ChannelType, isActive: boolean, createdAt: string, updatedAt: string }> };
+
+export type ChannelQueryVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type ChannelQuery = { __typename?: 'Query', channel?: { __typename?: 'Channel', id: string, appId: string, name: string, type: ChannelType, isActive: boolean, createdAt: string, updatedAt: string } | null | undefined };
+
+export type CreateChannelMutationVariables = Exact<{ input: CreateChannelInput; }>;
+export type CreateChannelMutation = { __typename?: 'Mutation', createChannel: { __typename?: 'Channel', id: string, appId: string, name: string, type: ChannelType, isActive: boolean, createdAt: string, updatedAt: string } };
+
+export type UpdateChannelMutationVariables = Exact<{ id: Scalars['ID']['input']; input: UpdateChannelInput; }>;
+export type UpdateChannelMutation = { __typename?: 'Mutation', updateChannel: { __typename?: 'Channel', id: string, name: string, type: ChannelType, isActive: boolean, updatedAt: string } };
+
+export type DeleteChannelMutationVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type DeleteChannelMutation = { __typename?: 'Mutation', deleteChannel: boolean };
+
+// --- Subscribers ---
+export type SubscribersQueryVariables = Exact<{
+  appId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+export type SubscribersQuery = { __typename?: 'Query', subscribers: Array<{ __typename?: 'Subscriber', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string }> };
+
+export type SubscriberQueryVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type SubscriberQuery = { __typename?: 'Query', subscriber?: { __typename?: 'Subscriber', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string, preferences?: Array<{ __typename?: 'SubscriberPreference', id: string, category: string, channelType: ChannelType, enabled: boolean }> | null | undefined } | null | undefined };
+
+export type SubscriberByExternalIdQueryVariables = Exact<{ appId: Scalars['ID']['input']; externalId: Scalars['String']['input']; }>;
+export type SubscriberByExternalIdQuery = { __typename?: 'Query', subscriberByExternalId?: { __typename?: 'Subscriber', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string } | null | undefined };
+
+export type CreateSubscriberMutationVariables = Exact<{ input: CreateSubscriberInput; }>;
+export type CreateSubscriberMutation = { __typename?: 'Mutation', createSubscriber: { __typename?: 'Subscriber', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, createdAt: string, updatedAt: string } };
+
+export type UpdateSubscriberMutationVariables = Exact<{ id: Scalars['ID']['input']; input: UpdateSubscriberInput; }>;
+export type UpdateSubscriberMutation = { __typename?: 'Mutation', updateSubscriber: { __typename?: 'Subscriber', id: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, updatedAt: string } };
+
+export type DeleteSubscriberMutationVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type DeleteSubscriberMutation = { __typename?: 'Mutation', deleteSubscriber: boolean };
+
+export type UpsertSubscriberDeviceMutationVariables = Exact<{ input: UpsertSubscriberDeviceInput; }>;
+export type UpsertSubscriberDeviceMutation = { __typename?: 'Mutation', upsertSubscriberDevice: boolean };
+
+export type UpdateSubscriberPreferenceMutationVariables = Exact<{ input: UpdateSubscriberPreferenceInput; }>;
+export type UpdateSubscriberPreferenceMutation = { __typename?: 'Mutation', updateSubscriberPreference: { __typename?: 'SubscriberPreference', id: string, subscriberId: string, category: string, channelType: ChannelType, enabled: boolean, updatedAt: string } };
+
+// --- Templates ---
+export type TemplatesQueryVariables = Exact<{
+  appId: Scalars['ID']['input'];
+  channelType?: InputMaybe<ChannelType>;
+}>;
+export type TemplatesQuery = { __typename?: 'Query', templates: Array<{ __typename?: 'Template', id: string, appId: string, channelId?: string | null | undefined, name: string, channelType: ChannelType, subject?: string | null | undefined, body: string, htmlBody?: string | null | undefined, createdAt: string, updatedAt: string }> };
+
+export type TemplateQueryVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type TemplateQuery = { __typename?: 'Query', template?: { __typename?: 'Template', id: string, appId: string, channelId?: string | null | undefined, name: string, channelType: ChannelType, subject?: string | null | undefined, body: string, htmlBody?: string | null | undefined, createdAt: string, updatedAt: string } | null | undefined };
+
+export type CreateTemplateMutationVariables = Exact<{ input: CreateTemplateInput; }>;
+export type CreateTemplateMutation = { __typename?: 'Mutation', createTemplate: { __typename?: 'Template', id: string, appId: string, channelId?: string | null | undefined, name: string, channelType: ChannelType, subject?: string | null | undefined, body: string, htmlBody?: string | null | undefined, createdAt: string, updatedAt: string } };
+
+export type UpdateTemplateMutationVariables = Exact<{ id: Scalars['ID']['input']; input: UpdateTemplateInput; }>;
+export type UpdateTemplateMutation = { __typename?: 'Mutation', updateTemplate: { __typename?: 'Template', id: string, name: string, subject?: string | null | undefined, body: string, htmlBody?: string | null | undefined, updatedAt: string } };
+
+export type DeleteTemplateMutationVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type DeleteTemplateMutation = { __typename?: 'Mutation', deleteTemplate: boolean };
+
+// --- Workflows ---
+export type WorkflowsQueryVariables = Exact<{
+  appId: Scalars['ID']['input'];
+  status?: InputMaybe<WorkflowStatus>;
+}>;
+export type WorkflowsQuery = { __typename?: 'Query', workflows: Array<{ __typename?: 'Workflow', id: string, appId: string, name: string, triggerIdentifier: string, triggerType: WorkflowTriggerType, status: WorkflowStatus, flowLayout?: any | null | undefined, createdAt: string, updatedAt: string, steps?: Array<{ __typename?: 'WorkflowStep', id: string, nodeId?: string | null | undefined, type: WorkflowStepType, order: number, config?: any | null | undefined }> | null | undefined }> };
+
+export type WorkflowQueryVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type WorkflowQuery = { __typename?: 'Query', workflow?: { __typename?: 'Workflow', id: string, appId: string, name: string, triggerIdentifier: string, triggerType: WorkflowTriggerType, status: WorkflowStatus, flowLayout?: any | null | undefined, createdAt: string, updatedAt: string, steps?: Array<{ __typename?: 'WorkflowStep', id: string, nodeId?: string | null | undefined, type: WorkflowStepType, order: number, config?: any | null | undefined }> | null | undefined } | null | undefined };
+
+export type WorkflowExecutionsQueryVariables = Exact<{
+  workflowId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+export type WorkflowExecutionsQuery = { __typename?: 'Query', workflowExecutions: Array<{ __typename?: 'WorkflowExecution', id: string, workflowId: string, subscriberId?: string | null | undefined, triggerIdentifier: string, payload?: any | null | undefined, status: WorkflowExecutionStatus, currentStepOrder: number, errorMessage?: string | null | undefined, startedAt: string, completedAt?: string | null | undefined, createdAt: string, updatedAt: string }> };
+
+export type CreateWorkflowMutationVariables = Exact<{ input: CreateWorkflowInput; }>;
+export type CreateWorkflowMutation = { __typename?: 'Mutation', createWorkflow: { __typename?: 'Workflow', id: string, appId: string, name: string, triggerIdentifier: string, triggerType: WorkflowTriggerType, status: WorkflowStatus, flowLayout?: any | null | undefined, createdAt: string, updatedAt: string } };
+
+export type UpdateWorkflowMutationVariables = Exact<{ id: Scalars['ID']['input']; input: UpdateWorkflowInput; }>;
+export type UpdateWorkflowMutation = { __typename?: 'Mutation', updateWorkflow: { __typename?: 'Workflow', id: string, name: string, triggerIdentifier: string, triggerType: WorkflowTriggerType, status: WorkflowStatus, flowLayout?: any | null | undefined, updatedAt: string, steps?: Array<{ __typename?: 'WorkflowStep', id: string, nodeId?: string | null | undefined, type: WorkflowStepType, order: number, config?: any | null | undefined }> | null | undefined } };
+
+export type DeleteWorkflowMutationVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type DeleteWorkflowMutation = { __typename?: 'Mutation', deleteWorkflow: boolean };
+
+export type TriggerWorkflowMutationVariables = Exact<{ input: TriggerWorkflowInput; }>;
+export type TriggerWorkflowMutation = { __typename?: 'Mutation', triggerWorkflow: { __typename?: 'WorkflowExecution', id: string, workflowId: string, status: WorkflowExecutionStatus, triggerIdentifier: string, startedAt: string, createdAt: string } };
+
+// --- Hooks ---
+export type HooksQueryVariables = Exact<{ appId: Scalars['ID']['input']; }>;
+export type HooksQuery = { __typename?: 'Query', hooks: Array<{ __typename?: 'Hook', id: string, appId: string, name: string, url: string, events?: any | null | undefined, isActive: boolean, createdAt: string, updatedAt: string }> };
+
+export type HookQueryVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type HookQuery = { __typename?: 'Query', hook?: { __typename?: 'Hook', id: string, appId: string, name: string, url: string, events?: any | null | undefined, isActive: boolean, createdAt: string, updatedAt: string } | null | undefined };
+
+export type CreateHookMutationVariables = Exact<{ input: CreateHookInput; }>;
+export type CreateHookMutation = { __typename?: 'Mutation', createHook: { __typename?: 'Hook', id: string, appId: string, name: string, url: string, events?: any | null | undefined, isActive: boolean, createdAt: string, updatedAt: string } };
+
+export type UpdateHookMutationVariables = Exact<{ id: Scalars['ID']['input']; input: UpdateHookInput; }>;
+export type UpdateHookMutation = { __typename?: 'Mutation', updateHook: { __typename?: 'Hook', id: string, name: string, url: string, events?: any | null | undefined, isActive: boolean, updatedAt: string } };
+
+export type DeleteHookMutationVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type DeleteHookMutation = { __typename?: 'Mutation', deleteHook: boolean };

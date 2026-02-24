@@ -1,0 +1,23 @@
+query channels($appId: ID!, $type: ChannelType) {
+  channels(appId: $appId, type: $type) {
+    id
+    appId
+    name
+    type
+    isActive
+    createdAt
+    updatedAt
+  }
+}
+
+query channel($id: ID!) {
+  channel(id: $id) {
+    id
+    appId
+    name
+    type
+    isActive
+    createdAt
+    updatedAt
+  }
+}

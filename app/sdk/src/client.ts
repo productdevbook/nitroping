@@ -1,7 +1,11 @@
 import type {
   DeviceRegistration,
+  IdentifyOptions,
   NitroPingConfig,
+  PreferenceUpdateOptions,
   PushSubscriptionData,
+  SubscriberPreferenceRecord,
+  SubscriberProfile,
   SubscriptionOptions,
   SubscriptionStatus,
 } from './types.ts'
@@ -203,6 +207,98 @@ export class NitroPingClient {
       subscription: stored?.subscription,
       device: stored?.device,
     }
+  }
+
+  /**
+   * Identifies a subscriber (user) in the NitroPing system.
+   * If a subscriber with the given externalId already exists it is updated,
+   * otherwise a new subscriber is created.
+   *
+   * @example
+   * await client.identify('user-123', { email: 'user@example.com' })
+   */
+  async identify(externalId: string, options: IdentifyOptions = {}): Promise<SubscriberProfile> {
+    const query = `
+      mutation CreateSubscriber($input: CreateSubscriberInput!) {
+        createSubscriber(input: $input) {
+          id
+          appId
+          externalId
+          email
+          phone
+          locale
+          metadata
+          createdAt
+          updatedAt
+        }
+      }
+    `
+
+    const response = await apiRequest<{ data: { createSubscriber: SubscriberProfile } }>(
+      `${this.config.apiUrl}/api/graphql`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          query,
+          variables: {
+            input: {
+              appId: this.config.appId,
+              externalId,
+              ...options,
+            },
+          },
+        }),
+      },
+    )
+
+    if (!response.data?.createSubscriber) {
+      throw new NitroPingError('Failed to identify subscriber', 'IDENTIFY_FAILED')
+    }
+
+    return response.data.createSubscriber
+  }
+
+  /**
+   * Updates a subscriber's notification preference for a given category and channel.
+   *
+   * @example
+   * await client.updatePreference({
+   *   subscriberId: 'sub-id',
+   *   category: 'marketing',
+   *   channelType: 'EMAIL',
+   *   enabled: false,
+   * })
+   */
+  async updatePreference(input: PreferenceUpdateOptions & { subscriberId: string }): Promise<SubscriberPreferenceRecord> {
+    const query = `
+      mutation UpdateSubscriberPreference($input: UpdateSubscriberPreferenceInput!) {
+        updateSubscriberPreference(input: $input) {
+          id
+          subscriberId
+          category
+          channelType
+          enabled
+          updatedAt
+        }
+      }
+    `
+
+    const response = await apiRequest<{ data: { updateSubscriberPreference: SubscriberPreferenceRecord } }>(
+      `${this.config.apiUrl}/api/graphql`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          query,
+          variables: { input },
+        }),
+      },
+    )
+
+    if (!response.data?.updateSubscriberPreference) {
+      throw new NitroPingError('Failed to update preference', 'PREFERENCE_UPDATE_FAILED')
+    }
+
+    return response.data.updateSubscriberPreference
   }
 
   /**

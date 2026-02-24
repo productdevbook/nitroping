@@ -21,7 +21,7 @@ const navigationItems = computed(() => [
     name: 'Push Providers',
     href: `/apps/${_props.appId}/providers`,
     icon: 'lucide:globe',
-    current: route.path === `/apps/${_props.appId}/providers`,
+    current: route.path.startsWith(`/apps/${_props.appId}/providers`),
   },
   {
     name: 'Devices',
@@ -34,6 +34,36 @@ const navigationItems = computed(() => [
     href: `/apps/${_props.appId}/notifications`,
     icon: 'lucide:activity',
     current: route.path === `/apps/${_props.appId}/notifications`,
+  },
+  {
+    name: 'Subscribers',
+    href: `/apps/${_props.appId}/subscribers`,
+    icon: 'lucide:users',
+    current: route.path === `/apps/${_props.appId}/subscribers`,
+  },
+  {
+    name: 'Channels',
+    href: `/apps/${_props.appId}/channels`,
+    icon: 'lucide:radio',
+    current: route.path === `/apps/${_props.appId}/channels`,
+  },
+  {
+    name: 'Templates',
+    href: `/apps/${_props.appId}/templates`,
+    icon: 'lucide:file-text',
+    current: route.path.startsWith(`/apps/${_props.appId}/templates`),
+  },
+  {
+    name: 'Workflows',
+    href: `/apps/${_props.appId}/workflows`,
+    icon: 'lucide:git-branch',
+    current: route.path.startsWith(`/apps/${_props.appId}/workflows`),
+  },
+  {
+    name: 'Webhooks',
+    href: `/apps/${_props.appId}/hooks`,
+    icon: 'lucide:webhook',
+    current: route.path === `/apps/${_props.appId}/hooks`,
   },
   {
     name: 'Settings',

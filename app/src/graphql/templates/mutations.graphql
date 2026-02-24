@@ -1,0 +1,29 @@
+mutation createTemplate($input: CreateTemplateInput!) {
+  createTemplate(input: $input) {
+    id
+    appId
+    channelId
+    name
+    channelType
+    subject
+    body
+    htmlBody
+    createdAt
+    updatedAt
+  }
+}
+
+mutation updateTemplate($id: ID!, $input: UpdateTemplateInput!) {
+  updateTemplate(id: $id, input: $input) {
+    id
+    name
+    subject
+    body
+    htmlBody
+    updatedAt
+  }
+}
+
+mutation deleteTemplate($id: ID!) {
+  deleteTemplate(id: $id)
+}

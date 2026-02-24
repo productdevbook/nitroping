@@ -1,0 +1,42 @@
+mutation createSubscriber($input: CreateSubscriberInput!) {
+  createSubscriber(input: $input) {
+    id
+    appId
+    externalId
+    email
+    phone
+    locale
+    createdAt
+    updatedAt
+  }
+}
+
+mutation updateSubscriber($id: ID!, $input: UpdateSubscriberInput!) {
+  updateSubscriber(id: $id, input: $input) {
+    id
+    externalId
+    email
+    phone
+    locale
+    updatedAt
+  }
+}
+
+mutation deleteSubscriber($id: ID!) {
+  deleteSubscriber(id: $id)
+}
+
+mutation upsertSubscriberDevice($input: UpsertSubscriberDeviceInput!) {
+  upsertSubscriberDevice(input: $input)
+}
+
+mutation updateSubscriberPreference($input: UpdateSubscriberPreferenceInput!) {
+  updateSubscriberPreference(input: $input) {
+    id
+    subscriberId
+    category
+    channelType
+    enabled
+    updatedAt
+  }
+}

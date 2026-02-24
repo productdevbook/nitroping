@@ -73,6 +73,61 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('./pages/apps/[id]/settings.vue'),
               },
               {
+                path: 'subscribers',
+                name: 'app-subscribers',
+                component: () => import('./pages/apps/[id]/subscribers.vue'),
+              },
+              {
+                path: 'channels',
+                name: 'app-channels',
+                component: () => import('./pages/apps/[id]/channels.vue'),
+              },
+              {
+                path: 'templates',
+                children: [
+                  {
+                    path: '',
+                    name: 'app-templates',
+                    component: () => import('./pages/apps/[id]/templates/index.vue'),
+                  },
+                  {
+                    path: 'create',
+                    name: 'app-templates-create',
+                    component: () => import('./pages/apps/[id]/templates/create.vue'),
+                  },
+                ],
+              },
+              {
+                path: 'workflows',
+                children: [
+                  {
+                    path: '',
+                    name: 'app-workflows',
+                    component: () => import('./pages/apps/[id]/workflows/index.vue'),
+                  },
+                  {
+                    path: ':wid',
+                    children: [
+                      {
+                        path: '',
+                        name: 'app-workflow-editor',
+                        component: () => import('./pages/apps/[id]/workflows/[wid]/index.vue'),
+                      },
+                      {
+                        path: 'runs',
+                        name: 'app-workflow-runs',
+                        component: () => import('./pages/apps/[id]/workflows/[wid]/runs.vue'),
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                path: 'hooks',
+                name: 'app-hooks',
+                component: () => import('./pages/apps/[id]/hooks.vue'),
+              },
+              {
                 path: 'providers',
                 children: [
                   {

@@ -5,6 +5,42 @@ export interface NitroPingConfig {
   userId?: string
 }
 
+// ── Subscriber / multi-channel types ─────────────────────────────────────────
+
+export interface SubscriberProfile {
+  id: string
+  appId: string
+  externalId: string
+  email?: string
+  phone?: string
+  locale?: string
+  metadata?: Record<string, any>
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IdentifyOptions {
+  email?: string
+  phone?: string
+  locale?: string
+  metadata?: Record<string, any>
+}
+
+export interface PreferenceUpdateOptions {
+  category: string
+  channelType: 'PUSH' | 'EMAIL' | 'SMS' | 'IN_APP'
+  enabled: boolean
+}
+
+export interface SubscriberPreferenceRecord {
+  id: string
+  subscriberId: string
+  category: string
+  channelType: string
+  enabled: boolean
+  updatedAt: string
+}
+
 export interface SubscriptionOptions {
   userId?: string
   tags?: string[]

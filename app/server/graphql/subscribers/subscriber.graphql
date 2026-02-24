@@ -1,0 +1,69 @@
+type Subscriber {
+  id: ID!
+  appId: ID!
+  externalId: String!
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+
+  # Relations
+  devices: [Device!]
+  preferences: [SubscriberPreference!]
+
+  # Timestamps
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type SubscriberPreference {
+  id: ID!
+  subscriberId: ID!
+  category: String!
+  channelType: ChannelType!
+  enabled: Boolean!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+input CreateSubscriberInput {
+  appId: ID!
+  externalId: String!
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+}
+
+input UpdateSubscriberInput {
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+}
+
+input UpsertSubscriberDeviceInput {
+  subscriberId: ID!
+  deviceId: ID!
+}
+
+input UpdateSubscriberPreferenceInput {
+  subscriberId: ID!
+  category: String!
+  channelType: ChannelType!
+  enabled: Boolean!
+}
+
+extend type Query {
+  subscribers(appId: ID!, limit: Int = 50, offset: Int = 0): [Subscriber!]!
+  subscriber(id: ID!): Subscriber
+  subscriberByExternalId(appId: ID!, externalId: String!): Subscriber
+}
+
+extend type Mutation {
+  createSubscriber(input: CreateSubscriberInput!): Subscriber!
+  updateSubscriber(id: ID!, input: UpdateSubscriberInput!): Subscriber!
+  deleteSubscriber(id: ID!): Boolean!
+  upsertSubscriberDevice(input: UpsertSubscriberDeviceInput!): Boolean!
+  updateSubscriberPreference(input: UpdateSubscriberPreferenceInput!): SubscriberPreference!
+}
