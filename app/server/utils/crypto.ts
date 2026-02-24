@@ -1,11 +1,11 @@
 import { Buffer } from 'node:buffer'
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto'
 
-interface EncryptedData {
-  iv: string
-  authTag: string
-  encrypted: string
-}
+// Wire format versions:
+//   v1 (legacy): iv_hex:authTag_hex:encrypted_hex           – fixed 'nitroping-salt'
+//   v2          : salt_hex:iv_hex:authTag_hex:encrypted_hex – random salt per call
+const SALT_LENGTH = 16 // 16 bytes → 32 hex chars
+const LEGACY_SALT = 'nitroping-salt'
 
 class CryptoService {
   private readonly algorithm = 'aes-256-gcm'
@@ -26,7 +26,7 @@ class CryptoService {
     return Buffer.from(encryptionKey, 'hex')
   }
 
-  private deriveKey(masterKey: Buffer, salt: string = 'nitroping-salt'): Buffer {
+  private deriveKey(masterKey: Buffer, salt: Buffer | string): Buffer {
     return scryptSync(masterKey, salt, this.keyLength)
   }
 
@@ -37,7 +37,8 @@ class CryptoService {
 
     try {
       const masterKey = this.getEncryptionKey()
-      const key = this.deriveKey(masterKey)
+      const salt = randomBytes(SALT_LENGTH) // unique salt per encryption
+      const key = this.deriveKey(masterKey, salt)
       const iv = randomBytes(this.ivLength)
 
       const cipher = createCipheriv(this.algorithm, key, iv)
@@ -47,13 +48,8 @@ class CryptoService {
 
       const authTag = cipher.getAuthTag()
 
-      const result: EncryptedData = {
-        iv: iv.toString('hex'),
-        authTag: authTag.toString('hex'),
-        encrypted,
-      }
-
-      return `${result.iv}:${result.authTag}:${result.encrypted}`
+      // v2 format: salt:iv:authTag:encrypted
+      return `${salt.toString('hex')}:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`
     }
     catch (error) {
       throw new Error(`Encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -67,28 +63,31 @@ class CryptoService {
 
     try {
       const parts = encryptedData.split(':')
-      if (parts.length !== 3) {
-        throw new Error('Invalid encrypted data format')
-      }
-
-      const [ivHex, authTagHex, encrypted] = parts
-
-      if (!ivHex || !authTagHex || !encrypted) {
-        throw new Error('Invalid encrypted data parts')
-      }
-
       const masterKey = this.getEncryptionKey()
-      const key = this.deriveKey(masterKey)
-      const iv = Buffer.from(ivHex, 'hex')
-      const authTag = Buffer.from(authTagHex, 'hex')
 
-      const decipher = createDecipheriv(this.algorithm, key, iv)
-      decipher.setAuthTag(authTag)
+      if (parts.length === 4) {
+        // v2: salt:iv:authTag:encrypted
+        const [saltHex, ivHex, authTagHex, encrypted] = parts as [string, string, string, string]
+        const key = this.deriveKey(masterKey, Buffer.from(saltHex, 'hex'))
+        const decipher = createDecipheriv(this.algorithm, key, Buffer.from(ivHex, 'hex'))
+        decipher.setAuthTag(Buffer.from(authTagHex, 'hex'))
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8')
+        decrypted += decipher.final('utf8')
+        return decrypted
+      }
 
-      let decrypted = decipher.update(encrypted, 'hex', 'utf8')
-      decrypted += decipher.final('utf8')
+      if (parts.length === 3) {
+        // v1 legacy: iv:authTag:encrypted (fixed salt)
+        const [ivHex, authTagHex, encrypted] = parts as [string, string, string]
+        const key = this.deriveKey(masterKey, LEGACY_SALT)
+        const decipher = createDecipheriv(this.algorithm, key, Buffer.from(ivHex, 'hex'))
+        decipher.setAuthTag(Buffer.from(authTagHex, 'hex'))
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8')
+        decrypted += decipher.final('utf8')
+        return decrypted
+      }
 
-      return decrypted
+      throw new Error('Invalid encrypted data format')
     }
     catch (error) {
       throw new Error(`Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -99,9 +98,22 @@ class CryptoService {
     if (!data)
       return false
     const parts = data.split(':')
-    return parts.length === 3
-      && parts[0]?.length === this.ivLength * 2 // IV hex length
-      && parts[1]?.length === this.tagLength * 2 // Auth tag hex length
+    const HEX32 = this.ivLength * 2 // 32 hex chars
+
+    // v2: salt(32):iv(32):authTag(32):encrypted
+    if (parts.length === 4) {
+      return parts[0]!.length === HEX32
+        && parts[1]!.length === HEX32
+        && parts[2]!.length === HEX32
+    }
+
+    // v1 legacy: iv(32):authTag(32):encrypted
+    if (parts.length === 3) {
+      return parts[0]!.length === HEX32
+        && parts[1]!.length === this.tagLength * 2
+    }
+
+    return false
   }
 
   generateKey(): string {
