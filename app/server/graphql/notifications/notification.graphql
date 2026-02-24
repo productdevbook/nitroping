@@ -80,9 +80,9 @@ input SendNotificationInput {
 }
 
 extend type Query {
-  notifications(appId: ID): [Notification!]!
+  notifications(appId: ID, limit: Int = 50, offset: Int = 0): [Notification!]!
   notification(id: ID!): Notification
-  deliveryLogs(notificationId: ID): [DeliveryLog!]!
+  deliveryLogs(notificationId: ID, limit: Int = 50, offset: Int = 0): [DeliveryLog!]!
 }
 
 extend type Mutation {

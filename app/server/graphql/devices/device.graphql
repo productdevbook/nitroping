@@ -60,7 +60,7 @@ input UpdateDeviceInput {
 }
 
 extend type Query {
-  devices(appId: ID): [Device!]!
+  devices(appId: ID, limit: Int = 50, offset: Int = 0): [Device!]!
   device(id: ID!): Device
   deviceByToken(token: String!): Device
 }

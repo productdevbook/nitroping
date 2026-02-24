@@ -3,7 +3,7 @@ import { defineQuery } from 'nitro-graphql/define'
 
 export const deliveryLogsQuery = defineQuery({
   deliveryLogs: {
-    resolve: async (_parent, { notificationId }, { context }) => {
+    resolve: async (_parent, { notificationId, limit = 50, offset = 0 }, { context }) => {
       const { useDatabase, tables } = context
       const db = useDatabase()
 
@@ -11,6 +11,8 @@ export const deliveryLogsQuery = defineQuery({
         .select()
         .from(tables.deliveryLog)
         .orderBy(tables.deliveryLog.createdAt)
+        .limit(limit)
+        .offset(offset)
 
       if (notificationId) {
         return await query.where(eq(tables.deliveryLog.notificationId, notificationId))
