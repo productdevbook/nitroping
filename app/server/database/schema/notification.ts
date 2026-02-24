@@ -1,4 +1,4 @@
-import { integer, pgTable, text, uuid } from 'drizzle-orm/pg-core'
+import { index, integer, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
@@ -29,7 +29,14 @@ export const notification = pgTable('notification', {
   sentAt: customTimestamp(),
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),
-})
+}, table => [
+  // Scheduler polls this every minute: WHERE status='SCHEDULED' AND scheduledAt<=now
+  index('notification_status_scheduled_at_idx').on(table.status, table.scheduledAt),
+  // App-scoped notification list queries
+  index('notification_app_id_idx').on(table.appId),
+  // Analytics date-range queries
+  index('notification_created_at_idx').on(table.createdAt),
+])
 
 export const selectNotificationSchema = createSelectSchema(notification)
 export const insertNotificationSchema = createInsertSchema(notification)

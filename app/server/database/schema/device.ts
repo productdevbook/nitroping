@@ -1,4 +1,4 @@
-import { pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
+import { index, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
@@ -19,9 +19,15 @@ export const device = pgTable('device', {
   lastSeenAt: customTimestamp(),
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),
-}, table => ({
-  uniqueAppTokenUser: unique().on(table.appId, table.token, table.userId),
-}))
+}, table => [
+  unique('device_app_token_user_unique').on(table.appId, table.token, table.userId),
+  // Device list by app (most common query pattern)
+  index('device_app_id_idx').on(table.appId),
+  // Active device count per app
+  index('device_app_id_status_idx').on(table.appId, table.status),
+  // Token lookup for sendNotification targetDevices
+  index('device_token_idx').on(table.token),
+])
 
 export const selectDeviceSchema = createSelectSchema(device)
 export const insertDeviceSchema = createInsertSchema(device)

@@ -1,4 +1,4 @@
-import { integer, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
+import { index, integer, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { device } from './device'
@@ -23,9 +23,15 @@ export const deliveryLog = pgTable('deliveryLog', {
   osVersion: text(),
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),
-}, table => ({
-  uniqueNotificationDevice: unique().on(table.notificationId, table.deviceId),
-}))
+}, table => [
+  unique('delivery_log_notification_device_unique').on(table.notificationId, table.deviceId),
+  // Most frequent: look up all logs for a notification
+  index('delivery_log_notification_id_idx').on(table.notificationId),
+  // Analytics date-range queries
+  index('delivery_log_created_at_idx').on(table.createdAt),
+  // Status-based analytics (delivery rate calculations)
+  index('delivery_log_status_idx').on(table.status),
+])
 
 export const selectDeliveryLogSchema = createSelectSchema(deliveryLog)
 export const insertDeliveryLogSchema = createInsertSchema(deliveryLog)
