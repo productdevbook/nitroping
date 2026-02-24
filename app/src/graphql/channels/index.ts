@@ -30,10 +30,10 @@ export function useCreateChannel() {
     mutation: async (input: {
       appId: string
       name: string
-      type: string
+      type: string // ChannelType
       config?: any
     }) => {
-      const result = await $sdk.createChannel({ input })
+      const result = await $sdk.createChannel({ input: input as any })
       return result.data?.createChannel || null
     },
     onSuccess: (_data, input) => {
@@ -46,7 +46,7 @@ export function useUpdateChannel() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async ({ id, input, appId }: { id: string, input: any, appId: string }) => {
+    mutation: async ({ id, input }: { id: string, input: any, appId: string }) => {
       const result = await $sdk.updateChannel({ id, input })
       return result.data?.updateChannel || null
     },
@@ -60,7 +60,7 @@ export function useDeleteChannel() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async ({ id, appId }: { id: string, appId: string }) => {
+    mutation: async ({ id }: { id: string, appId: string }) => {
       const result = await $sdk.deleteChannel({ id })
       return result.data?.deleteChannel || false
     },

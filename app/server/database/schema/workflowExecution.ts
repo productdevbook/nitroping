@@ -1,8 +1,8 @@
 import { index, integer, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
-import { workflowExecutionStatusEnum } from './enums'
 import { contact } from './contact'
+import { workflowExecutionStatusEnum } from './enums'
 import { workflow } from './workflow'
 
 export const workflowExecution = pgTable('workflowExecution', {

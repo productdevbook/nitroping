@@ -37,7 +37,7 @@ export function useUpdateHook() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async ({ id, input, appId }: { id: string, input: any, appId: string }) => {
+    mutation: async ({ id, input }: { id: string, input: any, appId: string }) => {
       const result = await $sdk.updateHook({ id, input })
       return result.data?.updateHook || null
     },
@@ -51,7 +51,7 @@ export function useDeleteHook() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async ({ id, appId }: { id: string, appId: string }) => {
+    mutation: async ({ id }: { id: string, appId: string }) => {
       const result = await $sdk.deleteHook({ id })
       return result.data?.deleteHook || false
     },

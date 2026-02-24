@@ -7,11 +7,11 @@ const props = defineProps<{
   selectedNode: any | null
 }>()
 
-const emit = defineEmits<{ (e: 'update-node', id: string, data: any): void }>()
+const emit = defineEmits<{ (e: 'updateNode', id: string, data: any): void }>()
 
 function handleUpdate(data: any) {
   if (props.selectedNode) {
-    emit('update-node', props.selectedNode.id, data)
+    emit('updateNode', props.selectedNode.id, data)
   }
 }
 </script>

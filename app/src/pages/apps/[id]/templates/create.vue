@@ -71,10 +71,18 @@ async function handleCreate() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="EMAIL">Email</SelectItem>
-              <SelectItem value="PUSH">Push</SelectItem>
-              <SelectItem value="SMS">SMS</SelectItem>
-              <SelectItem value="IN_APP">In-App</SelectItem>
+              <SelectItem value="EMAIL">
+                Email
+              </SelectItem>
+              <SelectItem value="PUSH">
+                Push
+              </SelectItem>
+              <SelectItem value="SMS">
+                SMS
+              </SelectItem>
+              <SelectItem value="IN_APP">
+                In-App
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>

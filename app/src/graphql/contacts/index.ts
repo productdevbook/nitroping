@@ -62,7 +62,7 @@ export function useDeleteContact() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async ({ id, appId }: { id: string, appId: string }) => {
+    mutation: async ({ id }: { id: string, appId: string }) => {
       const result = await $sdk.deleteContact({ id })
       return result.data?.deleteContact || false
     },
@@ -82,7 +82,7 @@ export function useUpdateContactPreference() {
       channelType: string
       enabled: boolean
     }) => {
-      const result = await $sdk.updateContactPreference({ input })
+      const result = await $sdk.updateContactPreference({ input: input as any })
       return result.data?.updateContactPreference || null
     },
     onSuccess: (_data, input) => {

@@ -37,9 +37,15 @@ watch(form, (val) => {
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="eq">equals</SelectItem>
-          <SelectItem value="neq">not equals</SelectItem>
-          <SelectItem value="contains">contains</SelectItem>
+          <SelectItem value="eq">
+            equals
+          </SelectItem>
+          <SelectItem value="neq">
+            not equals
+          </SelectItem>
+          <SelectItem value="contains">
+            contains
+          </SelectItem>
         </SelectContent>
       </Select>
     </div>

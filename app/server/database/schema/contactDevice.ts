@@ -1,8 +1,8 @@
 import { index, pgTable, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customTimestamp, uuidv7Generator } from '../shared'
-import { device } from './device'
 import { contact } from './contact'
+import { device } from './device'
 
 export const contactDevice = pgTable('contactDevice', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),

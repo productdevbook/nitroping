@@ -1,8 +1,8 @@
 import { boolean, index, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customTimestamp, uuidv7Generator } from '../shared'
-import { channelTypeEnum } from './enums'
 import { contact } from './contact'
+import { channelTypeEnum } from './enums'
 
 export const contactPreference = pgTable('contactPreference', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),

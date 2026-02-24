@@ -51,10 +51,18 @@ watch(form, (val) => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="seconds">Seconds</SelectItem>
-            <SelectItem value="minutes">Minutes</SelectItem>
-            <SelectItem value="hours">Hours</SelectItem>
-            <SelectItem value="days">Days</SelectItem>
+            <SelectItem value="seconds">
+              Seconds
+            </SelectItem>
+            <SelectItem value="minutes">
+              Minutes
+            </SelectItem>
+            <SelectItem value="hours">
+              Hours
+            </SelectItem>
+            <SelectItem value="days">
+              Days
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>

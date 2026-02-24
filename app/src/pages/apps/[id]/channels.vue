@@ -140,17 +140,27 @@ async function handleCreate() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="EMAIL">Email</SelectItem>
-                <SelectItem value="PUSH">Push</SelectItem>
-                <SelectItem value="SMS">SMS</SelectItem>
-                <SelectItem value="IN_APP">In-App</SelectItem>
+                <SelectItem value="EMAIL">
+                  Email
+                </SelectItem>
+                <SelectItem value="PUSH">
+                  Push
+                </SelectItem>
+                <SelectItem value="SMS">
+                  SMS
+                </SelectItem>
+                <SelectItem value="IN_APP">
+                  In-App
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <template v-if="form.type === 'EMAIL'">
             <div class="border rounded-lg p-4 space-y-3">
-              <p class="text-sm font-medium">SMTP Configuration</p>
+              <p class="text-sm font-medium">
+                SMTP Configuration
+              </p>
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <Label class="text-xs">Host</Label>

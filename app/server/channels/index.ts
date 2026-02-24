@@ -5,9 +5,9 @@ import { decryptSensitiveData, isDataEncrypted } from '#server/utils/crypto'
 import { and, eq } from 'drizzle-orm'
 import { EmailChannel } from './email.channel'
 
-export type { Channel, ChannelMessage, ChannelResult } from './types'
 export { EmailChannel } from './email.channel'
 export { PushChannel } from './push.channel'
+export type { Channel, ChannelMessage, ChannelResult } from './types'
 
 /**
  * Load a channel by its DB id and return a ready-to-use Channel instance.

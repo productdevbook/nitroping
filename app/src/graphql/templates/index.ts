@@ -39,7 +39,7 @@ export function useCreateTemplate() {
       body: string
       htmlBody?: string
     }) => {
-      const result = await $sdk.createTemplate({ input })
+      const result = await $sdk.createTemplate({ input: input as any })
       return result.data?.createTemplate || null
     },
     onSuccess: (_data, input) => {
@@ -52,7 +52,7 @@ export function useUpdateTemplate() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async ({ id, input, appId }: { id: string, input: any, appId: string }) => {
+    mutation: async ({ id, input }: { id: string, input: any, appId: string }) => {
       const result = await $sdk.updateTemplate({ id, input })
       return result.data?.updateTemplate || null
     },
@@ -67,7 +67,7 @@ export function useDeleteTemplate() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async ({ id, appId }: { id: string, appId: string }) => {
+    mutation: async ({ id }: { id: string, appId: string }) => {
       const result = await $sdk.deleteTemplate({ id })
       return result.data?.deleteTemplate || false
     },

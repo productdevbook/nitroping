@@ -10,7 +10,7 @@ import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
 import { useApp } from '~/graphql'
-import { useCreateContact, useDeleteContact, useContacts } from '~/graphql/contacts'
+import { useContacts, useCreateContact, useDeleteContact } from '~/graphql/contacts'
 
 const route = useRoute()
 const appId = computed(() => route.params.id as string)

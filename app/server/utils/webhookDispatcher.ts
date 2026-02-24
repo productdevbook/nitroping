@@ -4,13 +4,13 @@ import * as tables from '#server/database/schema'
 import { decryptSensitiveData, isDataEncrypted } from '#server/utils/crypto'
 import { and, eq } from 'drizzle-orm'
 
-export type HookEvent =
-  | 'NOTIFICATION_SENT'
-  | 'NOTIFICATION_DELIVERED'
-  | 'NOTIFICATION_FAILED'
-  | 'NOTIFICATION_CLICKED'
-  | 'WORKFLOW_COMPLETED'
-  | 'WORKFLOW_FAILED'
+export type HookEvent
+  = | 'NOTIFICATION_SENT'
+    | 'NOTIFICATION_DELIVERED'
+    | 'NOTIFICATION_FAILED'
+    | 'NOTIFICATION_CLICKED'
+    | 'WORKFLOW_COMPLETED'
+    | 'WORKFLOW_FAILED'
 
 /**
  * Fan-out an event to all active webhooks registered for the app+event.

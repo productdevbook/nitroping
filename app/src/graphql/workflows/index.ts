@@ -45,7 +45,7 @@ export function useCreateWorkflow() {
       steps?: any[]
       flowLayout?: any
     }) => {
-      const result = await $sdk.createWorkflow({ input })
+      const result = await $sdk.createWorkflow({ input: input as any })
       return result.data?.createWorkflow || null
     },
     onSuccess: (_data, input) => {
@@ -58,7 +58,7 @@ export function useUpdateWorkflow() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async ({ id, input, appId }: { id: string, input: any, appId: string }) => {
+    mutation: async ({ id, input }: { id: string, input: any, appId: string }) => {
       const result = await $sdk.updateWorkflow({ id, input })
       return result.data?.updateWorkflow || null
     },
@@ -73,7 +73,7 @@ export function useDeleteWorkflow() {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: async ({ id, appId }: { id: string, appId: string }) => {
+    mutation: async ({ id }: { id: string, appId: string }) => {
       const result = await $sdk.deleteWorkflow({ id })
       return result.data?.deleteWorkflow || false
     },

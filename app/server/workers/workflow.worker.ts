@@ -2,13 +2,13 @@ import type { Job } from 'bullmq'
 import type { ExecuteWorkflowStepJobData, TriggerWorkflowJobData } from '../queues/workflow.queue'
 import { Worker } from 'bullmq'
 import { asc, eq } from 'drizzle-orm'
+import { getChannelById } from '../channels'
 import { getDatabase } from '../database/connection'
 import * as tables from '../database/schema'
 import { addExecuteWorkflowStepJob } from '../queues/workflow.queue'
 import { getRedisConnection } from '../utils/redis'
 import { renderTemplate } from '../utils/templateRenderer'
 import { dispatchHooks } from '../utils/webhookDispatcher'
-import { getChannelById } from '../channels'
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -127,9 +127,12 @@ async function processExecuteWorkflowStep(job: Job<ExecuteWorkflowStepJobData>) 
         const payloadValue = String((payload as any)[field] ?? '')
         let pass = false
         switch (operator) {
-          case 'eq': pass = payloadValue === String(value); break
-          case 'neq': pass = payloadValue !== String(value); break
-          case 'contains': pass = payloadValue.includes(String(value)); break
+          case 'eq': pass = payloadValue === String(value)
+            break
+          case 'neq': pass = payloadValue !== String(value)
+            break
+          case 'contains': pass = payloadValue.includes(String(value))
+            break
           default: pass = true
         }
         if (!pass) {
