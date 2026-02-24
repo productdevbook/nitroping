@@ -1,11 +1,22 @@
 import type { H3Event } from 'nitro/h3'
+import { randomBytes } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import jwt from 'jsonwebtoken'
 import { getHeader, HTTPError } from 'nitro/h3'
 import { getDatabase } from '../database/connection'
 import { apiKey, app } from '../database/schema'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key'
+const JWT_SECRET = process.env.JWT_SECRET
+
+if (!JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('[Auth] JWT_SECRET environment variable must be set in production')
+  }
+  // eslint-disable-next-line no-console
+  console.warn('[Auth] WARNING: JWT_SECRET is not set. Using insecure default – set JWT_SECRET before deploying to production.')
+}
+
+const EFFECTIVE_JWT_SECRET = JWT_SECRET ?? 'dev-only-insecure-jwt-secret-do-not-use-in-production'
 
 export interface JWTPayload {
   appId: string
@@ -14,12 +25,12 @@ export interface JWTPayload {
 }
 
 export function generateJWT(payload: JWTPayload, expiresIn: string = '24h'): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn } as jwt.SignOptions)
+  return jwt.sign(payload, EFFECTIVE_JWT_SECRET, { expiresIn } as jwt.SignOptions)
 }
 
 export function verifyJWT(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload
+    return jwt.verify(token, EFFECTIVE_JWT_SECRET) as JWTPayload
   }
   catch {
     return null
@@ -27,7 +38,6 @@ export function verifyJWT(token: string): JWTPayload | null {
 }
 
 export function generateApiKey(): string {
-  const { randomBytes } = require('node:crypto')
   // 24 random bytes → 32 base64url chars (no padding, URL-safe)
   return `np_${randomBytes(24).toString('base64url')}`
 }
