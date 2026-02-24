@@ -20,50 +20,26 @@ export interface SendNotificationJobData {
   }
 }
 
-export interface RetryNotificationJobData {
-  notificationId: string
-  deviceId: string
-  appId: string
-  platform: 'ios' | 'android' | 'web'
-  token: string
-  webPushP256dh?: string
-  webPushAuth?: string
-  payload: {
-    title: string
-    body: string
-    data?: Record<string, any>
-    badge?: number
-    sound?: string
-    clickAction?: string
-    imageUrl?: string
-  }
-  attemptCount: number
-  lastError?: string
-}
-
-export interface ProcessScheduledJobData {
-  notificationId: string
-}
-
-let notificationQueue: Queue<SendNotificationJobData | RetryNotificationJobData | ProcessScheduledJobData> | null = null
+let notificationQueue: Queue<SendNotificationJobData> | null = null
 
 export function getNotificationQueue() {
   if (!notificationQueue) {
     notificationQueue = new Queue('notifications', {
       connection: getRedisConnection(),
       defaultJobOptions: {
+        // BullMQ owns retry – no manual re-queuing needed in the worker
         attempts: 5,
         backoff: {
           type: 'exponential',
-          delay: 60000, // Start with 1 minute, then 2, 4, 8, 16 minutes
+          delay: 60_000, // 1 min → 2 → 4 → 8 → 16 min
         },
         removeOnComplete: {
-          count: 1000, // Keep last 1000 completed jobs
-          age: 24 * 3600, // Keep for 24 hours
+          count: 1000,
+          age: 24 * 3600,
         },
         removeOnFail: {
-          count: 5000, // Keep last 5000 failed jobs
-          age: 7 * 24 * 3600, // Keep for 7 days
+          count: 5000,
+          age: 7 * 24 * 3600,
         },
       },
     })
@@ -73,26 +49,7 @@ export function getNotificationQueue() {
 
 export async function addSendNotificationJob(data: SendNotificationJobData) {
   const queue = getNotificationQueue()
-  return queue.add('send-notification', data, {
-    priority: 1,
-  })
-}
-
-export async function addRetryNotificationJob(data: RetryNotificationJobData) {
-  const queue = getNotificationQueue()
-  return queue.add('retry-notification', data, {
-    priority: 2,
-    delay: 2 ** data.attemptCount * 60000, // Exponential backoff
-  })
-}
-
-export async function addProcessScheduledJob(data: ProcessScheduledJobData, runAt: Date) {
-  const queue = getNotificationQueue()
-  const delay = Math.max(0, runAt.getTime() - Date.now())
-  return queue.add('process-scheduled', data, {
-    delay,
-    priority: 3,
-  })
+  return queue.add('send-notification', data, { priority: 1 })
 }
 
 export async function closeNotificationQueue() {
