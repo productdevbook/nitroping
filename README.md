@@ -169,7 +169,7 @@ graph TB
 3. **Set up database**
    ```bash
    # Start PostgreSQL (using Docker)
-   docker run --name nitroping-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=nitroping -p 5432:5432 -d postgres:18
+   docker run --name nitroping-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=nitroping -p 5433:5432 -d postgres:18
    
    # Generate and run migrations
    pnpm db:generate
@@ -391,7 +391,7 @@ cp .env.example .env
 docker run -d --name nitroping-db \
   -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_DB=nitroping \
-  -p 5432:5432 postgres:18
+  -p 5433:5432 postgres:18
 
 pnpm db:generate && pnpm db:migrate
 
