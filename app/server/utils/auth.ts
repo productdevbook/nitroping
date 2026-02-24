@@ -26,13 +26,10 @@ export function verifyJWT(token: string): JWTPayload | null {
   }
 }
 
-export async function generateApiKey(): Promise<string> {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let result = 'np_'
-  for (let i = 0; i < 32; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result
+export function generateApiKey(): string {
+  const { randomBytes } = require('node:crypto')
+  // 24 random bytes → 32 base64url chars (no padding, URL-safe)
+  return `np_${randomBytes(24).toString('base64url')}`
 }
 
 export async function validateApiKey(apiKeyValue: string) {
