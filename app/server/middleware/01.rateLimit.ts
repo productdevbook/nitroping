@@ -21,7 +21,8 @@ export default defineEventHandler(async (event) => {
   const rateLimitKey = apiKey || getRequestIP(event) || 'anonymous'
 
   const limiter = getRateLimiter()
-  const result = await limiter.isAllowed(rateLimitKey)
+  // consume() atomically checks and records the request in one Redis round-trip
+  const result = await limiter.consume(rateLimitKey)
 
   // Set rate limit headers
   setHeader(event, 'X-RateLimit-Limit', result.limit.toString())
@@ -34,7 +35,4 @@ export default defineEventHandler(async (event) => {
       message: 'Rate limit exceeded. Please try again later.',
     })
   }
-
-  // Consume rate limit
-  await limiter.consume(rateLimitKey)
 })

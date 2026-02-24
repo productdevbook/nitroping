@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import { getRedis } from './redis'
 
 export interface RateLimitResult {
@@ -10,6 +11,32 @@ export interface RateLimitResult {
 const DEFAULT_LIMIT = Number.parseInt(process.env.RATE_LIMIT_DEFAULT || '1000')
 const DEFAULT_WINDOW = Number.parseInt(process.env.RATE_LIMIT_WINDOW || '3600') // 1 hour in seconds
 
+// Atomic Lua script: removes stale entries, checks the count, and adds a new
+// entry in a single round-trip – eliminating the check-then-act race condition
+// that existed when isAllowed() and consume() were separate calls.
+//
+// Returns: [allowed (0|1), remaining, resetAt (ms timestamp)]
+const RATE_LIMIT_SCRIPT = `
+local key        = KEYS[1]
+local limit      = tonumber(ARGV[1])
+local window     = tonumber(ARGV[2])
+local now        = tonumber(ARGV[3])
+local member     = ARGV[4]
+local windowStart = now - (window * 1000)
+
+redis.call('ZREMRANGEBYSCORE', key, 0, windowStart)
+local count = redis.call('ZCARD', key)
+
+if count >= limit then
+  return {0, 0, now + (window * 1000)}
+end
+
+redis.call('ZADD', key, now, member)
+redis.call('EXPIRE', key, window + 60)
+
+return {1, limit - count - 1, now + (window * 1000)}
+`
+
 export class RateLimiter {
   private keyPrefix: string
 
@@ -17,100 +44,51 @@ export class RateLimiter {
     this.keyPrefix = keyPrefix
   }
 
-  async isAllowed(
+  /**
+   * Atomically check and consume a rate-limit token in one Redis round-trip.
+   * Returns the result including whether the request is allowed.
+   */
+  async consume(
     key: string,
     limit: number = DEFAULT_LIMIT,
     windowSeconds: number = DEFAULT_WINDOW,
   ): Promise<RateLimitResult> {
     const redis = getRedis()
     const now = Date.now()
-    const windowStart = now - (windowSeconds * 1000)
     const redisKey = `${this.keyPrefix}${key}`
+    const member = `${now}:${randomBytes(8).toString('hex')}`
 
     try {
-      // Use Redis pipeline for atomic operations
-      const pipeline = redis.pipeline()
-
-      // Remove old entries outside the window
-      pipeline.zremrangebyscore(redisKey, 0, windowStart)
-
-      // Count current requests in window
-      pipeline.zcard(redisKey)
-
-      // Execute pipeline
-      const results = await pipeline.exec()
-
-      if (!results) {
-        // Redis error, allow request but log warning
-        console.warn('[RateLimiter] Pipeline returned null, allowing request')
-        return {
-          allowed: true,
-          remaining: limit,
-          limit,
-          resetAt: now + (windowSeconds * 1000),
-        }
-      }
-
-      const currentCount = results[1]?.[1] as number || 0
-
-      if (currentCount >= limit) {
-        // Rate limit exceeded
-        return {
-          allowed: false,
-          remaining: 0,
-          limit,
-          resetAt: now + (windowSeconds * 1000),
-        }
-      }
+      const result = await redis.eval(
+        RATE_LIMIT_SCRIPT,
+        1,
+        redisKey,
+        limit.toString(),
+        windowSeconds.toString(),
+        now.toString(),
+        member,
+      ) as [number, number, number]
 
       return {
-        allowed: true,
-        remaining: limit - currentCount - 1,
+        allowed: result[0] === 1,
+        remaining: result[1] ?? 0,
         limit,
-        resetAt: now + (windowSeconds * 1000),
+        resetAt: result[2] ?? now + windowSeconds * 1000,
       }
     }
     catch (error) {
-      // On Redis error, allow request but log warning
+      // On Redis error, fail open with a warning
       console.warn('[RateLimiter] Redis error, allowing request:', error)
       return {
         allowed: true,
         remaining: limit,
         limit,
-        resetAt: now + (windowSeconds * 1000),
+        resetAt: now + windowSeconds * 1000,
       }
     }
   }
 
-  async consume(key: string, windowSeconds: number = DEFAULT_WINDOW): Promise<void> {
-    const redis = getRedis()
-    const now = Date.now()
-    const redisKey = `${this.keyPrefix}${key}`
-
-    try {
-      // Add current timestamp to sorted set
-      await redis.zadd(redisKey, now, `${now}:${Math.random()}`)
-
-      // Set expiration on the key
-      await redis.expire(redisKey, windowSeconds + 60) // Add buffer
-    }
-    catch (error) {
-      console.warn('[RateLimiter] Failed to consume rate limit:', error)
-    }
-  }
-
-  async reset(key: string): Promise<void> {
-    const redis = getRedis()
-    const redisKey = `${this.keyPrefix}${key}`
-
-    try {
-      await redis.del(redisKey)
-    }
-    catch (error) {
-      console.warn('[RateLimiter] Failed to reset rate limit:', error)
-    }
-  }
-
+  /** Read-only status check (does not consume a token). */
   async getStatus(
     key: string,
     limit: number = DEFAULT_LIMIT,
@@ -118,11 +96,10 @@ export class RateLimiter {
   ): Promise<RateLimitResult> {
     const redis = getRedis()
     const now = Date.now()
-    const windowStart = now - (windowSeconds * 1000)
+    const windowStart = now - windowSeconds * 1000
     const redisKey = `${this.keyPrefix}${key}`
 
     try {
-      // Remove old entries and count
       await redis.zremrangebyscore(redisKey, 0, windowStart)
       const currentCount = await redis.zcard(redisKey)
 
@@ -130,7 +107,7 @@ export class RateLimiter {
         allowed: currentCount < limit,
         remaining: Math.max(0, limit - currentCount),
         limit,
-        resetAt: now + (windowSeconds * 1000),
+        resetAt: now + windowSeconds * 1000,
       }
     }
     catch (error) {
@@ -139,13 +116,22 @@ export class RateLimiter {
         allowed: true,
         remaining: limit,
         limit,
-        resetAt: now + (windowSeconds * 1000),
+        resetAt: now + windowSeconds * 1000,
       }
+    }
+  }
+
+  async reset(key: string): Promise<void> {
+    const redis = getRedis()
+    try {
+      await redis.del(`${this.keyPrefix}${key}`)
+    }
+    catch (error) {
+      console.warn('[RateLimiter] Failed to reset rate limit:', error)
     }
   }
 }
 
-// Singleton instance
 let rateLimiterInstance: RateLimiter | null = null
 
 export function getRateLimiter(): RateLimiter {
