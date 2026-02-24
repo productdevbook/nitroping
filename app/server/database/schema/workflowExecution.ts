@@ -2,13 +2,13 @@ import { index, integer, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { workflowExecutionStatusEnum } from './enums'
-import { subscriber } from './subscriber'
+import { contact } from './contact'
 import { workflow } from './workflow'
 
 export const workflowExecution = pgTable('workflowExecution', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),
   workflowId: uuid().notNull().references(() => workflow.id, { onDelete: 'cascade' }),
-  subscriberId: uuid().references(() => subscriber.id, { onDelete: 'set null' }),
+  subscriberId: uuid().references(() => contact.id, { onDelete: 'set null' }),
   triggerIdentifier: text().notNull(),
   // Payload passed when workflow was triggered
   payload: customJsonb(),

@@ -2,11 +2,11 @@ import type { Database, DataLoaders } from './types'
 import { createApiKeyLoader, createApiKeysByAppLoader } from './apiKey.loader'
 import { createAppLoader } from './app.loader'
 import { createChannelLoader, createChannelsByAppLoader } from './channel.loader'
+import { createContactLoader, createContactsByAppLoader, createDevicesByContactLoader } from './contact.loader'
+import { createPreferencesByContactLoader } from './contactPreference.loader'
 import { createDeliveryLogLoader, createDeliveryLogsByDeviceLoader, createDeliveryLogsByNotificationLoader } from './deliveryLog.loader'
 import { createDeviceLoader, createDevicesByAppLoader } from './device.loader'
 import { createNotificationLoader, createNotificationsByAppLoader } from './notification.loader'
-import { createPreferencesBySubscriberLoader } from './preference.loader'
-import { createSubscriberLoader, createSubscribersByAppLoader, createDevicesBySubscriberLoader } from './subscriber.loader'
 import { createTemplateLoader, createTemplatesByChannelLoader } from './template.loader'
 import { createStepsByWorkflowLoader, createWorkflowLoader } from './workflow.loader'
 
@@ -22,7 +22,7 @@ export function createDataLoaders(db: Database): DataLoaders {
     apiKeyLoader: createApiKeyLoader(db),
 
     // Single entity loaders (new)
-    subscriberLoader: createSubscriberLoader(db),
+    contactLoader: createContactLoader(db),
     channelLoader: createChannelLoader(db),
     templateLoader: createTemplateLoader(db),
     workflowLoader: createWorkflowLoader(db),
@@ -35,9 +35,9 @@ export function createDataLoaders(db: Database): DataLoaders {
     deliveryLogsByDeviceLoader: createDeliveryLogsByDeviceLoader(db),
 
     // Relation loaders (new)
-    subscribersByAppLoader: createSubscribersByAppLoader(db),
-    devicesBySubscriberLoader: createDevicesBySubscriberLoader(db),
-    preferencesBySubscriberLoader: createPreferencesBySubscriberLoader(db),
+    contactsByAppLoader: createContactsByAppLoader(db),
+    devicesByContactLoader: createDevicesByContactLoader(db),
+    preferencesByContactLoader: createPreferencesByContactLoader(db),
     channelsByAppLoader: createChannelsByAppLoader(db),
     templatesByChannelLoader: createTemplatesByChannelLoader(db),
     stepsByWorkflowLoader: createStepsByWorkflowLoader(db),

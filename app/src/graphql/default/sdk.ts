@@ -509,29 +509,29 @@ export function getSdk<C, E>(requester: Requester<C, E>) {
     deleteChannel(variables: Types.DeleteChannelMutationVariables, options?: C): Promise<ExecutionResult<Types.DeleteChannelMutation, E>> {
       return requester<Types.DeleteChannelMutation, Types.DeleteChannelMutationVariables>(`mutation deleteChannel($id: ID!) { deleteChannel(id: $id) }`, variables, options) as Promise<ExecutionResult<Types.DeleteChannelMutation, E>>;
     },
-    subscribers(variables: Types.SubscribersQueryVariables, options?: C): Promise<ExecutionResult<Types.SubscribersQuery, E>> {
-      return requester<Types.SubscribersQuery, Types.SubscribersQueryVariables>(`query subscribers($appId: ID!, $limit: Int, $offset: Int) { subscribers(appId: $appId, limit: $limit, offset: $offset) { id appId externalId email phone locale metadata createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.SubscribersQuery, E>>;
+    contacts(variables: Types.ContactsQueryVariables, options?: C): Promise<ExecutionResult<Types.ContactsQuery, E>> {
+      return requester<Types.ContactsQuery, Types.ContactsQueryVariables>(`query contacts($appId: ID!, $limit: Int, $offset: Int) { contacts(appId: $appId, limit: $limit, offset: $offset) { id appId externalId email phone locale metadata createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.ContactsQuery, E>>;
     },
-    subscriber(variables: Types.SubscriberQueryVariables, options?: C): Promise<ExecutionResult<Types.SubscriberQuery, E>> {
-      return requester<Types.SubscriberQuery, Types.SubscriberQueryVariables>(`query subscriber($id: ID!) { subscriber(id: $id) { id appId externalId email phone locale metadata createdAt updatedAt preferences { id category channelType enabled } } }`, variables, options) as Promise<ExecutionResult<Types.SubscriberQuery, E>>;
+    contact(variables: Types.ContactQueryVariables, options?: C): Promise<ExecutionResult<Types.ContactQuery, E>> {
+      return requester<Types.ContactQuery, Types.ContactQueryVariables>(`query contact($id: ID!) { contact(id: $id) { id appId externalId email phone locale metadata createdAt updatedAt preferences { id category channelType enabled } } }`, variables, options) as Promise<ExecutionResult<Types.ContactQuery, E>>;
     },
-    subscriberByExternalId(variables: Types.SubscriberByExternalIdQueryVariables, options?: C): Promise<ExecutionResult<Types.SubscriberByExternalIdQuery, E>> {
-      return requester<Types.SubscriberByExternalIdQuery, Types.SubscriberByExternalIdQueryVariables>(`query subscriberByExternalId($appId: ID!, $externalId: String!) { subscriberByExternalId(appId: $appId, externalId: $externalId) { id appId externalId email phone locale metadata createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.SubscriberByExternalIdQuery, E>>;
+    contactByExternalId(variables: Types.ContactByExternalIdQueryVariables, options?: C): Promise<ExecutionResult<Types.ContactByExternalIdQuery, E>> {
+      return requester<Types.ContactByExternalIdQuery, Types.ContactByExternalIdQueryVariables>(`query contactByExternalId($appId: ID!, $externalId: String!) { contactByExternalId(appId: $appId, externalId: $externalId) { id appId externalId email phone locale metadata createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.ContactByExternalIdQuery, E>>;
     },
-    createSubscriber(variables: Types.CreateSubscriberMutationVariables, options?: C): Promise<ExecutionResult<Types.CreateSubscriberMutation, E>> {
-      return requester<Types.CreateSubscriberMutation, Types.CreateSubscriberMutationVariables>(`mutation createSubscriber($input: CreateSubscriberInput!) { createSubscriber(input: $input) { id appId externalId email phone locale createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.CreateSubscriberMutation, E>>;
+    createContact(variables: Types.CreateContactMutationVariables, options?: C): Promise<ExecutionResult<Types.CreateContactMutation, E>> {
+      return requester<Types.CreateContactMutation, Types.CreateContactMutationVariables>(`mutation createContact($input: CreateContactInput!) { createContact(input: $input) { id appId externalId email phone locale createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.CreateContactMutation, E>>;
     },
-    updateSubscriber(variables: Types.UpdateSubscriberMutationVariables, options?: C): Promise<ExecutionResult<Types.UpdateSubscriberMutation, E>> {
-      return requester<Types.UpdateSubscriberMutation, Types.UpdateSubscriberMutationVariables>(`mutation updateSubscriber($id: ID!, $input: UpdateSubscriberInput!) { updateSubscriber(id: $id, input: $input) { id externalId email phone locale updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.UpdateSubscriberMutation, E>>;
+    updateContact(variables: Types.UpdateContactMutationVariables, options?: C): Promise<ExecutionResult<Types.UpdateContactMutation, E>> {
+      return requester<Types.UpdateContactMutation, Types.UpdateContactMutationVariables>(`mutation updateContact($id: ID!, $input: UpdateContactInput!) { updateContact(id: $id, input: $input) { id externalId email phone locale updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.UpdateContactMutation, E>>;
     },
-    deleteSubscriber(variables: Types.DeleteSubscriberMutationVariables, options?: C): Promise<ExecutionResult<Types.DeleteSubscriberMutation, E>> {
-      return requester<Types.DeleteSubscriberMutation, Types.DeleteSubscriberMutationVariables>(`mutation deleteSubscriber($id: ID!) { deleteSubscriber(id: $id) }`, variables, options) as Promise<ExecutionResult<Types.DeleteSubscriberMutation, E>>;
+    deleteContact(variables: Types.DeleteContactMutationVariables, options?: C): Promise<ExecutionResult<Types.DeleteContactMutation, E>> {
+      return requester<Types.DeleteContactMutation, Types.DeleteContactMutationVariables>(`mutation deleteContact($id: ID!) { deleteContact(id: $id) }`, variables, options) as Promise<ExecutionResult<Types.DeleteContactMutation, E>>;
     },
-    upsertSubscriberDevice(variables: Types.UpsertSubscriberDeviceMutationVariables, options?: C): Promise<ExecutionResult<Types.UpsertSubscriberDeviceMutation, E>> {
-      return requester<Types.UpsertSubscriberDeviceMutation, Types.UpsertSubscriberDeviceMutationVariables>(`mutation upsertSubscriberDevice($input: UpsertSubscriberDeviceInput!) { upsertSubscriberDevice(input: $input) }`, variables, options) as Promise<ExecutionResult<Types.UpsertSubscriberDeviceMutation, E>>;
+    upsertContactDevice(variables: Types.UpsertContactDeviceMutationVariables, options?: C): Promise<ExecutionResult<Types.UpsertContactDeviceMutation, E>> {
+      return requester<Types.UpsertContactDeviceMutation, Types.UpsertContactDeviceMutationVariables>(`mutation upsertContactDevice($input: UpsertContactDeviceInput!) { upsertContactDevice(input: $input) }`, variables, options) as Promise<ExecutionResult<Types.UpsertContactDeviceMutation, E>>;
     },
-    updateSubscriberPreference(variables: Types.UpdateSubscriberPreferenceMutationVariables, options?: C): Promise<ExecutionResult<Types.UpdateSubscriberPreferenceMutation, E>> {
-      return requester<Types.UpdateSubscriberPreferenceMutation, Types.UpdateSubscriberPreferenceMutationVariables>(`mutation updateSubscriberPreference($input: UpdateSubscriberPreferenceInput!) { updateSubscriberPreference(input: $input) { id subscriberId category channelType enabled updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.UpdateSubscriberPreferenceMutation, E>>;
+    updateContactPreference(variables: Types.UpdateContactPreferenceMutationVariables, options?: C): Promise<ExecutionResult<Types.UpdateContactPreferenceMutation, E>> {
+      return requester<Types.UpdateContactPreferenceMutation, Types.UpdateContactPreferenceMutationVariables>(`mutation updateContactPreference($input: UpdateContactPreferenceInput!) { updateContactPreference(input: $input) { id subscriberId category channelType enabled updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.UpdateContactPreferenceMutation, E>>;
     },
     templates(variables: Types.TemplatesQueryVariables, options?: C): Promise<ExecutionResult<Types.TemplatesQuery, E>> {
       return requester<Types.TemplatesQuery, Types.TemplatesQueryVariables>(`query templates($appId: ID!, $channelType: ChannelType) { templates(appId: $appId, channelType: $channelType) { id appId channelId name channelType subject body htmlBody createdAt updatedAt } }`, variables, options) as Promise<ExecutionResult<Types.TemplatesQuery, E>>;

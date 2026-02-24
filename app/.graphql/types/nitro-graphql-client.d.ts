@@ -721,34 +721,34 @@ export type UpdateChannelMutation = { __typename?: 'Mutation', updateChannel: { 
 export type DeleteChannelMutationVariables = Exact<{ id: Scalars['ID']['input']; }>;
 export type DeleteChannelMutation = { __typename?: 'Mutation', deleteChannel: boolean };
 
-// --- Subscribers ---
-export type SubscribersQueryVariables = Exact<{
+// --- Contacts ---
+export type ContactsQueryVariables = Exact<{
   appId: Scalars['ID']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
 }>;
-export type SubscribersQuery = { __typename?: 'Query', subscribers: Array<{ __typename?: 'Subscriber', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string }> };
+export type ContactsQuery = { __typename?: 'Query', contacts: Array<{ __typename?: 'Contact', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string }> };
 
-export type SubscriberQueryVariables = Exact<{ id: Scalars['ID']['input']; }>;
-export type SubscriberQuery = { __typename?: 'Query', subscriber?: { __typename?: 'Subscriber', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string, preferences?: Array<{ __typename?: 'SubscriberPreference', id: string, category: string, channelType: ChannelType, enabled: boolean }> | null | undefined } | null | undefined };
+export type ContactQueryVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type ContactQuery = { __typename?: 'Query', contact?: { __typename?: 'Contact', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string, preferences?: Array<{ __typename?: 'ContactPreference', id: string, category: string, channelType: ChannelType, enabled: boolean }> | null | undefined } | null | undefined };
 
-export type SubscriberByExternalIdQueryVariables = Exact<{ appId: Scalars['ID']['input']; externalId: Scalars['String']['input']; }>;
-export type SubscriberByExternalIdQuery = { __typename?: 'Query', subscriberByExternalId?: { __typename?: 'Subscriber', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string } | null | undefined };
+export type ContactByExternalIdQueryVariables = Exact<{ appId: Scalars['ID']['input']; externalId: Scalars['String']['input']; }>;
+export type ContactByExternalIdQuery = { __typename?: 'Query', contactByExternalId?: { __typename?: 'Contact', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string } | null | undefined };
 
-export type CreateSubscriberMutationVariables = Exact<{ input: CreateSubscriberInput; }>;
-export type CreateSubscriberMutation = { __typename?: 'Mutation', createSubscriber: { __typename?: 'Subscriber', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, createdAt: string, updatedAt: string } };
+export type CreateContactMutationVariables = Exact<{ input: CreateContactInput; }>;
+export type CreateContactMutation = { __typename?: 'Mutation', createContact: { __typename?: 'Contact', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, createdAt: string, updatedAt: string } };
 
-export type UpdateSubscriberMutationVariables = Exact<{ id: Scalars['ID']['input']; input: UpdateSubscriberInput; }>;
-export type UpdateSubscriberMutation = { __typename?: 'Mutation', updateSubscriber: { __typename?: 'Subscriber', id: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, updatedAt: string } };
+export type UpdateContactMutationVariables = Exact<{ id: Scalars['ID']['input']; input: UpdateContactInput; }>;
+export type UpdateContactMutation = { __typename?: 'Mutation', updateContact: { __typename?: 'Contact', id: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, updatedAt: string } };
 
-export type DeleteSubscriberMutationVariables = Exact<{ id: Scalars['ID']['input']; }>;
-export type DeleteSubscriberMutation = { __typename?: 'Mutation', deleteSubscriber: boolean };
+export type DeleteContactMutationVariables = Exact<{ id: Scalars['ID']['input']; }>;
+export type DeleteContactMutation = { __typename?: 'Mutation', deleteContact: boolean };
 
-export type UpsertSubscriberDeviceMutationVariables = Exact<{ input: UpsertSubscriberDeviceInput; }>;
-export type UpsertSubscriberDeviceMutation = { __typename?: 'Mutation', upsertSubscriberDevice: boolean };
+export type UpsertContactDeviceMutationVariables = Exact<{ input: UpsertContactDeviceInput; }>;
+export type UpsertContactDeviceMutation = { __typename?: 'Mutation', upsertContactDevice: boolean };
 
-export type UpdateSubscriberPreferenceMutationVariables = Exact<{ input: UpdateSubscriberPreferenceInput; }>;
-export type UpdateSubscriberPreferenceMutation = { __typename?: 'Mutation', updateSubscriberPreference: { __typename?: 'SubscriberPreference', id: string, subscriberId: string, category: string, channelType: ChannelType, enabled: boolean, updatedAt: string } };
+export type UpdateContactPreferenceMutationVariables = Exact<{ input: UpdateContactPreferenceInput; }>;
+export type UpdateContactPreferenceMutation = { __typename?: 'Mutation', updateContactPreference: { __typename?: 'ContactPreference', id: string, subscriberId: string, category: string, channelType: ChannelType, enabled: boolean, updatedAt: string } };
 
 // --- Templates ---
 export type TemplatesQueryVariables = Exact<{

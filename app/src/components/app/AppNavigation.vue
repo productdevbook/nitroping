@@ -36,10 +36,10 @@ const navigationItems = computed(() => [
     current: route.path === `/apps/${_props.appId}/notifications`,
   },
   {
-    name: 'Subscribers',
-    href: `/apps/${_props.appId}/subscribers`,
+    name: 'Contacts',
+    href: `/apps/${_props.appId}/contacts`,
     icon: 'lucide:users',
-    current: route.path === `/apps/${_props.appId}/subscribers`,
+    current: route.path === `/apps/${_props.appId}/contacts`,
   },
   {
     name: 'Channels',

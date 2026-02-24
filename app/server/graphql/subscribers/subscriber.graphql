@@ -1,4 +1,4 @@
-type Subscriber {
+type Contact {
   id: ID!
   appId: ID!
   externalId: String!
@@ -9,14 +9,14 @@ type Subscriber {
 
   # Relations
   devices: [Device!]
-  preferences: [SubscriberPreference!]
+  preferences: [ContactPreference!]
 
   # Timestamps
   createdAt: Timestamp!
   updatedAt: Timestamp!
 }
 
-type SubscriberPreference {
+type ContactPreference {
   id: ID!
   subscriberId: ID!
   category: String!
@@ -26,7 +26,7 @@ type SubscriberPreference {
   updatedAt: Timestamp!
 }
 
-input CreateSubscriberInput {
+input CreateContactInput {
   appId: ID!
   externalId: String!
   email: String
@@ -35,19 +35,19 @@ input CreateSubscriberInput {
   metadata: JSON
 }
 
-input UpdateSubscriberInput {
+input UpdateContactInput {
   email: String
   phone: String
   locale: String
   metadata: JSON
 }
 
-input UpsertSubscriberDeviceInput {
+input UpsertContactDeviceInput {
   subscriberId: ID!
   deviceId: ID!
 }
 
-input UpdateSubscriberPreferenceInput {
+input UpdateContactPreferenceInput {
   subscriberId: ID!
   category: String!
   channelType: ChannelType!
@@ -55,15 +55,15 @@ input UpdateSubscriberPreferenceInput {
 }
 
 extend type Query {
-  subscribers(appId: ID!, limit: Int = 50, offset: Int = 0): [Subscriber!]!
-  subscriber(id: ID!): Subscriber
-  subscriberByExternalId(appId: ID!, externalId: String!): Subscriber
+  contacts(appId: ID!, limit: Int = 50, offset: Int = 0): [Contact!]!
+  contact(id: ID!): Contact
+  contactByExternalId(appId: ID!, externalId: String!): Contact
 }
 
 extend type Mutation {
-  createSubscriber(input: CreateSubscriberInput!): Subscriber!
-  updateSubscriber(id: ID!, input: UpdateSubscriberInput!): Subscriber!
-  deleteSubscriber(id: ID!): Boolean!
-  upsertSubscriberDevice(input: UpsertSubscriberDeviceInput!): Boolean!
-  updateSubscriberPreference(input: UpdateSubscriberPreferenceInput!): SubscriberPreference!
+  createContact(input: CreateContactInput!): Contact!
+  updateContact(id: ID!, input: UpdateContactInput!): Contact!
+  deleteContact(id: ID!): Boolean!
+  upsertContactDevice(input: UpsertContactDeviceInput!): Boolean!
+  updateContactPreference(input: UpdateContactPreferenceInput!): ContactPreference!
 }

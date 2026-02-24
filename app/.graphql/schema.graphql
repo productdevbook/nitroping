@@ -99,6 +99,30 @@ input ConfigureWebPushInput {
   privateKey: String!
 }
 
+type Contact {
+  id: ID!
+  appId: ID!
+  externalId: String!
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+  devices: [Device!]
+  preferences: [ContactPreference!]
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type ContactPreference {
+  id: ID!
+  subscriberId: ID!
+  category: String!
+  channelType: ChannelType!
+  enabled: Boolean!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
 input CreateAppInput {
   name: String!
   slug: String!
@@ -112,21 +136,21 @@ input CreateChannelInput {
   config: JSON
 }
 
-input CreateHookInput {
-  appId: ID!
-  name: String!
-  url: String!
-  secret: String
-  events: JSON
-}
-
-input CreateSubscriberInput {
+input CreateContactInput {
   appId: ID!
   externalId: String!
   email: String
   phone: String
   locale: String
   metadata: JSON
+}
+
+input CreateHookInput {
+  appId: ID!
+  name: String!
+  url: String!
+  secret: String
+  events: JSON
 }
 
 input CreateTemplateInput {
@@ -257,15 +281,15 @@ type Mutation {
   configureWebPush(id: ID!, input: ConfigureWebPushInput!): App!
   createApp(input: CreateAppInput!): App!
   createChannel(input: CreateChannelInput!): Channel!
+  createContact(input: CreateContactInput!): Contact!
   createHook(input: CreateHookInput!): Hook!
-  createSubscriber(input: CreateSubscriberInput!): Subscriber!
   createTemplate(input: CreateTemplateInput!): Template!
   createWorkflow(input: CreateWorkflowInput!): Workflow!
   deleteApp(id: ID!): Boolean!
   deleteChannel(id: ID!): Boolean!
+  deleteContact(id: ID!): Boolean!
   deleteDevice(id: ID!): Boolean!
   deleteHook(id: ID!): Boolean!
-  deleteSubscriber(id: ID!): Boolean!
   deleteTemplate(id: ID!): Boolean!
   deleteWorkflow(id: ID!): Boolean!
   regenerateApiKey(id: ID!): App!
@@ -278,13 +302,13 @@ type Mutation {
   triggerWorkflow(input: TriggerWorkflowInput!): WorkflowExecution!
   updateApp(id: ID!, input: UpdateAppInput!): App!
   updateChannel(id: ID!, input: UpdateChannelInput!): Channel!
+  updateContact(id: ID!, input: UpdateContactInput!): Contact!
+  updateContactPreference(input: UpdateContactPreferenceInput!): ContactPreference!
   updateDevice(id: ID!, input: UpdateDeviceInput!): Device!
   updateHook(id: ID!, input: UpdateHookInput!): Hook!
-  updateSubscriber(id: ID!, input: UpdateSubscriberInput!): Subscriber!
-  updateSubscriberPreference(input: UpdateSubscriberPreferenceInput!): SubscriberPreference!
   updateTemplate(id: ID!, input: UpdateTemplateInput!): Template!
   updateWorkflow(id: ID!, input: UpdateWorkflowInput!): Workflow!
-  upsertSubscriberDevice(input: UpsertSubscriberDeviceInput!): Boolean!
+  upsertContactDevice(input: UpsertContactDeviceInput!): Boolean!
 }
 
 type Notification {
@@ -370,6 +394,9 @@ type Query {
   apps: [App!]!
   channel(id: ID!): Channel
   channels(appId: ID!, type: ChannelType): [Channel!]!
+  contact(id: ID!): Contact
+  contactByExternalId(appId: ID!, externalId: String!): Contact
+  contacts(appId: ID!, limit: Int = 50, offset: Int = 0): [Contact!]!
   dashboardStats: DashboardStats!
   deliveryLogs(notificationId: ID, limit: Int = 50, offset: Int = 0): [DeliveryLog!]!
   device(id: ID!): Device
@@ -383,9 +410,6 @@ type Query {
   notification(id: ID!): Notification
   notifications(appId: ID, limit: Int = 50, offset: Int = 0): [Notification!]!
   platformStats(appId: ID): [PlatformStats!]!
-  subscriber(id: ID!): Subscriber
-  subscriberByExternalId(appId: ID!, externalId: String!): Subscriber
-  subscribers(appId: ID!, limit: Int = 50, offset: Int = 0): [Subscriber!]!
   template(id: ID!): Template
   templates(appId: ID!, channelType: ChannelType): [Template!]!
   workflow(id: ID!): Workflow
@@ -416,30 +440,6 @@ input SendNotificationInput {
   targetDevices: JSON
   platforms: JSON
   scheduledAt: Timestamp
-}
-
-type Subscriber {
-  id: ID!
-  appId: ID!
-  externalId: String!
-  email: String
-  phone: String
-  locale: String
-  metadata: JSON
-  devices: [Device!]
-  preferences: [SubscriberPreference!]
-  createdAt: Timestamp!
-  updatedAt: Timestamp!
-}
-
-type SubscriberPreference {
-  id: ID!
-  subscriberId: ID!
-  category: String!
-  channelType: ChannelType!
-  enabled: Boolean!
-  createdAt: Timestamp!
-  updatedAt: Timestamp!
 }
 
 type Template {
@@ -498,6 +498,20 @@ input UpdateChannelInput {
   isActive: Boolean
 }
 
+input UpdateContactInput {
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+}
+
+input UpdateContactPreferenceInput {
+  subscriberId: ID!
+  category: String!
+  channelType: ChannelType!
+  enabled: Boolean!
+}
+
 input UpdateDeviceInput {
   status: DeviceStatus
   userId: String
@@ -510,20 +524,6 @@ input UpdateHookInput {
   secret: String
   events: JSON
   isActive: Boolean
-}
-
-input UpdateSubscriberInput {
-  email: String
-  phone: String
-  locale: String
-  metadata: JSON
-}
-
-input UpdateSubscriberPreferenceInput {
-  subscriberId: ID!
-  category: String!
-  channelType: ChannelType!
-  enabled: Boolean!
 }
 
 input UpdateTemplateInput {
@@ -543,7 +543,7 @@ input UpdateWorkflowInput {
   flowLayout: JSON
 }
 
-input UpsertSubscriberDeviceInput {
+input UpsertContactDeviceInput {
   subscriberId: ID!
   deviceId: ID!
 }

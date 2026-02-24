@@ -10,24 +10,24 @@ import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
 import { useApp } from '~/graphql'
-import { useCreateSubscriber, useDeleteSubscriber, useSubscribers } from '~/graphql/subscribers'
+import { useCreateContact, useDeleteContact, useContacts } from '~/graphql/contacts'
 
 const route = useRoute()
 const appId = computed(() => route.params.id as string)
 
 const { data: appData } = useApp(appId)
 const app = computed(() => appData.value)
-const { data: subscribersData, isLoading } = useSubscribers(appId)
-const subscriberList = computed(() => subscribersData.value || [])
+const { data: contactsData, isLoading } = useContacts(appId)
+const contactList = computed(() => contactsData.value || [])
 
-const { mutateAsync: createSubscriber, isLoading: isCreating } = useCreateSubscriber()
-const { mutateAsync: deleteSubscriber } = useDeleteSubscriber()
+const { mutateAsync: createContact, isLoading: isCreating } = useCreateContact()
+const { mutateAsync: deleteContact } = useDeleteContact()
 
 const showCreate = ref(false)
 const form = ref({ externalId: '', email: '', phone: '', locale: '' })
 
 async function handleCreate() {
-  await createSubscriber({
+  await createContact({
     appId: appId.value,
     externalId: form.value.externalId,
     email: form.value.email || undefined,
@@ -39,7 +39,7 @@ async function handleCreate() {
 }
 
 async function handleDelete(id: string) {
-  await deleteSubscriber({ id, appId: appId.value })
+  await deleteContact({ id, appId: appId.value })
 }
 </script>
 
@@ -51,14 +51,14 @@ async function handleDelete(id: string) {
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-xl font-semibold">
-          Subscribers
+          Contacts
         </h2>
         <p class="text-sm text-muted-foreground">
-          Manage notification subscribers for this app
+          Manage notification contacts for this app
         </p>
       </div>
       <Button @click="showCreate = true">
-        Add Subscriber
+        Add Contact
       </Button>
     </div>
 
@@ -81,23 +81,23 @@ async function handleDelete(id: string) {
                 Loading...
               </TableCell>
             </TableRow>
-            <TableRow v-else-if="subscriberList.length === 0">
+            <TableRow v-else-if="contactList.length === 0">
               <TableCell colspan="6" class="text-center py-8 text-muted-foreground">
-                No subscribers yet
+                No contacts yet
               </TableCell>
             </TableRow>
-            <TableRow v-for="sub in subscriberList" :key="sub.id">
+            <TableRow v-for="contact in contactList" :key="contact.id">
               <TableCell class="font-mono text-sm">
-                {{ sub.externalId }}
+                {{ contact.externalId }}
               </TableCell>
-              <TableCell>{{ sub.email || '—' }}</TableCell>
-              <TableCell>{{ sub.phone || '—' }}</TableCell>
-              <TableCell>{{ sub.locale || '—' }}</TableCell>
+              <TableCell>{{ contact.email || '—' }}</TableCell>
+              <TableCell>{{ contact.phone || '—' }}</TableCell>
+              <TableCell>{{ contact.locale || '—' }}</TableCell>
               <TableCell class="text-sm text-muted-foreground">
-                {{ new Date(sub.createdAt).toLocaleDateString() }}
+                {{ new Date(contact.createdAt).toLocaleDateString() }}
               </TableCell>
               <TableCell>
-                <Button variant="destructive" size="sm" @click="handleDelete(sub.id)">
+                <Button variant="destructive" size="sm" @click="handleDelete(contact.id)">
                   Delete
                 </Button>
               </TableCell>
@@ -110,7 +110,7 @@ async function handleDelete(id: string) {
     <Dialog v-model:open="showCreate">
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Subscriber</DialogTitle>
+          <DialogTitle>Add Contact</DialogTitle>
         </DialogHeader>
         <div class="space-y-4">
           <div>

@@ -2,13 +2,13 @@ import { defineRelations } from 'drizzle-orm'
 import { apiKey } from './apiKey'
 import { app } from './app'
 import { channel } from './channel'
+import { contact } from './contact'
+import { contactDevice } from './contactDevice'
+import { contactPreference } from './contactPreference'
 import { deliveryLog } from './deliveryLog'
 import { device } from './device'
 import { hook } from './hook'
 import { notification } from './notification'
-import { subscriber } from './subscriber'
-import { subscriberDevice } from './subscriberDevice'
-import { subscriberPreference } from './subscriberPreference'
 import { template } from './template'
 import { workflow } from './workflow'
 import { workflowExecution } from './workflowExecution'
@@ -20,14 +20,14 @@ const schema = {
   device,
   notification,
   deliveryLog,
-  subscriber,
-  subscriberDevice,
+  contact,
+  contactDevice,
   channel,
   template,
   workflow,
   workflowStep,
   workflowExecution,
-  subscriberPreference,
+  contactPreference,
   hook,
 }
 
@@ -45,9 +45,9 @@ export const relations = defineRelations(schema, helpers => ({
       from: helpers.app.id,
       to: helpers.apiKey.appId,
     }),
-    subscribers: helpers.many.subscriber({
+    contacts: helpers.many.contact({
       from: helpers.app.id,
-      to: helpers.subscriber.appId,
+      to: helpers.contact.appId,
     }),
     channels: helpers.many.channel({
       from: helpers.app.id,
@@ -81,9 +81,9 @@ export const relations = defineRelations(schema, helpers => ({
       from: helpers.device.id,
       to: helpers.deliveryLog.deviceId,
     }),
-    subscriberDevices: helpers.many.subscriberDevice({
+    contactDevices: helpers.many.contactDevice({
       from: helpers.device.id,
-      to: helpers.subscriberDevice.deviceId,
+      to: helpers.contactDevice.deviceId,
     }),
   },
   notification: {
@@ -106,38 +106,38 @@ export const relations = defineRelations(schema, helpers => ({
       to: helpers.device.id,
     }),
   },
-  subscriber: {
+  contact: {
     app: helpers.one.app({
-      from: helpers.subscriber.appId,
+      from: helpers.contact.appId,
       to: helpers.app.id,
     }),
-    subscriberDevices: helpers.many.subscriberDevice({
-      from: helpers.subscriber.id,
-      to: helpers.subscriberDevice.subscriberId,
+    contactDevices: helpers.many.contactDevice({
+      from: helpers.contact.id,
+      to: helpers.contactDevice.subscriberId,
     }),
-    preferences: helpers.many.subscriberPreference({
-      from: helpers.subscriber.id,
-      to: helpers.subscriberPreference.subscriberId,
+    preferences: helpers.many.contactPreference({
+      from: helpers.contact.id,
+      to: helpers.contactPreference.subscriberId,
     }),
     executions: helpers.many.workflowExecution({
-      from: helpers.subscriber.id,
+      from: helpers.contact.id,
       to: helpers.workflowExecution.subscriberId,
     }),
   },
-  subscriberDevice: {
-    subscriber: helpers.one.subscriber({
-      from: helpers.subscriberDevice.subscriberId,
-      to: helpers.subscriber.id,
+  contactDevice: {
+    contact: helpers.one.contact({
+      from: helpers.contactDevice.subscriberId,
+      to: helpers.contact.id,
     }),
     device: helpers.one.device({
-      from: helpers.subscriberDevice.deviceId,
+      from: helpers.contactDevice.deviceId,
       to: helpers.device.id,
     }),
   },
-  subscriberPreference: {
-    subscriber: helpers.one.subscriber({
-      from: helpers.subscriberPreference.subscriberId,
-      to: helpers.subscriber.id,
+  contactPreference: {
+    contact: helpers.one.contact({
+      from: helpers.contactPreference.subscriberId,
+      to: helpers.contact.id,
     }),
   },
   channel: {
@@ -185,9 +185,9 @@ export const relations = defineRelations(schema, helpers => ({
       from: helpers.workflowExecution.workflowId,
       to: helpers.workflow.id,
     }),
-    subscriber: helpers.one.subscriber({
+    contact: helpers.one.contact({
       from: helpers.workflowExecution.subscriberId,
-      to: helpers.subscriber.id,
+      to: helpers.contact.id,
     }),
   },
   hook: {

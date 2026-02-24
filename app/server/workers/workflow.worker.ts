@@ -197,13 +197,13 @@ async function handleSendStep(
   // Resolve recipient
   let to: string = cfg.to || ''
   if (!to && subscriberId) {
-    const subRows = await db
+    const contactRows = await db
       .select()
-      .from(tables.subscriber)
-      .where(eq(tables.subscriber.id, subscriberId))
+      .from(tables.contact)
+      .where(eq(tables.contact.id, subscriberId))
       .limit(1)
-    if (subRows[0]?.email) {
-      to = subRows[0].email
+    if (contactRows[0]?.email) {
+      to = contactRows[0].email
     }
   }
   if (!to) {

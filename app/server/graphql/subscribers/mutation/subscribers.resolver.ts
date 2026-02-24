@@ -4,12 +4,12 @@ import { and, eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
 export const subscriberMutations = defineMutation({
-  createSubscriber: {
+  createContact: {
     resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       const [row] = await db
-        .insert(tables.subscriber)
+        .insert(tables.contact)
         .values({
           appId: input.appId as string,
           externalId: input.externalId as string,
@@ -21,17 +21,17 @@ export const subscriberMutations = defineMutation({
         .returning()
 
       if (!row)
-        throw new Error('Failed to create subscriber')
+        throw new Error('Failed to create contact')
       return row
     },
   },
 
-  updateSubscriber: {
+  updateContact: {
     resolve: async (_parent, { id, input }, _ctx) => {
       const db = useDatabase()
 
       const [row] = await db
-        .update(tables.subscriber)
+        .update(tables.contact)
         .set({
           ...(input.email !== undefined ? { email: input.email as string } : {}),
           ...(input.phone !== undefined ? { phone: input.phone as string } : {}),
@@ -39,41 +39,41 @@ export const subscriberMutations = defineMutation({
           ...(input.metadata !== undefined ? { metadata: input.metadata as any } : {}),
           updatedAt: new Date().toISOString(),
         })
-        .where(eq(tables.subscriber.id, id as string))
+        .where(eq(tables.contact.id, id as string))
         .returning()
 
       if (!row)
-        throw new Error('Subscriber not found')
+        throw new Error('Contact not found')
       return row
     },
   },
 
-  deleteSubscriber: {
+  deleteContact: {
     resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
-      await db.delete(tables.subscriber).where(eq(tables.subscriber.id, id as string))
+      await db.delete(tables.contact).where(eq(tables.contact.id, id as string))
       return true
     },
   },
 
-  upsertSubscriberDevice: {
+  upsertContactDevice: {
     resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       // Check if already linked
       const existing = await db
         .select()
-        .from(tables.subscriberDevice)
+        .from(tables.contactDevice)
         .where(
           and(
-            eq(tables.subscriberDevice.subscriberId, input.subscriberId as string),
-            eq(tables.subscriberDevice.deviceId, input.deviceId as string),
+            eq(tables.contactDevice.subscriberId, input.subscriberId as string),
+            eq(tables.contactDevice.deviceId, input.deviceId as string),
           ),
         )
         .limit(1)
 
       if (!existing[0]) {
-        await db.insert(tables.subscriberDevice).values({
+        await db.insert(tables.contactDevice).values({
           subscriberId: input.subscriberId as string,
           deviceId: input.deviceId as string,
         })
@@ -89,33 +89,33 @@ export const subscriberMutations = defineMutation({
     },
   },
 
-  updateSubscriberPreference: {
+  updateContactPreference: {
     resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       const existing = await db
         .select()
-        .from(tables.subscriberPreference)
+        .from(tables.contactPreference)
         .where(
           and(
-            eq(tables.subscriberPreference.subscriberId, input.subscriberId as string),
-            eq(tables.subscriberPreference.category, input.category as string),
-            eq(tables.subscriberPreference.channelType, input.channelType as any),
+            eq(tables.contactPreference.subscriberId, input.subscriberId as string),
+            eq(tables.contactPreference.category, input.category as string),
+            eq(tables.contactPreference.channelType, input.channelType as any),
           ),
         )
         .limit(1)
 
       if (existing[0]) {
         const [row] = await db
-          .update(tables.subscriberPreference)
+          .update(tables.contactPreference)
           .set({ enabled: input.enabled as boolean, updatedAt: new Date().toISOString() })
-          .where(eq(tables.subscriberPreference.id, existing[0].id))
+          .where(eq(tables.contactPreference.id, existing[0].id))
           .returning()
         return row!
       }
 
       const [row] = await db
-        .insert(tables.subscriberPreference)
+        .insert(tables.contactPreference)
         .values({
           subscriberId: input.subscriberId as string,
           category: input.category as string,

@@ -219,8 +219,8 @@ export class NitroPingClient {
    */
   async identify(externalId: string, options: IdentifyOptions = {}): Promise<SubscriberProfile> {
     const query = `
-      mutation CreateSubscriber($input: CreateSubscriberInput!) {
-        createSubscriber(input: $input) {
+      mutation CreateContact($input: CreateContactInput!) {
+        createContact(input: $input) {
           id
           appId
           externalId
@@ -234,7 +234,7 @@ export class NitroPingClient {
       }
     `
 
-    const response = await apiRequest<{ data: { createSubscriber: SubscriberProfile } }>(
+    const response = await apiRequest<{ data: { createContact: SubscriberProfile } }>(
       `${this.config.apiUrl}/api/graphql`,
       {
         method: 'POST',
@@ -251,11 +251,11 @@ export class NitroPingClient {
       },
     )
 
-    if (!response.data?.createSubscriber) {
+    if (!response.data?.createContact) {
       throw new NitroPingError('Failed to identify subscriber', 'IDENTIFY_FAILED')
     }
 
-    return response.data.createSubscriber
+    return response.data.createContact
   }
 
   /**
@@ -271,8 +271,8 @@ export class NitroPingClient {
    */
   async updatePreference(input: PreferenceUpdateOptions & { subscriberId: string }): Promise<SubscriberPreferenceRecord> {
     const query = `
-      mutation UpdateSubscriberPreference($input: UpdateSubscriberPreferenceInput!) {
-        updateSubscriberPreference(input: $input) {
+      mutation UpdateContactPreference($input: UpdateContactPreferenceInput!) {
+        updateContactPreference(input: $input) {
           id
           subscriberId
           category
@@ -283,7 +283,7 @@ export class NitroPingClient {
       }
     `
 
-    const response = await apiRequest<{ data: { updateSubscriberPreference: SubscriberPreferenceRecord } }>(
+    const response = await apiRequest<{ data: { updateContactPreference: SubscriberPreferenceRecord } }>(
       `${this.config.apiUrl}/api/graphql`,
       {
         method: 'POST',
@@ -294,11 +294,11 @@ export class NitroPingClient {
       },
     )
 
-    if (!response.data?.updateSubscriberPreference) {
+    if (!response.data?.updateContactPreference) {
       throw new NitroPingError('Failed to update preference', 'PREFERENCE_UPDATE_FAILED')
     }
 
-    return response.data.updateSubscriberPreference
+    return response.data.updateContactPreference
   }
 
   /**

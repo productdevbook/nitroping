@@ -11,7 +11,7 @@ export interface DataLoaders {
   notificationLoader: DataLoader<string, typeof tables.notification.$inferSelect | null>
   deliveryLogLoader: DataLoader<string, typeof tables.deliveryLog.$inferSelect | null>
   apiKeyLoader: DataLoader<string, typeof tables.apiKey.$inferSelect | null>
-  subscriberLoader: DataLoader<string, typeof tables.subscriber.$inferSelect | null>
+  contactLoader: DataLoader<string, typeof tables.contact.$inferSelect | null>
   channelLoader: DataLoader<string, typeof tables.channel.$inferSelect | null>
   templateLoader: DataLoader<string, typeof tables.template.$inferSelect | null>
   workflowLoader: DataLoader<string, typeof tables.workflow.$inferSelect | null>
@@ -24,9 +24,9 @@ export interface DataLoaders {
   deliveryLogsByDeviceLoader: DataLoader<string, (typeof tables.deliveryLog.$inferSelect)[]>
 
   // Relation loaders (new)
-  subscribersByAppLoader: DataLoader<string, (typeof tables.subscriber.$inferSelect)[]>
-  devicesBySubscriberLoader: DataLoader<string, (typeof tables.device.$inferSelect)[]>
-  preferencesBySubscriberLoader: DataLoader<string, (typeof tables.subscriberPreference.$inferSelect)[]>
+  contactsByAppLoader: DataLoader<string, (typeof tables.contact.$inferSelect)[]>
+  devicesByContactLoader: DataLoader<string, (typeof tables.device.$inferSelect)[]>
+  preferencesByContactLoader: DataLoader<string, (typeof tables.contactPreference.$inferSelect)[]>
   channelsByAppLoader: DataLoader<string, (typeof tables.channel.$inferSelect)[]>
   templatesByChannelLoader: DataLoader<string, (typeof tables.template.$inferSelect)[]>
   stepsByWorkflowLoader: DataLoader<string, (typeof tables.workflowStep.$inferSelect)[]>

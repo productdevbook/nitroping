@@ -1,5 +1,5 @@
-query subscribers($appId: ID!, $limit: Int, $offset: Int) {
-  subscribers(appId: $appId, limit: $limit, offset: $offset) {
+query contacts($appId: ID!, $limit: Int, $offset: Int) {
+  contacts(appId: $appId, limit: $limit, offset: $offset) {
     id
     appId
     externalId
@@ -12,8 +12,8 @@ query subscribers($appId: ID!, $limit: Int, $offset: Int) {
   }
 }
 
-query subscriber($id: ID!) {
-  subscriber(id: $id) {
+query contact($id: ID!) {
+  contact(id: $id) {
     id
     appId
     externalId
@@ -32,8 +32,8 @@ query subscriber($id: ID!) {
   }
 }
 
-query subscriberByExternalId($appId: ID!, $externalId: String!) {
-  subscriberByExternalId(appId: $appId, externalId: $externalId) {
+query contactByExternalId($appId: ID!, $externalId: String!) {
+  contactByExternalId(appId: $appId, externalId: $externalId) {
     id
     appId
     externalId

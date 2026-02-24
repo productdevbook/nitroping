@@ -2,11 +2,11 @@ import { boolean, index, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customTimestamp, uuidv7Generator } from '../shared'
 import { channelTypeEnum } from './enums'
-import { subscriber } from './subscriber'
+import { contact } from './contact'
 
-export const subscriberPreference = pgTable('subscriberPreference', {
+export const contactPreference = pgTable('contactPreference', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),
-  subscriberId: uuid().notNull().references(() => subscriber.id, { onDelete: 'cascade' }),
+  subscriberId: uuid().notNull().references(() => contact.id, { onDelete: 'cascade' }),
   // Notification category (e.g. 'marketing', 'transactional')
   category: text().notNull(),
   channelType: channelTypeEnum().notNull(),
@@ -14,13 +14,13 @@ export const subscriberPreference = pgTable('subscriberPreference', {
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),
 }, table => [
-  index('subscriberPreference_subscriber_id_idx').on(table.subscriberId),
-  index('subscriberPreference_subscriber_category_channel_idx').on(
+  index('contactPreference_subscriber_id_idx').on(table.subscriberId),
+  index('contactPreference_subscriber_category_channel_idx').on(
     table.subscriberId,
     table.category,
     table.channelType,
   ),
 ])
 
-export const selectSubscriberPreferenceSchema = createSelectSchema(subscriberPreference)
-export const insertSubscriberPreferenceSchema = createInsertSchema(subscriberPreference)
+export const selectContactPreferenceSchema = createSelectSchema(contactPreference)
+export const insertContactPreferenceSchema = createInsertSchema(contactPreference)

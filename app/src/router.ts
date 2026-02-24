@@ -73,9 +73,9 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('./pages/apps/[id]/settings.vue'),
               },
               {
-                path: 'subscribers',
-                name: 'app-subscribers',
-                component: () => import('./pages/apps/[id]/subscribers.vue'),
+                path: 'contacts',
+                name: 'app-contacts',
+                component: () => import('./pages/apps/[id]/contacts.vue'),
               },
               {
                 path: 'channels',
