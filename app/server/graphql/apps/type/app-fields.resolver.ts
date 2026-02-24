@@ -11,7 +11,7 @@ export const appFieldsResolver = defineField({
     vapidPrivateKey: { resolve: () => null },
 
     devices: {
-      resolve: async (parent, _args, _ctx) => {
+      resolve: async (parent, _args, { context }) => {
         const { dataloaders } = context
         return await dataloaders.devicesByAppLoader.load(parent.id)
       },
