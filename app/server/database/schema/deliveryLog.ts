@@ -24,13 +24,14 @@ export const deliveryLog = pgTable('deliveryLog', {
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),
 }, table => [
-  unique('delivery_log_notification_device_unique').on(table.notificationId, table.deviceId),
   // Most frequent: look up all logs for a notification
   index('delivery_log_notification_id_idx').on(table.notificationId),
   // Analytics date-range queries
   index('delivery_log_created_at_idx').on(table.createdAt),
   // Status-based analytics (delivery rate calculations)
   index('delivery_log_status_idx').on(table.status),
+  // Composite: notification + device (non-unique – allows multiple retry rows)
+  index('delivery_log_notification_device_idx').on(table.notificationId, table.deviceId),
 ])
 
 export const selectDeliveryLogSchema = createSelectSchema(deliveryLog)
