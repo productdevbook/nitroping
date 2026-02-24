@@ -1,21 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent } from '~/components/ui/card'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
-import { useApp } from '~/graphql'
 import { useContacts, useCreateContact, useDeleteContact } from '~/graphql/contacts'
 
 const route = useRoute()
 const appId = computed(() => route.params.id as string)
 
-const { data: appData } = useApp(appId)
-const app = computed(() => appData.value)
 const { data: contactsData, isLoading } = useContacts(appId)
 const contactList = computed(() => contactsData.value || [])
 
@@ -44,7 +40,6 @@ async function handleDelete(id: string) {
 
 <template>
   <div>
-    <AppDetailHeader :app="app" />
 
     <div class="flex items-center justify-between mb-6">
       <div>

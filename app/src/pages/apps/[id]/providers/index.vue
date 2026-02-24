@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -33,7 +32,6 @@ function configureWebPush() {
 <template>
   <div v-if="app">
     <!-- App Header -->
-    <AppDetailHeader :app="app" />
 
     <!-- Navigation -->
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent } from '~/components/ui/card'
 import { Checkbox } from '~/components/ui/checkbox'
@@ -9,14 +8,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
-import { useApp } from '~/graphql'
 import { useCreateHook, useDeleteHook, useHooks } from '~/graphql/hooks'
 
 const route = useRoute()
 const appId = computed(() => route.params.id as string)
 
-const { data: appData } = useApp(appId)
-const app = computed(() => appData.value)
 const { data: hooksData, isLoading } = useHooks(appId)
 const hookList = computed(() => hooksData.value || [])
 
@@ -65,7 +61,6 @@ async function handleCreate() {
 
 <template>
   <div>
-    <AppDetailHeader :app="app" />
 
     <div class="flex items-center justify-between mb-6">
       <div>

@@ -14,6 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '~/components/ui/sidebar'
+import { useApp } from '~/graphql'
 
 const props = withDefaults(defineProps<SidebarProps>(), {
   collapsible: 'icon',
@@ -27,6 +28,9 @@ const appId = computed(() => {
 })
 
 const isAppContext = computed(() => !!appId.value)
+
+const { data: appData } = useApp(appId as any)
+const currentApp = computed(() => appData.value)
 
 // App-specific navigation
 const appNavItems = computed(() => {
@@ -83,8 +87,8 @@ const userData = computed(() => ({
                 <Icon name="lucide:arrow-left" class="size-4" />
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
-                <span class="truncate font-semibold">Applications</span>
-                <span class="truncate text-xs">Back to list</span>
+                <span class="truncate font-semibold">{{ currentApp?.name ?? '...' }}</span>
+                <span class="truncate text-xs text-muted-foreground">Back to list</span>
               </div>
             </RouterLink>
             <RouterLink v-else to="/">

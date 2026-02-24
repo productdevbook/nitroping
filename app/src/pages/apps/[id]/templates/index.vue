@@ -1,19 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { useApp } from '~/graphql'
 import { useDeleteTemplate, useTemplates } from '~/graphql/templates'
 
 const route = useRoute()
 const router = useRouter()
 const appId = computed(() => route.params.id as string)
 
-const { data: appData } = useApp(appId)
-const app = computed(() => appData.value)
 const { data: templatesData, isLoading } = useTemplates(appId)
 const templateList = computed(() => templatesData.value || [])
 const { mutateAsync: deleteTemplate } = useDeleteTemplate()
@@ -28,7 +24,6 @@ const channelTypeColors: Record<string, string> = {
 
 <template>
   <div>
-    <AppDetailHeader :app="app" />
 
     <div class="flex items-center justify-between mb-6">
       <div>

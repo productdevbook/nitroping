@@ -203,3 +203,5 @@ android/libs/x86_64/
 # Demo/Test files
 demo-devices.json
 test-tokens.txt
+
+.playwright-mcp

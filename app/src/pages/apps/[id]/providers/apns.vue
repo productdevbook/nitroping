@@ -3,7 +3,6 @@ import { useForm } from 'vee-validate'
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { z } from 'zod'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import Icon from '~/components/common/Icon.vue'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
@@ -98,7 +97,6 @@ const hasExistingConfig = computed(() => {
 <template>
   <div v-if="app">
     <!-- App Header -->
-    <AppDetailHeader :app="app" />
 
     <!-- Page Header -->
     <div class="flex items-center space-x-4 mb-8">

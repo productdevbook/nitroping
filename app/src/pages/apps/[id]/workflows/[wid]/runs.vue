@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 
 import { Button } from '~/components/ui/button'
 import { Card, CardContent } from '~/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
-import { useApp } from '~/graphql'
 import { useWorkflow, useWorkflowExecutions } from '~/graphql/workflows'
 
 const route = useRoute()
@@ -14,8 +12,6 @@ const router = useRouter()
 const appId = computed(() => route.params.id as string)
 const workflowId = computed(() => route.params.wid as string)
 
-const { data: appData } = useApp(appId)
-const app = computed(() => appData.value)
 const { data: workflowData } = useWorkflow(workflowId)
 const workflow = computed(() => workflowData.value)
 const { data: executionsData, isLoading } = useWorkflowExecutions(workflowId)
@@ -31,7 +27,6 @@ const statusColors: Record<string, string> = {
 
 <template>
   <div>
-    <AppDetailHeader :app="app" />
 
     <div class="flex items-center justify-between mb-6">
       <div>

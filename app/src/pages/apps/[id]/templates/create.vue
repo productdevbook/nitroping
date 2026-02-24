@@ -1,22 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Textarea } from '~/components/ui/textarea'
-import { useApp } from '~/graphql'
 import { useCreateTemplate } from '~/graphql/templates'
 
 const route = useRoute()
 const router = useRouter()
 const appId = computed(() => route.params.id as string)
 
-const { data: appData } = useApp(appId)
-const app = computed(() => appData.value)
 const { mutateAsync: createTemplate, isLoading } = useCreateTemplate()
 
 const form = ref({
@@ -42,7 +38,6 @@ async function handleCreate() {
 
 <template>
   <div>
-    <AppDetailHeader :app="app" />
 
     <div class="mb-6">
       <h2 class="text-xl font-semibold">

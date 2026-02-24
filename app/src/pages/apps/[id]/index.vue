@@ -2,7 +2,6 @@
 import { usePush } from 'notivue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import Icon from '~/components/common/Icon.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -95,7 +94,6 @@ onMounted(() => {
 <template>
   <div v-if="app">
     <!-- App Header -->
-    <AppDetailHeader :app="app" />
 
     <!-- Navigation -->
 
