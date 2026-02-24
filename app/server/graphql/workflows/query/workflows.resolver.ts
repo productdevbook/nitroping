@@ -1,10 +1,11 @@
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 import { and, desc, eq } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
 
 export const workflowsQuery = defineQuery({
   workflows: {
-    resolve: async (_parent, { appId, status }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { appId, status }, _ctx) => {
       const db = useDatabase()
 
       const conditions = [eq(tables.workflow.appId, appId as string)]
@@ -17,8 +18,7 @@ export const workflowsQuery = defineQuery({
   },
 
   workflow: {
-    resolve: async (_parent, { id }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
       const rows = await db
         .select()
@@ -30,8 +30,7 @@ export const workflowsQuery = defineQuery({
   },
 
   workflowExecutions: {
-    resolve: async (_parent, { workflowId, limit, offset }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { workflowId, limit, offset }, _ctx) => {
       const db = useDatabase()
 
       return db

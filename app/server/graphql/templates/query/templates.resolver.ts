@@ -1,10 +1,11 @@
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 import { and, eq } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
 
 export const templatesQuery = defineQuery({
   templates: {
-    resolve: async (_parent, { appId, channelType }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { appId, channelType }, _ctx) => {
       const db = useDatabase()
 
       const conditions = [eq(tables.template.appId, appId as string)]
@@ -17,8 +18,7 @@ export const templatesQuery = defineQuery({
   },
 
   template: {
-    resolve: async (_parent, { id }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
       const rows = await db
         .select()

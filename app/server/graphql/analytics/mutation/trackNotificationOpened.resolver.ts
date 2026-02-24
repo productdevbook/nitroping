@@ -1,9 +1,10 @@
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 import { defineMutation } from 'nitro-graphql/define'
 
 export const trackNotificationOpenedMutation = defineMutation({
   trackNotificationOpened: {
-    resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       try {

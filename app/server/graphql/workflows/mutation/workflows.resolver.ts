@@ -1,11 +1,12 @@
+import * as tables from '#server/database/schema'
 import { addTriggerWorkflowJob } from '#server/queues/workflow.queue'
+import { useDatabase } from '#server/utils/useDatabase'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
 export const workflowMutations = defineMutation({
   createWorkflow: {
-    resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       const [workflow] = await db
@@ -42,8 +43,7 @@ export const workflowMutations = defineMutation({
   },
 
   updateWorkflow: {
-    resolve: async (_parent, { id, input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { id, input }, _ctx) => {
       const db = useDatabase()
 
       const updates: any = { updatedAt: new Date().toISOString() }
@@ -89,8 +89,7 @@ export const workflowMutations = defineMutation({
   },
 
   deleteWorkflow: {
-    resolve: async (_parent, { id }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
       await db.delete(tables.workflow).where(eq(tables.workflow.id, id as string))
       return true
@@ -98,8 +97,7 @@ export const workflowMutations = defineMutation({
   },
 
   triggerWorkflow: {
-    resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       // Load workflow

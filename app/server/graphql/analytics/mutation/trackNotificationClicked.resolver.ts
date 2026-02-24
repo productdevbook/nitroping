@@ -1,10 +1,11 @@
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 import { and, eq, isNotNull } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
 export const trackNotificationClickedMutation = defineMutation({
   trackNotificationClicked: {
-    resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       try {

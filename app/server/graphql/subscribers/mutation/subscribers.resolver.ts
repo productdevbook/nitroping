@@ -1,10 +1,11 @@
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 import { and, eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
 export const subscriberMutations = defineMutation({
   createSubscriber: {
-    resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       const [row] = await db
@@ -26,8 +27,7 @@ export const subscriberMutations = defineMutation({
   },
 
   updateSubscriber: {
-    resolve: async (_parent, { id, input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { id, input }, _ctx) => {
       const db = useDatabase()
 
       const [row] = await db
@@ -49,8 +49,7 @@ export const subscriberMutations = defineMutation({
   },
 
   deleteSubscriber: {
-    resolve: async (_parent, { id }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
       await db.delete(tables.subscriber).where(eq(tables.subscriber.id, id as string))
       return true
@@ -58,8 +57,7 @@ export const subscriberMutations = defineMutation({
   },
 
   upsertSubscriberDevice: {
-    resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       // Check if already linked
@@ -92,8 +90,7 @@ export const subscriberMutations = defineMutation({
   },
 
   updateSubscriberPreference: {
-    resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       const existing = await db

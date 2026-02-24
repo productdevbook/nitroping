@@ -1,11 +1,12 @@
+import * as tables from '#server/database/schema'
 import { encryptSensitiveData } from '#server/utils/crypto'
+import { useDatabase } from '#server/utils/useDatabase'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
 export const hookMutations = defineMutation({
   createHook: {
-    resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       const secret = input.secret
@@ -31,8 +32,7 @@ export const hookMutations = defineMutation({
   },
 
   updateHook: {
-    resolve: async (_parent, { id, input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { id, input }, _ctx) => {
       const db = useDatabase()
 
       const updates: any = { updatedAt: new Date().toISOString() }
@@ -64,8 +64,7 @@ export const hookMutations = defineMutation({
   },
 
   deleteHook: {
-    resolve: async (_parent, { id }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
       await db.delete(tables.hook).where(eq(tables.hook.id, id as string))
       return true

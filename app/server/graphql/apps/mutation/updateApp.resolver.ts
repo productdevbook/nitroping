@@ -1,15 +1,16 @@
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 import { HTTPError } from 'nitro/h3'
 
 export const updateAppMutation = defineMutation({
   updateApp: {
-    resolve: async (_parent, { id, input }, { context }) => {
+    resolve: async (_parent, { id, input }, _ctx) => {
       // Uncomment this line to require authentication:
       // const app = await requireAuth(context)
       // if (app.id !== id) throw new HTTPError({ status: 403, message: 'Forbidden' })
 
-      const { useDatabase, tables } = context
       const db = useDatabase()
 
       const updatedApp = await db

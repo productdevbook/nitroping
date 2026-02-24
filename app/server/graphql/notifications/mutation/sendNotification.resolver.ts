@@ -1,11 +1,12 @@
+import * as tables from '#server/database/schema'
 import { addSendNotificationJob } from '#server/queues/notification.queue'
+import { useDatabase } from '#server/utils/useDatabase'
 import { and, eq, inArray } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
 export const notificationMutations = defineMutation({
   sendNotification: {
-    resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       // Create notification record immediately so the caller has an ID to track

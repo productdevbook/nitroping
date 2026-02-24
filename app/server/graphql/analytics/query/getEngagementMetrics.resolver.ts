@@ -1,10 +1,11 @@
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 import { and, eq, sql } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
 
 export const getEngagementMetricsQuery = defineQuery({
   getEngagementMetrics: {
-    resolve: async (_parent, { appId, timeRange = '7d' }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { appId, timeRange = '7d' }, _ctx) => {
       const db = useDatabase()
 
       try {

@@ -1,10 +1,11 @@
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 import { defineMutation } from 'nitro-graphql/define'
 import { HTTPError } from 'nitro/h3'
 
 export const registerDeviceMutation = defineMutation({
   registerDevice: {
-    resolve: async (_parent, { input }, { context }) => {
-      const { useDatabase, tables } = context
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       // Validate and clean push token based on platform
