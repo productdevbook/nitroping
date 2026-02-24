@@ -1,7 +1,7 @@
-import { and, eq, gte, sql } from 'drizzle-orm'
-import { defineField } from 'nitro-graphql/define'
 import * as tables from '#server/database/schema'
 import { useDatabase } from '#server/utils/useDatabase'
+import { and, eq, gte, sql } from 'drizzle-orm'
+import { defineField } from 'nitro-graphql/define'
 
 export const appFieldsResolver = defineField({
   App: {
@@ -11,7 +11,7 @@ export const appFieldsResolver = defineField({
     vapidPrivateKey: { resolve: () => null },
 
     devices: {
-      resolve: async (parent, _args, { context }) => {
+      resolve: async (parent, _args, _ctx) => {
         const { dataloaders } = context
         return await dataloaders.devicesByAppLoader.load(parent.id)
       },

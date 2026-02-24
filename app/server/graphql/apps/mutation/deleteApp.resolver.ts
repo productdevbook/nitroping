@@ -1,11 +1,11 @@
-import { eq } from 'drizzle-orm'
-import { defineMutation } from 'nitro-graphql/define'
 import * as tables from '#server/database/schema'
 import { useDatabase } from '#server/utils/useDatabase'
+import { eq } from 'drizzle-orm'
+import { defineMutation } from 'nitro-graphql/define'
 
 export const deleteAppMutation = defineMutation({
   deleteApp: {
-    resolve: async (_parent, { id }, { context }) => {
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
 
       await db

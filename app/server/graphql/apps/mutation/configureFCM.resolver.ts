@@ -1,13 +1,13 @@
+import * as tables from '#server/database/schema'
 import { encryptSensitiveData } from '#server/utils/crypto'
+import { useDatabase } from '#server/utils/useDatabase'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 import { HTTPError } from 'nitro/h3'
-import * as tables from '#server/database/schema'
-import { useDatabase } from '#server/utils/useDatabase'
 
 export const configureFCMMutation = defineMutation({
   configureFCM: {
-    resolve: async (_parent, { id, input }, { context }) => {
+    resolve: async (_parent, { id, input }, _ctx) => {
       const db = useDatabase()
 
       // Check if app exists

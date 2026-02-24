@@ -1,12 +1,12 @@
+import * as tables from '#server/database/schema'
+import { useDatabase } from '#server/utils/useDatabase'
 import { eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 import { HTTPError } from 'nitro/h3'
-import * as tables from '#server/database/schema'
-import { useDatabase } from '#server/utils/useDatabase'
 
 export const cancelNotificationMutation = defineMutation({
   cancelNotification: {
-    resolve: async (_parent, { id }, { context }) => {
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
 
       // Check if notification exists and is in a cancellable state
