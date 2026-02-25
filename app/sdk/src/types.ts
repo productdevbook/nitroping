@@ -1,8 +1,9 @@
 export interface NitroPingConfig {
   appId: string
-  vapidPublicKey: string
+  vapidPublicKey?: string  // required for push subscriptions, optional for email/sms-only usage
   apiUrl?: string
   userId?: string
+  swPath?: string          // custom service worker path, default: '/sw.js'
 }
 
 // ── Subscriber / multi-channel types ─────────────────────────────────────────
@@ -11,6 +12,7 @@ export interface SubscriberProfile {
   id: string
   appId: string
   externalId: string
+  name?: string
   email?: string
   phone?: string
   locale?: string
@@ -20,6 +22,7 @@ export interface SubscriberProfile {
 }
 
 export interface IdentifyOptions {
+  name?: string
   email?: string
   phone?: string
   locale?: string
@@ -28,7 +31,7 @@ export interface IdentifyOptions {
 
 export interface PreferenceUpdateOptions {
   category: string
-  channelType: 'PUSH' | 'EMAIL' | 'SMS' | 'IN_APP'
+  channelType: 'PUSH' | 'EMAIL' | 'SMS' | 'IN_APP' | 'DISCORD'
   enabled: boolean
 }
 

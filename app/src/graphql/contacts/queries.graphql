@@ -3,6 +3,7 @@ query contacts($appId: ID!, $limit: Int, $offset: Int) {
     id
     appId
     externalId
+    name
     email
     phone
     locale
@@ -17,6 +18,7 @@ query contact($id: ID!) {
     id
     appId
     externalId
+    name
     email
     phone
     locale
@@ -25,9 +27,11 @@ query contact($id: ID!) {
     updatedAt
     preferences {
       id
+      subscriberId
       category
       channelType
       enabled
+      updatedAt
     }
   }
 }
@@ -37,6 +41,7 @@ query contactByExternalId($appId: ID!, $externalId: String!) {
     id
     appId
     externalId
+    name
     email
     phone
     locale

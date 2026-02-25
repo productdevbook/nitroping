@@ -17,6 +17,7 @@ enum ChannelType {
   EMAIL
   SMS
   IN_APP
+  DISCORD
 }
 
 # Shared workflow enums

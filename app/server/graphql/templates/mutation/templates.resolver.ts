@@ -5,7 +5,7 @@ import { defineMutation } from 'nitro-graphql/define'
 
 export const templateMutations = defineMutation({
   createTemplate: {
-    resolve: async (_parent, { input }, _ctx) => {
+    resolve: async (_parent, { input }, ctx) => {
       const db = useDatabase()
 
       const [row] = await db
@@ -28,7 +28,7 @@ export const templateMutations = defineMutation({
   },
 
   updateTemplate: {
-    resolve: async (_parent, { id, input }, _ctx) => {
+    resolve: async (_parent, { id, input }, ctx) => {
       const db = useDatabase()
 
       const updates: any = { updatedAt: new Date().toISOString() }
@@ -56,7 +56,7 @@ export const templateMutations = defineMutation({
   },
 
   deleteTemplate: {
-    resolve: async (_parent, { id }, _ctx) => {
+    resolve: async (_parent, { id }, ctx) => {
       const db = useDatabase()
       await db.delete(tables.template).where(eq(tables.template.id, id as string))
       return true

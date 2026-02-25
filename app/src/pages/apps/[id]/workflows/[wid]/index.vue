@@ -12,7 +12,6 @@ import FilterNode from '~/components/workflow/nodes/FilterNode.vue'
 import SendNode from '~/components/workflow/nodes/SendNode.vue'
 import TriggerNode from '~/components/workflow/nodes/TriggerNode.vue'
 import StepConfigPanel from '~/components/workflow/panels/StepConfigPanel.vue'
-import { useApp } from '~/graphql'
 import { useUpdateWorkflow, useWorkflow } from '~/graphql/workflows'
 
 import '@vue-flow/core/dist/style.css'
@@ -25,8 +24,7 @@ const router = useRouter()
 const appId = computed(() => route.params.id as string)
 const workflowId = computed(() => route.params.wid as string)
 
-const { data: appData } = useApp(appId)
-const app = computed(() => appData.value)
+
 const { data: workflowData, isLoading } = useWorkflow(workflowId)
 const workflow = computed(() => workflowData.value)
 

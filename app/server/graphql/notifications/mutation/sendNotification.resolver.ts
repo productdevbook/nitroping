@@ -6,7 +6,7 @@ import { defineMutation } from 'nitro-graphql/define'
 
 export const notificationMutations = defineMutation({
   sendNotification: {
-    resolve: async (_parent, { input }, _ctx) => {
+    resolve: async (_parent, { input }, ctx) => {
       const db = useDatabase()
 
       // Create notification record immediately so the caller has an ID to track
@@ -40,7 +40,94 @@ export const notificationMutations = defineMutation({
         return insertedNotification
       }
 
-      // Resolve target devices
+      const channelType = input.channelType as string | undefined
+
+      // ── Channel-based delivery (EMAIL, SMS, DISCORD, IN_APP) ──────────────
+      if (channelType && channelType !== 'PUSH') {
+        const appId = input.appId as string
+        const channelId = input.channelId as string | undefined
+        const contactIds = input.contactIds as string[] | undefined
+
+        const payload = {
+          title: input.title as string,
+          body: input.body as string,
+          data: input.data as Record<string, any> | undefined,
+        }
+
+        if (channelType === 'DISCORD') {
+          // Discord is a single webhook — one job, no contact required
+          const resolvedChannelId = channelId ?? await resolveChannelId(db, appId, 'DISCORD')
+
+          await addSendNotificationJob({
+            deliveryMode: 'channel',
+            notificationId: insertedNotification.id,
+            appId,
+            channelId: resolvedChannelId,
+            to: '',
+            channelType: 'DISCORD',
+            payload,
+          })
+
+          await db
+            .update(tables.notification)
+            .set({ totalTargets: 1 })
+            .where(eq(tables.notification.id, insertedNotification.id))
+
+          return { ...insertedNotification, totalTargets: 1 }
+        }
+
+        // For EMAIL, SMS, IN_APP — resolve contacts
+        let contacts: Array<typeof tables.contact.$inferSelect>
+
+        if (contactIds && contactIds.length > 0) {
+          contacts = await db
+            .select()
+            .from(tables.contact)
+            .where(inArray(tables.contact.id, contactIds))
+        }
+        else {
+          contacts = await db
+            .select()
+            .from(tables.contact)
+            .where(eq(tables.contact.appId, appId))
+        }
+
+        const resolvedChannelId = channelId ?? await resolveChannelId(db, appId, channelType as 'EMAIL' | 'SMS' | 'IN_APP')
+
+        const jobs = contacts
+          .map((c) => {
+            const to = channelType === 'EMAIL'
+              ? c.email
+              : channelType === 'SMS'
+                ? c.phone
+                : c.id // IN_APP uses contactId
+
+            if (!to)
+              return null
+
+            return addSendNotificationJob({
+              deliveryMode: 'channel',
+              notificationId: insertedNotification.id,
+              appId,
+              channelId: resolvedChannelId,
+              to,
+              channelType: channelType as 'EMAIL' | 'SMS' | 'IN_APP',
+              payload,
+            })
+          })
+          .filter(Boolean)
+
+        await Promise.all(jobs)
+
+        await db
+          .update(tables.notification)
+          .set({ totalTargets: jobs.length })
+          .where(eq(tables.notification.id, insertedNotification.id))
+
+        return { ...insertedNotification, totalTargets: jobs.length }
+      }
+
+      // ── Device-based push delivery ─────────────────────────────────────────
       let targetDevices: Array<{ id: string, appId: string, token: string, platform: string, webPushP256dh: string | null, webPushAuth: string | null }>
 
       if (input.targetDevices && (input.targetDevices as string[]).length > 0) {
@@ -68,11 +155,11 @@ export const notificationMutations = defineMutation({
         .set({ totalTargets: targetDevices.length })
         .where(eq(tables.notification.id, insertedNotification.id))
 
-      // Enqueue one job per device – the worker handles actual delivery,
-      // retries, and stat updates asynchronously
+      // Enqueue one job per device
       await Promise.all(
         targetDevices.map(device =>
           addSendNotificationJob({
+            deliveryMode: 'device',
             notificationId: insertedNotification.id,
             deviceId: device.id,
             appId: input.appId as string,
@@ -100,3 +187,27 @@ export const notificationMutations = defineMutation({
     },
   },
 })
+
+async function resolveChannelId(
+  db: ReturnType<typeof import('#server/utils/useDatabase').useDatabase>,
+  appId: string,
+  type: string,
+): Promise<string> {
+  const rows = await db
+    .select()
+    .from(tables.channel)
+    .where(
+      and(
+        eq(tables.channel.appId, appId),
+        eq(tables.channel.type, type as any),
+        eq(tables.channel.isActive, true),
+      ),
+    )
+    .limit(1)
+
+  if (!rows[0]) {
+    throw new Error(`No active ${type} channel configured for app ${appId}`)
+  }
+
+  return rows[0].id
+}

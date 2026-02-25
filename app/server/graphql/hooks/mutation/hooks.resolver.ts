@@ -6,7 +6,7 @@ import { defineMutation } from 'nitro-graphql/define'
 
 export const hookMutations = defineMutation({
   createHook: {
-    resolve: async (_parent, { input }, _ctx) => {
+    resolve: async (_parent, { input }, ctx) => {
       const db = useDatabase()
 
       const secret = input.secret
@@ -32,7 +32,7 @@ export const hookMutations = defineMutation({
   },
 
   updateHook: {
-    resolve: async (_parent, { id, input }, _ctx) => {
+    resolve: async (_parent, { id, input }, ctx) => {
       const db = useDatabase()
 
       const updates: any = { updatedAt: new Date().toISOString() }
@@ -64,7 +64,7 @@ export const hookMutations = defineMutation({
   },
 
   deleteHook: {
-    resolve: async (_parent, { id }, _ctx) => {
+    resolve: async (_parent, { id }, ctx) => {
       const db = useDatabase()
       await db.delete(tables.hook).where(eq(tables.hook.id, id as string))
       return true

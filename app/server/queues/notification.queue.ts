@@ -1,14 +1,9 @@
 import { Queue } from 'bullmq'
 import { getRedisConnection } from '../utils/redis'
 
-export interface SendNotificationJobData {
+interface BaseJobData {
   notificationId: string
-  deviceId: string
   appId: string
-  platform: 'ios' | 'android' | 'web'
-  token: string
-  webPushP256dh?: string
-  webPushAuth?: string
   payload: {
     title: string
     body: string
@@ -19,6 +14,24 @@ export interface SendNotificationJobData {
     imageUrl?: string
   }
 }
+
+interface DeviceJobData extends BaseJobData {
+  deliveryMode: 'device'
+  deviceId: string
+  platform: 'ios' | 'android' | 'web'
+  token: string
+  webPushP256dh?: string
+  webPushAuth?: string
+}
+
+interface ChannelJobData extends BaseJobData {
+  deliveryMode: 'channel'
+  channelId: string
+  to: string
+  channelType: 'EMAIL' | 'SMS' | 'IN_APP' | 'DISCORD'
+}
+
+export type SendNotificationJobData = DeviceJobData | ChannelJobData
 
 let notificationQueue: Queue<SendNotificationJobData> | null = null
 

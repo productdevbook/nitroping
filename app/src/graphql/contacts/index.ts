@@ -30,6 +30,7 @@ export function useCreateContact() {
     mutation: async (input: {
       appId: string
       externalId: string
+      name?: string
       email?: string
       phone?: string
       locale?: string

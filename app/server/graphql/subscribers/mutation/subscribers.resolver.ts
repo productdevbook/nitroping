@@ -3,20 +3,40 @@ import { useDatabase } from '#server/utils/useDatabase'
 import { and, eq } from 'drizzle-orm'
 import { defineMutation } from 'nitro-graphql/define'
 
+const KNOWN_KEYS = ['name', 'email', 'phone', 'locale'] as const
+
+function extractKnownFields(metadata: Record<string, any> | null | undefined) {
+  const known: Partial<Record<typeof KNOWN_KEYS[number], any>> = {}
+  const remaining: Record<string, any> = {}
+
+  for (const [k, v] of Object.entries(metadata ?? {})) {
+    if ((KNOWN_KEYS as readonly string[]).includes(k)) {
+      (known as any)[k] = v
+    }
+    else {
+      remaining[k] = v
+    }
+  }
+  return { known, remaining }
+}
+
 export const subscriberMutations = defineMutation({
   createContact: {
-    resolve: async (_parent, { input }, _ctx) => {
+    resolve: async (_parent, { input }, ctx) => {
       const db = useDatabase()
+
+      const { known, remaining } = extractKnownFields(input.metadata as Record<string, any> | undefined)
 
       const [row] = await db
         .insert(tables.contact)
         .values({
           appId: input.appId as string,
           externalId: input.externalId as string,
-          email: input.email as string | undefined,
-          phone: input.phone as string | undefined,
-          locale: input.locale as string | undefined,
-          metadata: input.metadata as any,
+          name: (input.name as string | undefined) ?? known.name ?? undefined,
+          email: (input.email as string | undefined) ?? known.email ?? undefined,
+          phone: (input.phone as string | undefined) ?? known.phone ?? undefined,
+          locale: (input.locale as string | undefined) ?? known.locale ?? undefined,
+          metadata: Object.keys(remaining).length > 0 ? remaining : (input.metadata as any),
         })
         .returning()
 
@@ -27,18 +47,40 @@ export const subscriberMutations = defineMutation({
   },
 
   updateContact: {
-    resolve: async (_parent, { id, input }, _ctx) => {
+    resolve: async (_parent, { id, input }, ctx) => {
       const db = useDatabase()
+
+      const { known, remaining } = extractKnownFields(input.metadata as Record<string, any> | undefined)
+
+      const updates: Record<string, any> = { updatedAt: new Date().toISOString() }
+
+      if (input.name !== undefined)
+        updates.name = input.name as string
+      else if (known.name !== undefined)
+        updates.name = known.name
+
+      if (input.email !== undefined)
+        updates.email = input.email as string
+      else if (known.email !== undefined)
+        updates.email = known.email
+
+      if (input.phone !== undefined)
+        updates.phone = input.phone as string
+      else if (known.phone !== undefined)
+        updates.phone = known.phone
+
+      if (input.locale !== undefined)
+        updates.locale = input.locale as string
+      else if (known.locale !== undefined)
+        updates.locale = known.locale
+
+      if (input.metadata !== undefined) {
+        updates.metadata = Object.keys(remaining).length > 0 ? remaining : (input.metadata as any)
+      }
 
       const [row] = await db
         .update(tables.contact)
-        .set({
-          ...(input.email !== undefined ? { email: input.email as string } : {}),
-          ...(input.phone !== undefined ? { phone: input.phone as string } : {}),
-          ...(input.locale !== undefined ? { locale: input.locale as string } : {}),
-          ...(input.metadata !== undefined ? { metadata: input.metadata as any } : {}),
-          updatedAt: new Date().toISOString(),
-        })
+        .set(updates)
         .where(eq(tables.contact.id, id as string))
         .returning()
 
@@ -49,7 +91,7 @@ export const subscriberMutations = defineMutation({
   },
 
   deleteContact: {
-    resolve: async (_parent, { id }, _ctx) => {
+    resolve: async (_parent, { id }, ctx) => {
       const db = useDatabase()
       await db.delete(tables.contact).where(eq(tables.contact.id, id as string))
       return true

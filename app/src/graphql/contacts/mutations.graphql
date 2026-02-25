@@ -3,6 +3,7 @@ mutation createContact($input: CreateContactInput!) {
     id
     appId
     externalId
+    name
     email
     phone
     locale
@@ -15,6 +16,7 @@ mutation updateContact($id: ID!, $input: UpdateContactInput!) {
   updateContact(id: $id, input: $input) {
     id
     externalId
+    name
     email
     phone
     locale

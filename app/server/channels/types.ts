@@ -13,6 +13,6 @@ export interface ChannelResult {
 }
 
 export interface Channel {
-  type: 'PUSH' | 'EMAIL' | 'SMS' | 'IN_APP'
+  type: 'PUSH' | 'EMAIL' | 'SMS' | 'IN_APP' | 'DISCORD'
   send: (msg: ChannelMessage) => Promise<ChannelResult>
 }

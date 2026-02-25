@@ -7,6 +7,7 @@ export const contact = pgTable('contact', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),
   appId: uuid().notNull().references(() => app.id, { onDelete: 'cascade' }),
   externalId: text().notNull(),
+  name: text(),
   email: text(),
   phone: text(),
   locale: text(),

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { usePush } from 'notivue'
 
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -12,6 +13,7 @@ import { useChannels, useCreateChannel, useDeleteChannel } from '~/graphql/chann
 
 const route = useRoute()
 const appId = computed(() => route.params.id as string)
+const push = usePush()
 
 const { data: channelsData, isLoading } = useChannels(appId)
 const channelList = computed(() => channelsData.value || [])
@@ -30,6 +32,12 @@ const form = ref({
   smtpPass: '',
   smtpFrom: '',
   smtpFromName: '',
+  // Discord config
+  discordWebhookUrl: '',
+  // SMS / Twilio config
+  twilioAccountSid: '',
+  twilioAuthToken: '',
+  twilioFrom: '',
 })
 
 const channelTypeColors: Record<string, string> = {
@@ -37,11 +45,13 @@ const channelTypeColors: Record<string, string> = {
   PUSH: 'bg-purple-100 text-purple-700',
   SMS: 'bg-green-100 text-green-700',
   IN_APP: 'bg-orange-100 text-orange-700',
+  DISCORD: 'bg-indigo-100 text-indigo-700',
 }
 
-async function handleCreate() {
-  const config = form.value.type === 'EMAIL'
-    ? {
+function buildConfig() {
+  switch (form.value.type) {
+    case 'EMAIL':
+      return {
         provider: 'smtp',
         host: form.value.smtpHost,
         port: Number(form.value.smtpPort),
@@ -50,11 +60,58 @@ async function handleCreate() {
         from: form.value.smtpFrom,
         fromName: form.value.smtpFromName,
       }
-    : undefined
+    case 'DISCORD':
+      return { webhookUrl: form.value.discordWebhookUrl }
+    case 'SMS':
+      return {
+        provider: 'twilio',
+        accountSid: form.value.twilioAccountSid,
+        authToken: form.value.twilioAuthToken,
+        from: form.value.twilioFrom,
+      }
+    default:
+      return undefined
+  }
+}
 
-  await createChannel({ appId: appId.value, name: form.value.name, type: form.value.type, config })
-  showCreate.value = false
-  form.value = { name: '', type: 'EMAIL', smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: '', smtpFrom: '', smtpFromName: '' }
+function resetForm() {
+  form.value = {
+    name: '',
+    type: 'EMAIL',
+    smtpHost: '',
+    smtpPort: '587',
+    smtpUser: '',
+    smtpPass: '',
+    smtpFrom: '',
+    smtpFromName: '',
+    discordWebhookUrl: '',
+    twilioAccountSid: '',
+    twilioAuthToken: '',
+    twilioFrom: '',
+  }
+}
+
+async function handleCreate() {
+  try {
+    const config = buildConfig()
+    await createChannel({ appId: appId.value, name: form.value.name, type: form.value.type, config })
+    showCreate.value = false
+    resetForm()
+    push.success({ title: 'Channel created successfully' })
+  }
+  catch (error) {
+    push.error({ title: 'Failed to create channel', message: error instanceof Error ? error.message : 'Unknown error' })
+  }
+}
+
+async function handleDelete(id: string) {
+  try {
+    await deleteChannel({ id, appId: appId.value })
+    push.success({ title: 'Channel deleted' })
+  }
+  catch (error) {
+    push.error({ title: 'Failed to delete channel', message: error instanceof Error ? error.message : 'Unknown error' })
+  }
 }
 </script>
 
@@ -67,7 +124,7 @@ async function handleCreate() {
           Channels
         </h2>
         <p class="text-sm text-muted-foreground">
-          Configure delivery channels (Email, SMS, Push)
+          Configure delivery channels (Email, SMS, Discord, Push)
         </p>
       </div>
       <Button @click="showCreate = true">
@@ -108,7 +165,7 @@ async function handleCreate() {
             Created {{ new Date(ch.createdAt).toLocaleDateString() }}
           </div>
           <div class="mt-3 flex gap-2">
-            <Button variant="destructive" size="sm" @click="deleteChannel({ id: ch.id, appId })">
+            <Button variant="destructive" size="sm" @click="handleDelete(ch.id)">
               Delete
             </Button>
           </div>
@@ -124,7 +181,7 @@ async function handleCreate() {
         <div class="space-y-4">
           <div>
             <Label>Channel Name</Label>
-            <Input v-model="form.name" placeholder="My Email Channel" />
+            <Input v-model="form.name" placeholder="My Channel" />
           </div>
           <div>
             <Label>Type</Label>
@@ -145,10 +202,14 @@ async function handleCreate() {
                 <SelectItem value="IN_APP">
                   In-App
                 </SelectItem>
+                <SelectItem value="DISCORD">
+                  Discord
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          <!-- EMAIL: SMTP configuration -->
           <template v-if="form.type === 'EMAIL'">
             <div class="border rounded-lg p-4 space-y-3">
               <p class="text-sm font-medium">
@@ -181,6 +242,40 @@ async function handleCreate() {
                   <Label class="text-xs">From Name</Label>
                   <Input v-model="form.smtpFromName" placeholder="My App" />
                 </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- DISCORD: Webhook URL -->
+          <template v-if="form.type === 'DISCORD'">
+            <div class="border rounded-lg p-4 space-y-3">
+              <p class="text-sm font-medium">
+                Discord Webhook Configuration
+              </p>
+              <div>
+                <Label class="text-xs">Webhook URL</Label>
+                <Input v-model="form.discordWebhookUrl" placeholder="https://discord.com/api/webhooks/..." />
+              </div>
+            </div>
+          </template>
+
+          <!-- SMS: Twilio configuration -->
+          <template v-if="form.type === 'SMS'">
+            <div class="border rounded-lg p-4 space-y-3">
+              <p class="text-sm font-medium">
+                Twilio Configuration
+              </p>
+              <div>
+                <Label class="text-xs">Account SID</Label>
+                <Input v-model="form.twilioAccountSid" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+              </div>
+              <div>
+                <Label class="text-xs">Auth Token</Label>
+                <Input v-model="form.twilioAuthToken" type="password" />
+              </div>
+              <div>
+                <Label class="text-xs">From Number</Label>
+                <Input v-model="form.twilioFrom" placeholder="+1234567890" />
               </div>
             </div>
           </template>

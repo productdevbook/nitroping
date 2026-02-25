@@ -157,7 +157,8 @@ export type ChannelType =
   | 'PUSH'
   | 'EMAIL'
   | 'SMS'
-  | 'IN_APP';
+  | 'IN_APP'
+  | 'DISCORD';
 
 export interface ConfigureApNsInput {
   keyId: Scalars['String']['input'];
@@ -183,6 +184,7 @@ export interface Contact {
   id: Scalars['ID']['output'];
   appId: Scalars['ID']['output'];
   externalId: Scalars['String']['output'];
+  name?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   phone?: Maybe<Scalars['String']['output']>;
   locale?: Maybe<Scalars['String']['output']>;
@@ -220,6 +222,7 @@ export interface CreateChannelInput {
 export interface CreateContactInput {
   appId: Scalars['ID']['input'];
   externalId: Scalars['String']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
   email?: InputMaybe<Scalars['String']['input']>;
   phone?: InputMaybe<Scalars['String']['input']>;
   locale?: InputMaybe<Scalars['String']['input']>;
@@ -352,6 +355,20 @@ export type HookEvent =
   | 'WORKFLOW_COMPLETED'
   | 'WORKFLOW_FAILED';
 
+export interface InAppMessage {
+  __typename?: 'InAppMessage';
+  id: Scalars['ID']['output'];
+  appId: Scalars['ID']['output'];
+  contactId: Scalars['ID']['output'];
+  notificationId?: Maybe<Scalars['ID']['output']>;
+  title: Scalars['String']['output'];
+  body: Scalars['String']['output'];
+  data?: Maybe<Scalars['JSON']['output']>;
+  isRead: Scalars['Boolean']['output'];
+  readAt?: Maybe<Scalars['Timestamp']['output']>;
+  createdAt: Scalars['Timestamp']['output'];
+}
+
 export interface Mutation {
   __typename?: 'Mutation';
   _empty?: Maybe<Scalars['String']['output']>;
@@ -372,6 +389,7 @@ export interface Mutation {
   deleteHook: Scalars['Boolean']['output'];
   deleteTemplate: Scalars['Boolean']['output'];
   deleteWorkflow: Scalars['Boolean']['output'];
+  markInAppMessageRead: Scalars['Boolean']['output'];
   regenerateApiKey: App;
   registerDevice: Device;
   scheduleNotification: Notification;
@@ -476,6 +494,11 @@ export interface MutationDeleteTemplateArgs {
 
 
 export interface MutationDeleteWorkflowArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface MutationMarkInAppMessageReadArgs {
   id: Scalars['ID']['input'];
 }
 
@@ -672,11 +695,13 @@ export interface Query {
   getNotificationAnalytics?: Maybe<NotificationAnalytics>;
   hook?: Maybe<Hook>;
   hooks: Array<Hook>;
+  inAppMessages: Array<InAppMessage>;
   notification?: Maybe<Notification>;
   notifications: Array<Notification>;
   platformStats: Array<PlatformStats>;
   template?: Maybe<Template>;
   templates: Array<Template>;
+  unreadInAppCount: Scalars['Int']['output'];
   workflow?: Maybe<Workflow>;
   workflowExecutions: Array<WorkflowExecution>;
   workflows: Array<Workflow>;
@@ -783,6 +808,13 @@ export interface QueryHooksArgs {
 }
 
 
+export interface QueryInAppMessagesArgs {
+  contactId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}
+
+
 export interface QueryNotificationArgs {
   id: Scalars['ID']['input'];
 }
@@ -808,6 +840,11 @@ export interface QueryTemplateArgs {
 export interface QueryTemplatesArgs {
   appId: Scalars['ID']['input'];
   channelType?: InputMaybe<ChannelType>;
+}
+
+
+export interface QueryUnreadInAppCountArgs {
+  contactId: Scalars['ID']['input'];
 }
 
 
@@ -851,6 +888,9 @@ export interface SendNotificationInput {
   targetDevices?: InputMaybe<Scalars['JSON']['input']>;
   platforms?: InputMaybe<Scalars['JSON']['input']>;
   scheduledAt?: InputMaybe<Scalars['Timestamp']['input']>;
+  channelType?: InputMaybe<ChannelType>;
+  channelId?: InputMaybe<Scalars['ID']['input']>;
+  contactIds?: InputMaybe<Array<Scalars['ID']['input']>>;
 }
 
 export interface Template {
@@ -910,6 +950,7 @@ export interface UpdateChannelInput {
 }
 
 export interface UpdateContactInput {
+  name?: InputMaybe<Scalars['String']['input']>;
   email?: InputMaybe<Scalars['String']['input']>;
   phone?: InputMaybe<Scalars['String']['input']>;
   locale?: InputMaybe<Scalars['String']['input']>;
@@ -1142,6 +1183,7 @@ export type ResolversTypes = {
   EngagementMetrics: ResolverTypeWrapper<ResolverReturnType<EngagementMetrics>>;
   Hook: ResolverTypeWrapper<ResolverReturnType<Hook>>;
   HookEvent: ResolverTypeWrapper<ResolverReturnType<HookEvent>>;
+  InAppMessage: ResolverTypeWrapper<ResolverReturnType<InAppMessage>>;
   JSON: ResolverTypeWrapper<ResolverReturnType<Scalars['JSON']['output']>>;
   Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
   Notification: ResolverTypeWrapper<ResolverReturnType<Notification>>;
@@ -1206,6 +1248,7 @@ export type ResolversParentTypes = {
   Device: ResolverReturnType<Device>;
   EngagementMetrics: ResolverReturnType<EngagementMetrics>;
   Hook: ResolverReturnType<Hook>;
+  InAppMessage: ResolverReturnType<InAppMessage>;
   JSON: ResolverReturnType<Scalars['JSON']['output']>;
   Mutation: Record<PropertyKey, never>;
   Notification: ResolverReturnType<Notification>;
@@ -1318,6 +1361,7 @@ export type ContactResolvers<ContextType = H3Event, ParentType extends Resolvers
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   appId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   externalId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   email?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   phone?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   locale?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1400,6 +1444,19 @@ export type HookResolvers<ContextType = H3Event, ParentType extends ResolversPar
   updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
 };
 
+export type InAppMessageResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['InAppMessage'] = ResolversParentTypes['InAppMessage']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  appId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  contactId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  notificationId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  body?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  data?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  isRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  readAt?: Resolver<Maybe<ResolversTypes['Timestamp']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+};
+
 export interface JsonScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['JSON'], any> {
   name: 'JSON';
 }
@@ -1423,6 +1480,7 @@ export type MutationResolvers<ContextType = H3Event, ParentType extends Resolver
   deleteHook?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteHookArgs, 'id'>>;
   deleteTemplate?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteTemplateArgs, 'id'>>;
   deleteWorkflow?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteWorkflowArgs, 'id'>>;
+  markInAppMessageRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkInAppMessageReadArgs, 'id'>>;
   regenerateApiKey?: Resolver<ResolversTypes['App'], ParentType, ContextType, RequireFields<MutationRegenerateApiKeyArgs, 'id'>>;
   registerDevice?: Resolver<ResolversTypes['Device'], ParentType, ContextType, RequireFields<MutationRegisterDeviceArgs, 'input'>>;
   scheduleNotification?: Resolver<ResolversTypes['Notification'], ParentType, ContextType, RequireFields<MutationScheduleNotificationArgs, 'input'>>;
@@ -1530,11 +1588,13 @@ export type QueryResolvers<ContextType = H3Event, ParentType extends ResolversPa
   getNotificationAnalytics?: Resolver<Maybe<ResolversTypes['NotificationAnalytics']>, ParentType, ContextType, RequireFields<QueryGetNotificationAnalyticsArgs, 'notificationId'>>;
   hook?: Resolver<Maybe<ResolversTypes['Hook']>, ParentType, ContextType, RequireFields<QueryHookArgs, 'id'>>;
   hooks?: Resolver<Array<ResolversTypes['Hook']>, ParentType, ContextType, RequireFields<QueryHooksArgs, 'appId'>>;
+  inAppMessages?: Resolver<Array<ResolversTypes['InAppMessage']>, ParentType, ContextType, RequireFields<QueryInAppMessagesArgs, 'contactId' | 'limit' | 'offset'>>;
   notification?: Resolver<Maybe<ResolversTypes['Notification']>, ParentType, ContextType, RequireFields<QueryNotificationArgs, 'id'>>;
   notifications?: Resolver<Array<ResolversTypes['Notification']>, ParentType, ContextType, RequireFields<QueryNotificationsArgs, 'limit' | 'offset'>>;
   platformStats?: Resolver<Array<ResolversTypes['PlatformStats']>, ParentType, ContextType, Partial<QueryPlatformStatsArgs>>;
   template?: Resolver<Maybe<ResolversTypes['Template']>, ParentType, ContextType, RequireFields<QueryTemplateArgs, 'id'>>;
   templates?: Resolver<Array<ResolversTypes['Template']>, ParentType, ContextType, RequireFields<QueryTemplatesArgs, 'appId'>>;
+  unreadInAppCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryUnreadInAppCountArgs, 'contactId'>>;
   workflow?: Resolver<Maybe<ResolversTypes['Workflow']>, ParentType, ContextType, RequireFields<QueryWorkflowArgs, 'id'>>;
   workflowExecutions?: Resolver<Array<ResolversTypes['WorkflowExecution']>, ParentType, ContextType, RequireFields<QueryWorkflowExecutionsArgs, 'workflowId' | 'limit' | 'offset'>>;
   workflows?: Resolver<Array<ResolversTypes['Workflow']>, ParentType, ContextType, RequireFields<QueryWorkflowsArgs, 'appId'>>;
@@ -1619,6 +1679,7 @@ export type Resolvers<ContextType = H3Event> = {
   Device?: DeviceResolvers<ContextType>;
   EngagementMetrics?: EngagementMetricsResolvers<ContextType>;
   Hook?: HookResolvers<ContextType>;
+  InAppMessage?: InAppMessageResolvers<ContextType>;
   JSON?: GraphQLScalarType;
   Mutation?: MutationResolvers<ContextType>;
   Notification?: NotificationResolvers<ContextType>;

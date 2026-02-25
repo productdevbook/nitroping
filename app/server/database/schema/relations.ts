@@ -8,6 +8,7 @@ import { contactPreference } from './contactPreference'
 import { deliveryLog } from './deliveryLog'
 import { device } from './device'
 import { hook } from './hook'
+import { inAppMessage } from './inAppMessage'
 import { notification } from './notification'
 import { template } from './template'
 import { workflow } from './workflow'
@@ -29,6 +30,7 @@ const schema = {
   workflowExecution,
   contactPreference,
   hook,
+  inAppMessage,
 }
 
 export const relations = defineRelations(schema, helpers => ({
@@ -194,6 +196,20 @@ export const relations = defineRelations(schema, helpers => ({
     app: helpers.one.app({
       from: helpers.hook.appId,
       to: helpers.app.id,
+    }),
+  },
+  inAppMessage: {
+    app: helpers.one.app({
+      from: helpers.inAppMessage.appId,
+      to: helpers.app.id,
+    }),
+    contact: helpers.one.contact({
+      from: helpers.inAppMessage.contactId,
+      to: helpers.contact.id,
+    }),
+    notification: helpers.one.notification({
+      from: helpers.inAppMessage.notificationId,
+      to: helpers.notification.id,
     }),
   },
 }))

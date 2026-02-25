@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { usePush } from 'notivue'
 import Icon from '~/components/common/Icon.vue'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
@@ -15,6 +16,7 @@ import { useApp, useDeleteApp, useRegenerateApiKey, useUpdateApp } from '~/graph
 const route = useRoute()
 const router = useRouter()
 const appId = computed(() => route.params.id as string)
+const push = usePush()
 
 // API queries
 const { data: appData } = useApp(appId)
@@ -56,11 +58,11 @@ async function updateApp() {
         isActive: appForm.value.isActive,
       },
     })
-    // TODO: Show success toast
+    push.success({ title: 'App settings saved' })
   }
   catch (error) {
     console.error('Error updating app:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to save settings', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 }
 
@@ -68,11 +70,11 @@ async function regenerateApiKey() {
   try {
     await regenerateApiKeyMutation(appId.value)
     showRegenerateDialog.value = false
-    // TODO: Show success toast
+    push.success({ title: 'API key regenerated' })
   }
   catch (error) {
     console.error('Error regenerating API key:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to regenerate API key', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 }
 
@@ -84,12 +86,12 @@ async function deleteApp() {
   try {
     await deleteAppMutation(appId.value)
     showDeleteDialog.value = false
+    push.success({ title: 'App deleted' })
     router.push('/apps')
-    // TODO: Show success toast
   }
   catch (error) {
     console.error('Error deleting app:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to delete app', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 }
 

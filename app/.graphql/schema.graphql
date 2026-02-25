@@ -78,6 +78,7 @@ enum ChannelType {
   EMAIL
   SMS
   IN_APP
+  DISCORD
 }
 
 input ConfigureAPNsInput {
@@ -103,6 +104,7 @@ type Contact {
   id: ID!
   appId: ID!
   externalId: String!
+  name: String
   email: String
   phone: String
   locale: String
@@ -139,6 +141,7 @@ input CreateChannelInput {
 input CreateContactInput {
   appId: ID!
   externalId: String!
+  name: String
   email: String
   phone: String
   locale: String
@@ -271,6 +274,19 @@ enum HookEvent {
   WORKFLOW_FAILED
 }
 
+type InAppMessage {
+  id: ID!
+  appId: ID!
+  contactId: ID!
+  notificationId: ID
+  title: String!
+  body: String!
+  data: JSON
+  isRead: Boolean!
+  readAt: Timestamp
+  createdAt: Timestamp!
+}
+
 scalar JSON
 
 type Mutation {
@@ -292,6 +308,7 @@ type Mutation {
   deleteHook(id: ID!): Boolean!
   deleteTemplate(id: ID!): Boolean!
   deleteWorkflow(id: ID!): Boolean!
+  markInAppMessageRead(id: ID!): Boolean!
   regenerateApiKey(id: ID!): App!
   registerDevice(input: RegisterDeviceInput!): Device!
   scheduleNotification(input: SendNotificationInput!): Notification!
@@ -407,11 +424,13 @@ type Query {
   getNotificationAnalytics(notificationId: ID!): NotificationAnalytics
   hook(id: ID!): Hook
   hooks(appId: ID!): [Hook!]!
+  inAppMessages(contactId: ID!, limit: Int = 20, offset: Int = 0): [InAppMessage!]!
   notification(id: ID!): Notification
   notifications(appId: ID, limit: Int = 50, offset: Int = 0): [Notification!]!
   platformStats(appId: ID): [PlatformStats!]!
   template(id: ID!): Template
   templates(appId: ID!, channelType: ChannelType): [Template!]!
+  unreadInAppCount(contactId: ID!): Int!
   workflow(id: ID!): Workflow
   workflowExecutions(workflowId: ID!, limit: Int = 50, offset: Int = 0): [WorkflowExecution!]!
   workflows(appId: ID!, status: WorkflowStatus): [Workflow!]!
@@ -440,6 +459,9 @@ input SendNotificationInput {
   targetDevices: JSON
   platforms: JSON
   scheduledAt: Timestamp
+  channelType: ChannelType
+  channelId: ID
+  contactIds: [ID!]
 }
 
 type Template {
@@ -499,6 +521,7 @@ input UpdateChannelInput {
 }
 
 input UpdateContactInput {
+  name: String
   email: String
   phone: String
   locale: String

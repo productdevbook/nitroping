@@ -277,6 +277,7 @@ export const CreateContactDocument = /*#__PURE__*/ `
     id
     appId
     externalId
+    name
     email
     phone
     locale
@@ -290,6 +291,7 @@ export const UpdateContactDocument = /*#__PURE__*/ `
   updateContact(id: $id, input: $input) {
     id
     externalId
+    name
     email
     phone
     locale
@@ -325,6 +327,7 @@ export const ContactsDocument = /*#__PURE__*/ `
     id
     appId
     externalId
+    name
     email
     phone
     locale
@@ -340,6 +343,7 @@ export const ContactDocument = /*#__PURE__*/ `
     id
     appId
     externalId
+    name
     email
     phone
     locale
@@ -348,9 +352,11 @@ export const ContactDocument = /*#__PURE__*/ `
     updatedAt
     preferences {
       id
+      subscriberId
       category
       channelType
       enabled
+      updatedAt
     }
   }
 }
@@ -361,6 +367,7 @@ export const ContactByExternalIdDocument = /*#__PURE__*/ `
     id
     appId
     externalId
+    name
     email
     phone
     locale

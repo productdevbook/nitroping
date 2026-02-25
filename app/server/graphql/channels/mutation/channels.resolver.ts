@@ -13,12 +13,20 @@ function encryptChannelConfig(config: any): any {
     encrypted.pass = encryptSensitiveData(String(encrypted.pass))
   if (encrypted.apiKey)
     encrypted.apiKey = encryptSensitiveData(String(encrypted.apiKey))
+  // Discord
+  if (encrypted.webhookUrl)
+    encrypted.webhookUrl = encryptSensitiveData(String(encrypted.webhookUrl))
+  // SMS / Twilio
+  if (encrypted.accountSid)
+    encrypted.accountSid = encryptSensitiveData(String(encrypted.accountSid))
+  if (encrypted.authToken)
+    encrypted.authToken = encryptSensitiveData(String(encrypted.authToken))
   return encrypted
 }
 
 export const channelMutations = defineMutation({
   createChannel: {
-    resolve: async (_parent, { input }, _ctx) => {
+    resolve: async (_parent, { input }, ctx) => {
       const db = useDatabase()
 
       const config = encryptChannelConfig(input.config as any)
@@ -42,7 +50,7 @@ export const channelMutations = defineMutation({
   },
 
   updateChannel: {
-    resolve: async (_parent, { id, input }, _ctx) => {
+    resolve: async (_parent, { id, input }, ctx) => {
       const db = useDatabase()
 
       const updates: any = { updatedAt: new Date().toISOString() }
@@ -67,7 +75,7 @@ export const channelMutations = defineMutation({
   },
 
   deleteChannel: {
-    resolve: async (_parent, { id }, _ctx) => {
+    resolve: async (_parent, { id }, ctx) => {
       const db = useDatabase()
       await db.delete(tables.channel).where(eq(tables.channel.id, id as string))
       return true

@@ -96,7 +96,8 @@ export type ChannelType =
   | 'PUSH'
   | 'EMAIL'
   | 'SMS'
-  | 'IN_APP';
+  | 'IN_APP'
+  | 'DISCORD';
 
 export type ConfigureApNsInput = {
   keyId: Scalars['String']['input'];
@@ -122,6 +123,7 @@ export type Contact = {
   id: Scalars['ID']['output'];
   appId: Scalars['ID']['output'];
   externalId: Scalars['String']['output'];
+  name?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   phone?: Maybe<Scalars['String']['output']>;
   locale?: Maybe<Scalars['String']['output']>;
@@ -159,6 +161,7 @@ export type CreateChannelInput = {
 export type CreateContactInput = {
   appId: Scalars['ID']['input'];
   externalId: Scalars['String']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
   email?: InputMaybe<Scalars['String']['input']>;
   phone?: InputMaybe<Scalars['String']['input']>;
   locale?: InputMaybe<Scalars['String']['input']>;
@@ -291,6 +294,20 @@ export type HookEvent =
   | 'WORKFLOW_COMPLETED'
   | 'WORKFLOW_FAILED';
 
+export type InAppMessage = {
+  __typename?: 'InAppMessage';
+  id: Scalars['ID']['output'];
+  appId: Scalars['ID']['output'];
+  contactId: Scalars['ID']['output'];
+  notificationId?: Maybe<Scalars['ID']['output']>;
+  title: Scalars['String']['output'];
+  body: Scalars['String']['output'];
+  data?: Maybe<Scalars['JSON']['output']>;
+  isRead: Scalars['Boolean']['output'];
+  readAt?: Maybe<Scalars['Timestamp']['output']>;
+  createdAt: Scalars['Timestamp']['output'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
   _empty?: Maybe<Scalars['String']['output']>;
@@ -311,6 +328,7 @@ export type Mutation = {
   deleteHook: Scalars['Boolean']['output'];
   deleteTemplate: Scalars['Boolean']['output'];
   deleteWorkflow: Scalars['Boolean']['output'];
+  markInAppMessageRead: Scalars['Boolean']['output'];
   regenerateApiKey: App;
   registerDevice: Device;
   scheduleNotification: Notification;
@@ -415,6 +433,11 @@ export type MutationDeleteTemplateArgs = {
 
 
 export type MutationDeleteWorkflowArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationMarkInAppMessageReadArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -611,11 +634,13 @@ export type Query = {
   getNotificationAnalytics?: Maybe<NotificationAnalytics>;
   hook?: Maybe<Hook>;
   hooks: Array<Hook>;
+  inAppMessages: Array<InAppMessage>;
   notification?: Maybe<Notification>;
   notifications: Array<Notification>;
   platformStats: Array<PlatformStats>;
   template?: Maybe<Template>;
   templates: Array<Template>;
+  unreadInAppCount: Scalars['Int']['output'];
   workflow?: Maybe<Workflow>;
   workflowExecutions: Array<WorkflowExecution>;
   workflows: Array<Workflow>;
@@ -722,6 +747,13 @@ export type QueryHooksArgs = {
 };
 
 
+export type QueryInAppMessagesArgs = {
+  contactId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
 export type QueryNotificationArgs = {
   id: Scalars['ID']['input'];
 };
@@ -747,6 +779,11 @@ export type QueryTemplateArgs = {
 export type QueryTemplatesArgs = {
   appId: Scalars['ID']['input'];
   channelType?: InputMaybe<ChannelType>;
+};
+
+
+export type QueryUnreadInAppCountArgs = {
+  contactId: Scalars['ID']['input'];
 };
 
 
@@ -790,6 +827,9 @@ export type SendNotificationInput = {
   targetDevices?: InputMaybe<Scalars['JSON']['input']>;
   platforms?: InputMaybe<Scalars['JSON']['input']>;
   scheduledAt?: InputMaybe<Scalars['Timestamp']['input']>;
+  channelType?: InputMaybe<ChannelType>;
+  channelId?: InputMaybe<Scalars['ID']['input']>;
+  contactIds?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 export type Template = {
@@ -849,6 +889,7 @@ export type UpdateChannelInput = {
 };
 
 export type UpdateContactInput = {
+  name?: InputMaybe<Scalars['String']['input']>;
   email?: InputMaybe<Scalars['String']['input']>;
   phone?: InputMaybe<Scalars['String']['input']>;
   locale?: InputMaybe<Scalars['String']['input']>;
@@ -1118,7 +1159,7 @@ export type CreateContactMutationVariables = Exact<{
 }>;
 
 
-export type CreateContactMutation = { __typename?: 'Mutation', createContact: { __typename?: 'Contact', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, createdAt: string, updatedAt: string } };
+export type CreateContactMutation = { __typename?: 'Mutation', createContact: { __typename?: 'Contact', id: string, appId: string, externalId: string, name?: string | null | undefined, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, createdAt: string, updatedAt: string } };
 
 export type UpdateContactMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1126,7 +1167,7 @@ export type UpdateContactMutationVariables = Exact<{
 }>;
 
 
-export type UpdateContactMutation = { __typename?: 'Mutation', updateContact: { __typename?: 'Contact', id: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, updatedAt: string } };
+export type UpdateContactMutation = { __typename?: 'Mutation', updateContact: { __typename?: 'Contact', id: string, externalId: string, name?: string | null | undefined, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, updatedAt: string } };
 
 export type DeleteContactMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1156,14 +1197,14 @@ export type ContactsQueryVariables = Exact<{
 }>;
 
 
-export type ContactsQuery = { __typename?: 'Query', contacts: Array<{ __typename?: 'Contact', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string }> };
+export type ContactsQuery = { __typename?: 'Query', contacts: Array<{ __typename?: 'Contact', id: string, appId: string, externalId: string, name?: string | null | undefined, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string }> };
 
 export type ContactQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type ContactQuery = { __typename?: 'Query', contact?: { __typename?: 'Contact', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string, preferences?: Array<{ __typename?: 'ContactPreference', id: string, category: string, channelType: ChannelType, enabled: boolean }> | null | undefined } | null | undefined };
+export type ContactQuery = { __typename?: 'Query', contact?: { __typename?: 'Contact', id: string, appId: string, externalId: string, name?: string | null | undefined, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string, preferences?: Array<{ __typename?: 'ContactPreference', id: string, subscriberId: string, category: string, channelType: ChannelType, enabled: boolean, updatedAt: string }> | null | undefined } | null | undefined };
 
 export type ContactByExternalIdQueryVariables = Exact<{
   appId: Scalars['ID']['input'];
@@ -1171,7 +1212,7 @@ export type ContactByExternalIdQueryVariables = Exact<{
 }>;
 
 
-export type ContactByExternalIdQuery = { __typename?: 'Query', contactByExternalId?: { __typename?: 'Contact', id: string, appId: string, externalId: string, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string } | null | undefined };
+export type ContactByExternalIdQuery = { __typename?: 'Query', contactByExternalId?: { __typename?: 'Contact', id: string, appId: string, externalId: string, name?: string | null | undefined, email?: string | null | undefined, phone?: string | null | undefined, locale?: string | null | undefined, metadata?: any | null | undefined, createdAt: string, updatedAt: string } | null | undefined };
 
 export type RegisterDeviceMutationVariables = Exact<{
   input: RegisterDeviceInput;

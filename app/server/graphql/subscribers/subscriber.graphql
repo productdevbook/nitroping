@@ -2,6 +2,7 @@ type Contact {
   id: ID!
   appId: ID!
   externalId: String!
+  name: String
   email: String
   phone: String
   locale: String
@@ -29,6 +30,7 @@ type ContactPreference {
 input CreateContactInput {
   appId: ID!
   externalId: String!
+  name: String
   email: String
   phone: String
   locale: String
@@ -36,6 +38,7 @@ input CreateContactInput {
 }
 
 input UpdateContactInput {
+  name: String
   email: String
   phone: String
   locale: String

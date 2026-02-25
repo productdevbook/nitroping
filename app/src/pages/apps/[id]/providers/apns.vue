@@ -12,11 +12,13 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { Input } from '~/components/ui/input'
 import { Switch } from '~/components/ui/switch'
 import { Textarea } from '~/components/ui/textarea'
+import { usePush } from 'notivue'
 import { useApp, useConfigureAPNs } from '~/graphql'
 
 const route = useRoute()
 const router = useRouter()
 const appId = computed(() => route.params.id as string)
+const push = usePush()
 
 // API queries
 const { data: appData } = useApp(appId)
@@ -72,15 +74,12 @@ const onSubmit = handleSubmit(async (values) => {
       },
     })
 
-    // TODO: Show success toast
-    console.log('APNs configured successfully')
-
-    // Navigate back to providers page
+    push.success({ title: 'APNs configured successfully' })
     await router.push(`/apps/${appId.value}/providers`)
   }
   catch (error) {
     console.error('Error configuring APNs:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to configure APNs', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 })
 

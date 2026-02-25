@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { usePush } from 'notivue'
 import Icon from '~/components/common/Icon.vue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
@@ -10,6 +11,8 @@ import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Textarea } from '~/components/ui/textarea'
 import { useApps, useSendNotification } from '~/graphql'
+
+const push = usePush()
 
 // API queries
 const { data: appsData, isLoading: _appsLoading } = useApps()
@@ -79,14 +82,12 @@ async function sendNotification() {
     }
 
     await sendNotificationMutation(payload)
-
-    console.log('Notification sent successfully!')
-    // TODO: Show success toast and redirect to notification details
+    push.success({ title: 'Notification sent successfully' })
     resetForm()
   }
   catch (error) {
     console.error('Error sending notification:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to send notification', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 }
 

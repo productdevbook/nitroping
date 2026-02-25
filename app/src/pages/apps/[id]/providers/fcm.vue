@@ -11,11 +11,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/com
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { Textarea } from '~/components/ui/textarea'
+import { usePush } from 'notivue'
 import { useApp, useConfigureFCM } from '~/graphql'
 
 const route = useRoute()
 const router = useRouter()
 const appId = computed(() => route.params.id as string)
+const push = usePush()
 
 // API queries
 const { data: appData } = useApp(appId)
@@ -100,15 +102,12 @@ const onSubmit = handleSubmit(async (values) => {
       },
     })
 
-    // TODO: Show success toast
-    console.log('FCM configured successfully')
-
-    // Navigate back to providers page
+    push.success({ title: 'FCM configured successfully' })
     await router.push(`/apps/${appId.value}/providers`)
   }
   catch (error) {
     console.error('Error configuring FCM:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to configure FCM', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 })
 

@@ -41,8 +41,9 @@ function getInitials(name: string | undefined) {
 }
 
 function handleLogout() {
-  // TODO: Implement logout functionality
-  console.log('Logout clicked')
+  // Clear any stored session data (nitroping SDK keys etc.)
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('nitroping_'))
+  keys.forEach(k => localStorage.removeItem(k))
   router.push('/')
 }
 </script>

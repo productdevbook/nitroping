@@ -3,10 +3,16 @@ import { getDatabase } from '#server/database/connection'
 import * as tables from '#server/database/schema'
 import { decryptSensitiveData, isDataEncrypted } from '#server/utils/crypto'
 import { and, eq } from 'drizzle-orm'
+import { DiscordChannel } from './discord.channel'
 import { EmailChannel } from './email.channel'
+import { InAppChannel } from './inapp.channel'
+import { SmsChannel } from './sms.channel'
 
+export { DiscordChannel } from './discord.channel'
 export { EmailChannel } from './email.channel'
+export { InAppChannel } from './inapp.channel'
 export { PushChannel } from './push.channel'
+export { SmsChannel } from './sms.channel'
 export type { Channel, ChannelMessage, ChannelResult } from './types'
 
 /**
@@ -33,7 +39,7 @@ export async function getChannelById(channelId: string): Promise<Channel> {
  */
 export async function getChannelForApp(
   appId: string,
-  type: 'PUSH' | 'EMAIL' | 'SMS' | 'IN_APP',
+  type: 'PUSH' | 'EMAIL' | 'SMS' | 'IN_APP' | 'DISCORD',
 ): Promise<Channel> {
   const db = getDatabase()
 
@@ -65,7 +71,6 @@ function buildChannel(row: typeof tables.channel.$inferSelect): Channel {
         throw new Error('Email channel is missing config')
       }
 
-      // Decrypt sensitive fields if encrypted
       const config = { ...rawConfig }
       if (config.pass && isDataEncrypted(config.pass)) {
         config.pass = decryptSensitiveData(config.pass)
@@ -75,6 +80,45 @@ function buildChannel(row: typeof tables.channel.$inferSelect): Channel {
       }
 
       return new EmailChannel(config)
+    }
+
+    case 'DISCORD': {
+      if (!rawConfig) {
+        throw new Error('Discord channel is missing config')
+      }
+
+      const config = { ...rawConfig }
+      if (config.webhookUrl && isDataEncrypted(config.webhookUrl)) {
+        config.webhookUrl = decryptSensitiveData(config.webhookUrl)
+      }
+
+      return new DiscordChannel(config)
+    }
+
+    case 'SMS': {
+      if (!rawConfig) {
+        throw new Error('SMS channel is missing config')
+      }
+
+      const config = { ...rawConfig }
+      if (config.accountSid && isDataEncrypted(config.accountSid)) {
+        config.accountSid = decryptSensitiveData(config.accountSid)
+      }
+      if (config.authToken && isDataEncrypted(config.authToken)) {
+        config.authToken = decryptSensitiveData(config.authToken)
+      }
+
+      return new SmsChannel(config)
+    }
+
+    case 'IN_APP': {
+      const config = rawConfig ?? {}
+      // appId comes from the channel row itself
+      if (!config.appId) {
+        config.appId = row.appId
+      }
+
+      return new InAppChannel(config)
     }
 
     default:

@@ -6,7 +6,7 @@ import { defineMutation } from 'nitro-graphql/define'
 
 export const workflowMutations = defineMutation({
   createWorkflow: {
-    resolve: async (_parent, { input }, _ctx) => {
+    resolve: async (_parent, { input }, ctx) => {
       const db = useDatabase()
 
       const [workflow] = await db
@@ -43,7 +43,7 @@ export const workflowMutations = defineMutation({
   },
 
   updateWorkflow: {
-    resolve: async (_parent, { id, input }, _ctx) => {
+    resolve: async (_parent, { id, input }, ctx) => {
       const db = useDatabase()
 
       const updates: any = { updatedAt: new Date().toISOString() }
@@ -89,7 +89,7 @@ export const workflowMutations = defineMutation({
   },
 
   deleteWorkflow: {
-    resolve: async (_parent, { id }, _ctx) => {
+    resolve: async (_parent, { id }, ctx) => {
       const db = useDatabase()
       await db.delete(tables.workflow).where(eq(tables.workflow.id, id as string))
       return true
@@ -97,7 +97,7 @@ export const workflowMutations = defineMutation({
   },
 
   triggerWorkflow: {
-    resolve: async (_parent, { input }, _ctx) => {
+    resolve: async (_parent, { input }, ctx) => {
       const db = useDatabase()
 
       // Load workflow

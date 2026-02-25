@@ -70,6 +70,17 @@ async function processExecuteWorkflowStep(job: Job<ExecuteWorkflowStepJobData>) 
   const { workflowId, executionId, appId, subscriberId, stepOrder, payload } = job.data
   const db = getDatabase()
 
+  // Load contact for FILTER step contact.* field access
+  let contactRecord: typeof tables.contact.$inferSelect | null = null
+  if (subscriberId) {
+    const rows = await db
+      .select()
+      .from(tables.contact)
+      .where(eq(tables.contact.id, subscriberId))
+      .limit(1)
+    contactRecord = rows[0] ?? null
+  }
+
   // Load steps ordered
   const steps = await db
     .select()
@@ -124,7 +135,17 @@ async function processExecuteWorkflowStep(job: Job<ExecuteWorkflowStepJobData>) 
 
       case 'FILTER': {
         const { field, operator, value } = cfg
-        const payloadValue = String((payload as any)[field] ?? '')
+
+        // Support contact.* prefix for contact field access
+        let actualValue: any
+        if (typeof field === 'string' && field.startsWith('contact.') && contactRecord) {
+          actualValue = (contactRecord as any)[field.replace('contact.', '')]
+        }
+        else {
+          actualValue = (payload as any)[field]
+        }
+
+        const payloadValue = String(actualValue ?? '')
         let pass = false
         switch (operator) {
           case 'eq': pass = payloadValue === String(value)

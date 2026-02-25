@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { usePush } from 'notivue'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent } from '~/components/ui/card'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog'
@@ -11,6 +12,7 @@ import { useContacts, useCreateContact, useDeleteContact } from '~/graphql/conta
 
 const route = useRoute()
 const appId = computed(() => route.params.id as string)
+const push = usePush()
 
 const { data: contactsData, isLoading } = useContacts(appId)
 const contactList = computed(() => contactsData.value || [])
@@ -19,22 +21,35 @@ const { mutateAsync: createContact, isLoading: isCreating } = useCreateContact()
 const { mutateAsync: deleteContact } = useDeleteContact()
 
 const showCreate = ref(false)
-const form = ref({ externalId: '', email: '', phone: '', locale: '' })
+const form = ref({ externalId: '', name: '', email: '', phone: '', locale: '' })
 
 async function handleCreate() {
-  await createContact({
-    appId: appId.value,
-    externalId: form.value.externalId,
-    email: form.value.email || undefined,
-    phone: form.value.phone || undefined,
-    locale: form.value.locale || undefined,
-  })
-  showCreate.value = false
-  form.value = { externalId: '', email: '', phone: '', locale: '' }
+  try {
+    await createContact({
+      appId: appId.value,
+      externalId: form.value.externalId,
+      name: form.value.name || undefined,
+      email: form.value.email || undefined,
+      phone: form.value.phone || undefined,
+      locale: form.value.locale || undefined,
+    })
+    showCreate.value = false
+    form.value = { externalId: '', name: '', email: '', phone: '', locale: '' }
+    push.success({ title: 'Contact created successfully' })
+  }
+  catch (error) {
+    push.error({ title: 'Failed to create contact', message: error instanceof Error ? error.message : 'Unknown error' })
+  }
 }
 
 async function handleDelete(id: string) {
-  await deleteContact({ id, appId: appId.value })
+  try {
+    await deleteContact({ id, appId: appId.value })
+    push.success({ title: 'Contact deleted' })
+  }
+  catch (error) {
+    push.error({ title: 'Failed to delete contact', message: error instanceof Error ? error.message : 'Unknown error' })
+  }
 }
 </script>
 
@@ -61,6 +76,7 @@ async function handleDelete(id: string) {
           <TableHeader>
             <TableRow>
               <TableHead>External ID</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Locale</TableHead>
@@ -70,12 +86,12 @@ async function handleDelete(id: string) {
           </TableHeader>
           <TableBody>
             <TableRow v-if="isLoading">
-              <TableCell colspan="6" class="text-center py-8 text-muted-foreground">
+              <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
                 Loading...
               </TableCell>
             </TableRow>
             <TableRow v-else-if="contactList.length === 0">
-              <TableCell colspan="6" class="text-center py-8 text-muted-foreground">
+              <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
                 No contacts yet
               </TableCell>
             </TableRow>
@@ -83,6 +99,7 @@ async function handleDelete(id: string) {
               <TableCell class="font-mono text-sm">
                 {{ contact.externalId }}
               </TableCell>
+              <TableCell>{{ contact.name || '—' }}</TableCell>
               <TableCell>{{ contact.email || '—' }}</TableCell>
               <TableCell>{{ contact.phone || '—' }}</TableCell>
               <TableCell>{{ contact.locale || '—' }}</TableCell>
@@ -109,6 +126,10 @@ async function handleDelete(id: string) {
           <div>
             <Label>External ID *</Label>
             <Input v-model="form.externalId" placeholder="user-123" />
+          </div>
+          <div>
+            <Label>Name</Label>
+            <Input v-model="form.name" placeholder="John Doe" />
           </div>
           <div>
             <Label>Email</Label>
