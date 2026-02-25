@@ -14,6 +14,7 @@ async function processChannelDelivery(job: Job<SendNotificationJobData>) {
   const db = getDatabase()
 
   try {
+    console.log(`[NotificationWorker] Channel job ${job.id}: ${job.data.channelType} → ${to || '(no recipient)'}`)
     const channel = await getChannelById(channelId)
     const result = await channel.send({
       to,
@@ -21,6 +22,13 @@ async function processChannelDelivery(job: Job<SendNotificationJobData>) {
       body: payload.body,
       data: payload.data,
     })
+
+    if (result.success) {
+      console.log(`[NotificationWorker] Channel job ${job.id}: sent OK (msgId=${result.messageId})`)
+    }
+    else {
+      console.error(`[NotificationWorker] Channel job ${job.id}: provider error — ${result.error}`)
+    }
 
     await db.insert(deliveryLog).values({
       notificationId,
