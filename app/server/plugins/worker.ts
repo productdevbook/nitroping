@@ -1,6 +1,7 @@
 import type { SendNotificationJobData } from '#server/queues/notification.queue'
 import type { ExecuteWorkflowStepJobData, TriggerWorkflowJobData } from '#server/queues/workflow.queue'
 import { definePlugin } from 'nitro'
+import { closeDatabase } from '#server/database/connection'
 import { closeAllQueuesAndWorkers, useWorker } from '#server/utils/bullmq'
 import { processNotificationJob } from '#server/workers/notification.worker'
 import { processWorkflowJob } from '#server/workers/workflow.worker'
@@ -29,5 +30,6 @@ export default definePlugin((nitroApp) => {
   nitroApp.hooks.hook('close', async () => {
     console.log('[WorkerPlugin] Shutting down...')
     await closeAllQueuesAndWorkers()
+    await closeDatabase()
   })
 })

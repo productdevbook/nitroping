@@ -15,9 +15,12 @@ export default definePlugin(async () => {
     ? '/app/migrations'
     : resolve(process.cwd(), 'server/database/migrations')
 
-  console.log('[migrate] Running migrations...')
-  await migrate(db, { migrationsFolder })
-  console.log('[migrate] Migrations applied successfully')
-
-  await client.end()
+  try {
+    console.log('[migrate] Running migrations...')
+    await migrate(db, { migrationsFolder })
+    console.log('[migrate] Migrations applied successfully')
+  }
+  finally {
+    await client.end()
+  }
 })
