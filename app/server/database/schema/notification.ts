@@ -25,6 +25,7 @@ export const notification = pgTable('notification', {
   totalSent: integer().default(0).notNull(),
   totalDelivered: integer().default(0).notNull(),
   totalFailed: integer().default(0).notNull(),
+  totalOpened: integer().default(0).notNull(),
   totalClicked: integer().default(0).notNull(),
   sentAt: customTimestamp(),
   createdAt: customTimestamp().defaultNow().notNull(),

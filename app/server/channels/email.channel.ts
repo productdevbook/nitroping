@@ -1,5 +1,26 @@
 import type { Channel, ChannelMessage, ChannelResult } from './types'
 
+// 1×1 transparent GIF — returned by the open-tracking pixel endpoint
+const TRACKING_PIXEL_TAG = (base: string, id: string) =>
+  `<img src="${base}/track/open/${id}" width="1" height="1" alt="" style="display:none;border:0" />`
+
+/** Replace every http(s) href with a click-tracking redirect URL. */
+function wrapLinks(html: string, base: string, id: string): string {
+  return html.replace(/href="(https?:\/\/[^"]+)"/gi, (_, url: string) => {
+    const encoded = Buffer.from(url).toString('base64url')
+    return `href="${base}/track/click/${id}?url=${encoded}"`
+  })
+}
+
+/** Inject tracking pixel and wrap links into an HTML email body. */
+function injectTracking(html: string, base: string, id: string): string {
+  const withLinks = wrapLinks(html, base, id)
+  const pixel = TRACKING_PIXEL_TAG(base, id)
+  return withLinks.includes('</body>')
+    ? withLinks.replace('</body>', `${pixel}</body>`)
+    : withLinks + pixel
+}
+
 export interface SmtpConfig {
   provider: 'smtp'
   host: string
@@ -42,7 +63,6 @@ export class EmailChannel implements Channel {
 
   private async sendViaSmtp(msg: ChannelMessage): Promise<ChannelResult> {
     const cfg = this.config as SmtpConfig
-    // Lazy import nodemailer to avoid loading it unless actually used
     const nodemailer = await import('nodemailer')
 
     const transporter = nodemailer.createTransport({
@@ -53,13 +73,16 @@ export class EmailChannel implements Channel {
     })
 
     const fromName = cfg.fromName ? `"${cfg.fromName}" <${cfg.from}>` : cfg.from
+    const html = msg.trackingId && msg.trackingBaseUrl && msg.htmlBody
+      ? injectTracking(msg.htmlBody, msg.trackingBaseUrl, msg.trackingId)
+      : msg.htmlBody
 
     const info = await transporter.sendMail({
       from: fromName,
       to: msg.to,
       subject: msg.subject,
       text: msg.body,
-      html: msg.htmlBody,
+      html,
     })
 
     return { success: true, messageId: info.messageId }
@@ -67,18 +90,20 @@ export class EmailChannel implements Channel {
 
   private async sendViaResend(msg: ChannelMessage): Promise<ChannelResult> {
     const cfg = this.config as ResendConfig
-    // Lazy import resend SDK
     const { Resend } = await import('resend')
 
     const resend = new Resend(cfg.apiKey)
     const fromName = cfg.fromName ? `${cfg.fromName} <${cfg.from}>` : cfg.from
+    const html = msg.trackingId && msg.trackingBaseUrl && msg.htmlBody
+      ? injectTracking(msg.htmlBody, msg.trackingBaseUrl, msg.trackingId)
+      : msg.htmlBody
 
     const { data, error } = await resend.emails.send({
       from: fromName,
       to: [msg.to],
       subject: msg.subject || '',
       text: msg.body,
-      html: msg.htmlBody,
+      html,
     })
 
     if (error) {

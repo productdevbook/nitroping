@@ -4,6 +4,10 @@ export interface ChannelMessage {
   body: string
   htmlBody?: string
   data?: any
+  /** deliveryLog UUID — used by email channel to embed tracking pixel & wrap links */
+  trackingId?: string
+  /** Fully-qualified base URL, e.g. https://app.example.com */
+  trackingBaseUrl?: string
 }
 
 export interface ChannelResult {

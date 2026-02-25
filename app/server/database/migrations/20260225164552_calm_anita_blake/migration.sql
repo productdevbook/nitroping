@@ -1,0 +1,1 @@
+ALTER TABLE "notification" ADD COLUMN "totalOpened" integer DEFAULT 0 NOT NULL;

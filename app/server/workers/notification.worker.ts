@@ -1,11 +1,14 @@
 import type { Job } from 'bullmq'
 import type { SendNotificationJobData } from '../queues/notification.queue'
 import { eq, sql } from 'drizzle-orm'
+import { v7 as uuidv7 } from 'uuid'
 import { getChannelById } from '../channels'
 import { getDatabase } from '../database/connection'
 import { deliveryLog, notification } from '../database/schema'
 import { getProviderForApp } from '../providers'
 import { dispatchHooks } from '../utils/webhookDispatcher'
+
+const TRACKING_BASE_URL = process.env.APP_URL || 'http://localhost:3000'
 
 async function processChannelDelivery(job: Job<SendNotificationJobData>) {
   if (job.data.deliveryMode !== 'channel')
@@ -13,6 +16,9 @@ async function processChannelDelivery(job: Job<SendNotificationJobData>) {
 
   const { notificationId, appId, channelId, to, payload } = job.data
   const db = getDatabase()
+
+  // Pre-generate the deliveryLog ID so it can be embedded in tracking URLs
+  const deliveryLogId = uuidv7()
 
   try {
     console.log(`[NotificationWorker] Channel job ${job.id}: ${job.data.channelType} → ${to || '(no recipient)'}`)
@@ -22,6 +28,8 @@ async function processChannelDelivery(job: Job<SendNotificationJobData>) {
       subject: payload.title,
       body: payload.body,
       data: payload.data,
+      trackingId: deliveryLogId,
+      trackingBaseUrl: TRACKING_BASE_URL,
     })
 
     if (result.success) {
@@ -32,6 +40,7 @@ async function processChannelDelivery(job: Job<SendNotificationJobData>) {
     }
 
     await db.insert(deliveryLog).values({
+      id: deliveryLogId,
       notificationId,
       status: result.success ? 'SENT' : 'FAILED',
       errorMessage: result.error,
