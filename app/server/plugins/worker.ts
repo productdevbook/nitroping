@@ -2,6 +2,8 @@ import type { SendNotificationJobData } from '#server/queues/notification.queue'
 import type { ExecuteWorkflowStepJobData, TriggerWorkflowJobData } from '#server/queues/workflow.queue'
 import { definePlugin } from 'nitro'
 import { closeDatabase } from '#server/database/connection'
+import { getNotificationQueue } from '#server/queues/notification.queue'
+import { getWorkflowQueue } from '#server/queues/workflow.queue'
 import { closeAllQueuesAndWorkers, useWorker } from '#server/utils/bullmq'
 import { processNotificationJob } from '#server/workers/notification.worker'
 import { processWorkflowJob } from '#server/workers/workflow.worker'
@@ -12,6 +14,10 @@ export default definePlugin((nitroApp) => {
     console.log('[WorkerPlugin] Skipping (prerender)')
     return
   }
+
+  // Eagerly initialize queues so BullMQ metadata exists in Redis before workers start
+  getNotificationQueue()
+  getWorkflowQueue()
 
   // Notification worker
   useWorker<SendNotificationJobData>('notifications', async (job) => {
