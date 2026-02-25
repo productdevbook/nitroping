@@ -1,12 +1,10 @@
 import type { Job } from 'bullmq'
 import type { SendNotificationJobData } from '../queues/notification.queue'
-import { Worker } from 'bullmq'
 import { eq, sql } from 'drizzle-orm'
 import { getChannelById } from '../channels'
 import { getDatabase } from '../database/connection'
 import { deliveryLog, notification } from '../database/schema'
 import { getProviderForApp } from '../providers'
-import { getRedisConnection } from '../utils/redis'
 import { dispatchHooks } from '../utils/webhookDispatcher'
 
 async function processChannelDelivery(job: Job<SendNotificationJobData>) {
@@ -26,7 +24,6 @@ async function processChannelDelivery(job: Job<SendNotificationJobData>) {
 
     await db.insert(deliveryLog).values({
       notificationId,
-      deviceId: '00000000-0000-0000-0000-000000000000', // placeholder for channel delivery
       status: result.success ? 'SENT' : 'FAILED',
       errorMessage: result.error,
       providerResponse: result.messageId ? { messageId: result.messageId } : null,
@@ -176,63 +173,10 @@ async function processDeviceDelivery(job: Job<SendNotificationJobData>) {
   }
 }
 
-async function processSendNotification(job: Job<SendNotificationJobData>) {
+export async function processNotificationJob(job: Job<SendNotificationJobData>) {
+  console.log(`[NotificationWorker] Processing job ${job.id} (${job.name})`)
   if (job.data.deliveryMode === 'channel') {
     return processChannelDelivery(job)
   }
   return processDeviceDelivery(job)
-}
-
-let worker: Worker | null = null
-
-export function startNotificationWorker() {
-  if (worker) {
-    console.log('[NotificationWorker] Worker already running')
-    return worker
-  }
-
-  worker = new Worker(
-    'notifications',
-    async (job) => {
-      console.log(`[NotificationWorker] Processing job ${job.id} (${job.name})`)
-
-      if (job.name === 'send-notification') {
-        return processSendNotification(job as Job<SendNotificationJobData>)
-      }
-
-      console.warn(`[NotificationWorker] Unknown job name: ${job.name}`)
-      return { success: false, reason: 'unknown_job' }
-    },
-    {
-      connection: getRedisConnection(),
-      concurrency: 10,
-      limiter: {
-        max: 100,
-        duration: 1000,
-      },
-    },
-  )
-
-  worker.on('completed', (job) => {
-    console.log(`[NotificationWorker] Job ${job.id} completed`)
-  })
-
-  worker.on('failed', (job, err) => {
-    console.error(`[NotificationWorker] Job ${job?.id} failed:`, err.message)
-  })
-
-  worker.on('error', (err) => {
-    console.error('[NotificationWorker] Worker error:', err)
-  })
-
-  console.log('[NotificationWorker] Started')
-  return worker
-}
-
-export async function stopNotificationWorker() {
-  if (worker) {
-    await worker.close()
-    worker = null
-    console.log('[NotificationWorker] Stopped')
-  }
 }

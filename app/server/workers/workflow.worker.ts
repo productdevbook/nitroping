@@ -1,12 +1,10 @@
 import type { Job } from 'bullmq'
 import type { ExecuteWorkflowStepJobData, TriggerWorkflowJobData } from '../queues/workflow.queue'
-import { Worker } from 'bullmq'
 import { asc, eq } from 'drizzle-orm'
 import { getChannelById } from '../channels'
 import { getDatabase } from '../database/connection'
 import * as tables from '../database/schema'
 import { addExecuteWorkflowStepJob } from '../queues/workflow.queue'
-import { getRedisConnection } from '../utils/redis'
 import { renderTemplate } from '../utils/templateRenderer'
 import { dispatchHooks } from '../utils/webhookDispatcher'
 
@@ -245,49 +243,18 @@ async function handleSendStep(
   await ch.send({ to, subject, body, htmlBody, data: payload })
 }
 
-// ── worker lifecycle ──────────────────────────────────────────────────────────
+// ── exported job handler ──────────────────────────────────────────────────────
 
-let worker: Worker | null = null
+export async function processWorkflowJob(job: Job<TriggerWorkflowJobData | ExecuteWorkflowStepJobData>) {
+  console.log(`[WorkflowWorker] Processing job ${job.id} (${job.name})`)
 
-export function startWorkflowWorker() {
-  if (worker) {
-    console.log('[WorkflowWorker] Worker already running')
-    return worker
+  if (job.name === 'trigger-workflow') {
+    return processTriggerWorkflow(job as Job<TriggerWorkflowJobData>)
   }
 
-  worker = new Worker(
-    'workflows',
-    async (job) => {
-      console.log(`[WorkflowWorker] Processing job ${job.id} (${job.name})`)
-
-      if (job.name === 'trigger-workflow') {
-        return processTriggerWorkflow(job as Job<TriggerWorkflowJobData>)
-      }
-
-      if (job.name === 'execute-workflow-step') {
-        return processExecuteWorkflowStep(job as Job<ExecuteWorkflowStepJobData>)
-      }
-
-      console.warn(`[WorkflowWorker] Unknown job name: ${job.name}`)
-    },
-    {
-      connection: getRedisConnection(),
-      concurrency: 5,
-    },
-  )
-
-  worker.on('completed', job => console.log(`[WorkflowWorker] Job ${job.id} completed`))
-  worker.on('failed', (job, err) => console.error(`[WorkflowWorker] Job ${job?.id} failed:`, err.message))
-  worker.on('error', err => console.error('[WorkflowWorker] Worker error:', err))
-
-  console.log('[WorkflowWorker] Started')
-  return worker
-}
-
-export async function stopWorkflowWorker() {
-  if (worker) {
-    await worker.close()
-    worker = null
-    console.log('[WorkflowWorker] Stopped')
+  if (job.name === 'execute-workflow-step') {
+    return processExecuteWorkflowStep(job as Job<ExecuteWorkflowStepJobData>)
   }
+
+  console.warn(`[WorkflowWorker] Unknown job name: ${job.name}`)
 }
