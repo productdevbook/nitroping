@@ -12,7 +12,7 @@ declare global {
 export function getDatabase() {
   if (!globalThis.__db) {
     const connectionString = process.env.DATABASE_URL || 'postgresql://localhost:5432/nitroping'
-    const client = postgres(connectionString, { max: 5 })
+    const client = postgres(connectionString, { max: 3, idle_timeout: 30 })
     globalThis.__pgClient = client
     globalThis.__db = drizzle({ client, schema })
   }
