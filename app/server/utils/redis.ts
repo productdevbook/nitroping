@@ -1,10 +1,13 @@
 import Redis from 'ioredis'
 
-let redisInstance: Redis | null = null
+declare global {
+  // eslint-disable-next-line vars-on-top, no-var
+  var __redisInstance: Redis | undefined
+}
 
 export function getRedis(): Redis {
-  if (!redisInstance) {
-    redisInstance = new Redis({
+  if (!globalThis.__redisInstance) {
+    globalThis.__redisInstance = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: Number.parseInt(process.env.REDIS_PORT || '6379'),
       password: process.env.REDIS_PASSWORD || undefined,
@@ -13,16 +16,16 @@ export function getRedis(): Redis {
       lazyConnect: true,
     })
 
-    redisInstance.on('error', (err) => {
+    globalThis.__redisInstance.on('error', (err) => {
       console.error('[Redis] Connection error:', err.message)
     })
 
-    redisInstance.on('connect', () => {
+    globalThis.__redisInstance.on('connect', () => {
       console.log('[Redis] Connected successfully')
     })
   }
 
-  return redisInstance
+  return globalThis.__redisInstance
 }
 
 // BullMQ Queue uses a config object (short-lived connections)
@@ -68,9 +71,9 @@ export function getWorkerRedis(): Redis {
 }
 
 export async function closeRedis(): Promise<void> {
-  if (redisInstance) {
-    await redisInstance.quit()
-    redisInstance = null
+  if (globalThis.__redisInstance) {
+    await globalThis.__redisInstance.quit()
+    globalThis.__redisInstance = undefined
   }
   if (globalThis.__workerRedis) {
     await globalThis.__workerRedis.quit()
