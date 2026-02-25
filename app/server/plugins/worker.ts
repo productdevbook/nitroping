@@ -6,8 +6,11 @@ import { processNotificationJob } from '#server/workers/notification.worker'
 import { processWorkflowJob } from '#server/workers/workflow.worker'
 
 export default definePlugin((nitroApp) => {
-  if (import.meta.prerender)
+  console.log('[WorkerPlugin] Initializing...')
+  if (import.meta.prerender) {
+    console.log('[WorkerPlugin] Skipping (prerender)')
     return
+  }
 
   // Notification worker
   useWorker<SendNotificationJobData>('notifications', async (job) => {
