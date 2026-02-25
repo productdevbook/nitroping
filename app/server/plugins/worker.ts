@@ -21,6 +21,7 @@ export default definePlugin((nitroApp) => {
 
   // Notification worker
   useWorker<SendNotificationJobData>('notifications', async (job) => {
+    console.log(`[WorkerPlugin] Processor called for job ${job.id} (${job.name})`)
     if (job.name === 'send-notification') {
       return processNotificationJob(job)
     }

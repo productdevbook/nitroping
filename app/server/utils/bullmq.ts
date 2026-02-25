@@ -60,8 +60,10 @@ export function useWorker<T = any, R = any>(
     })
 
     worker.on('ready', () => console.log(`[Worker:${name}] Ready — listening for jobs`))
+    worker.on('active', job => console.log(`[Worker:${name}] Job ${job.id} active`))
     worker.on('completed', job => console.log(`[Worker:${name}] Job ${job.id} completed`))
     worker.on('failed', (job, err) => console.error(`[Worker:${name}] Job ${job?.id} failed:`, err.message))
+    worker.on('stalled', (jobId) => console.warn(`[Worker:${name}] Job ${jobId} stalled — was active when process died`))
     worker.on('error', err => console.error(`[Worker:${name}] Error:`, err.message))
 
     workerMap.set(name, worker)
