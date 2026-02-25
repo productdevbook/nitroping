@@ -39,7 +39,8 @@ export function getNotificationQueue() {
 export async function addSendNotificationJob(data: SendNotificationJobData) {
   const queue = getNotificationQueue()
   const job = await queue.add('send-notification', data)
-  console.log(`[NotificationQueue] Job ${job.id} added (${data.deliveryMode})`)
+  const counts = await queue.getJobCounts('waiting', 'active', 'failed', 'delayed')
+  console.log(`[NotificationQueue] Job ${job.id} added (${data.deliveryMode}) — counts:`, counts)
   return job
 }
 
