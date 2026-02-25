@@ -8,7 +8,7 @@ import { deliveryLog, notification } from '../database/schema'
 import { getProviderForApp } from '../providers'
 import { dispatchHooks } from '../utils/webhookDispatcher'
 
-const TRACKING_BASE_URL = process.env.APP_URL || 'http://localhost:3000'
+const TRACKING_BASE_URL = process.env.APP_URL || 'http://localhost:3412'
 
 async function processChannelDelivery(job: Job<SendNotificationJobData>) {
   if (job.data.deliveryMode !== 'channel')
@@ -42,6 +42,7 @@ async function processChannelDelivery(job: Job<SendNotificationJobData>) {
     await db.insert(deliveryLog).values({
       id: deliveryLogId,
       notificationId,
+      to,
       status: result.success ? 'SENT' : 'FAILED',
       errorMessage: result.error,
       providerResponse: result.messageId ? { messageId: result.messageId } : null,

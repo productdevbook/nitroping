@@ -597,6 +597,7 @@ export const NotificationDocument = /*#__PURE__*/ `
     totalSent
     totalDelivered
     totalFailed
+    totalOpened
     totalClicked
     createdAt
     updatedAt
@@ -604,10 +605,13 @@ export const NotificationDocument = /*#__PURE__*/ `
     deliveryLogs {
       id
       deviceId
+      to
       status
       errorMessage
-      createdAt
+      sentAt
+      openedAt
       clickedAt
+      createdAt
     }
   }
 }
@@ -618,8 +622,11 @@ export const DeliveryLogsDocument = /*#__PURE__*/ `
     id
     notificationId
     deviceId
+    to
     status
     errorMessage
+    sentAt
+    openedAt
     clickedAt
     createdAt
     updatedAt

@@ -9,6 +9,7 @@ export const deliveryLog = pgTable('deliveryLog', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),
   notificationId: uuid().notNull().references(() => notification.id, { onDelete: 'cascade' }),
   deviceId: uuid().references(() => device.id, { onDelete: 'cascade' }),
+  to: text(), // channel recipient: email address, phone number, etc.
   status: deliveryStatusEnum().notNull(),
   providerResponse: customJsonb(),
   errorMessage: text(),

@@ -1,0 +1,1 @@
+ALTER TABLE "deliveryLog" ADD COLUMN "to" text;

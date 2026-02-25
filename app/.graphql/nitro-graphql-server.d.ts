@@ -269,10 +269,13 @@ export interface DeliveryLog {
   id: Scalars['ID']['output'];
   notificationId: Scalars['ID']['output'];
   notification?: Maybe<Notification>;
-  deviceId: Scalars['ID']['output'];
+  deviceId?: Maybe<Scalars['ID']['output']>;
   device?: Maybe<Device>;
+  to?: Maybe<Scalars['String']['output']>;
   status: DeliveryStatus;
   errorMessage?: Maybe<Scalars['String']['output']>;
+  sentAt?: Maybe<Scalars['Timestamp']['output']>;
+  openedAt?: Maybe<Scalars['Timestamp']['output']>;
   clickedAt?: Maybe<Scalars['Timestamp']['output']>;
   createdAt: Scalars['Timestamp']['output'];
   updatedAt: Scalars['Timestamp']['output'];
@@ -614,6 +617,7 @@ export interface Notification {
   totalSent: Scalars['Int']['output'];
   totalDelivered: Scalars['Int']['output'];
   totalFailed: Scalars['Int']['output'];
+  totalOpened: Scalars['Int']['output'];
   totalClicked: Scalars['Int']['output'];
   deliveryLogs?: Maybe<Array<DeliveryLog>>;
   createdAt: Scalars['Timestamp']['output'];
@@ -1393,10 +1397,13 @@ export type DeliveryLogResolvers<ContextType = H3Event, ParentType extends Resol
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   notificationId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   notification?: Resolver<Maybe<ResolversTypes['Notification']>, ParentType, ContextType>;
-  deviceId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  deviceId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
   device?: Resolver<Maybe<ResolversTypes['Device']>, ParentType, ContextType>;
+  to?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['DeliveryStatus'], ParentType, ContextType>;
   errorMessage?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  sentAt?: Resolver<Maybe<ResolversTypes['Timestamp']>, ParentType, ContextType>;
+  openedAt?: Resolver<Maybe<ResolversTypes['Timestamp']>, ParentType, ContextType>;
   clickedAt?: Resolver<Maybe<ResolversTypes['Timestamp']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
@@ -1519,6 +1526,7 @@ export type NotificationResolvers<ContextType = H3Event, ParentType extends Reso
   totalSent?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalDelivered?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalFailed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalOpened?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalClicked?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   deliveryLogs?: Resolver<Maybe<Array<ResolversTypes['DeliveryLog']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;

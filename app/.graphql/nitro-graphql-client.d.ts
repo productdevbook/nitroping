@@ -208,10 +208,13 @@ export type DeliveryLog = {
   id: Scalars['ID']['output'];
   notificationId: Scalars['ID']['output'];
   notification?: Maybe<Notification>;
-  deviceId: Scalars['ID']['output'];
+  deviceId?: Maybe<Scalars['ID']['output']>;
   device?: Maybe<Device>;
+  to?: Maybe<Scalars['String']['output']>;
   status: DeliveryStatus;
   errorMessage?: Maybe<Scalars['String']['output']>;
+  sentAt?: Maybe<Scalars['Timestamp']['output']>;
+  openedAt?: Maybe<Scalars['Timestamp']['output']>;
   clickedAt?: Maybe<Scalars['Timestamp']['output']>;
   createdAt: Scalars['Timestamp']['output'];
   updatedAt: Scalars['Timestamp']['output'];
@@ -553,6 +556,7 @@ export type Notification = {
   totalSent: Scalars['Int']['output'];
   totalDelivered: Scalars['Int']['output'];
   totalFailed: Scalars['Int']['output'];
+  totalOpened: Scalars['Int']['output'];
   totalClicked: Scalars['Int']['output'];
   deliveryLogs?: Maybe<Array<DeliveryLog>>;
   createdAt: Scalars['Timestamp']['output'];
@@ -1312,14 +1316,14 @@ export type NotificationQueryVariables = Exact<{
 }>;
 
 
-export type NotificationQuery = { __typename?: 'Query', notification?: { __typename?: 'Notification', id: string, appId: string, title: string, body: string, data?: any | null | undefined, badge?: number | null | undefined, sound?: string | null | undefined, clickAction?: string | null | undefined, imageUrl?: string | null | undefined, targetDevices?: any | null | undefined, platforms?: any | null | undefined, scheduledAt?: string | null | undefined, status: NotificationStatus, totalTargets: number, totalSent: number, totalDelivered: number, totalFailed: number, totalClicked: number, createdAt: string, updatedAt: string, sentAt?: string | null | undefined, deliveryLogs?: Array<{ __typename?: 'DeliveryLog', id: string, deviceId: string, status: DeliveryStatus, errorMessage?: string | null | undefined, createdAt: string, clickedAt?: string | null | undefined }> | null | undefined } | null | undefined };
+export type NotificationQuery = { __typename?: 'Query', notification?: { __typename?: 'Notification', id: string, appId: string, title: string, body: string, data?: any | null | undefined, badge?: number | null | undefined, sound?: string | null | undefined, clickAction?: string | null | undefined, imageUrl?: string | null | undefined, targetDevices?: any | null | undefined, platforms?: any | null | undefined, scheduledAt?: string | null | undefined, status: NotificationStatus, totalTargets: number, totalSent: number, totalDelivered: number, totalFailed: number, totalOpened: number, totalClicked: number, createdAt: string, updatedAt: string, sentAt?: string | null | undefined, deliveryLogs?: Array<{ __typename?: 'DeliveryLog', id: string, deviceId?: string | null | undefined, to?: string | null | undefined, status: DeliveryStatus, errorMessage?: string | null | undefined, sentAt?: string | null | undefined, openedAt?: string | null | undefined, clickedAt?: string | null | undefined, createdAt: string }> | null | undefined } | null | undefined };
 
 export type DeliveryLogsQueryVariables = Exact<{
   notificationId?: InputMaybe<Scalars['ID']['input']>;
 }>;
 
 
-export type DeliveryLogsQuery = { __typename?: 'Query', deliveryLogs: Array<{ __typename?: 'DeliveryLog', id: string, notificationId: string, deviceId: string, status: DeliveryStatus, errorMessage?: string | null | undefined, clickedAt?: string | null | undefined, createdAt: string, updatedAt: string }> };
+export type DeliveryLogsQuery = { __typename?: 'Query', deliveryLogs: Array<{ __typename?: 'DeliveryLog', id: string, notificationId: string, deviceId?: string | null | undefined, to?: string | null | undefined, status: DeliveryStatus, errorMessage?: string | null | undefined, sentAt?: string | null | undefined, openedAt?: string | null | undefined, clickedAt?: string | null | undefined, createdAt: string, updatedAt: string }> };
 
 export type DashboardStatsQueryVariables = Exact<{ [key: string]: never; }>;
 

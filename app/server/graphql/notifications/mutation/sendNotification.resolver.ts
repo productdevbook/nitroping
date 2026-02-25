@@ -70,10 +70,10 @@ export const notificationMutations = defineMutation({
 
           await db
             .update(tables.notification)
-            .set({ totalTargets: 1 })
+            .set({ totalTargets: 1, status: 'SENT', sentAt: new Date().toISOString() })
             .where(eq(tables.notification.id, insertedNotification.id))
 
-          return { ...insertedNotification, totalTargets: 1 }
+          return { ...insertedNotification, totalTargets: 1, status: 'SENT' }
         }
 
         // For EMAIL, SMS, IN_APP — resolve contacts
@@ -121,10 +121,10 @@ export const notificationMutations = defineMutation({
 
         await db
           .update(tables.notification)
-          .set({ totalTargets: jobs.length })
+          .set({ totalTargets: jobs.length, status: 'SENT', sentAt: new Date().toISOString() })
           .where(eq(tables.notification.id, insertedNotification.id))
 
-        return { ...insertedNotification, totalTargets: jobs.length }
+        return { ...insertedNotification, totalTargets: jobs.length, status: 'SENT' }
       }
 
       // ── Device-based push delivery ─────────────────────────────────────────

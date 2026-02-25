@@ -186,10 +186,13 @@ type DeliveryLog {
   id: ID!
   notificationId: ID!
   notification: Notification
-  deviceId: ID!
+  deviceId: ID
   device: Device
+  to: String
   status: DeliveryStatus!
   errorMessage: String
+  sentAt: Timestamp
+  openedAt: Timestamp
   clickedAt: Timestamp
   createdAt: Timestamp!
   updatedAt: Timestamp!
@@ -347,6 +350,7 @@ type Notification {
   totalSent: Int!
   totalDelivered: Int!
   totalFailed: Int!
+  totalOpened: Int!
   totalClicked: Int!
   deliveryLogs: [DeliveryLog!]
   createdAt: Timestamp!
