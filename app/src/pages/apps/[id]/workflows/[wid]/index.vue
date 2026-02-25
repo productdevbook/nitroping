@@ -24,7 +24,6 @@ const router = useRouter()
 const appId = computed(() => route.params.id as string)
 const workflowId = computed(() => route.params.wid as string)
 
-
 const { data: workflowData, isLoading } = useWorkflow(workflowId)
 const workflow = computed(() => workflowData.value)
 
@@ -136,8 +135,7 @@ async function saveWorkflow() {
 
 <template>
   <div class="flex flex-col h-screen">
-    <div class="flex-none px-6 pt-4 pb-0">
-      </div>
+    <div class="flex-none px-6 pt-4 pb-0" />
 
     <div class="flex-none px-6 py-3 flex items-center justify-between border-b">
       <div>

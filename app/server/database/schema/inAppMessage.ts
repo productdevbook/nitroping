@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, uuid, text } from 'drizzle-orm/pg-core'
+import { boolean, index, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
 import { contact } from './contact'

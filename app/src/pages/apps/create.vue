@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import { usePush } from 'notivue'
+import { useRouter } from 'vue-router'
 import AppPageHeader from '~/components/app/AppPageHeader.vue'
 import CreateAppForm from '~/components/forms/CreateAppForm.vue'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'

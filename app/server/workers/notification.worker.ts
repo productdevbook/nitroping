@@ -8,7 +8,8 @@ import { getProviderForApp } from '../providers'
 import { dispatchHooks } from '../utils/webhookDispatcher'
 
 async function processChannelDelivery(job: Job<SendNotificationJobData>) {
-  if (job.data.deliveryMode !== 'channel') return
+  if (job.data.deliveryMode !== 'channel')
+    return
 
   const { notificationId, appId, channelId, to, payload } = job.data
   const db = getDatabase()
@@ -74,7 +75,8 @@ async function processChannelDelivery(job: Job<SendNotificationJobData>) {
 }
 
 async function processDeviceDelivery(job: Job<SendNotificationJobData>) {
-  if (job.data.deliveryMode !== 'device') return
+  if (job.data.deliveryMode !== 'device')
+    return
 
   const { notificationId, deviceId, appId, platform, token, webPushP256dh, webPushAuth, payload } = job.data
   const db = getDatabase()

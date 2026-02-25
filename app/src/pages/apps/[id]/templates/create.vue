@@ -38,7 +38,6 @@ async function handleCreate() {
 
 <template>
   <div>
-
     <div class="mb-6">
       <h2 class="text-xl font-semibold">
         Create Template

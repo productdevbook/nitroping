@@ -1,18 +1,18 @@
 <script setup lang="ts">
+import { usePush } from 'notivue'
 import { useForm } from 'vee-validate'
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { z } from 'zod'
 import Icon from '~/components/common/Icon.vue'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { Button } from '~/components/ui/button'
 
+import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
 import { Switch } from '~/components/ui/switch'
 import { Textarea } from '~/components/ui/textarea'
-import { usePush } from 'notivue'
 import { useApp, useConfigureAPNs } from '~/graphql'
 
 const route = useRoute()

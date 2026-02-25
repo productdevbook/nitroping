@@ -27,7 +27,6 @@ const statusColors: Record<string, string> = {
 
 <template>
   <div>
-
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-xl font-semibold">

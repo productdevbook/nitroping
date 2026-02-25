@@ -1,11 +1,11 @@
 import type { SendNotificationJobData } from '#server/queues/notification.queue'
 import type { ExecuteWorkflowStepJobData, TriggerWorkflowJobData } from '#server/queues/workflow.queue'
-import { definePlugin } from 'nitro'
 import { getNotificationQueue } from '#server/queues/notification.queue'
 import { getWorkflowQueue } from '#server/queues/workflow.queue'
 import { useWorker } from '#server/utils/bullmq'
 import { processNotificationJob } from '#server/workers/notification.worker'
 import { processWorkflowJob } from '#server/workers/workflow.worker'
+import { definePlugin } from 'nitro'
 
 export default definePlugin((nitroApp) => {
   console.log('[WorkerPlugin] Initializing...')
@@ -32,5 +32,4 @@ export default definePlugin((nitroApp) => {
   useWorker<TriggerWorkflowJobData | ExecuteWorkflowStepJobData>('workflows', async (job) => {
     return processWorkflowJob(job)
   }, { concurrency: 5 })
-
 })

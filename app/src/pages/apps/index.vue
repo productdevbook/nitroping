@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { usePush } from 'notivue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { usePush } from 'notivue'
 import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'

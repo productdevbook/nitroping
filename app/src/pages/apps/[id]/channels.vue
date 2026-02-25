@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { usePush } from 'notivue'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { usePush } from 'notivue'
 
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
@@ -117,7 +117,6 @@ async function handleDelete(id: string) {
 
 <template>
   <div>
-
     <div class="flex items-center justify-between mb-6">
       <div>
         <h2 class="text-xl font-semibold">

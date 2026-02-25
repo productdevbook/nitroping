@@ -1,7 +1,7 @@
-import { definePlugin } from 'nitro'
 import { closeDatabase } from '#server/database/connection'
 import { closeAllQueuesAndWorkers } from '#server/utils/bullmq'
 import { closeRedis } from '#server/utils/redis'
+import { definePlugin } from 'nitro'
 
 export default definePlugin((nitroApp) => {
   nitroApp.hooks.hook('close', async () => {
