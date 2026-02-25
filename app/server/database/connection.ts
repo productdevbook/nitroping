@@ -2,27 +2,22 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from './schema'
 
-declare global {
-  // eslint-disable-next-line vars-on-top, no-var
-  var __pgClient: ReturnType<typeof postgres> | undefined
-  // eslint-disable-next-line vars-on-top, no-var
-  var __db: ReturnType<typeof drizzle<typeof schema>> | undefined
-}
+let pgClient: ReturnType<typeof postgres> | undefined
+let db: ReturnType<typeof drizzle<typeof schema>> | undefined
 
 export function getDatabase() {
-  if (!globalThis.__db) {
+  if (!db) {
     const connectionString = process.env.DATABASE_URL || 'postgresql://localhost:5432/nitroping'
-    const client = postgres(connectionString, { max: 3, idle_timeout: 30 })
-    globalThis.__pgClient = client
-    globalThis.__db = drizzle({ client, schema })
+    pgClient = postgres(connectionString, { max: 3, idle_timeout: 30 })
+    db = drizzle({ client: pgClient, schema })
   }
-  return globalThis.__db
+  return db
 }
 
 export async function closeDatabase() {
-  if (globalThis.__pgClient) {
-    await globalThis.__pgClient.end()
-    globalThis.__pgClient = undefined
-    globalThis.__db = undefined
+  if (pgClient) {
+    await pgClient.end()
+    pgClient = undefined
+    db = undefined
   }
 }

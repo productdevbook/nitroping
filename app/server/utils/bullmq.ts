@@ -2,16 +2,8 @@ import type { Processor, QueueOptions, WorkerOptions } from 'bullmq'
 import { Queue, Worker } from 'bullmq'
 import Redis from 'ioredis'
 
-// Survive Nitro dev-mode HMR module reloads
-declare global {
-  // eslint-disable-next-line vars-on-top, no-var
-  var __bullmqQueues: Map<string, Queue> | undefined
-  // eslint-disable-next-line vars-on-top, no-var
-  var __bullmqWorkers: Map<string, Worker> | undefined
-}
-
-const queueMap: Map<string, Queue> = (globalThis.__bullmqQueues ??= new Map())
-const workerMap: Map<string, Worker> = (globalThis.__bullmqWorkers ??= new Map())
+const queueMap = new Map<string, Queue>()
+const workerMap = new Map<string, Worker>()
 
 function createRedisConnection() {
   const conn = new Redis({
@@ -63,7 +55,7 @@ export function useWorker<T = any, R = any>(
     worker.on('active', job => console.log(`[Worker:${name}] Job ${job.id} active`))
     worker.on('completed', job => console.log(`[Worker:${name}] Job ${job.id} completed`))
     worker.on('failed', (job, err) => console.error(`[Worker:${name}] Job ${job?.id} failed:`, err.message))
-    worker.on('stalled', (jobId) => console.warn(`[Worker:${name}] Job ${jobId} stalled — was active when process died`))
+    worker.on('stalled', jobId => console.warn(`[Worker:${name}] Job ${jobId} stalled — was active when process died`))
     worker.on('error', err => console.error(`[Worker:${name}] Error:`, err.message))
 
     workerMap.set(name, worker)
@@ -79,6 +71,4 @@ export async function closeAllQueuesAndWorkers() {
   ])
   queueMap.clear()
   workerMap.clear()
-  delete globalThis.__bullmqQueues
-  delete globalThis.__bullmqWorkers
 }
