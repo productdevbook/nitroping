@@ -21,6 +21,21 @@ function injectTracking(html: string, base: string, id: string): string {
     : withLinks + pixel
 }
 
+/**
+ * Build the HTML body for tracking purposes.
+ * Uses htmlBody if provided, otherwise wraps plain text in minimal HTML.
+ * This ensures the tracking pixel is always injected regardless of input format.
+ */
+function buildTrackedHtml(msg: ChannelMessage): string | undefined {
+  if (!msg.trackingId || !msg.trackingBaseUrl)
+    return msg.htmlBody
+
+  const base = msg.trackingBaseUrl
+  const id = msg.trackingId
+  const source = msg.htmlBody ?? `<p style="white-space:pre-wrap">${msg.body}</p>`
+  return injectTracking(source, base, id)
+}
+
 export interface SmtpConfig {
   provider: 'smtp'
   host: string
@@ -73,9 +88,7 @@ export class EmailChannel implements Channel {
     })
 
     const fromName = cfg.fromName ? `"${cfg.fromName}" <${cfg.from}>` : cfg.from
-    const html = msg.trackingId && msg.trackingBaseUrl && msg.htmlBody
-      ? injectTracking(msg.htmlBody, msg.trackingBaseUrl, msg.trackingId)
-      : msg.htmlBody
+    const html = buildTrackedHtml(msg)
 
     const info = await transporter.sendMail({
       from: fromName,
@@ -94,9 +107,7 @@ export class EmailChannel implements Channel {
 
     const resend = new Resend(cfg.apiKey)
     const fromName = cfg.fromName ? `${cfg.fromName} <${cfg.from}>` : cfg.from
-    const html = msg.trackingId && msg.trackingBaseUrl && msg.htmlBody
-      ? injectTracking(msg.htmlBody, msg.trackingBaseUrl, msg.trackingId)
-      : msg.htmlBody
+    const html = buildTrackedHtml(msg)
 
     const { data, error } = await resend.emails.send({
       from: fromName,
