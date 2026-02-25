@@ -57,7 +57,6 @@
     "notivue": "^2.4.5",
     "ofetch": "^2.0.0-alpha.3",
     "pg": "^8.18.0",
-    "pg-boss": "^12.13.0",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
     "postgres": "^3.4.8",
