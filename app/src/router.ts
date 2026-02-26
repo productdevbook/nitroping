@@ -68,6 +68,11 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('./pages/apps/[id]/notifications.vue'),
               },
               {
+                path: 'notifications/:notificationId',
+                name: 'app-notification-detail',
+                component: () => import('./pages/apps/[id]/notifications/[notificationId].vue'),
+              },
+              {
                 path: 'settings',
                 name: 'app-settings',
                 component: () => import('./pages/apps/[id]/settings.vue'),

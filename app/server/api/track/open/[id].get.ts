@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm'
-import { defineEventHandler, getRouterParam, setResponseHeaders } from 'h3'
+import { defineEventHandler, getRouterParam } from 'nitro/h3'
 import { getDatabase } from '#server/database/connection'
 import { deliveryLog, notification } from '#server/database/schema'
 import { dispatchHooks } from '#server/utils/webhookDispatcher'
@@ -10,12 +10,10 @@ const PIXEL = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBR
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
 
-  setResponseHeaders(event, {
-    'Content-Type': 'image/gif',
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0',
-  })
+  event.res.headers.set('Content-Type', 'image/gif')
+  event.res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  event.res.headers.set('Pragma', 'no-cache')
+  event.res.headers.set('Expires', '0')
 
   if (!id) {
     return PIXEL
@@ -48,7 +46,6 @@ export default defineEventHandler(async (event) => {
       .set({ openedAt: now, updatedAt: now })
       .where(eq(deliveryLog.id, id))
 
-    // Fetch notificationId's appId for webhook dispatch
     const notifRows = await db
       .select({ appId: notification.appId })
       .from(notification)

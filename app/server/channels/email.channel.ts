@@ -2,13 +2,13 @@ import type { Channel, ChannelMessage, ChannelResult } from './types'
 
 // 1×1 transparent GIF — returned by the open-tracking pixel endpoint
 const TRACKING_PIXEL_TAG = (base: string, id: string) =>
-  `<img src="${base}/track/open/${id}" width="1" height="1" alt="" style="display:none;border:0" />`
+  `<img src="${base}/api/track/open/${id}" width="1" height="1" alt="" style="display:none;border:0" />`
 
 /** Replace every http(s) href with a click-tracking redirect URL. */
 function wrapLinks(html: string, base: string, id: string): string {
   return html.replace(/href="(https?:\/\/[^"]+)"/gi, (_, url: string) => {
     const encoded = Buffer.from(url).toString('base64url')
-    return `href="${base}/track/click/${id}?url=${encoded}"`
+    return `href="${base}/api/track/click/${id}?url=${encoded}"`
   })
 }
 
