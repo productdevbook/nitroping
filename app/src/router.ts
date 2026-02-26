@@ -48,6 +48,11 @@ const routes: RouteRecordRaw[] = [
             redirect: '/docs/getting-started',
           },
           {
+            path: 'channels/:type',
+            name: 'docs-channels-type',
+            component: () => import('./pages/docs/channels/[type].vue'),
+          },
+          {
             path: ':slug',
             name: 'docs-page',
             component: () => import('./pages/docs/[slug].vue'),

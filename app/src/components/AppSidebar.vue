@@ -76,7 +76,20 @@ const navDocsGuide = computed(() => [
 ])
 
 const navDocsFeatures = computed(() => [
-  { title: 'Channels', url: '/docs/channels', icon: 'lucide:radio', isActive: route.path === '/docs/channels' },
+  {
+    title: 'Channels',
+    url: '/docs/channels',
+    icon: 'lucide:radio',
+    isActive: route.path.startsWith('/docs/channels'),
+    items: [
+      { title: 'Email (SMTP)', url: '/docs/channels/email', isActive: route.path === '/docs/channels/email' },
+      { title: 'Telegram', url: '/docs/channels/telegram', isActive: route.path === '/docs/channels/telegram' },
+      { title: 'Discord', url: '/docs/channels/discord', isActive: route.path === '/docs/channels/discord' },
+      { title: 'SMS (Twilio)', url: '/docs/channels/sms', isActive: route.path === '/docs/channels/sms' },
+      { title: 'Push', url: '/docs/channels/push', isActive: route.path === '/docs/channels/push' },
+      { title: 'In-App', url: '/docs/channels/in-app', isActive: route.path === '/docs/channels/in-app' },
+    ],
+  },
   { title: 'Contacts', url: '/docs/contacts', icon: 'lucide:users', isActive: route.path === '/docs/contacts' },
   { title: 'Workflows', url: '/docs/workflows', icon: 'lucide:git-branch', isActive: route.path === '/docs/workflows' },
   { title: 'Notifications', url: '/docs/notifications', icon: 'lucide:bell', isActive: route.path === '/docs/notifications' },
