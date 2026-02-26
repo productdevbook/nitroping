@@ -1,58 +1,42 @@
 <script setup lang="ts">
+import type { Node } from '@vue-flow/core'
+import type { WorkflowNodeData } from '../types'
 import DelayConfigPanel from './DelayConfigPanel.vue'
 import FilterConfigPanel from './FilterConfigPanel.vue'
 import SendConfigPanel from './SendConfigPanel.vue'
 
 const props = defineProps<{
-  selectedNode: any | null
+  selectedNode: Node | null
 }>()
 
-const emit = defineEmits<{ (e: 'updateNode', id: string, data: any): void }>()
+const emit = defineEmits<{
+  (e: 'updateNode', id: string, data: Partial<WorkflowNodeData>): void
+}>()
 
-function handleUpdate(data: any) {
-  if (props.selectedNode) {
+function onUpdate(data: Partial<WorkflowNodeData>) {
+  if (props.selectedNode)
     emit('updateNode', props.selectedNode.id, data)
-  }
 }
 </script>
 
 <template>
-  <div class="w-72 border-l bg-white p-4 flex flex-col gap-4 overflow-y-auto">
-    <div v-if="!selectedNode" class="text-sm text-muted-foreground text-center mt-8">
-      Select a node to configure it
-    </div>
-
-    <template v-else>
-      <div>
-        <p class="text-xs text-muted-foreground uppercase tracking-wide font-medium">
-          {{ selectedNode.type?.toUpperCase() }} Step
-        </p>
-        <p class="font-semibold text-sm mt-0.5">
-          {{ selectedNode.data?.label || 'Configure' }}
-        </p>
-      </div>
-
-      <SendConfigPanel
-        v-if="selectedNode.type === 'send'"
-        :node-data="selectedNode.data"
-        @update="handleUpdate"
-      />
-
-      <DelayConfigPanel
-        v-else-if="selectedNode.type === 'delay'"
-        :node-data="selectedNode.data"
-        @update="handleUpdate"
-      />
-
-      <FilterConfigPanel
-        v-else-if="selectedNode.type === 'filter'"
-        :node-data="selectedNode.data"
-        @update="handleUpdate"
-      />
-
-      <div v-else class="text-sm text-muted-foreground">
-        No configuration for trigger nodes.
-      </div>
-    </template>
-  </div>
+  <!-- :key forces form remount when switching between nodes of the same type -->
+  <SendConfigPanel
+    v-if="selectedNode?.type === 'send'"
+    :key="selectedNode.id"
+    :node-data="selectedNode.data"
+    @update="onUpdate"
+  />
+  <DelayConfigPanel
+    v-else-if="selectedNode?.type === 'delay'"
+    :key="selectedNode.id"
+    :node-data="selectedNode.data"
+    @update="onUpdate"
+  />
+  <FilterConfigPanel
+    v-else-if="selectedNode?.type === 'filter'"
+    :key="selectedNode.id"
+    :node-data="selectedNode.data"
+    @update="onUpdate"
+  />
 </template>

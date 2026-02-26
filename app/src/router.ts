@@ -2,6 +2,15 @@ import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
+  // ─── Standalone full-screen workflow editor (no DefaultLayout) ────────────
+  // Must be declared before the DefaultLayout catch-all so Vue Router matches it first.
+  {
+    path: '/apps/:id/workflows/:wid',
+    name: 'app-workflow-editor',
+    component: () => import('./pages/apps/[id]/workflows/[wid]/index.vue'),
+  },
+
+  // ─── Everything else inside DefaultLayout ─────────────────────────────────
   {
     path: '/',
     component: () => import('./layouts/DefaultLayout.vue'),
@@ -113,11 +122,8 @@ const routes: RouteRecordRaw[] = [
                   {
                     path: ':wid',
                     children: [
-                      {
-                        path: '',
-                        name: 'app-workflow-editor',
-                        component: () => import('./pages/apps/[id]/workflows/[wid]/index.vue'),
-                      },
+                      // NOTE: the editor itself lives at the top-level route above.
+                      // Only runs stays inside DefaultLayout.
                       {
                         path: 'runs',
                         name: 'app-workflow-runs',
@@ -163,6 +169,7 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+
   {
     path: '/:pathMatch(.*)*',
     redirect: '/',

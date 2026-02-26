@@ -3,18 +3,19 @@ import { ref, watch } from 'vue'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
+import type { DelayNodeData } from '~/components/workflow/types'
 
-const props = defineProps<{ nodeData: any }>()
-const emit = defineEmits<{ (e: 'update', data: any): void }>()
+const props = defineProps<{ nodeData: DelayNodeData }>()
+const emit = defineEmits<{ (e: 'update', data: Partial<DelayNodeData>): void }>()
 
 const UNIT_MS: Record<string, number> = {
-  seconds: 1000,
+  seconds: 1_000,
   minutes: 60_000,
   hours: 3_600_000,
   days: 86_400_000,
 }
 
-function msToUnit(ms: number): { value: number, unit: string } {
+function decompose(ms: number): { value: number, unit: string } {
   if (!ms)
     return { value: 1, unit: 'hours' }
   for (const [unit, factor] of Object.entries(UNIT_MS).reverse()) {
@@ -24,13 +25,12 @@ function msToUnit(ms: number): { value: number, unit: string } {
   return { value: ms / 1000, unit: 'seconds' }
 }
 
-const initial = msToUnit(props.nodeData?.delayMs || 3_600_000)
-const form = ref({ value: initial.value, unit: initial.unit })
+const { value, unit } = decompose(props.nodeData.delayMs ?? 3_600_000)
+const form = ref({ value, unit })
 
 watch(form, (val) => {
-  const delayMs = val.value * (UNIT_MS[val.unit] || 1000)
+  const delayMs = val.value * (UNIT_MS[val.unit] ?? 1000)
   emit('update', {
-    ...props.nodeData,
     delayMs,
     label: `${val.value} ${val.unit}`,
   })

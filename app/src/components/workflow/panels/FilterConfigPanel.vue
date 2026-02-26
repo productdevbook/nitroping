@@ -3,23 +3,23 @@ import { ref, watch } from 'vue'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
+import type { FilterNodeData, FilterOperator } from '~/components/workflow/types'
 
-const props = defineProps<{ nodeData: any }>()
-const emit = defineEmits<{ (e: 'update', data: any): void }>()
+const props = defineProps<{ nodeData: FilterNodeData }>()
+const emit = defineEmits<{ (e: 'update', data: Partial<FilterNodeData>): void }>()
 
 const form = ref({
-  field: props.nodeData?.field || '',
-  operator: props.nodeData?.operator || 'eq',
-  value: props.nodeData?.value || '',
+  field: props.nodeData.field ?? '',
+  operator: props.nodeData.operator ?? 'eq' as FilterOperator,
+  value: props.nodeData.value ?? '',
 })
 
 watch(form, (val) => {
   emit('update', {
-    ...props.nodeData,
     field: val.field,
     operator: val.operator,
     value: val.value,
-    label: `${val.field} ${val.operator} ${val.value}`,
+    label: [val.field, val.operator, val.value].filter(Boolean).join(' ') || 'Filter',
   })
 }, { deep: true })
 </script>
@@ -28,7 +28,7 @@ watch(form, (val) => {
   <div class="space-y-3">
     <div>
       <Label class="text-xs">Field</Label>
-      <Input v-model="form.field" placeholder="plan" />
+      <Input v-model="form.field" placeholder="e.g. plan" />
     </div>
     <div>
       <Label class="text-xs">Operator</Label>
@@ -51,7 +51,7 @@ watch(form, (val) => {
     </div>
     <div>
       <Label class="text-xs">Value</Label>
-      <Input v-model="form.value" placeholder="pro" />
+      <Input v-model="form.value" placeholder="e.g. pro" />
     </div>
   </div>
 </template>
