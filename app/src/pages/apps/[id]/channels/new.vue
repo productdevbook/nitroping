@@ -57,14 +57,14 @@ const typeDocMap: Record<string, string> = {
 
 // ── Help doc dynamic loader ────────────────────────────────────────────────
 
-const docModules = import.meta.glob('../../../../../docs/channels/*.md', { query: '?raw', import: 'default' })
+const docModules = import.meta.glob('../../../../docs/channels/*.md', { query: '?raw', import: 'default' })
 
 const helpContent = ref('')
 
 async function loadHelp(type: string) {
   const docSlug = typeDocMap[type]
   if (!docSlug) return
-  const key = `../../../../../docs/channels/${docSlug}.md`
+  const key = `../../../../docs/channels/${docSlug}.md`
   if (docModules[key]) {
     helpContent.value = await docModules[key]() as string
   }
