@@ -158,7 +158,8 @@ export type ChannelType =
   | 'EMAIL'
   | 'SMS'
   | 'IN_APP'
-  | 'DISCORD';
+  | 'DISCORD'
+  | 'TELEGRAM';
 
 export interface ConfigureApNsInput {
   keyId: Scalars['String']['input'];

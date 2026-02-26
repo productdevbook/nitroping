@@ -16,6 +16,9 @@ function encryptChannelConfig(config: any): any {
   // Discord
   if (encrypted.webhookUrl)
     encrypted.webhookUrl = encryptSensitiveData(String(encrypted.webhookUrl))
+  // Telegram
+  if (encrypted.botToken)
+    encrypted.botToken = encryptSensitiveData(String(encrypted.botToken))
   // SMS / Twilio
   if (encrypted.accountSid)
     encrypted.accountSid = encryptSensitiveData(String(encrypted.accountSid))

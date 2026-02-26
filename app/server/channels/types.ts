@@ -1,3 +1,7 @@
+import type { ChannelType } from '#server/database/schema/enums'
+
+export type { ChannelType }
+
 export interface ChannelMessage {
   to: string
   subject?: string
@@ -17,6 +21,6 @@ export interface ChannelResult {
 }
 
 export interface Channel {
-  type: 'PUSH' | 'EMAIL' | 'SMS' | 'IN_APP' | 'DISCORD'
+  type: ChannelType
   send: (msg: ChannelMessage) => Promise<ChannelResult>
 }

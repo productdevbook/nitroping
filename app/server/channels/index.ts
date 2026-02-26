@@ -1,4 +1,5 @@
 import type { Channel } from './types'
+import type { ChannelType } from '#server/database/schema/enums'
 import { getDatabase } from '#server/database/connection'
 import * as tables from '#server/database/schema'
 import { decryptSensitiveData, isDataEncrypted } from '#server/utils/crypto'
@@ -7,12 +8,14 @@ import { DiscordChannel } from './discord.channel'
 import { EmailChannel } from './email.channel'
 import { InAppChannel } from './inapp.channel'
 import { SmsChannel } from './sms.channel'
+import { TelegramChannel } from './telegram.channel'
 
 export { DiscordChannel } from './discord.channel'
 export { EmailChannel } from './email.channel'
 export { InAppChannel } from './inapp.channel'
 export { PushChannel } from './push.channel'
 export { SmsChannel } from './sms.channel'
+export { TelegramChannel } from './telegram.channel'
 export type { Channel, ChannelMessage, ChannelResult } from './types'
 
 /**
@@ -39,7 +42,7 @@ export async function getChannelById(channelId: string): Promise<Channel> {
  */
 export async function getChannelForApp(
   appId: string,
-  type: 'PUSH' | 'EMAIL' | 'SMS' | 'IN_APP' | 'DISCORD',
+  type: ChannelType,
 ): Promise<Channel> {
   const db = getDatabase()
 
@@ -119,6 +122,19 @@ function buildChannel(row: typeof tables.channel.$inferSelect): Channel {
       }
 
       return new InAppChannel(config)
+    }
+
+    case 'TELEGRAM': {
+      if (!rawConfig) {
+        throw new Error('Telegram channel is missing config')
+      }
+
+      const config = { ...rawConfig }
+      if (config.botToken && isDataEncrypted(config.botToken)) {
+        config.botToken = decryptSensitiveData(config.botToken)
+      }
+
+      return new TelegramChannel(config)
     }
 
     default:

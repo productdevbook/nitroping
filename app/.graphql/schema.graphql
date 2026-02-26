@@ -79,6 +79,7 @@ enum ChannelType {
   SMS
   IN_APP
   DISCORD
+  TELEGRAM
 }
 
 input ConfigureAPNsInput {

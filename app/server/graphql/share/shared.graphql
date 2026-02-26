@@ -18,6 +18,7 @@ enum ChannelType {
   SMS
   IN_APP
   DISCORD
+  TELEGRAM
 }
 
 # Shared workflow enums

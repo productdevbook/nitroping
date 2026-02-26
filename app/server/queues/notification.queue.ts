@@ -1,3 +1,4 @@
+import type { ChannelType } from '#server/database/schema/enums'
 import { useQueue } from '#server/utils/bullmq'
 
 interface BaseJobData {
@@ -27,7 +28,7 @@ interface ChannelJobData extends BaseJobData {
   deliveryMode: 'channel'
   channelId: string
   to: string
-  channelType: 'EMAIL' | 'SMS' | 'IN_APP' | 'DISCORD'
+  channelType: ChannelType
 }
 
 export type SendNotificationJobData = DeviceJobData | ChannelJobData

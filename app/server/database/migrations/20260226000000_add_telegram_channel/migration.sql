@@ -1,0 +1,1 @@
+ALTER TYPE "channelType" ADD VALUE 'TELEGRAM';

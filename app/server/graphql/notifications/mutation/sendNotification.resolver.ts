@@ -54,9 +54,9 @@ export const notificationMutations = defineMutation({
           data: input.data as Record<string, any> | undefined,
         }
 
-        if (channelType === 'DISCORD') {
-          // Discord is a single webhook — one job, no contact required
-          const resolvedChannelId = channelId ?? await resolveChannelId(db, appId, 'DISCORD')
+        if (channelType === 'DISCORD' || channelType === 'TELEGRAM') {
+          // Discord/Telegram — single destination, no contact required
+          const resolvedChannelId = channelId ?? await resolveChannelId(db, appId, channelType)
 
           await addSendNotificationJob({
             deliveryMode: 'channel',
@@ -64,7 +64,7 @@ export const notificationMutations = defineMutation({
             appId,
             channelId: resolvedChannelId,
             to: '',
-            channelType: 'DISCORD',
+            channelType: channelType as 'DISCORD' | 'TELEGRAM',
             payload,
           })
 

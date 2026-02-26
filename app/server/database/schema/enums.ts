@@ -17,7 +17,9 @@ export const deviceStatusEnum = pgEnum('device_status', ['ACTIVE', 'INACTIVE', '
 export const deliveryStatusEnum = pgEnum('delivery_status', ['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'CLICKED'])
 
 // Multi-channel platform enums
-export const channelTypeEnum = pgEnum('channelType', ['PUSH', 'EMAIL', 'SMS', 'IN_APP', 'DISCORD'])
+export const CHANNEL_TYPES = ['PUSH', 'EMAIL', 'SMS', 'IN_APP', 'DISCORD', 'TELEGRAM'] as const
+export type ChannelType = typeof CHANNEL_TYPES[number]
+export const channelTypeEnum = pgEnum('channelType', CHANNEL_TYPES)
 
 export const workflowStatusEnum = pgEnum('workflowStatus', ['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED'])
 

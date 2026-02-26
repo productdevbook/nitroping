@@ -36,7 +36,7 @@ const contactsAppId = computed(() => appId.value)
 const { data: contactsData } = useContacts(contactsAppId)
 const contacts = computed(() => contactsData.value || [])
 
-const isChannelBased = computed(() => ['EMAIL', 'SMS', 'IN_APP', 'DISCORD'].includes(channelType.value))
+const isChannelBased = computed(() => ['EMAIL', 'SMS', 'IN_APP', 'DISCORD', 'TELEGRAM'].includes(channelType.value))
 const isContactBased = computed(() => ['EMAIL', 'SMS', 'IN_APP'].includes(channelType.value))
 
 // Reset targeting when channel changes
@@ -61,6 +61,7 @@ function getChannelIcon() {
     SMS: 'lucide:message-square',
     IN_APP: 'lucide:bell',
     DISCORD: 'lucide:message-circle',
+    TELEGRAM: 'lucide:send',
   }
   return icons[channelType.value] || 'lucide:send'
 }
@@ -70,6 +71,8 @@ function getTargetSummary() {
     return 'All registered devices'
   if (channelType.value === 'DISCORD')
     return 'Discord webhook'
+  if (channelType.value === 'TELEGRAM')
+    return 'Telegram chat'
   if (contactTargetType.value === 'all')
     return `All contacts (${contacts.value.length})`
   return `${selectedContactIds.value.length} selected contact(s)`
@@ -162,6 +165,9 @@ async function sendNotification() {
                     </SelectItem>
                     <SelectItem value="DISCORD">
                       Discord
+                    </SelectItem>
+                    <SelectItem value="TELEGRAM">
+                      Telegram
                     </SelectItem>
                   </SelectContent>
                 </Select>

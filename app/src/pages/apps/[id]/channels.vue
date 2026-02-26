@@ -38,6 +38,9 @@ const form = ref({
   twilioAccountSid: '',
   twilioAuthToken: '',
   twilioFrom: '',
+  // Telegram config
+  telegramBotToken: '',
+  telegramChatId: '',
 })
 
 const channelTypeColors: Record<string, string> = {
@@ -46,6 +49,7 @@ const channelTypeColors: Record<string, string> = {
   SMS: 'bg-green-100 text-green-700',
   IN_APP: 'bg-orange-100 text-orange-700',
   DISCORD: 'bg-indigo-100 text-indigo-700',
+  TELEGRAM: 'bg-cyan-100 text-cyan-700',
 }
 
 function buildConfig() {
@@ -62,6 +66,8 @@ function buildConfig() {
       }
     case 'DISCORD':
       return { webhookUrl: form.value.discordWebhookUrl }
+    case 'TELEGRAM':
+      return { botToken: form.value.telegramBotToken, chatId: form.value.telegramChatId }
     case 'SMS':
       return {
         provider: 'twilio',
@@ -88,6 +94,8 @@ function resetForm() {
     twilioAccountSid: '',
     twilioAuthToken: '',
     twilioFrom: '',
+    telegramBotToken: '',
+    telegramChatId: '',
   }
 }
 
@@ -204,6 +212,9 @@ async function handleDelete(id: string) {
                 <SelectItem value="DISCORD">
                   Discord
                 </SelectItem>
+                <SelectItem value="TELEGRAM">
+                  Telegram
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -254,6 +265,23 @@ async function handleDelete(id: string) {
               <div>
                 <Label class="text-xs">Webhook URL</Label>
                 <Input v-model="form.discordWebhookUrl" placeholder="https://discord.com/api/webhooks/..." />
+              </div>
+            </div>
+          </template>
+
+          <!-- TELEGRAM: Bot configuration -->
+          <template v-if="form.type === 'TELEGRAM'">
+            <div class="border rounded-lg p-4 space-y-3">
+              <p class="text-sm font-medium">
+                Telegram Bot Configuration
+              </p>
+              <div>
+                <Label class="text-xs">Bot Token</Label>
+                <Input v-model="form.telegramBotToken" type="password" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" />
+              </div>
+              <div>
+                <Label class="text-xs">Chat ID</Label>
+                <Input v-model="form.telegramChatId" placeholder="-1001234567890" />
               </div>
             </div>
           </template>
