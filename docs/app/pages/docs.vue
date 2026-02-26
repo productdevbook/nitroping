@@ -26,6 +26,16 @@ const sections = [
 
 const activeSection = ref('getting-started')
 
+const mdcOptions = {
+  highlight: {
+    themes: {
+      light: 'github-light',
+      dark: 'github-dark',
+    },
+    preStyles: true,
+  },
+}
+
 function scrollTo(id: string) {
   activeSection.value = id
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -87,7 +97,7 @@ function scrollTo(id: string) {
           >
             <article class="prose prose-gray max-w-none prose-headings:scroll-mt-24 prose-code:before:content-none prose-code:after:content-none prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-50 prose-pre:border prose-pre:border-gray-200">
               <Suspense>
-                <MDC :markdown="s.content" :options="{ highlight: true }" />
+                <MDC :markdown="s.content" :options="mdcOptions" />
               </Suspense>
             </article>
           </section>

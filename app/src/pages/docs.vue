@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { MDC } from 'mdc-syntax/vue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import gettingStarted from '~/docs/getting-started.md?raw'
 import authentication from '~/docs/authentication.md?raw'
 import channels from '~/docs/channels.md?raw'
@@ -20,6 +20,16 @@ const sections = [
 ]
 
 const activeSection = ref('getting-started')
+
+const mdcOptions = {
+  highlight: {
+    themes: {
+      light: 'github-light',
+      dark: 'github-dark',
+    },
+    preStyles: true,
+  },
+}
 
 function scrollTo(id: string) {
   activeSection.value = id
@@ -59,7 +69,7 @@ function scrollTo(id: string) {
       >
         <article class="prose prose-neutral dark:prose-invert max-w-none prose-headings:scroll-mt-4 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:!p-0 prose-pre:!bg-transparent prose-pre:!border-0">
           <Suspense>
-            <MDC :markdown="s.content" :options="{ highlight: true }" />
+            <MDC :markdown="s.content" :options="mdcOptions" />
           </Suspense>
         </article>
       </section>
