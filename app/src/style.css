@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -136,6 +137,22 @@ html.dark,
     100% { transform: translateX(100%); }
   }
 }
+
+/* ── VueFlow handle overrides ───────────────────────────────────────────── */
+/* Ensure handles are always on top and interactive.                         */
+.vue-flow__handle {
+  cursor: crosshair !important;
+  z-index: 10;
+}
+
+/* Valid drop target while an edge is being drawn toward this handle */
+.vue-flow__handle.vue-flow__handle-valid {
+  border-color: #22c55e !important;
+  background-color: #bbf7d0 !important;
+  transform: scale(1.4);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
 
 @layer base {
   * {

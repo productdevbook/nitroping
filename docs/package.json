@@ -15,7 +15,10 @@
   },
   "dependencies": {
     "abckit": "^0.0.29",
+    "comark": "^0.0.1",
+    "mdc-syntax": "^1.0.0",
     "nuxt": "^4.2.2",
+    "shiki": "^3.23.0",
     "vue": "^3.5.25",
     "vue-router": "^4.6.4"
   },

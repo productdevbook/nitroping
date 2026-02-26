@@ -1,0 +1,1 @@
+ALTER TABLE "deliveryLog" ALTER COLUMN "deviceId" DROP NOT NULL;

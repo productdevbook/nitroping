@@ -1,0 +1,25 @@
+mutation createChannel($input: CreateChannelInput!) {
+  createChannel(input: $input) {
+    id
+    appId
+    name
+    type
+    isActive
+    createdAt
+    updatedAt
+  }
+}
+
+mutation updateChannel($id: ID!, $input: UpdateChannelInput!) {
+  updateChannel(id: $id, input: $input) {
+    id
+    name
+    type
+    isActive
+    updatedAt
+  }
+}
+
+mutation deleteChannel($id: ID!) {
+  deleteChannel(id: $id)
+}

@@ -1,0 +1,21 @@
+type InAppMessage {
+  id: ID!
+  appId: ID!
+  contactId: ID!
+  notificationId: ID
+  title: String!
+  body: String!
+  data: JSON
+  isRead: Boolean!
+  readAt: Timestamp
+  createdAt: Timestamp!
+}
+
+extend type Query {
+  inAppMessages(contactId: ID!, limit: Int = 20, offset: Int = 0): [InAppMessage!]!
+  unreadInAppCount(contactId: ID!): Int!
+}
+
+extend type Mutation {
+  markInAppMessageRead(id: ID!): Boolean!
+}

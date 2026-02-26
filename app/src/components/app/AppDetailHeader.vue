@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -14,8 +13,6 @@ interface Props {
 }
 
 const _props = defineProps<Props>()
-
-const router = useRouter()
 
 // Reactive data
 const showSendTest = ref(false)
@@ -39,21 +36,20 @@ async function sendTestNotification() {
 
 <template>
   <div class="flex items-center justify-between mb-8">
-    <div class="flex items-center space-x-4">
-      <Button variant="ghost" size="icon" @click="router.back()">
-        <Icon name="lucide:arrow-left" class="size-4" />
-      </Button>
+    <div class="flex items-center gap-3">
       <div>
-        <h1 class="text-3xl font-bold mb-1">
-          {{ app.name }}
-        </h1>
-        <p class="text-muted-foreground">
+        <div class="flex items-center gap-2 mb-0.5">
+          <h1 class="text-2xl font-bold">
+            {{ app.name }}
+          </h1>
+          <Badge :variant="app.isActive ? 'default' : 'secondary'">
+            {{ app.isActive ? 'Active' : 'Inactive' }}
+          </Badge>
+        </div>
+        <p class="text-sm text-muted-foreground">
           {{ app.slug }}
         </p>
       </div>
-      <Badge :variant="app.isActive ? 'default' : 'secondary'">
-        {{ app.isActive ? 'Active' : 'Inactive' }}
-      </Badge>
     </div>
     <div class="flex space-x-2">
       <Button variant="outline" @click="showSendTest = true">

@@ -1,7 +1,11 @@
 import type {
   DeviceRegistration,
+  IdentifyOptions,
   NitroPingConfig,
+  PreferenceUpdateOptions,
   PushSubscriptionData,
+  SubscriberPreferenceRecord,
+  SubscriberProfile,
   SubscriptionOptions,
   SubscriptionStatus,
 } from './types.ts'
@@ -37,9 +41,7 @@ export class NitroPingClient {
     if (!this.config.appId) {
       throw new NitroPingError('appId is required', 'INVALID_CONFIG')
     }
-    if (!this.config.vapidPublicKey) {
-      throw new NitroPingError('vapidPublicKey is required', 'INVALID_CONFIG')
-    }
+    // vapidPublicKey is only required when subscribe() is called, not at construction
   }
 
   /**
@@ -82,6 +84,11 @@ export class NitroPingClient {
       )
     }
 
+    // vapidPublicKey is required for push subscriptions
+    if (!this.config.vapidPublicKey) {
+      throw new NitroPingError('vapidPublicKey is required for push subscriptions', 'INVALID_CONFIG')
+    }
+
     // Request permission if not already granted
     const permission = await this.requestPermission()
     if (permission !== 'granted') {
@@ -92,7 +99,8 @@ export class NitroPingClient {
     }
 
     // Register service worker
-    const registration = await navigator.serviceWorker.register('/sw.js')
+    const swPath = this.config.swPath ?? '/sw.js'
+    const registration = await navigator.serviceWorker.register(swPath)
     await navigator.serviceWorker.ready
 
     // Subscribe to push notifications
@@ -148,7 +156,7 @@ export class NitroPingClient {
   }
 
   /**
-   * Unsubscribes from push notifications
+   * Unsubscribes from push notifications and removes the device from the backend
    */
   async unsubscribe(): Promise<boolean> {
     try {
@@ -156,9 +164,21 @@ export class NitroPingClient {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
 
+      const stored = this.getStoredSubscription()
+
       if (subscription) {
         // Unsubscribe from push manager
         await subscription.unsubscribe()
+      }
+
+      // Delete device from backend if we have a device ID
+      if (stored?.device?.id) {
+        try {
+          await this.deleteDevice(stored.device.id)
+        }
+        catch {
+          // Best-effort — do not fail unsubscribe if backend call fails
+        }
       }
 
       // Remove from local storage
@@ -203,6 +223,188 @@ export class NitroPingClient {
       subscription: stored?.subscription,
       device: stored?.device,
     }
+  }
+
+  /**
+   * Identifies a subscriber (user) in the NitroPing system.
+   * If a subscriber with the given externalId already exists it is updated,
+   * otherwise a new subscriber is created.
+   *
+   * @example
+   * await client.identify('user-123', { name: 'John', email: 'user@example.com' })
+   */
+  async identify(externalId: string, options: IdentifyOptions = {}): Promise<SubscriberProfile> {
+    const query = `
+      mutation CreateContact($input: CreateContactInput!) {
+        createContact(input: $input) {
+          id
+          appId
+          externalId
+          name
+          email
+          phone
+          locale
+          metadata
+          createdAt
+          updatedAt
+        }
+      }
+    `
+
+    const response = await apiRequest<{ data: { createContact: SubscriberProfile } }>(
+      `${this.config.apiUrl}/api/graphql`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          query,
+          variables: {
+            input: {
+              appId: this.config.appId,
+              externalId,
+              ...options,
+            },
+          },
+        }),
+      },
+    )
+
+    if (!response.data?.createContact) {
+      throw new NitroPingError('Failed to identify subscriber', 'IDENTIFY_FAILED')
+    }
+
+    return response.data.createContact
+  }
+
+  /**
+   * Fetches a contact by external ID.
+   */
+  async getContact(externalId: string): Promise<SubscriberProfile | null> {
+    const query = `
+      query GetContact($appId: ID!, $externalId: String!) {
+        contactByExternalId(appId: $appId, externalId: $externalId) {
+          id
+          appId
+          externalId
+          name
+          email
+          phone
+          locale
+          metadata
+          createdAt
+          updatedAt
+        }
+      }
+    `
+
+    const response = await apiRequest<{ data: { contactByExternalId: SubscriberProfile | null } }>(
+      `${this.config.apiUrl}/api/graphql`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          query,
+          variables: { appId: this.config.appId, externalId },
+        }),
+      },
+    )
+
+    return response.data?.contactByExternalId ?? null
+  }
+
+  /**
+   * Fetches preferences for a contact by their internal ID.
+   */
+  async getPreferences(contactId: string): Promise<SubscriberPreferenceRecord[]> {
+    const query = `
+      query GetContact($id: ID!) {
+        contact(id: $id) {
+          preferences {
+            id
+            subscriberId
+            category
+            channelType
+            enabled
+            updatedAt
+          }
+        }
+      }
+    `
+
+    const response = await apiRequest<{
+      data: { contact: { preferences: SubscriberPreferenceRecord[] } | null }
+    }>(
+      `${this.config.apiUrl}/api/graphql`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ query, variables: { id: contactId } }),
+      },
+    )
+
+    return response.data?.contact?.preferences ?? []
+  }
+
+  /**
+   * Tracks a notification event (delivered, opened, clicked).
+   */
+  async trackEvent(notificationId: string, event: 'delivered' | 'opened' | 'clicked'): Promise<void> {
+    const mutationMap: Record<string, string> = {
+      delivered: `mutation { trackNotificationDelivered(notificationId: "${notificationId}") }`,
+      opened: `mutation { trackNotificationOpened(notificationId: "${notificationId}") }`,
+      clicked: `mutation { trackNotificationClicked(notificationId: "${notificationId}") }`,
+    }
+
+    const query = mutationMap[event]
+    if (!query) return
+
+    await apiRequest(
+      `${this.config.apiUrl}/api/graphql`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ query }),
+      },
+    )
+  }
+
+  /**
+   * Updates a subscriber's notification preference for a given category and channel.
+   *
+   * @example
+   * await client.updatePreference({
+   *   subscriberId: 'sub-id',
+   *   category: 'marketing',
+   *   channelType: 'EMAIL',
+   *   enabled: false,
+   * })
+   */
+  async updatePreference(input: PreferenceUpdateOptions & { subscriberId: string }): Promise<SubscriberPreferenceRecord> {
+    const query = `
+      mutation UpdateContactPreference($input: UpdateContactPreferenceInput!) {
+        updateContactPreference(input: $input) {
+          id
+          subscriberId
+          category
+          channelType
+          enabled
+          updatedAt
+        }
+      }
+    `
+
+    const response = await apiRequest<{ data: { updateContactPreference: SubscriberPreferenceRecord } }>(
+      `${this.config.apiUrl}/api/graphql`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          query,
+          variables: { input },
+        }),
+      },
+    )
+
+    if (!response.data?.updateContactPreference) {
+      throw new NitroPingError('Failed to update preference', 'PREFERENCE_UPDATE_FAILED')
+    }
+
+    return response.data.updateContactPreference
   }
 
   /**
@@ -253,6 +455,28 @@ export class NitroPingClient {
     }
 
     return response.data.registerDevice
+  }
+
+  /**
+   * Deletes a device from the backend
+   */
+  private async deleteDevice(deviceId: string): Promise<void> {
+    const query = `
+      mutation DeleteDevice($id: ID!) {
+        deleteDevice(id: $id)
+      }
+    `
+
+    await apiRequest(
+      `${this.config.apiUrl}/api/graphql`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          query,
+          variables: { id: deviceId },
+        }),
+      },
+    )
   }
 
   /**

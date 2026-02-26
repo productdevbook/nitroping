@@ -1,0 +1,58 @@
+query workflows($appId: ID!, $status: WorkflowStatus) {
+  workflows(appId: $appId, status: $status) {
+    id
+    appId
+    name
+    triggerIdentifier
+    triggerType
+    status
+    flowLayout
+    createdAt
+    updatedAt
+    steps {
+      id
+      nodeId
+      type
+      order
+      config
+    }
+  }
+}
+
+query workflow($id: ID!) {
+  workflow(id: $id) {
+    id
+    appId
+    name
+    triggerIdentifier
+    triggerType
+    status
+    flowLayout
+    createdAt
+    updatedAt
+    steps {
+      id
+      nodeId
+      type
+      order
+      config
+    }
+  }
+}
+
+query workflowExecutions($workflowId: ID!, $limit: Int, $offset: Int) {
+  workflowExecutions(workflowId: $workflowId, limit: $limit, offset: $offset) {
+    id
+    workflowId
+    subscriberId
+    triggerIdentifier
+    payload
+    status
+    currentStepOrder
+    errorMessage
+    startedAt
+    completedAt
+    createdAt
+    updatedAt
+  }
+}

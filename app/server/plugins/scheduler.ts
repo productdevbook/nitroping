@@ -85,6 +85,7 @@ async function processScheduledNotifications() {
         // Queue jobs for each device
         for (const dev of targetDevices) {
           await addSendNotificationJob({
+            deliveryMode: 'device',
             notificationId: notif.id,
             deviceId: dev.id,
             appId: notif.appId,

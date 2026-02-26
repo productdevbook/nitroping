@@ -43,6 +43,7 @@ query notification($id: ID!) {
     totalSent
     totalDelivered
     totalFailed
+    totalOpened
     totalClicked
     createdAt
     updatedAt
@@ -50,10 +51,13 @@ query notification($id: ID!) {
     deliveryLogs {
       id
       deviceId
+      to
       status
       errorMessage
-      createdAt
+      sentAt
+      openedAt
       clickedAt
+      createdAt
     }
   }
 }
@@ -63,8 +67,11 @@ query deliveryLogs($notificationId: ID) {
     id
     notificationId
     deviceId
+    to
     status
     errorMessage
+    sentAt
+    openedAt
     clickedAt
     createdAt
     updatedAt

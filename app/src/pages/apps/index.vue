@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePush } from 'notivue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Icon from '~/components/common/Icon.vue'
@@ -12,6 +13,7 @@ import { Textarea } from '~/components/ui/textarea'
 import { useApps } from '~/graphql'
 
 const router = useRouter()
+const push = usePush()
 
 // API queries
 const { data: appsData } = useApps()
@@ -44,15 +46,13 @@ async function sendTest() {
 
   testLoading.value = true
   try {
-    // TODO: Implement with proper app API key
     console.log('Would send test notification to:', (selectedApp.value as any)?.name, testNotification.value)
     showTestDialog.value = false
-
-    // TODO: Show success toast
+    push.success({ title: 'Test notification sent' })
   }
   catch (error) {
     console.error('Error sending test notification:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to send test notification', message: error instanceof Error ? error.message : 'Unknown error' })
   }
   finally {
     testLoading.value = false

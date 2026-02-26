@@ -1,27 +1,96 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
+import { usePush } from 'notivue'
+import { computed, ref, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { Checkbox } from '~/components/ui/checkbox'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
-import { useApp, useNotificationApi } from '~/graphql'
+import { Textarea } from '~/components/ui/textarea'
+import { useApp, useNotificationApi, useSendNotification } from '~/graphql'
+import { useContacts } from '~/graphql/contacts'
 
 const route = useRoute()
-const router = useRouter()
+const push = usePush()
 const appId = computed(() => route.params.id as string)
 
 // API queries
 const { data: appData } = useApp(appId)
 const app = computed(() => appData.value)
 
-const { data: notificationsData, isLoading: notificationsLoading } = useNotificationApi(appId)
+const { data: notificationsData, isLoading: notificationsLoading, refetch: refetchNotifications } = useNotificationApi(appId)
 const notifications = computed(() => notificationsData.value || [])
+
+// ── Send Notification Dialog ───────────────────────────────────────────────
+const sendDialogOpen = ref(false)
+const channelType = ref('PUSH')
+const sendTitle = ref('')
+const sendBody = ref('')
+const contactTargetType = ref<'all' | 'specific'>('all')
+const selectedContactIds = ref<string[]>([])
+const scheduleType = ref<'now' | 'later'>('now')
+const scheduledAt = ref('')
+
+const { data: contactsData } = useContacts(appId)
+const contacts = computed(() => contactsData.value || [])
+const { mutateAsync: sendNotificationMutation, isLoading: isSending } = useSendNotification()
+
+const isContactBased = computed(() => ['EMAIL', 'SMS', 'IN_APP'].includes(channelType.value))
+
+const channelIcons: Record<string, string> = {
+  PUSH: 'lucide:smartphone',
+  EMAIL: 'lucide:mail',
+  SMS: 'lucide:message-square',
+  IN_APP: 'lucide:bell',
+  DISCORD: 'lucide:message-circle',
+}
+
+watch(channelType, () => {
+  contactTargetType.value = 'all'
+  selectedContactIds.value = []
+})
+
+function toggleContact(id: string) {
+  const idx = selectedContactIds.value.indexOf(id)
+  if (idx === -1)
+    selectedContactIds.value.push(id)
+  else selectedContactIds.value.splice(idx, 1)
+}
+
+async function doSend() {
+  if (!sendTitle.value || !sendBody.value)
+    return
+  try {
+    const input: any = {
+      appId: appId.value,
+      title: sendTitle.value,
+      body: sendBody.value,
+      channelType: channelType.value === 'PUSH' ? undefined : channelType.value,
+      scheduledAt: scheduleType.value === 'later' ? scheduledAt.value : undefined,
+    }
+    if (isContactBased.value && contactTargetType.value === 'specific' && selectedContactIds.value.length > 0) {
+      input.contactIds = selectedContactIds.value
+    }
+    await sendNotificationMutation(input)
+    push.success({ title: 'Notification sent!' })
+    sendDialogOpen.value = false
+    sendTitle.value = ''
+    sendBody.value = ''
+    selectedContactIds.value = []
+    scheduleType.value = 'now'
+    scheduledAt.value = ''
+    refetchNotifications()
+  }
+  catch (error) {
+    push.error({ title: 'Send failed', message: error instanceof Error ? error.message : 'Unknown error' })
+  }
+}
 
 // Reactive data
 const searchQuery = ref('')
@@ -52,7 +121,7 @@ const notificationStats = computed(() => {
   const stats = notifications.value.reduce((acc, notification) => {
     acc.total++
     acc.totalTargeted += notification.totalTargets || 0
-    acc.totalDelivered += notification.totalDelivered || 0
+    acc.totalDelivered += notification.totalSent || 0
     acc.totalFailed += notification.totalFailed || 0
 
     switch (notification.status) {
@@ -90,6 +159,7 @@ const notificationStats = computed(() => {
   stats.deliveryRate = stats.totalTargeted > 0
     ? Math.round((stats.totalDelivered / stats.totalTargeted) * 100)
     : 0
+  // totalDelivered here tracks totalSent (provider-level delivery)
 
   return stats
 })
@@ -142,26 +212,19 @@ function formatTimeAgo(dateString: string) {
 function getDeliveryRate(notification: any) {
   if (notification.totalTargets === 0)
     return 0
-  return Math.round((notification.totalDelivered / notification.totalTargets) * 100)
-}
-
-function viewNotificationDetails(notificationId: string) {
-  router.push(`/apps/${appId.value}/notifications/${notificationId}`)
+  return Math.round((notification.totalSent / notification.totalTargets) * 100)
 }
 
 function refreshNotifications() {
-  // Trigger refetch of notifications
-  notificationsData.value = undefined
+  refetchNotifications()
 }
 </script>
 
 <template>
   <div v-if="app">
     <!-- App Header -->
-    <AppDetailHeader :app="app" />
 
     <!-- Navigation -->
-    <AppNavigation :app-id="appId" />
 
     <!-- Notifications Content -->
     <div class="space-y-6">
@@ -176,13 +239,140 @@ function refreshNotifications() {
         </div>
         <div class="flex space-x-2">
           <Button variant="outline" :disabled="notificationsLoading" @click="refreshNotifications">
-            <Icon name="lucide:send" :class="`mr-2 size-4${notificationsLoading ? ' animate-pulse' : ''}`" />
+            <Icon name="lucide:refresh-cw" :class="`mr-2 size-4${notificationsLoading ? ' animate-spin' : ''}`" />
             Refresh
           </Button>
-          <Button @click="router.push('/send')">
-            <Icon name="lucide:send" class="mr-2 size-4" />
-            Send New
-          </Button>
+          <Dialog v-model:open="sendDialogOpen">
+            <DialogTrigger as-child>
+              <Button>
+                <Icon name="lucide:send" class="mr-2 size-4" />
+                Send New
+              </Button>
+            </DialogTrigger>
+            <DialogContent class="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Send Notification</DialogTitle>
+              </DialogHeader>
+              <div class="space-y-4 pt-2">
+                <!-- Channel -->
+                <div class="space-y-2">
+                  <Label>Channel</Label>
+                  <Select v-model="channelType">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PUSH">
+                        <div class="flex items-center gap-2">
+                          <Icon name="lucide:smartphone" class="size-4" />
+                          Push Notification
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="EMAIL">
+                        <div class="flex items-center gap-2">
+                          <Icon name="lucide:mail" class="size-4" />
+                          Email
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="SMS">
+                        <div class="flex items-center gap-2">
+                          <Icon name="lucide:message-square" class="size-4" />
+                          SMS
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="IN_APP">
+                        <div class="flex items-center gap-2">
+                          <Icon name="lucide:bell" class="size-4" />
+                          In-App
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="DISCORD">
+                        <div class="flex items-center gap-2">
+                          <Icon name="lucide:message-circle" class="size-4" />
+                          Discord
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <!-- Title -->
+                <div class="space-y-2">
+                  <Label>Title *</Label>
+                  <Input v-model="sendTitle" placeholder="Notification title" />
+                </div>
+
+                <!-- Body -->
+                <div class="space-y-2">
+                  <Label>Body *</Label>
+                  <Textarea v-model="sendBody" placeholder="Message content..." :rows="3" />
+                </div>
+
+                <!-- Recipients (contact-based channels) -->
+                <div v-if="isContactBased" class="space-y-2">
+                  <Label>Recipients</Label>
+                  <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <Checkbox :model-value="contactTargetType === 'all'" @update:model-value="contactTargetType = 'all'" />
+                      <span class="text-sm">All contacts ({{ contacts.length }})</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <Checkbox :model-value="contactTargetType === 'specific'" @update:model-value="contactTargetType = 'specific'" />
+                      <span class="text-sm">Select contacts</span>
+                    </label>
+                  </div>
+                  <div v-if="contactTargetType === 'specific'" class="border rounded-lg divide-y max-h-40 overflow-y-auto">
+                    <label
+                      v-for="contact in contacts"
+                      :key="contact.id"
+                      class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/50"
+                    >
+                      <Checkbox
+                        :model-value="selectedContactIds.includes(contact.id)"
+                        @update:model-value="toggleContact(contact.id)"
+                      />
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate">{{ contact.name || contact.externalId }}</p>
+                        <p class="text-xs text-muted-foreground truncate">{{ contact.email || contact.phone || '—' }}</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Schedule -->
+                <div class="space-y-2">
+                  <Label>Schedule</Label>
+                  <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <Checkbox :model-value="scheduleType === 'now'" @update:model-value="scheduleType = 'now'" />
+                      <span class="text-sm">Send now</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                      <Checkbox :model-value="scheduleType === 'later'" @update:model-value="scheduleType = 'later'" />
+                      <span class="text-sm">Schedule</span>
+                    </label>
+                  </div>
+                  <Input
+                    v-if="scheduleType === 'later'"
+                    v-model="scheduledAt"
+                    type="datetime-local"
+                    :min="new Date().toISOString().slice(0, 16)"
+                  />
+                </div>
+
+                <!-- Submit -->
+                <Button
+                  class="w-full"
+                  :disabled="!sendTitle || !sendBody || isSending"
+                  @click="doSend"
+                >
+                  <Icon v-if="isSending" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
+                  <Icon v-else :name="channelIcons[channelType] || 'lucide:send'" class="mr-2 size-4" />
+                  {{ scheduleType === 'now' ? 'Send Now' : 'Schedule' }}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -360,7 +550,7 @@ function refreshNotifications() {
                   <div class="space-y-1">
                     <div class="flex items-center space-x-2">
                       <span class="text-sm font-medium">{{ getDeliveryRate(notification) }}%</span>
-                      <span class="text-xs text-muted-foreground">({{ notification.totalDelivered }}/{{ notification.totalTargets }})</span>
+                      <span class="text-xs text-muted-foreground">({{ notification.totalSent }}/{{ notification.totalTargets }})</span>
                     </div>
                     <div v-if="notification.totalFailed > 0" class="text-xs text-red-600">
                       {{ notification.totalFailed }} failed
@@ -374,7 +564,12 @@ function refreshNotifications() {
                   <span class="text-sm text-muted-foreground">{{ formatTimeAgo(notification.createdAt) }}</span>
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="sm" @click="viewNotificationDetails(notification.id)">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    :as="RouterLink"
+                    :to="`/apps/${appId}/notifications/${notification.id}`"
+                  >
                     View Details
                   </Button>
                 </TableCell>

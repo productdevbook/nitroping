@@ -1,3 +1,4 @@
+import type { ChannelType } from '#graphql/nitro-graphql-client'
 import type { Ref } from 'vue'
 import { useMutation, useQuery } from '@pinia/colada'
 import { unref } from 'vue'
@@ -60,6 +61,9 @@ export function useSendNotification() {
       clickAction?: string
       sound?: string
       badge?: number
+      channelType?: ChannelType
+      channelId?: string
+      contactIds?: string[]
     }) => {
       const result = await $sdk.sendNotification({ input })
       return result.data?.sendNotification || null

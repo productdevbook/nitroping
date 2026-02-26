@@ -2,10 +2,14 @@ export { NitroPingClient } from './client.js'
 export type {
   APIResponse,
   DeviceRegistration,
+  IdentifyOptions,
   NitroPingConfig,
   NotificationAction,
   NotificationPayload,
+  PreferenceUpdateOptions,
   PushSubscriptionData,
+  SubscriberPreferenceRecord,
+  SubscriberProfile,
   SubscriptionOptions,
   SubscriptionStatus,
 } from './types.ts'

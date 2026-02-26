@@ -1,13 +1,93 @@
 import type { Job } from 'bullmq'
 import type { SendNotificationJobData } from '../queues/notification.queue'
-import { Worker } from 'bullmq'
 import { eq, sql } from 'drizzle-orm'
+import { v7 as uuidv7 } from 'uuid'
+import { getChannelById } from '../channels'
 import { getDatabase } from '../database/connection'
 import { deliveryLog, notification } from '../database/schema'
 import { getProviderForApp } from '../providers'
-import { getRedisConnection } from '../utils/redis'
+import { dispatchHooks } from '../utils/webhookDispatcher'
 
-async function processSendNotification(job: Job<SendNotificationJobData>) {
+const TRACKING_BASE_URL = process.env.APP_URL || 'http://localhost:3412'
+
+async function processChannelDelivery(job: Job<SendNotificationJobData>) {
+  if (job.data.deliveryMode !== 'channel')
+    return
+
+  const { notificationId, appId, channelId, to, payload } = job.data
+  const db = getDatabase()
+
+  // Pre-generate the deliveryLog ID so it can be embedded in tracking URLs
+  const deliveryLogId = uuidv7()
+
+  try {
+    console.log(`[NotificationWorker] Channel job ${job.id}: ${job.data.channelType} → ${to || '(no recipient)'}`)
+    const channel = await getChannelById(channelId)
+    const result = await channel.send({
+      to,
+      subject: payload.title,
+      body: payload.body,
+      data: payload.data,
+      trackingId: deliveryLogId,
+      trackingBaseUrl: TRACKING_BASE_URL,
+    })
+
+    if (result.success) {
+      console.log(`[NotificationWorker] Channel job ${job.id}: sent OK (msgId=${result.messageId})`)
+    }
+    else {
+      console.error(`[NotificationWorker] Channel job ${job.id}: provider error — ${result.error}`)
+    }
+
+    await db.insert(deliveryLog).values({
+      id: deliveryLogId,
+      notificationId,
+      to,
+      status: result.success ? 'SENT' : 'FAILED',
+      errorMessage: result.error,
+      providerResponse: result.messageId ? { messageId: result.messageId } : null,
+      sentAt: result.success ? new Date().toISOString() : null,
+    })
+
+    if (result.success) {
+      await db
+        .update(notification)
+        .set({ totalSent: sql`"totalSent" + 1`, updatedAt: new Date().toISOString() })
+        .where(eq(notification.id, notificationId))
+
+      await dispatchHooks(appId, 'NOTIFICATION_SENT', {
+        notificationId,
+        channelId,
+        messageId: result.messageId,
+      })
+    }
+    else {
+      await db
+        .update(notification)
+        .set({ totalFailed: sql`"totalFailed" + 1`, updatedAt: new Date().toISOString() })
+        .where(eq(notification.id, notificationId))
+
+      await dispatchHooks(appId, 'NOTIFICATION_FAILED', {
+        notificationId,
+        channelId,
+        error: result.error,
+      })
+
+      throw new Error(result.error ?? 'Channel delivery failed')
+    }
+
+    return { success: true, messageId: result.messageId }
+  }
+  catch (error) {
+    console.error(`[NotificationWorker] Channel delivery error for job ${job.id}:`, error)
+    throw error
+  }
+}
+
+async function processDeviceDelivery(job: Job<SendNotificationJobData>) {
+  if (job.data.deliveryMode !== 'device')
+    return
+
   const { notificationId, deviceId, appId, platform, token, webPushP256dh, webPushAuth, payload } = job.data
   const db = getDatabase()
 
@@ -59,6 +139,12 @@ async function processSendNotification(job: Job<SendNotificationJobData>) {
         .update(notification)
         .set({ totalSent: sql`"totalSent" + 1`, updatedAt: new Date().toISOString() })
         .where(eq(notification.id, notificationId))
+
+      await dispatchHooks(appId, 'NOTIFICATION_SENT', {
+        notificationId,
+        deviceId,
+        messageId: result.messageId,
+      })
     }
     else {
       await db
@@ -66,8 +152,12 @@ async function processSendNotification(job: Job<SendNotificationJobData>) {
         .set({ totalFailed: sql`"totalFailed" + 1`, updatedAt: new Date().toISOString() })
         .where(eq(notification.id, notificationId))
 
-      // BullMQ's own retry mechanism (attempts: 5, exponential backoff) handles
-      // re-queuing – throwing here triggers it without double-counting.
+      await dispatchHooks(appId, 'NOTIFICATION_FAILED', {
+        notificationId,
+        deviceId,
+        error: result.error,
+      })
+
       if (!result.success) {
         throw new Error(result.error ?? 'Provider returned failure')
       }
@@ -78,8 +168,6 @@ async function processSendNotification(job: Job<SendNotificationJobData>) {
   catch (error) {
     console.error(`[NotificationWorker] Error processing job ${job.id}:`, error)
 
-    // Only insert a delivery log for unexpected exceptions (provider result
-    // failures are logged above before re-throwing).
     const alreadyLogged = error instanceof Error
       && error.message === (job.data as any)?.lastProviderError
     if (!alreadyLogged) {
@@ -105,56 +193,10 @@ async function processSendNotification(job: Job<SendNotificationJobData>) {
   }
 }
 
-let worker: Worker | null = null
-
-export function startNotificationWorker() {
-  if (worker) {
-    console.log('[NotificationWorker] Worker already running')
-    return worker
+export async function processNotificationJob(job: Job<SendNotificationJobData>) {
+  console.log(`[NotificationWorker] Processing job ${job.id} (${job.name})`)
+  if (job.data.deliveryMode === 'channel') {
+    return processChannelDelivery(job)
   }
-
-  worker = new Worker(
-    'notifications',
-    async (job) => {
-      console.log(`[NotificationWorker] Processing job ${job.id} (${job.name})`)
-
-      if (job.name === 'send-notification') {
-        return processSendNotification(job as Job<SendNotificationJobData>)
-      }
-
-      console.warn(`[NotificationWorker] Unknown job name: ${job.name}`)
-      return { success: false, reason: 'unknown_job' }
-    },
-    {
-      connection: getRedisConnection(),
-      concurrency: 10,
-      limiter: {
-        max: 100,
-        duration: 1000,
-      },
-    },
-  )
-
-  worker.on('completed', (job) => {
-    console.log(`[NotificationWorker] Job ${job.id} completed`)
-  })
-
-  worker.on('failed', (job, err) => {
-    console.error(`[NotificationWorker] Job ${job?.id} failed:`, err.message)
-  })
-
-  worker.on('error', (err) => {
-    console.error('[NotificationWorker] Worker error:', err)
-  })
-
-  console.log('[NotificationWorker] Started')
-  return worker
-}
-
-export async function stopNotificationWorker() {
-  if (worker) {
-    await worker.close()
-    worker = null
-    console.log('[NotificationWorker] Stopped')
-  }
+  return processDeviceDelivery(job)
 }

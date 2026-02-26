@@ -1,0 +1,72 @@
+type Contact {
+  id: ID!
+  appId: ID!
+  externalId: String!
+  name: String
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+
+  # Relations
+  devices: [Device!]
+  preferences: [ContactPreference!]
+
+  # Timestamps
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type ContactPreference {
+  id: ID!
+  subscriberId: ID!
+  category: String!
+  channelType: ChannelType!
+  enabled: Boolean!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+input CreateContactInput {
+  appId: ID!
+  externalId: String!
+  name: String
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+}
+
+input UpdateContactInput {
+  name: String
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+}
+
+input UpsertContactDeviceInput {
+  subscriberId: ID!
+  deviceId: ID!
+}
+
+input UpdateContactPreferenceInput {
+  subscriberId: ID!
+  category: String!
+  channelType: ChannelType!
+  enabled: Boolean!
+}
+
+extend type Query {
+  contacts(appId: ID!, limit: Int = 50, offset: Int = 0): [Contact!]!
+  contact(id: ID!): Contact
+  contactByExternalId(appId: ID!, externalId: String!): Contact
+}
+
+extend type Mutation {
+  createContact(input: CreateContactInput!): Contact!
+  updateContact(id: ID!, input: UpdateContactInput!): Contact!
+  deleteContact(id: ID!): Boolean!
+  upsertContactDevice(input: UpsertContactDeviceInput!): Boolean!
+  updateContactPreference(input: UpdateContactPreferenceInput!): ContactPreference!
+}

@@ -141,6 +141,26 @@ export interface AppStats {
   apiCalls: Scalars['Int']['output'];
 }
 
+export interface Channel {
+  __typename?: 'Channel';
+  id: Scalars['ID']['output'];
+  appId: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  type: ChannelType;
+  config?: Maybe<Scalars['JSON']['output']>;
+  isActive: Scalars['Boolean']['output'];
+  createdAt: Scalars['Timestamp']['output'];
+  updatedAt: Scalars['Timestamp']['output'];
+}
+
+export type ChannelType =
+  | 'PUSH'
+  | 'EMAIL'
+  | 'SMS'
+  | 'IN_APP'
+  | 'DISCORD'
+  | 'TELEGRAM';
+
 export interface ConfigureApNsInput {
   keyId: Scalars['String']['input'];
   teamId: Scalars['String']['input'];
@@ -160,10 +180,81 @@ export interface ConfigureWebPushInput {
   privateKey: Scalars['String']['input'];
 }
 
+export interface Contact {
+  __typename?: 'Contact';
+  id: Scalars['ID']['output'];
+  appId: Scalars['ID']['output'];
+  externalId: Scalars['String']['output'];
+  name?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  phone?: Maybe<Scalars['String']['output']>;
+  locale?: Maybe<Scalars['String']['output']>;
+  metadata?: Maybe<Scalars['JSON']['output']>;
+  devices?: Maybe<Array<Device>>;
+  preferences?: Maybe<Array<ContactPreference>>;
+  createdAt: Scalars['Timestamp']['output'];
+  updatedAt: Scalars['Timestamp']['output'];
+}
+
+export interface ContactPreference {
+  __typename?: 'ContactPreference';
+  id: Scalars['ID']['output'];
+  subscriberId: Scalars['ID']['output'];
+  category: Scalars['String']['output'];
+  channelType: ChannelType;
+  enabled: Scalars['Boolean']['output'];
+  createdAt: Scalars['Timestamp']['output'];
+  updatedAt: Scalars['Timestamp']['output'];
+}
+
 export interface CreateAppInput {
   name: Scalars['String']['input'];
   slug: Scalars['String']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
+}
+
+export interface CreateChannelInput {
+  appId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+  type: ChannelType;
+  config?: InputMaybe<Scalars['JSON']['input']>;
+}
+
+export interface CreateContactInput {
+  appId: Scalars['ID']['input'];
+  externalId: Scalars['String']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  email?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+  locale?: InputMaybe<Scalars['String']['input']>;
+  metadata?: InputMaybe<Scalars['JSON']['input']>;
+}
+
+export interface CreateHookInput {
+  appId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+  url: Scalars['String']['input'];
+  secret?: InputMaybe<Scalars['String']['input']>;
+  events?: InputMaybe<Scalars['JSON']['input']>;
+}
+
+export interface CreateTemplateInput {
+  appId: Scalars['ID']['input'];
+  channelId?: InputMaybe<Scalars['ID']['input']>;
+  name: Scalars['String']['input'];
+  channelType: ChannelType;
+  subject?: InputMaybe<Scalars['String']['input']>;
+  body: Scalars['String']['input'];
+  htmlBody?: InputMaybe<Scalars['String']['input']>;
+}
+
+export interface CreateWorkflowInput {
+  appId: Scalars['ID']['input'];
+  name: Scalars['String']['input'];
+  triggerIdentifier: Scalars['String']['input'];
+  triggerType?: InputMaybe<WorkflowTriggerType>;
+  steps?: InputMaybe<Array<WorkflowStepInput>>;
+  flowLayout?: InputMaybe<Scalars['JSON']['input']>;
 }
 
 export interface DashboardStats {
@@ -179,10 +270,13 @@ export interface DeliveryLog {
   id: Scalars['ID']['output'];
   notificationId: Scalars['ID']['output'];
   notification?: Maybe<Notification>;
-  deviceId: Scalars['ID']['output'];
+  deviceId?: Maybe<Scalars['ID']['output']>;
   device?: Maybe<Device>;
+  to?: Maybe<Scalars['String']['output']>;
   status: DeliveryStatus;
   errorMessage?: Maybe<Scalars['String']['output']>;
+  sentAt?: Maybe<Scalars['Timestamp']['output']>;
+  openedAt?: Maybe<Scalars['Timestamp']['output']>;
   clickedAt?: Maybe<Scalars['Timestamp']['output']>;
   createdAt: Scalars['Timestamp']['output'];
   updatedAt: Scalars['Timestamp']['output'];
@@ -244,6 +338,41 @@ export interface EngagementMetrics {
   platformBreakdown: Array<PlatformMetrics>;
 }
 
+export interface Hook {
+  __typename?: 'Hook';
+  id: Scalars['ID']['output'];
+  appId: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+  secret?: Maybe<Scalars['String']['output']>;
+  events?: Maybe<Scalars['JSON']['output']>;
+  isActive: Scalars['Boolean']['output'];
+  createdAt: Scalars['Timestamp']['output'];
+  updatedAt: Scalars['Timestamp']['output'];
+}
+
+export type HookEvent =
+  | 'NOTIFICATION_SENT'
+  | 'NOTIFICATION_DELIVERED'
+  | 'NOTIFICATION_FAILED'
+  | 'NOTIFICATION_CLICKED'
+  | 'WORKFLOW_COMPLETED'
+  | 'WORKFLOW_FAILED';
+
+export interface InAppMessage {
+  __typename?: 'InAppMessage';
+  id: Scalars['ID']['output'];
+  appId: Scalars['ID']['output'];
+  contactId: Scalars['ID']['output'];
+  notificationId?: Maybe<Scalars['ID']['output']>;
+  title: Scalars['String']['output'];
+  body: Scalars['String']['output'];
+  data?: Maybe<Scalars['JSON']['output']>;
+  isRead: Scalars['Boolean']['output'];
+  readAt?: Maybe<Scalars['Timestamp']['output']>;
+  createdAt: Scalars['Timestamp']['output'];
+}
+
 export interface Mutation {
   __typename?: 'Mutation';
   _empty?: Maybe<Scalars['String']['output']>;
@@ -252,8 +381,19 @@ export interface Mutation {
   configureFCM: App;
   configureWebPush: App;
   createApp: App;
+  createChannel: Channel;
+  createContact: Contact;
+  createHook: Hook;
+  createTemplate: Template;
+  createWorkflow: Workflow;
   deleteApp: Scalars['Boolean']['output'];
+  deleteChannel: Scalars['Boolean']['output'];
+  deleteContact: Scalars['Boolean']['output'];
   deleteDevice: Scalars['Boolean']['output'];
+  deleteHook: Scalars['Boolean']['output'];
+  deleteTemplate: Scalars['Boolean']['output'];
+  deleteWorkflow: Scalars['Boolean']['output'];
+  markInAppMessageRead: Scalars['Boolean']['output'];
   regenerateApiKey: App;
   registerDevice: Device;
   scheduleNotification: Notification;
@@ -261,8 +401,16 @@ export interface Mutation {
   trackNotificationClicked: TrackEventResponse;
   trackNotificationDelivered: TrackEventResponse;
   trackNotificationOpened: TrackEventResponse;
+  triggerWorkflow: WorkflowExecution;
   updateApp: App;
+  updateChannel: Channel;
+  updateContact: Contact;
+  updateContactPreference: ContactPreference;
   updateDevice: Device;
+  updateHook: Hook;
+  updateTemplate: Template;
+  updateWorkflow: Workflow;
+  upsertContactDevice: Scalars['Boolean']['output'];
 }
 
 
@@ -294,12 +442,67 @@ export interface MutationCreateAppArgs {
 }
 
 
+export interface MutationCreateChannelArgs {
+  input: CreateChannelInput;
+}
+
+
+export interface MutationCreateContactArgs {
+  input: CreateContactInput;
+}
+
+
+export interface MutationCreateHookArgs {
+  input: CreateHookInput;
+}
+
+
+export interface MutationCreateTemplateArgs {
+  input: CreateTemplateInput;
+}
+
+
+export interface MutationCreateWorkflowArgs {
+  input: CreateWorkflowInput;
+}
+
+
 export interface MutationDeleteAppArgs {
   id: Scalars['ID']['input'];
 }
 
 
+export interface MutationDeleteChannelArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface MutationDeleteContactArgs {
+  id: Scalars['ID']['input'];
+}
+
+
 export interface MutationDeleteDeviceArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface MutationDeleteHookArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface MutationDeleteTemplateArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface MutationDeleteWorkflowArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface MutationMarkInAppMessageReadArgs {
   id: Scalars['ID']['input'];
 }
 
@@ -339,15 +542,60 @@ export interface MutationTrackNotificationOpenedArgs {
 }
 
 
+export interface MutationTriggerWorkflowArgs {
+  input: TriggerWorkflowInput;
+}
+
+
 export interface MutationUpdateAppArgs {
   id: Scalars['ID']['input'];
   input: UpdateAppInput;
 }
 
 
+export interface MutationUpdateChannelArgs {
+  id: Scalars['ID']['input'];
+  input: UpdateChannelInput;
+}
+
+
+export interface MutationUpdateContactArgs {
+  id: Scalars['ID']['input'];
+  input: UpdateContactInput;
+}
+
+
+export interface MutationUpdateContactPreferenceArgs {
+  input: UpdateContactPreferenceInput;
+}
+
+
 export interface MutationUpdateDeviceArgs {
   id: Scalars['ID']['input'];
   input: UpdateDeviceInput;
+}
+
+
+export interface MutationUpdateHookArgs {
+  id: Scalars['ID']['input'];
+  input: UpdateHookInput;
+}
+
+
+export interface MutationUpdateTemplateArgs {
+  id: Scalars['ID']['input'];
+  input: UpdateTemplateInput;
+}
+
+
+export interface MutationUpdateWorkflowArgs {
+  id: Scalars['ID']['input'];
+  input: UpdateWorkflowInput;
+}
+
+
+export interface MutationUpsertContactDeviceArgs {
+  input: UpsertContactDeviceInput;
 }
 
 export interface Notification {
@@ -370,6 +618,7 @@ export interface Notification {
   totalSent: Scalars['Int']['output'];
   totalDelivered: Scalars['Int']['output'];
   totalFailed: Scalars['Int']['output'];
+  totalOpened: Scalars['Int']['output'];
   totalClicked: Scalars['Int']['output'];
   deliveryLogs?: Maybe<Array<DeliveryLog>>;
   createdAt: Scalars['Timestamp']['output'];
@@ -436,6 +685,11 @@ export interface Query {
   appExists: Scalars['Boolean']['output'];
   appStats?: Maybe<AppStats>;
   apps: Array<App>;
+  channel?: Maybe<Channel>;
+  channels: Array<Channel>;
+  contact?: Maybe<Contact>;
+  contactByExternalId?: Maybe<Contact>;
+  contacts: Array<Contact>;
   dashboardStats: DashboardStats;
   deliveryLogs: Array<DeliveryLog>;
   device?: Maybe<Device>;
@@ -444,9 +698,18 @@ export interface Query {
   generateVapidKeys: VapidKeys;
   getEngagementMetrics?: Maybe<EngagementMetrics>;
   getNotificationAnalytics?: Maybe<NotificationAnalytics>;
+  hook?: Maybe<Hook>;
+  hooks: Array<Hook>;
+  inAppMessages: Array<InAppMessage>;
   notification?: Maybe<Notification>;
   notifications: Array<Notification>;
   platformStats: Array<PlatformStats>;
+  template?: Maybe<Template>;
+  templates: Array<Template>;
+  unreadInAppCount: Scalars['Int']['output'];
+  workflow?: Maybe<Workflow>;
+  workflowExecutions: Array<WorkflowExecution>;
+  workflows: Array<Workflow>;
 }
 
 
@@ -473,6 +736,35 @@ export interface QueryAppExistsArgs {
 
 export interface QueryAppStatsArgs {
   appId: Scalars['ID']['input'];
+}
+
+
+export interface QueryChannelArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface QueryChannelsArgs {
+  appId: Scalars['ID']['input'];
+  type?: InputMaybe<ChannelType>;
+}
+
+
+export interface QueryContactArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface QueryContactByExternalIdArgs {
+  appId: Scalars['ID']['input'];
+  externalId: Scalars['String']['input'];
+}
+
+
+export interface QueryContactsArgs {
+  appId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
 }
 
 
@@ -511,6 +803,23 @@ export interface QueryGetNotificationAnalyticsArgs {
 }
 
 
+export interface QueryHookArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface QueryHooksArgs {
+  appId: Scalars['ID']['input'];
+}
+
+
+export interface QueryInAppMessagesArgs {
+  contactId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}
+
+
 export interface QueryNotificationArgs {
   id: Scalars['ID']['input'];
 }
@@ -525,6 +834,40 @@ export interface QueryNotificationsArgs {
 
 export interface QueryPlatformStatsArgs {
   appId?: InputMaybe<Scalars['ID']['input']>;
+}
+
+
+export interface QueryTemplateArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface QueryTemplatesArgs {
+  appId: Scalars['ID']['input'];
+  channelType?: InputMaybe<ChannelType>;
+}
+
+
+export interface QueryUnreadInAppCountArgs {
+  contactId: Scalars['ID']['input'];
+}
+
+
+export interface QueryWorkflowArgs {
+  id: Scalars['ID']['input'];
+}
+
+
+export interface QueryWorkflowExecutionsArgs {
+  workflowId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}
+
+
+export interface QueryWorkflowsArgs {
+  appId: Scalars['ID']['input'];
+  status?: InputMaybe<WorkflowStatus>;
 }
 
 export interface RegisterDeviceInput {
@@ -550,6 +893,23 @@ export interface SendNotificationInput {
   targetDevices?: InputMaybe<Scalars['JSON']['input']>;
   platforms?: InputMaybe<Scalars['JSON']['input']>;
   scheduledAt?: InputMaybe<Scalars['Timestamp']['input']>;
+  channelType?: InputMaybe<ChannelType>;
+  channelId?: InputMaybe<Scalars['ID']['input']>;
+  contactIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+}
+
+export interface Template {
+  __typename?: 'Template';
+  id: Scalars['ID']['output'];
+  appId: Scalars['ID']['output'];
+  channelId?: Maybe<Scalars['ID']['output']>;
+  name: Scalars['String']['output'];
+  channelType: ChannelType;
+  subject?: Maybe<Scalars['String']['output']>;
+  body: Scalars['String']['output'];
+  htmlBody?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['Timestamp']['output'];
+  updatedAt: Scalars['Timestamp']['output'];
 }
 
 export interface TrackEventInput {
@@ -567,6 +927,12 @@ export interface TrackEventResponse {
   message?: Maybe<Scalars['String']['output']>;
 }
 
+export interface TriggerWorkflowInput {
+  workflowId: Scalars['ID']['input'];
+  subscriberId?: InputMaybe<Scalars['ID']['input']>;
+  payload?: InputMaybe<Scalars['JSON']['input']>;
+}
+
 export interface UpdateAppInput {
   name?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -582,10 +948,61 @@ export interface UpdateAppInput {
   vapidPrivateKey?: InputMaybe<Scalars['String']['input']>;
 }
 
+export interface UpdateChannelInput {
+  name?: InputMaybe<Scalars['String']['input']>;
+  config?: InputMaybe<Scalars['JSON']['input']>;
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+}
+
+export interface UpdateContactInput {
+  name?: InputMaybe<Scalars['String']['input']>;
+  email?: InputMaybe<Scalars['String']['input']>;
+  phone?: InputMaybe<Scalars['String']['input']>;
+  locale?: InputMaybe<Scalars['String']['input']>;
+  metadata?: InputMaybe<Scalars['JSON']['input']>;
+}
+
+export interface UpdateContactPreferenceInput {
+  subscriberId: Scalars['ID']['input'];
+  category: Scalars['String']['input'];
+  channelType: ChannelType;
+  enabled: Scalars['Boolean']['input'];
+}
+
 export interface UpdateDeviceInput {
   status?: InputMaybe<DeviceStatus>;
   userId?: InputMaybe<Scalars['String']['input']>;
   metadata?: InputMaybe<Scalars['JSON']['input']>;
+}
+
+export interface UpdateHookInput {
+  name?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+  secret?: InputMaybe<Scalars['String']['input']>;
+  events?: InputMaybe<Scalars['JSON']['input']>;
+  isActive?: InputMaybe<Scalars['Boolean']['input']>;
+}
+
+export interface UpdateTemplateInput {
+  channelId?: InputMaybe<Scalars['ID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  subject?: InputMaybe<Scalars['String']['input']>;
+  body?: InputMaybe<Scalars['String']['input']>;
+  htmlBody?: InputMaybe<Scalars['String']['input']>;
+}
+
+export interface UpdateWorkflowInput {
+  name?: InputMaybe<Scalars['String']['input']>;
+  triggerIdentifier?: InputMaybe<Scalars['String']['input']>;
+  triggerType?: InputMaybe<WorkflowTriggerType>;
+  status?: InputMaybe<WorkflowStatus>;
+  steps?: InputMaybe<Array<WorkflowStepInput>>;
+  flowLayout?: InputMaybe<Scalars['JSON']['input']>;
+}
+
+export interface UpsertContactDeviceInput {
+  subscriberId: Scalars['ID']['input'];
+  deviceId: Scalars['ID']['input'];
 }
 
 export interface VapidKeys {
@@ -593,6 +1010,79 @@ export interface VapidKeys {
   publicKey: Scalars['String']['output'];
   privateKey: Scalars['String']['output'];
 }
+
+export interface Workflow {
+  __typename?: 'Workflow';
+  id: Scalars['ID']['output'];
+  appId: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  triggerIdentifier: Scalars['String']['output'];
+  triggerType: WorkflowTriggerType;
+  status: WorkflowStatus;
+  flowLayout?: Maybe<Scalars['JSON']['output']>;
+  createdAt: Scalars['Timestamp']['output'];
+  updatedAt: Scalars['Timestamp']['output'];
+  steps?: Maybe<Array<WorkflowStep>>;
+}
+
+export interface WorkflowExecution {
+  __typename?: 'WorkflowExecution';
+  id: Scalars['ID']['output'];
+  workflowId: Scalars['ID']['output'];
+  subscriberId?: Maybe<Scalars['ID']['output']>;
+  triggerIdentifier: Scalars['String']['output'];
+  payload?: Maybe<Scalars['JSON']['output']>;
+  status: WorkflowExecutionStatus;
+  currentStepOrder: Scalars['Int']['output'];
+  errorMessage?: Maybe<Scalars['String']['output']>;
+  startedAt: Scalars['Timestamp']['output'];
+  completedAt?: Maybe<Scalars['Timestamp']['output']>;
+  createdAt: Scalars['Timestamp']['output'];
+  updatedAt: Scalars['Timestamp']['output'];
+}
+
+export type WorkflowExecutionStatus =
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED';
+
+export type WorkflowStatus =
+  | 'DRAFT'
+  | 'ACTIVE'
+  | 'PAUSED'
+  | 'ARCHIVED';
+
+export interface WorkflowStep {
+  __typename?: 'WorkflowStep';
+  id: Scalars['ID']['output'];
+  workflowId: Scalars['ID']['output'];
+  nodeId?: Maybe<Scalars['String']['output']>;
+  type: WorkflowStepType;
+  order: Scalars['Int']['output'];
+  config?: Maybe<Scalars['JSON']['output']>;
+  createdAt: Scalars['Timestamp']['output'];
+  updatedAt: Scalars['Timestamp']['output'];
+}
+
+export interface WorkflowStepInput {
+  nodeId?: InputMaybe<Scalars['String']['input']>;
+  type: WorkflowStepType;
+  order: Scalars['Int']['input'];
+  config?: InputMaybe<Scalars['JSON']['input']>;
+}
+
+export type WorkflowStepType =
+  | 'SEND'
+  | 'DELAY'
+  | 'FILTER'
+  | 'DIGEST'
+  | 'BRANCH';
+
+export type WorkflowTriggerType =
+  | 'EVENT'
+  | 'SCHEDULED'
+  | 'MANUAL';
 
 
 
@@ -675,10 +1165,19 @@ export type ResolversTypes = {
   App: ResolverTypeWrapper<ResolverReturnType<App>>;
   AppStats: ResolverTypeWrapper<ResolverReturnType<AppStats>>;
   Float: ResolverTypeWrapper<ResolverReturnType<Scalars['Float']['output']>>;
+  Channel: ResolverTypeWrapper<ResolverReturnType<Channel>>;
+  ChannelType: ResolverTypeWrapper<ResolverReturnType<ChannelType>>;
   ConfigureAPNsInput: ResolverTypeWrapper<ResolverReturnType<ConfigureApNsInput>>;
   ConfigureFCMInput: ResolverTypeWrapper<ResolverReturnType<ConfigureFcmInput>>;
   ConfigureWebPushInput: ResolverTypeWrapper<ResolverReturnType<ConfigureWebPushInput>>;
+  Contact: ResolverTypeWrapper<ResolverReturnType<Contact>>;
+  ContactPreference: ResolverTypeWrapper<ResolverReturnType<ContactPreference>>;
   CreateAppInput: ResolverTypeWrapper<ResolverReturnType<CreateAppInput>>;
+  CreateChannelInput: ResolverTypeWrapper<ResolverReturnType<CreateChannelInput>>;
+  CreateContactInput: ResolverTypeWrapper<ResolverReturnType<CreateContactInput>>;
+  CreateHookInput: ResolverTypeWrapper<ResolverReturnType<CreateHookInput>>;
+  CreateTemplateInput: ResolverTypeWrapper<ResolverReturnType<CreateTemplateInput>>;
+  CreateWorkflowInput: ResolverTypeWrapper<ResolverReturnType<CreateWorkflowInput>>;
   DashboardStats: ResolverTypeWrapper<ResolverReturnType<DashboardStats>>;
   DeliveryLog: ResolverTypeWrapper<ResolverReturnType<DeliveryLog>>;
   DeliveryStatus: ResolverTypeWrapper<ResolverReturnType<DeliveryStatus>>;
@@ -687,6 +1186,9 @@ export type ResolversTypes = {
   DevicePlatform: ResolverTypeWrapper<ResolverReturnType<DevicePlatform>>;
   DeviceStatus: ResolverTypeWrapper<ResolverReturnType<DeviceStatus>>;
   EngagementMetrics: ResolverTypeWrapper<ResolverReturnType<EngagementMetrics>>;
+  Hook: ResolverTypeWrapper<ResolverReturnType<Hook>>;
+  HookEvent: ResolverTypeWrapper<ResolverReturnType<HookEvent>>;
+  InAppMessage: ResolverTypeWrapper<ResolverReturnType<InAppMessage>>;
   JSON: ResolverTypeWrapper<ResolverReturnType<Scalars['JSON']['output']>>;
   Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
   Notification: ResolverTypeWrapper<ResolverReturnType<Notification>>;
@@ -698,12 +1200,29 @@ export type ResolversTypes = {
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
   RegisterDeviceInput: ResolverTypeWrapper<ResolverReturnType<RegisterDeviceInput>>;
   SendNotificationInput: ResolverTypeWrapper<ResolverReturnType<SendNotificationInput>>;
+  Template: ResolverTypeWrapper<ResolverReturnType<Template>>;
   Timestamp: ResolverTypeWrapper<ResolverReturnType<Scalars['Timestamp']['output']>>;
   TrackEventInput: ResolverTypeWrapper<ResolverReturnType<TrackEventInput>>;
   TrackEventResponse: ResolverTypeWrapper<ResolverReturnType<TrackEventResponse>>;
+  TriggerWorkflowInput: ResolverTypeWrapper<ResolverReturnType<TriggerWorkflowInput>>;
   UpdateAppInput: ResolverTypeWrapper<ResolverReturnType<UpdateAppInput>>;
+  UpdateChannelInput: ResolverTypeWrapper<ResolverReturnType<UpdateChannelInput>>;
+  UpdateContactInput: ResolverTypeWrapper<ResolverReturnType<UpdateContactInput>>;
+  UpdateContactPreferenceInput: ResolverTypeWrapper<ResolverReturnType<UpdateContactPreferenceInput>>;
   UpdateDeviceInput: ResolverTypeWrapper<ResolverReturnType<UpdateDeviceInput>>;
+  UpdateHookInput: ResolverTypeWrapper<ResolverReturnType<UpdateHookInput>>;
+  UpdateTemplateInput: ResolverTypeWrapper<ResolverReturnType<UpdateTemplateInput>>;
+  UpdateWorkflowInput: ResolverTypeWrapper<ResolverReturnType<UpdateWorkflowInput>>;
+  UpsertContactDeviceInput: ResolverTypeWrapper<ResolverReturnType<UpsertContactDeviceInput>>;
   VapidKeys: ResolverTypeWrapper<ResolverReturnType<VapidKeys>>;
+  Workflow: ResolverTypeWrapper<ResolverReturnType<Workflow>>;
+  WorkflowExecution: ResolverTypeWrapper<ResolverReturnType<WorkflowExecution>>;
+  WorkflowExecutionStatus: ResolverTypeWrapper<ResolverReturnType<WorkflowExecutionStatus>>;
+  WorkflowStatus: ResolverTypeWrapper<ResolverReturnType<WorkflowStatus>>;
+  WorkflowStep: ResolverTypeWrapper<ResolverReturnType<WorkflowStep>>;
+  WorkflowStepInput: ResolverTypeWrapper<ResolverReturnType<WorkflowStepInput>>;
+  WorkflowStepType: ResolverTypeWrapper<ResolverReturnType<WorkflowStepType>>;
+  WorkflowTriggerType: ResolverTypeWrapper<ResolverReturnType<WorkflowTriggerType>>;
   String: ResolverTypeWrapper<ResolverReturnType<Scalars['String']['output']>>;
 };
 
@@ -717,14 +1236,24 @@ export type ResolversParentTypes = {
   App: ResolverReturnType<App>;
   AppStats: ResolverReturnType<AppStats>;
   Float: ResolverReturnType<Scalars['Float']['output']>;
+  Channel: ResolverReturnType<Channel>;
   ConfigureAPNsInput: ResolverReturnType<ConfigureApNsInput>;
   ConfigureFCMInput: ResolverReturnType<ConfigureFcmInput>;
   ConfigureWebPushInput: ResolverReturnType<ConfigureWebPushInput>;
+  Contact: ResolverReturnType<Contact>;
+  ContactPreference: ResolverReturnType<ContactPreference>;
   CreateAppInput: ResolverReturnType<CreateAppInput>;
+  CreateChannelInput: ResolverReturnType<CreateChannelInput>;
+  CreateContactInput: ResolverReturnType<CreateContactInput>;
+  CreateHookInput: ResolverReturnType<CreateHookInput>;
+  CreateTemplateInput: ResolverReturnType<CreateTemplateInput>;
+  CreateWorkflowInput: ResolverReturnType<CreateWorkflowInput>;
   DashboardStats: ResolverReturnType<DashboardStats>;
   DeliveryLog: ResolverReturnType<DeliveryLog>;
   Device: ResolverReturnType<Device>;
   EngagementMetrics: ResolverReturnType<EngagementMetrics>;
+  Hook: ResolverReturnType<Hook>;
+  InAppMessage: ResolverReturnType<InAppMessage>;
   JSON: ResolverReturnType<Scalars['JSON']['output']>;
   Mutation: Record<PropertyKey, never>;
   Notification: ResolverReturnType<Notification>;
@@ -735,12 +1264,25 @@ export type ResolversParentTypes = {
   Query: Record<PropertyKey, never>;
   RegisterDeviceInput: ResolverReturnType<RegisterDeviceInput>;
   SendNotificationInput: ResolverReturnType<SendNotificationInput>;
+  Template: ResolverReturnType<Template>;
   Timestamp: ResolverReturnType<Scalars['Timestamp']['output']>;
   TrackEventInput: ResolverReturnType<TrackEventInput>;
   TrackEventResponse: ResolverReturnType<TrackEventResponse>;
+  TriggerWorkflowInput: ResolverReturnType<TriggerWorkflowInput>;
   UpdateAppInput: ResolverReturnType<UpdateAppInput>;
+  UpdateChannelInput: ResolverReturnType<UpdateChannelInput>;
+  UpdateContactInput: ResolverReturnType<UpdateContactInput>;
+  UpdateContactPreferenceInput: ResolverReturnType<UpdateContactPreferenceInput>;
   UpdateDeviceInput: ResolverReturnType<UpdateDeviceInput>;
+  UpdateHookInput: ResolverReturnType<UpdateHookInput>;
+  UpdateTemplateInput: ResolverReturnType<UpdateTemplateInput>;
+  UpdateWorkflowInput: ResolverReturnType<UpdateWorkflowInput>;
+  UpsertContactDeviceInput: ResolverReturnType<UpsertContactDeviceInput>;
   VapidKeys: ResolverReturnType<VapidKeys>;
+  Workflow: ResolverReturnType<Workflow>;
+  WorkflowExecution: ResolverReturnType<WorkflowExecution>;
+  WorkflowStep: ResolverReturnType<WorkflowStep>;
+  WorkflowStepInput: ResolverReturnType<WorkflowStepInput>;
   String: ResolverReturnType<Scalars['String']['output']>;
 };
 
@@ -809,6 +1351,42 @@ export type AppStatsResolvers<ContextType = H3Event, ParentType extends Resolver
   apiCalls?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
 };
 
+export type ChannelResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['Channel'] = ResolversParentTypes['Channel']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  appId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['ChannelType'], ParentType, ContextType>;
+  config?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  isActive?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+};
+
+export type ContactResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['Contact'] = ResolversParentTypes['Contact']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  appId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  externalId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  email?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  phone?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  locale?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  metadata?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  devices?: Resolver<Maybe<Array<ResolversTypes['Device']>>, ParentType, ContextType>;
+  preferences?: Resolver<Maybe<Array<ResolversTypes['ContactPreference']>>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+};
+
+export type ContactPreferenceResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['ContactPreference'] = ResolversParentTypes['ContactPreference']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  subscriberId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  category?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  channelType?: Resolver<ResolversTypes['ChannelType'], ParentType, ContextType>;
+  enabled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+};
+
 export type DashboardStatsResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['DashboardStats'] = ResolversParentTypes['DashboardStats']> = {
   totalApps?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   activeDevices?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
@@ -820,10 +1398,13 @@ export type DeliveryLogResolvers<ContextType = H3Event, ParentType extends Resol
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   notificationId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   notification?: Resolver<Maybe<ResolversTypes['Notification']>, ParentType, ContextType>;
-  deviceId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  deviceId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
   device?: Resolver<Maybe<ResolversTypes['Device']>, ParentType, ContextType>;
+  to?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['DeliveryStatus'], ParentType, ContextType>;
   errorMessage?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  sentAt?: Resolver<Maybe<ResolversTypes['Timestamp']>, ParentType, ContextType>;
+  openedAt?: Resolver<Maybe<ResolversTypes['Timestamp']>, ParentType, ContextType>;
   clickedAt?: Resolver<Maybe<ResolversTypes['Timestamp']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
@@ -859,6 +1440,31 @@ export type EngagementMetricsResolvers<ContextType = H3Event, ParentType extends
   platformBreakdown?: Resolver<Array<ResolversTypes['PlatformMetrics']>, ParentType, ContextType>;
 };
 
+export type HookResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['Hook'] = ResolversParentTypes['Hook']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  appId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  secret?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  events?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  isActive?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+};
+
+export type InAppMessageResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['InAppMessage'] = ResolversParentTypes['InAppMessage']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  appId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  contactId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  notificationId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  body?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  data?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  isRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  readAt?: Resolver<Maybe<ResolversTypes['Timestamp']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+};
+
 export interface JsonScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['JSON'], any> {
   name: 'JSON';
 }
@@ -870,8 +1476,19 @@ export type MutationResolvers<ContextType = H3Event, ParentType extends Resolver
   configureFCM?: Resolver<ResolversTypes['App'], ParentType, ContextType, RequireFields<MutationConfigureFcmArgs, 'id' | 'input'>>;
   configureWebPush?: Resolver<ResolversTypes['App'], ParentType, ContextType, RequireFields<MutationConfigureWebPushArgs, 'id' | 'input'>>;
   createApp?: Resolver<ResolversTypes['App'], ParentType, ContextType, RequireFields<MutationCreateAppArgs, 'input'>>;
+  createChannel?: Resolver<ResolversTypes['Channel'], ParentType, ContextType, RequireFields<MutationCreateChannelArgs, 'input'>>;
+  createContact?: Resolver<ResolversTypes['Contact'], ParentType, ContextType, RequireFields<MutationCreateContactArgs, 'input'>>;
+  createHook?: Resolver<ResolversTypes['Hook'], ParentType, ContextType, RequireFields<MutationCreateHookArgs, 'input'>>;
+  createTemplate?: Resolver<ResolversTypes['Template'], ParentType, ContextType, RequireFields<MutationCreateTemplateArgs, 'input'>>;
+  createWorkflow?: Resolver<ResolversTypes['Workflow'], ParentType, ContextType, RequireFields<MutationCreateWorkflowArgs, 'input'>>;
   deleteApp?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteAppArgs, 'id'>>;
+  deleteChannel?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteChannelArgs, 'id'>>;
+  deleteContact?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteContactArgs, 'id'>>;
   deleteDevice?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteDeviceArgs, 'id'>>;
+  deleteHook?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteHookArgs, 'id'>>;
+  deleteTemplate?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteTemplateArgs, 'id'>>;
+  deleteWorkflow?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteWorkflowArgs, 'id'>>;
+  markInAppMessageRead?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationMarkInAppMessageReadArgs, 'id'>>;
   regenerateApiKey?: Resolver<ResolversTypes['App'], ParentType, ContextType, RequireFields<MutationRegenerateApiKeyArgs, 'id'>>;
   registerDevice?: Resolver<ResolversTypes['Device'], ParentType, ContextType, RequireFields<MutationRegisterDeviceArgs, 'input'>>;
   scheduleNotification?: Resolver<ResolversTypes['Notification'], ParentType, ContextType, RequireFields<MutationScheduleNotificationArgs, 'input'>>;
@@ -879,8 +1496,16 @@ export type MutationResolvers<ContextType = H3Event, ParentType extends Resolver
   trackNotificationClicked?: Resolver<ResolversTypes['TrackEventResponse'], ParentType, ContextType, RequireFields<MutationTrackNotificationClickedArgs, 'input'>>;
   trackNotificationDelivered?: Resolver<ResolversTypes['TrackEventResponse'], ParentType, ContextType, RequireFields<MutationTrackNotificationDeliveredArgs, 'input'>>;
   trackNotificationOpened?: Resolver<ResolversTypes['TrackEventResponse'], ParentType, ContextType, RequireFields<MutationTrackNotificationOpenedArgs, 'input'>>;
+  triggerWorkflow?: Resolver<ResolversTypes['WorkflowExecution'], ParentType, ContextType, RequireFields<MutationTriggerWorkflowArgs, 'input'>>;
   updateApp?: Resolver<ResolversTypes['App'], ParentType, ContextType, RequireFields<MutationUpdateAppArgs, 'id' | 'input'>>;
+  updateChannel?: Resolver<ResolversTypes['Channel'], ParentType, ContextType, RequireFields<MutationUpdateChannelArgs, 'id' | 'input'>>;
+  updateContact?: Resolver<ResolversTypes['Contact'], ParentType, ContextType, RequireFields<MutationUpdateContactArgs, 'id' | 'input'>>;
+  updateContactPreference?: Resolver<ResolversTypes['ContactPreference'], ParentType, ContextType, RequireFields<MutationUpdateContactPreferenceArgs, 'input'>>;
   updateDevice?: Resolver<ResolversTypes['Device'], ParentType, ContextType, RequireFields<MutationUpdateDeviceArgs, 'id' | 'input'>>;
+  updateHook?: Resolver<ResolversTypes['Hook'], ParentType, ContextType, RequireFields<MutationUpdateHookArgs, 'id' | 'input'>>;
+  updateTemplate?: Resolver<ResolversTypes['Template'], ParentType, ContextType, RequireFields<MutationUpdateTemplateArgs, 'id' | 'input'>>;
+  updateWorkflow?: Resolver<ResolversTypes['Workflow'], ParentType, ContextType, RequireFields<MutationUpdateWorkflowArgs, 'id' | 'input'>>;
+  upsertContactDevice?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationUpsertContactDeviceArgs, 'input'>>;
 };
 
 export type NotificationResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['Notification'] = ResolversParentTypes['Notification']> = {
@@ -902,6 +1527,7 @@ export type NotificationResolvers<ContextType = H3Event, ParentType extends Reso
   totalSent?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalDelivered?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalFailed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalOpened?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   totalClicked?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   deliveryLogs?: Resolver<Maybe<Array<ResolversTypes['DeliveryLog']>>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
@@ -956,6 +1582,11 @@ export type QueryResolvers<ContextType = H3Event, ParentType extends ResolversPa
   appExists?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<QueryAppExistsArgs, 'slug'>>;
   appStats?: Resolver<Maybe<ResolversTypes['AppStats']>, ParentType, ContextType, RequireFields<QueryAppStatsArgs, 'appId'>>;
   apps?: Resolver<Array<ResolversTypes['App']>, ParentType, ContextType>;
+  channel?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType, RequireFields<QueryChannelArgs, 'id'>>;
+  channels?: Resolver<Array<ResolversTypes['Channel']>, ParentType, ContextType, RequireFields<QueryChannelsArgs, 'appId'>>;
+  contact?: Resolver<Maybe<ResolversTypes['Contact']>, ParentType, ContextType, RequireFields<QueryContactArgs, 'id'>>;
+  contactByExternalId?: Resolver<Maybe<ResolversTypes['Contact']>, ParentType, ContextType, RequireFields<QueryContactByExternalIdArgs, 'appId' | 'externalId'>>;
+  contacts?: Resolver<Array<ResolversTypes['Contact']>, ParentType, ContextType, RequireFields<QueryContactsArgs, 'appId' | 'limit' | 'offset'>>;
   dashboardStats?: Resolver<ResolversTypes['DashboardStats'], ParentType, ContextType>;
   deliveryLogs?: Resolver<Array<ResolversTypes['DeliveryLog']>, ParentType, ContextType, RequireFields<QueryDeliveryLogsArgs, 'limit' | 'offset'>>;
   device?: Resolver<Maybe<ResolversTypes['Device']>, ParentType, ContextType, RequireFields<QueryDeviceArgs, 'id'>>;
@@ -964,9 +1595,31 @@ export type QueryResolvers<ContextType = H3Event, ParentType extends ResolversPa
   generateVapidKeys?: Resolver<ResolversTypes['VapidKeys'], ParentType, ContextType>;
   getEngagementMetrics?: Resolver<Maybe<ResolversTypes['EngagementMetrics']>, ParentType, ContextType, RequireFields<QueryGetEngagementMetricsArgs, 'appId'>>;
   getNotificationAnalytics?: Resolver<Maybe<ResolversTypes['NotificationAnalytics']>, ParentType, ContextType, RequireFields<QueryGetNotificationAnalyticsArgs, 'notificationId'>>;
+  hook?: Resolver<Maybe<ResolversTypes['Hook']>, ParentType, ContextType, RequireFields<QueryHookArgs, 'id'>>;
+  hooks?: Resolver<Array<ResolversTypes['Hook']>, ParentType, ContextType, RequireFields<QueryHooksArgs, 'appId'>>;
+  inAppMessages?: Resolver<Array<ResolversTypes['InAppMessage']>, ParentType, ContextType, RequireFields<QueryInAppMessagesArgs, 'contactId' | 'limit' | 'offset'>>;
   notification?: Resolver<Maybe<ResolversTypes['Notification']>, ParentType, ContextType, RequireFields<QueryNotificationArgs, 'id'>>;
   notifications?: Resolver<Array<ResolversTypes['Notification']>, ParentType, ContextType, RequireFields<QueryNotificationsArgs, 'limit' | 'offset'>>;
   platformStats?: Resolver<Array<ResolversTypes['PlatformStats']>, ParentType, ContextType, Partial<QueryPlatformStatsArgs>>;
+  template?: Resolver<Maybe<ResolversTypes['Template']>, ParentType, ContextType, RequireFields<QueryTemplateArgs, 'id'>>;
+  templates?: Resolver<Array<ResolversTypes['Template']>, ParentType, ContextType, RequireFields<QueryTemplatesArgs, 'appId'>>;
+  unreadInAppCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryUnreadInAppCountArgs, 'contactId'>>;
+  workflow?: Resolver<Maybe<ResolversTypes['Workflow']>, ParentType, ContextType, RequireFields<QueryWorkflowArgs, 'id'>>;
+  workflowExecutions?: Resolver<Array<ResolversTypes['WorkflowExecution']>, ParentType, ContextType, RequireFields<QueryWorkflowExecutionsArgs, 'workflowId' | 'limit' | 'offset'>>;
+  workflows?: Resolver<Array<ResolversTypes['Workflow']>, ParentType, ContextType, RequireFields<QueryWorkflowsArgs, 'appId'>>;
+};
+
+export type TemplateResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['Template'] = ResolversParentTypes['Template']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  appId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  channelId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  channelType?: Resolver<ResolversTypes['ChannelType'], ParentType, ContextType>;
+  subject?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  body?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  htmlBody?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
 };
 
 export interface TimestampScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Timestamp'], any> {
@@ -983,15 +1636,59 @@ export type VapidKeysResolvers<ContextType = H3Event, ParentType extends Resolve
   privateKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
 };
 
+export type WorkflowResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['Workflow'] = ResolversParentTypes['Workflow']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  appId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  triggerIdentifier?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  triggerType?: Resolver<ResolversTypes['WorkflowTriggerType'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['WorkflowStatus'], ParentType, ContextType>;
+  flowLayout?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+  steps?: Resolver<Maybe<Array<ResolversTypes['WorkflowStep']>>, ParentType, ContextType>;
+};
+
+export type WorkflowExecutionResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['WorkflowExecution'] = ResolversParentTypes['WorkflowExecution']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  workflowId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  subscriberId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  triggerIdentifier?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  payload?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['WorkflowExecutionStatus'], ParentType, ContextType>;
+  currentStepOrder?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  errorMessage?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  startedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+  completedAt?: Resolver<Maybe<ResolversTypes['Timestamp']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+};
+
+export type WorkflowStepResolvers<ContextType = H3Event, ParentType extends ResolversParentTypes['WorkflowStep'] = ResolversParentTypes['WorkflowStep']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  workflowId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  nodeId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['WorkflowStepType'], ParentType, ContextType>;
+  order?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  config?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Timestamp'], ParentType, ContextType>;
+};
+
 export type Resolvers<ContextType = H3Event> = {
   AnalyticsData?: AnalyticsDataResolvers<ContextType>;
   ApiKey?: ApiKeyResolvers<ContextType>;
   App?: AppResolvers<ContextType>;
   AppStats?: AppStatsResolvers<ContextType>;
+  Channel?: ChannelResolvers<ContextType>;
+  Contact?: ContactResolvers<ContextType>;
+  ContactPreference?: ContactPreferenceResolvers<ContextType>;
   DashboardStats?: DashboardStatsResolvers<ContextType>;
   DeliveryLog?: DeliveryLogResolvers<ContextType>;
   Device?: DeviceResolvers<ContextType>;
   EngagementMetrics?: EngagementMetricsResolvers<ContextType>;
+  Hook?: HookResolvers<ContextType>;
+  InAppMessage?: InAppMessageResolvers<ContextType>;
   JSON?: GraphQLScalarType;
   Mutation?: MutationResolvers<ContextType>;
   Notification?: NotificationResolvers<ContextType>;
@@ -1000,9 +1697,13 @@ export type Resolvers<ContextType = H3Event> = {
   PlatformMetrics?: PlatformMetricsResolvers<ContextType>;
   PlatformStats?: PlatformStatsResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  Template?: TemplateResolvers<ContextType>;
   Timestamp?: GraphQLScalarType;
   TrackEventResponse?: TrackEventResponseResolvers<ContextType>;
   VapidKeys?: VapidKeysResolvers<ContextType>;
+  Workflow?: WorkflowResolvers<ContextType>;
+  WorkflowExecution?: WorkflowExecutionResolvers<ContextType>;
+  WorkflowStep?: WorkflowStepResolvers<ContextType>;
 };
 
 export type DirectiveResolvers<ContextType = H3Event> = {

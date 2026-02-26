@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import { usePush } from 'notivue'
 import { useForm } from 'vee-validate'
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { z } from 'zod'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
 import Icon from '~/components/common/Icon.vue'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { Button } from '~/components/ui/button'
 
+import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/components/ui/form'
 import { Input } from '~/components/ui/input'
@@ -17,6 +17,7 @@ import { useApp, useConfigureFCM } from '~/graphql'
 const route = useRoute()
 const router = useRouter()
 const appId = computed(() => route.params.id as string)
+const push = usePush()
 
 // API queries
 const { data: appData } = useApp(appId)
@@ -101,15 +102,12 @@ const onSubmit = handleSubmit(async (values) => {
       },
     })
 
-    // TODO: Show success toast
-    console.log('FCM configured successfully')
-
-    // Navigate back to providers page
+    push.success({ title: 'FCM configured successfully' })
     await router.push(`/apps/${appId.value}/providers`)
   }
   catch (error) {
     console.error('Error configuring FCM:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to configure FCM', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 })
 
@@ -140,7 +138,6 @@ const serviceAccountInfo = computed(() => {
 <template>
   <div v-if="app">
     <!-- App Header -->
-    <AppDetailHeader :app="app" />
 
     <!-- Page Header -->
     <div class="flex items-center space-x-4 mb-8">

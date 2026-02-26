@@ -2,8 +2,6 @@
 import type { DevicePlatform } from '#graphql/client'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import AppDetailHeader from '~/components/app/AppDetailHeader.vue'
-import AppNavigation from '~/components/app/AppNavigation.vue'
 import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -427,10 +425,8 @@ function refreshDevices() {
 <template>
   <div v-if="app">
     <!-- App Header -->
-    <AppDetailHeader :app="app" />
 
     <!-- Navigation -->
-    <AppNavigation :app-id="appId" />
 
     <!-- Devices Content -->
     <div class="space-y-6">

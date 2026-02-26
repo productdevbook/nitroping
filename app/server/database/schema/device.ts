@@ -7,6 +7,8 @@ import { categoryEnum, deviceStatusEnum, platformEnum } from './enums'
 export const device = pgTable('device', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),
   appId: uuid().notNull().references(() => app.id, { onDelete: 'cascade' }),
+  // Nullable FK — set when device is linked to a subscriber
+  subscriberId: uuid(),
   token: text().notNull(),
   category: categoryEnum(),
   platform: platformEnum().notNull(),
@@ -20,7 +22,7 @@ export const device = pgTable('device', {
   createdAt: customTimestamp().defaultNow().notNull(),
   updatedAt: customTimestamp().defaultNow().notNull(),
 }, table => [
-  unique('device_app_token_user_unique').on(table.appId, table.token, table.userId),
+  unique('device_appId_token_userId_unique').on(table.appId, table.token, table.userId),
   // Device list by app (most common query pattern)
   index('device_app_id_idx').on(table.appId),
   // Active device count per app

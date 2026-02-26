@@ -37,6 +37,7 @@ type Notification {
   totalSent: Int!
   totalDelivered: Int!
   totalFailed: Int!
+  totalOpened: Int!
   totalClicked: Int!
   
   # Relations
@@ -52,12 +53,15 @@ type DeliveryLog {
   id: ID!
   notificationId: ID!
   notification: Notification
-  deviceId: ID!
+  deviceId: ID
   device: Device
+  to: String
   status: DeliveryStatus!
   errorMessage: String
+  sentAt: Timestamp
+  openedAt: Timestamp
   clickedAt: Timestamp
-  
+
   # Timestamps
   createdAt: Timestamp!
   updatedAt: Timestamp!
@@ -72,11 +76,16 @@ input SendNotificationInput {
   clickAction: String
   sound: String
   badge: Int
-  
-  # Targeting
+
+  # Push targeting
   targetDevices: JSON # Array of device IDs or tokens
   platforms: JSON # Array of platforms
   scheduledAt: Timestamp
+
+  # Multi-channel targeting
+  channelType: ChannelType         # EMAIL, SMS, DISCORD, IN_APP for channel-based delivery
+  channelId: ID                    # Specific channel to use (optional, falls back to first active)
+  contactIds: [ID!]                # Target specific contacts (if omitted, targets all app contacts)
 }
 
 extend type Query {

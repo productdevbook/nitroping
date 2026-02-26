@@ -1,0 +1,29 @@
+query templates($appId: ID!, $channelType: ChannelType) {
+  templates(appId: $appId, channelType: $channelType) {
+    id
+    appId
+    channelId
+    name
+    channelType
+    subject
+    body
+    htmlBody
+    createdAt
+    updatedAt
+  }
+}
+
+query template($id: ID!) {
+  template(id: $id) {
+    id
+    appId
+    channelId
+    name
+    channelType
+    subject
+    body
+    htmlBody
+    createdAt
+    updatedAt
+  }
+}

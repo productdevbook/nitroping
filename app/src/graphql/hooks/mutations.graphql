@@ -1,0 +1,27 @@
+mutation createHook($input: CreateHookInput!) {
+  createHook(input: $input) {
+    id
+    appId
+    name
+    url
+    events
+    isActive
+    createdAt
+    updatedAt
+  }
+}
+
+mutation updateHook($id: ID!, $input: UpdateHookInput!) {
+  updateHook(id: $id, input: $input) {
+    id
+    name
+    url
+    events
+    isActive
+    updatedAt
+  }
+}
+
+mutation deleteHook($id: ID!) {
+  deleteHook(id: $id)
+}

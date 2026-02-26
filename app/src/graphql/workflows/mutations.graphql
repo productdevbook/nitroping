@@ -1,0 +1,47 @@
+mutation createWorkflow($input: CreateWorkflowInput!) {
+  createWorkflow(input: $input) {
+    id
+    appId
+    name
+    triggerIdentifier
+    triggerType
+    status
+    flowLayout
+    createdAt
+    updatedAt
+  }
+}
+
+mutation updateWorkflow($id: ID!, $input: UpdateWorkflowInput!) {
+  updateWorkflow(id: $id, input: $input) {
+    id
+    name
+    triggerIdentifier
+    triggerType
+    status
+    flowLayout
+    updatedAt
+    steps {
+      id
+      nodeId
+      type
+      order
+      config
+    }
+  }
+}
+
+mutation deleteWorkflow($id: ID!) {
+  deleteWorkflow(id: $id)
+}
+
+mutation triggerWorkflow($input: TriggerWorkflowInput!) {
+  triggerWorkflow(input: $input) {
+    id
+    workflowId
+    status
+    triggerIdentifier
+    startedAt
+    createdAt
+  }
+}

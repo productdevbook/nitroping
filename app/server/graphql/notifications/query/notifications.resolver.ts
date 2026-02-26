@@ -1,6 +1,6 @@
 import * as tables from '#server/database/schema'
 import { useDatabase } from '#server/utils/useDatabase'
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
 
 export const notificationsQuery = defineQuery({
@@ -11,7 +11,7 @@ export const notificationsQuery = defineQuery({
       const query = db
         .select()
         .from(tables.notification)
-        .orderBy(tables.notification.createdAt)
+        .orderBy(desc(tables.notification.createdAt))
         .limit(limit)
         .offset(offset)
 

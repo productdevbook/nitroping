@@ -62,6 +62,26 @@ type AppStats {
   apiCalls: Int!
 }
 
+type Channel {
+  id: ID!
+  appId: ID!
+  name: String!
+  type: ChannelType!
+  config: JSON
+  isActive: Boolean!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+enum ChannelType {
+  PUSH
+  EMAIL
+  SMS
+  IN_APP
+  DISCORD
+  TELEGRAM
+}
+
 input ConfigureAPNsInput {
   keyId: String!
   teamId: String!
@@ -81,10 +101,79 @@ input ConfigureWebPushInput {
   privateKey: String!
 }
 
+type Contact {
+  id: ID!
+  appId: ID!
+  externalId: String!
+  name: String
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+  devices: [Device!]
+  preferences: [ContactPreference!]
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+type ContactPreference {
+  id: ID!
+  subscriberId: ID!
+  category: String!
+  channelType: ChannelType!
+  enabled: Boolean!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
 input CreateAppInput {
   name: String!
   slug: String!
   description: String
+}
+
+input CreateChannelInput {
+  appId: ID!
+  name: String!
+  type: ChannelType!
+  config: JSON
+}
+
+input CreateContactInput {
+  appId: ID!
+  externalId: String!
+  name: String
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+}
+
+input CreateHookInput {
+  appId: ID!
+  name: String!
+  url: String!
+  secret: String
+  events: JSON
+}
+
+input CreateTemplateInput {
+  appId: ID!
+  channelId: ID
+  name: String!
+  channelType: ChannelType!
+  subject: String
+  body: String!
+  htmlBody: String
+}
+
+input CreateWorkflowInput {
+  appId: ID!
+  name: String!
+  triggerIdentifier: String!
+  triggerType: WorkflowTriggerType
+  steps: [WorkflowStepInput!]
+  flowLayout: JSON
 }
 
 type DashboardStats {
@@ -98,10 +187,13 @@ type DeliveryLog {
   id: ID!
   notificationId: ID!
   notification: Notification
-  deviceId: ID!
+  deviceId: ID
   device: Device
+  to: String
   status: DeliveryStatus!
   errorMessage: String
+  sentAt: Timestamp
+  openedAt: Timestamp
   clickedAt: Timestamp
   createdAt: Timestamp!
   updatedAt: Timestamp!
@@ -165,6 +257,40 @@ type EngagementMetrics {
   platformBreakdown: [PlatformMetrics!]!
 }
 
+type Hook {
+  id: ID!
+  appId: ID!
+  name: String!
+  url: String!
+  secret: String
+  events: JSON
+  isActive: Boolean!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+enum HookEvent {
+  NOTIFICATION_SENT
+  NOTIFICATION_DELIVERED
+  NOTIFICATION_FAILED
+  NOTIFICATION_CLICKED
+  WORKFLOW_COMPLETED
+  WORKFLOW_FAILED
+}
+
+type InAppMessage {
+  id: ID!
+  appId: ID!
+  contactId: ID!
+  notificationId: ID
+  title: String!
+  body: String!
+  data: JSON
+  isRead: Boolean!
+  readAt: Timestamp
+  createdAt: Timestamp!
+}
+
 scalar JSON
 
 type Mutation {
@@ -174,8 +300,19 @@ type Mutation {
   configureFCM(id: ID!, input: ConfigureFCMInput!): App!
   configureWebPush(id: ID!, input: ConfigureWebPushInput!): App!
   createApp(input: CreateAppInput!): App!
+  createChannel(input: CreateChannelInput!): Channel!
+  createContact(input: CreateContactInput!): Contact!
+  createHook(input: CreateHookInput!): Hook!
+  createTemplate(input: CreateTemplateInput!): Template!
+  createWorkflow(input: CreateWorkflowInput!): Workflow!
   deleteApp(id: ID!): Boolean!
+  deleteChannel(id: ID!): Boolean!
+  deleteContact(id: ID!): Boolean!
   deleteDevice(id: ID!): Boolean!
+  deleteHook(id: ID!): Boolean!
+  deleteTemplate(id: ID!): Boolean!
+  deleteWorkflow(id: ID!): Boolean!
+  markInAppMessageRead(id: ID!): Boolean!
   regenerateApiKey(id: ID!): App!
   registerDevice(input: RegisterDeviceInput!): Device!
   scheduleNotification(input: SendNotificationInput!): Notification!
@@ -183,8 +320,16 @@ type Mutation {
   trackNotificationClicked(input: TrackEventInput!): TrackEventResponse!
   trackNotificationDelivered(input: TrackEventInput!): TrackEventResponse!
   trackNotificationOpened(input: TrackEventInput!): TrackEventResponse!
+  triggerWorkflow(input: TriggerWorkflowInput!): WorkflowExecution!
   updateApp(id: ID!, input: UpdateAppInput!): App!
+  updateChannel(id: ID!, input: UpdateChannelInput!): Channel!
+  updateContact(id: ID!, input: UpdateContactInput!): Contact!
+  updateContactPreference(input: UpdateContactPreferenceInput!): ContactPreference!
   updateDevice(id: ID!, input: UpdateDeviceInput!): Device!
+  updateHook(id: ID!, input: UpdateHookInput!): Hook!
+  updateTemplate(id: ID!, input: UpdateTemplateInput!): Template!
+  updateWorkflow(id: ID!, input: UpdateWorkflowInput!): Workflow!
+  upsertContactDevice(input: UpsertContactDeviceInput!): Boolean!
 }
 
 type Notification {
@@ -206,6 +351,7 @@ type Notification {
   totalSent: Int!
   totalDelivered: Int!
   totalFailed: Int!
+  totalOpened: Int!
   totalClicked: Int!
   deliveryLogs: [DeliveryLog!]
   createdAt: Timestamp!
@@ -268,6 +414,11 @@ type Query {
   appExists(slug: String!): Boolean!
   appStats(appId: ID!): AppStats
   apps: [App!]!
+  channel(id: ID!): Channel
+  channels(appId: ID!, type: ChannelType): [Channel!]!
+  contact(id: ID!): Contact
+  contactByExternalId(appId: ID!, externalId: String!): Contact
+  contacts(appId: ID!, limit: Int = 50, offset: Int = 0): [Contact!]!
   dashboardStats: DashboardStats!
   deliveryLogs(notificationId: ID, limit: Int = 50, offset: Int = 0): [DeliveryLog!]!
   device(id: ID!): Device
@@ -276,9 +427,18 @@ type Query {
   generateVapidKeys: VapidKeys!
   getEngagementMetrics(appId: ID!, timeRange: String): EngagementMetrics
   getNotificationAnalytics(notificationId: ID!): NotificationAnalytics
+  hook(id: ID!): Hook
+  hooks(appId: ID!): [Hook!]!
+  inAppMessages(contactId: ID!, limit: Int = 20, offset: Int = 0): [InAppMessage!]!
   notification(id: ID!): Notification
   notifications(appId: ID, limit: Int = 50, offset: Int = 0): [Notification!]!
   platformStats(appId: ID): [PlatformStats!]!
+  template(id: ID!): Template
+  templates(appId: ID!, channelType: ChannelType): [Template!]!
+  unreadInAppCount(contactId: ID!): Int!
+  workflow(id: ID!): Workflow
+  workflowExecutions(workflowId: ID!, limit: Int = 50, offset: Int = 0): [WorkflowExecution!]!
+  workflows(appId: ID!, status: WorkflowStatus): [Workflow!]!
 }
 
 input RegisterDeviceInput {
@@ -304,6 +464,22 @@ input SendNotificationInput {
   targetDevices: JSON
   platforms: JSON
   scheduledAt: Timestamp
+  channelType: ChannelType
+  channelId: ID
+  contactIds: [ID!]
+}
+
+type Template {
+  id: ID!
+  appId: ID!
+  channelId: ID
+  name: String!
+  channelType: ChannelType!
+  subject: String
+  body: String!
+  htmlBody: String
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
 }
 
 scalar Timestamp
@@ -322,6 +498,12 @@ type TrackEventResponse {
   message: String
 }
 
+input TriggerWorkflowInput {
+  workflowId: ID!
+  subscriberId: ID
+  payload: JSON
+}
+
 input UpdateAppInput {
   name: String
   description: String
@@ -337,13 +519,138 @@ input UpdateAppInput {
   vapidPrivateKey: String
 }
 
+input UpdateChannelInput {
+  name: String
+  config: JSON
+  isActive: Boolean
+}
+
+input UpdateContactInput {
+  name: String
+  email: String
+  phone: String
+  locale: String
+  metadata: JSON
+}
+
+input UpdateContactPreferenceInput {
+  subscriberId: ID!
+  category: String!
+  channelType: ChannelType!
+  enabled: Boolean!
+}
+
 input UpdateDeviceInput {
   status: DeviceStatus
   userId: String
   metadata: JSON
 }
 
+input UpdateHookInput {
+  name: String
+  url: String
+  secret: String
+  events: JSON
+  isActive: Boolean
+}
+
+input UpdateTemplateInput {
+  channelId: ID
+  name: String
+  subject: String
+  body: String
+  htmlBody: String
+}
+
+input UpdateWorkflowInput {
+  name: String
+  triggerIdentifier: String
+  triggerType: WorkflowTriggerType
+  status: WorkflowStatus
+  steps: [WorkflowStepInput!]
+  flowLayout: JSON
+}
+
+input UpsertContactDeviceInput {
+  subscriberId: ID!
+  deviceId: ID!
+}
+
 type VapidKeys {
   publicKey: String!
   privateKey: String!
+}
+
+type Workflow {
+  id: ID!
+  appId: ID!
+  name: String!
+  triggerIdentifier: String!
+  triggerType: WorkflowTriggerType!
+  status: WorkflowStatus!
+  flowLayout: JSON
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+  steps: [WorkflowStep!]
+}
+
+type WorkflowExecution {
+  id: ID!
+  workflowId: ID!
+  subscriberId: ID
+  triggerIdentifier: String!
+  payload: JSON
+  status: WorkflowExecutionStatus!
+  currentStepOrder: Int!
+  errorMessage: String
+  startedAt: Timestamp!
+  completedAt: Timestamp
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+enum WorkflowExecutionStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+type WorkflowStep {
+  id: ID!
+  workflowId: ID!
+  nodeId: String
+  type: WorkflowStepType!
+  order: Int!
+  config: JSON
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+input WorkflowStepInput {
+  nodeId: String
+  type: WorkflowStepType!
+  order: Int!
+  config: JSON
+}
+
+enum WorkflowStepType {
+  SEND
+  DELAY
+  FILTER
+  DIGEST
+  BRANCH
+}
+
+enum WorkflowTriggerType {
+  EVENT
+  SCHEDULED
+  MANUAL
 }

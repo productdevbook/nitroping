@@ -10,3 +10,51 @@ type PageInfo {
   startCursor: String
   endCursor: String
 }
+
+# Shared channel type enum — used by Channel, Template, and SubscriberPreference
+enum ChannelType {
+  PUSH
+  EMAIL
+  SMS
+  IN_APP
+  DISCORD
+  TELEGRAM
+}
+
+# Shared workflow enums
+enum WorkflowStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum WorkflowStepType {
+  SEND
+  DELAY
+  FILTER
+  DIGEST
+  BRANCH
+}
+
+enum WorkflowTriggerType {
+  EVENT
+  SCHEDULED
+  MANUAL
+}
+
+enum WorkflowExecutionStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum HookEvent {
+  NOTIFICATION_SENT
+  NOTIFICATION_DELIVERED
+  NOTIFICATION_FAILED
+  NOTIFICATION_CLICKED
+  WORKFLOW_COMPLETED
+  WORKFLOW_FAILED
+}

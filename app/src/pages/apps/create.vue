@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePush } from 'notivue'
 import { useRouter } from 'vue-router'
 import AppPageHeader from '~/components/app/AppPageHeader.vue'
 import CreateAppForm from '~/components/forms/CreateAppForm.vue'
@@ -6,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { useCreateApp } from '~/graphql'
 
 const router = useRouter()
+const push = usePush()
 
 // API mutations
 const { mutateAsync: createAppMutation, isLoading: isCreatingApp } = useCreateApp()
@@ -14,17 +16,14 @@ const { mutateAsync: createAppMutation, isLoading: isCreatingApp } = useCreateAp
 async function handleSubmit(formData: any) {
   try {
     const result = await createAppMutation(formData)
-
-    console.log('App created successfully!', result)
-
-    // Navigate to the new app's page
+    push.success({ title: 'App created successfully' })
     if (result?.id) {
       await router.push(`/apps/${result.id}`)
     }
   }
   catch (error) {
     console.error('Error creating app:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to create app', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 }
 

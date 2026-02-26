@@ -1,0 +1,44 @@
+mutation createContact($input: CreateContactInput!) {
+  createContact(input: $input) {
+    id
+    appId
+    externalId
+    name
+    email
+    phone
+    locale
+    createdAt
+    updatedAt
+  }
+}
+
+mutation updateContact($id: ID!, $input: UpdateContactInput!) {
+  updateContact(id: $id, input: $input) {
+    id
+    externalId
+    name
+    email
+    phone
+    locale
+    updatedAt
+  }
+}
+
+mutation deleteContact($id: ID!) {
+  deleteContact(id: $id)
+}
+
+mutation upsertContactDevice($input: UpsertContactDeviceInput!) {
+  upsertContactDevice(input: $input)
+}
+
+mutation updateContactPreference($input: UpdateContactPreferenceInput!) {
+  updateContactPreference(input: $input) {
+    id
+    subscriberId
+    category
+    channelType
+    enabled
+    updatedAt
+  }
+}

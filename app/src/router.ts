@@ -2,6 +2,15 @@ import type { RouteRecordRaw } from 'vue-router'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
+  // ─── Standalone full-screen workflow editor (no DefaultLayout) ────────────
+  // Must be declared before the DefaultLayout catch-all so Vue Router matches it first.
+  {
+    path: '/apps/:id/workflows/:wid',
+    name: 'app-workflow-editor',
+    component: () => import('./pages/apps/[id]/workflows/[wid]/index.vue'),
+  },
+
+  // ─── Everything else inside DefaultLayout ─────────────────────────────────
   {
     path: '/',
     component: () => import('./layouts/DefaultLayout.vue'),
@@ -33,8 +42,22 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'docs',
-        name: 'docs',
-        component: () => import('./pages/docs.vue'),
+        children: [
+          {
+            path: '',
+            redirect: '/docs/getting-started',
+          },
+          {
+            path: 'channels/:type',
+            name: 'docs-channels-type',
+            component: () => import('./pages/docs/channels/[type].vue'),
+          },
+          {
+            path: ':slug',
+            name: 'docs-page',
+            component: () => import('./pages/docs/[slug].vue'),
+          },
+        ],
       },
       {
         path: 'apps',
@@ -68,9 +91,76 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('./pages/apps/[id]/notifications.vue'),
               },
               {
+                path: 'notifications/:notificationId',
+                name: 'app-notification-detail',
+                component: () => import('./pages/apps/[id]/notifications/[notificationId].vue'),
+              },
+              {
                 path: 'settings',
                 name: 'app-settings',
                 component: () => import('./pages/apps/[id]/settings.vue'),
+              },
+              {
+                path: 'contacts',
+                name: 'app-contacts',
+                component: () => import('./pages/apps/[id]/contacts.vue'),
+              },
+              {
+                path: 'channels',
+                children: [
+                  {
+                    path: '',
+                    name: 'app-channels',
+                    component: () => import('./pages/apps/[id]/channels/index.vue'),
+                  },
+                  {
+                    path: 'new',
+                    name: 'app-channels-new',
+                    component: () => import('./pages/apps/[id]/channels/new.vue'),
+                  },
+                ],
+              },
+              {
+                path: 'templates',
+                children: [
+                  {
+                    path: '',
+                    name: 'app-templates',
+                    component: () => import('./pages/apps/[id]/templates/index.vue'),
+                  },
+                  {
+                    path: 'create',
+                    name: 'app-templates-create',
+                    component: () => import('./pages/apps/[id]/templates/create.vue'),
+                  },
+                ],
+              },
+              {
+                path: 'workflows',
+                children: [
+                  {
+                    path: '',
+                    name: 'app-workflows',
+                    component: () => import('./pages/apps/[id]/workflows/index.vue'),
+                  },
+                  {
+                    path: ':wid',
+                    children: [
+                      // NOTE: the editor itself lives at the top-level route above.
+                      // Only runs stays inside DefaultLayout.
+                      {
+                        path: 'runs',
+                        name: 'app-workflow-runs',
+                        component: () => import('./pages/apps/[id]/workflows/[wid]/runs.vue'),
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                path: 'hooks',
+                name: 'app-hooks',
+                component: () => import('./pages/apps/[id]/hooks.vue'),
               },
               {
                 path: 'providers',
@@ -103,6 +193,7 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+
   {
     path: '/:pathMatch(.*)*',
     redirect: '/',

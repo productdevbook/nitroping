@@ -1,0 +1,39 @@
+type Hook {
+  id: ID!
+  appId: ID!
+  name: String!
+  url: String!
+  # secret always resolves to null for security
+  secret: String
+  events: JSON
+  isActive: Boolean!
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+input CreateHookInput {
+  appId: ID!
+  name: String!
+  url: String!
+  secret: String
+  events: JSON
+}
+
+input UpdateHookInput {
+  name: String
+  url: String
+  secret: String
+  events: JSON
+  isActive: Boolean
+}
+
+extend type Query {
+  hooks(appId: ID!): [Hook!]!
+  hook(id: ID!): Hook
+}
+
+extend type Mutation {
+  createHook(input: CreateHookInput!): Hook!
+  updateHook(id: ID!, input: UpdateHookInput!): Hook!
+  deleteHook(id: ID!): Boolean!
+}

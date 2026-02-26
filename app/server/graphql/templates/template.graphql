@@ -1,0 +1,41 @@
+type Template {
+  id: ID!
+  appId: ID!
+  channelId: ID
+  name: String!
+  channelType: ChannelType!
+  subject: String
+  body: String!
+  htmlBody: String
+  createdAt: Timestamp!
+  updatedAt: Timestamp!
+}
+
+input CreateTemplateInput {
+  appId: ID!
+  channelId: ID
+  name: String!
+  channelType: ChannelType!
+  subject: String
+  body: String!
+  htmlBody: String
+}
+
+input UpdateTemplateInput {
+  channelId: ID
+  name: String
+  subject: String
+  body: String
+  htmlBody: String
+}
+
+extend type Query {
+  templates(appId: ID!, channelType: ChannelType): [Template!]!
+  template(id: ID!): Template
+}
+
+extend type Mutation {
+  createTemplate(input: CreateTemplateInput!): Template!
+  updateTemplate(id: ID!, input: UpdateTemplateInput!): Template!
+  deleteTemplate(id: ID!): Boolean!
+}
