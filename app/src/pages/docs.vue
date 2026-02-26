@@ -57,9 +57,9 @@ function scrollTo(id: string) {
         :key="s.id"
         class="scroll-mt-4"
       >
-        <article class="prose prose-neutral dark:prose-invert max-w-none prose-headings:scroll-mt-4 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-muted prose-pre:border">
+        <article class="prose prose-neutral dark:prose-invert max-w-none prose-headings:scroll-mt-4 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:!p-0 prose-pre:!bg-transparent prose-pre:!border-0">
           <Suspense>
-            <MDC :markdown="s.content" />
+            <MDC :markdown="s.content" :options="{ highlight: true }" />
           </Suspense>
         </article>
       </section>
