@@ -113,6 +113,20 @@ export const workflowMutations = defineMutation({
       if (wf.status !== 'ACTIVE')
         throw new Error('Workflow is not active')
 
+      // If any SEND step has no hardcoded `to`, a subscriberId is required
+      if (!input.subscriberId) {
+        const steps = await db
+          .select()
+          .from(tables.workflowStep)
+          .where(eq(tables.workflowStep.workflowId, wf.id))
+
+        const needsSubscriber = steps.some(
+          s => s.type === 'SEND' && !(s.config as any)?.to,
+        )
+        if (needsSubscriber)
+          throw new Error('This workflow has a SEND step that requires a subscriberId')
+      }
+
       // Create execution record
       const [execution] = await db
         .insert(tables.workflowExecution)
