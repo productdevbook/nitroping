@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm'
-import { defineEventHandler, getQuery, getRouterParam } from 'nitro/h3'
+import { defineEventHandler, getQuery, getRouterParam, sendRedirect } from 'nitro/h3'
 import { getDatabase } from '#server/database/connection'
 import { deliveryLog, notification } from '#server/database/schema'
 import { dispatchHooks } from '#server/utils/webhookDispatcher'
@@ -76,5 +76,5 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  return redirect(event, destination, 302)
+  return sendRedirect(event, destination, 302)
 })

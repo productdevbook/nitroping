@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { usePush } from 'notivue'
 import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
@@ -17,7 +17,6 @@ import { useApp, useNotificationApi, useSendNotification } from '~/graphql'
 import { useContacts } from '~/graphql/contacts'
 
 const route = useRoute()
-const router = useRouter()
 const push = usePush()
 const appId = computed(() => route.params.id as string)
 
