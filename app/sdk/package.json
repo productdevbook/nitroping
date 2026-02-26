@@ -1,7 +1,7 @@
 {
   "name": "nitroping",
   "type": "module",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "JavaScript/TypeScript SDK for NitroPing push notification service",
   "author": "NitroPing Team",
   "license": "MIT",

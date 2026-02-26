@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import type { SendNodeData } from '~/components/workflow/types'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
-import type { SendNodeData } from '~/components/workflow/types'
 import { useChannels } from '~/graphql/channels'
 import { useTemplates } from '~/graphql/templates'
 

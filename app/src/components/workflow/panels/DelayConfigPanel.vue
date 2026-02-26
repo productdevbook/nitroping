@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import type { DelayNodeData } from '~/components/workflow/types'
 import { ref, watch } from 'vue'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
-import type { DelayNodeData } from '~/components/workflow/types'
 
 const props = defineProps<{ nodeData: DelayNodeData }>()
 const emit = defineEmits<{ (e: 'update', data: Partial<DelayNodeData>): void }>()

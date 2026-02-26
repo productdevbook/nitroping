@@ -1,5 +1,5 @@
-import type { Channel } from './types'
 import type { ChannelType } from '#server/database/schema/enums'
+import type { Channel } from './types'
 import { getDatabase } from '#server/database/connection'
 import * as tables from '#server/database/schema'
 import { decryptSensitiveData, isDataEncrypted } from '#server/utils/crypto'

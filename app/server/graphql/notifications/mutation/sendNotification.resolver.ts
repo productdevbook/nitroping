@@ -6,7 +6,7 @@ import { defineMutation } from 'nitro-graphql/define'
 
 export const notificationMutations = defineMutation({
   sendNotification: {
-    resolve: async (_parent, { input }, ctx) => {
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       // Create notification record immediately so the caller has an ID to track

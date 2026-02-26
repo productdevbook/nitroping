@@ -62,7 +62,8 @@ const helpContent = ref('')
 
 async function loadHelp(type: string) {
   const docSlug = typeDocMap[type]
-  if (!docSlug) return
+  if (!docSlug)
+    return
   const key = `../../../../docs/channels/${docSlug}.md`
   if (docModules[key]) {
     helpContent.value = await docModules[key]() as string
@@ -161,8 +162,12 @@ async function handleCreate() {
               >
                 <span class="text-base shrink-0">{{ ct.icon }}</span>
                 <div class="min-w-0">
-                  <div class="font-medium leading-tight">{{ ct.label }}</div>
-                  <div class="text-[11px] text-muted-foreground truncate mt-0.5">{{ ct.description }}</div>
+                  <div class="font-medium leading-tight">
+                    {{ ct.label }}
+                  </div>
+                  <div class="text-[11px] text-muted-foreground truncate mt-0.5">
+                    {{ ct.description }}
+                  </div>
                 </div>
               </button>
             </div>

@@ -6,7 +6,7 @@ import { HTTPError } from 'nitro/h3'
 
 export const updateAppMutation = defineMutation({
   updateApp: {
-    resolve: async (_parent, { id, input }, ctx) => {
+    resolve: async (_parent, { id, input }, _ctx) => {
       const db = useDatabase()
 
       const updatedApp = await db

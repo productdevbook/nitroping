@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { NodeProps } from '@vue-flow/core'
-import { Handle, Position } from '@vue-flow/core'
 import type { DelayNodeData } from '../types'
+import { Handle, Position } from '@vue-flow/core'
 import { Badge } from '~/components/ui/badge'
 
 defineProps<NodeProps<DelayNodeData>>()

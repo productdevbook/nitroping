@@ -16,9 +16,12 @@ function getSlotText(slots: any): string {
   const nodes = slots.default?.() ?? []
   function walk(vnodes: any[]): string {
     return vnodes.map((vn) => {
-      if (typeof vn === 'string') return vn
-      if (typeof vn.children === 'string') return vn.children
-      if (Array.isArray(vn.children)) return walk(vn.children)
+      if (typeof vn === 'string')
+        return vn
+      if (typeof vn.children === 'string')
+        return vn.children
+      if (Array.isArray(vn.children))
+        return walk(vn.children)
       return ''
     }).join('')
   }

@@ -17,7 +17,8 @@ const logs = computed(() => notif.value?.deliveryLogs ?? [])
 
 const stats = computed(() => {
   const n = notif.value
-  if (!n) return null
+  if (!n)
+    return null
   const rate = n.totalTargets > 0 ? Math.round((n.totalSent / n.totalTargets) * 100) : 0
   const openRate = n.totalSent > 0 ? Math.round((n.totalOpened / n.totalSent) * 100) : 0
   const clickRate = n.totalSent > 0 ? Math.round((n.totalClicked / n.totalSent) * 100) : 0
@@ -47,7 +48,8 @@ function statusIcon(status: string) {
 }
 
 function fmt(ts?: string | null) {
-  if (!ts) return '—'
+  if (!ts)
+    return '—'
   return new Date(ts).toLocaleString()
 }
 </script>

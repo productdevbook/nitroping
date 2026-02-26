@@ -6,7 +6,7 @@ import { HTTPError } from 'nitro/h3'
 
 export const scheduleNotificationMutation = defineMutation({
   scheduleNotification: {
-    resolve: async (_parent, { input }, ctx) => {
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       // Ensure scheduledAt is provided for scheduled notifications

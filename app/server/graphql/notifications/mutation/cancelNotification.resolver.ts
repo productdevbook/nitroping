@@ -6,7 +6,7 @@ import { HTTPError } from 'nitro/h3'
 
 export const cancelNotificationMutation = defineMutation({
   cancelNotification: {
-    resolve: async (_parent, { id }, ctx) => {
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
 
       // Check if notification exists and is in a cancellable state

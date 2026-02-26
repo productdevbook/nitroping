@@ -5,7 +5,7 @@ import { defineMutation } from 'nitro-graphql/define'
 
 export const deleteDeviceMutation = defineMutation({
   deleteDevice: {
-    resolve: async (_parent, { id }, ctx) => {
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
 
       await db

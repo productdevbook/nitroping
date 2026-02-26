@@ -5,7 +5,7 @@ import { HTTPError } from 'nitro/h3'
 
 export const registerDeviceMutation = defineMutation({
   registerDevice: {
-    resolve: async (_parent, { input }, ctx) => {
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       // Validate and clean push token based on platform

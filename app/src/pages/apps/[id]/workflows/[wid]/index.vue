@@ -13,7 +13,7 @@ import FilterNode from '~/components/workflow/nodes/FilterNode.vue'
 import SendNode from '~/components/workflow/nodes/SendNode.vue'
 import TriggerNode from '~/components/workflow/nodes/TriggerNode.vue'
 import StepConfigPanel from '~/components/workflow/panels/StepConfigPanel.vue'
-import { WORKFLOW_FLOW_ID, useWorkflowEditor } from '~/composables/useWorkflowEditor'
+import { useWorkflowEditor, WORKFLOW_FLOW_ID } from '~/composables/useWorkflowEditor'
 
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -55,7 +55,6 @@ function closePanel() {
 <template>
   <!-- Full-screen editor, outside DefaultLayout -->
   <div class="h-screen w-screen overflow-hidden flex flex-col bg-background">
-
     <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
     <header class="h-12 flex-none flex items-center gap-3 px-3 border-b bg-white z-20">
       <!-- Back -->
@@ -100,7 +99,6 @@ function closePanel() {
 
     <!-- ── Body ────────────────────────────────────────────────────────────── -->
     <div class="flex flex-1 overflow-hidden">
-
       <!-- Left palette -->
       <NodePalette />
 

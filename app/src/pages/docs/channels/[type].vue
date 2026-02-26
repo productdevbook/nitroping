@@ -51,13 +51,16 @@ function slugify(text: string) {
 }
 
 const headings = computed(() => {
-  if (!content.value) return []
+  if (!content.value)
+    return []
   const result: Array<{ level: 2 | 3, text: string, id: string }> = []
   for (const line of content.value.split('\n')) {
     const h2 = line.match(/^## (.+)/)
     const h3 = line.match(/^### (.+)/)
-    if (h2?.[1]) result.push({ level: 2, text: h2[1].trim(), id: slugify(h2[1].trim()) })
-    else if (h3?.[1]) result.push({ level: 3, text: h3[1].trim(), id: slugify(h3[1].trim()) })
+    if (h2?.[1])
+      result.push({ level: 2, text: h2[1].trim(), id: slugify(h2[1].trim()) })
+    else if (h3?.[1])
+      result.push({ level: 3, text: h3[1].trim(), id: slugify(h3[1].trim()) })
   }
   return result
 })
@@ -68,9 +71,15 @@ const headings = computed(() => {
     <!-- Main content -->
     <div class="flex-1 min-w-0 max-w-[720px]">
       <div v-if="notFound" class="flex flex-col items-center justify-center py-24 text-center gap-3">
-        <p class="text-4xl">📄</p>
-        <p class="text-lg font-medium text-foreground">Channel not found</p>
-        <p class="text-sm text-muted-foreground">No docs found for "{{ type }}"</p>
+        <p class="text-4xl">
+          📄
+        </p>
+        <p class="text-lg font-medium text-foreground">
+          Channel not found
+        </p>
+        <p class="text-sm text-muted-foreground">
+          No docs found for "{{ type }}"
+        </p>
         <button class="mt-2 text-sm text-primary underline underline-offset-2" @click="router.push('/docs/channels/email')">
           Go to Email docs
         </button>
@@ -92,8 +101,12 @@ const headings = computed(() => {
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
             <div class="min-w-0">
-              <div class="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Previous</div>
-              <div class="font-medium text-foreground truncate">{{ prevPage.title }}</div>
+              <div class="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
+                Previous
+              </div>
+              <div class="font-medium text-foreground truncate">
+                {{ prevPage.title }}
+              </div>
             </div>
           </RouterLink>
           <div v-else />
@@ -104,8 +117,12 @@ const headings = computed(() => {
             class="group flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm transition-colors hover:bg-muted/50 text-right min-w-0 ml-auto"
           >
             <div class="min-w-0">
-              <div class="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Next</div>
-              <div class="font-medium text-foreground truncate">{{ nextPage.title }}</div>
+              <div class="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
+                Next
+              </div>
+              <div class="font-medium text-foreground truncate">
+                {{ nextPage.title }}
+              </div>
             </div>
             <svg class="size-4 text-muted-foreground shrink-0 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />

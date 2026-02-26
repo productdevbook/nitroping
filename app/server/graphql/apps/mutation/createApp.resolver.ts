@@ -5,7 +5,7 @@ import { defineMutation } from 'nitro-graphql/define'
 
 export const createAppMutation = defineMutation({
   createApp: {
-    resolve: async (_parent, { input }, ctx) => {
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       const apiKey = await generateApiKey()

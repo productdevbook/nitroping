@@ -7,7 +7,7 @@ import { HTTPError } from 'nitro/h3'
 
 export const regenerateApiKeyMutation = defineMutation({
   regenerateApiKey: {
-    resolve: async (_parent, { id }, ctx) => {
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
 
       const newApiKey = await generateApiKey()

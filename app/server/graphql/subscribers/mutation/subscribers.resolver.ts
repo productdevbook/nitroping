@@ -22,7 +22,7 @@ function extractKnownFields(metadata: Record<string, any> | null | undefined) {
 
 export const subscriberMutations = defineMutation({
   createContact: {
-    resolve: async (_parent, { input }, ctx) => {
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       const { known, remaining } = extractKnownFields(input.metadata as Record<string, any> | undefined)
@@ -47,7 +47,7 @@ export const subscriberMutations = defineMutation({
   },
 
   updateContact: {
-    resolve: async (_parent, { id, input }, ctx) => {
+    resolve: async (_parent, { id, input }, _ctx) => {
       const db = useDatabase()
 
       const { known, remaining } = extractKnownFields(input.metadata as Record<string, any> | undefined)
@@ -91,7 +91,7 @@ export const subscriberMutations = defineMutation({
   },
 
   deleteContact: {
-    resolve: async (_parent, { id }, ctx) => {
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
       await db.delete(tables.contact).where(eq(tables.contact.id, id as string))
       return true

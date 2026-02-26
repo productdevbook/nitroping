@@ -29,7 +29,7 @@ function encryptChannelConfig(config: any): any {
 
 export const channelMutations = defineMutation({
   createChannel: {
-    resolve: async (_parent, { input }, ctx) => {
+    resolve: async (_parent, { input }, _ctx) => {
       const db = useDatabase()
 
       const config = encryptChannelConfig(input.config as any)
@@ -53,7 +53,7 @@ export const channelMutations = defineMutation({
   },
 
   updateChannel: {
-    resolve: async (_parent, { id, input }, ctx) => {
+    resolve: async (_parent, { id, input }, _ctx) => {
       const db = useDatabase()
 
       const updates: any = { updatedAt: new Date().toISOString() }
@@ -78,7 +78,7 @@ export const channelMutations = defineMutation({
   },
 
   deleteChannel: {
-    resolve: async (_parent, { id }, ctx) => {
+    resolve: async (_parent, { id }, _ctx) => {
       const db = useDatabase()
       await db.delete(tables.channel).where(eq(tables.channel.id, id as string))
       return true

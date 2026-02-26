@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { usePush } from 'notivue'
 import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { usePush } from 'notivue'
 import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -58,12 +58,14 @@ watch(channelType, () => {
 
 function toggleContact(id: string) {
   const idx = selectedContactIds.value.indexOf(id)
-  if (idx === -1) selectedContactIds.value.push(id)
+  if (idx === -1)
+    selectedContactIds.value.push(id)
   else selectedContactIds.value.splice(idx, 1)
 }
 
 async function doSend() {
-  if (!sendTitle.value || !sendBody.value) return
+  if (!sendTitle.value || !sendBody.value)
+    return
   try {
     const input: any = {
       appId: appId.value,
@@ -212,7 +214,6 @@ function getDeliveryRate(notification: any) {
     return 0
   return Math.round((notification.totalSent / notification.totalTargets) * 100)
 }
-
 
 function refreshNotifications() {
   refetchNotifications()

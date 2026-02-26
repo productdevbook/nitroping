@@ -41,19 +41,19 @@ const sections: { title: string, items: PaletteItem[] }[] = [
   {
     title: 'Actions',
     items: [
-      { icon: '✉️', label: 'Email',    type: 'send', badgeClass: 'text-blue-700 bg-blue-100',     iconClass: 'bg-blue-100',   data: { channelType: 'EMAIL' as ChannelType,    label: 'Send Email' } },
-      { icon: '💬', label: 'SMS',      type: 'send', badgeClass: 'text-green-700 bg-green-100',   iconClass: 'bg-green-100',  data: { channelType: 'SMS' as ChannelType,      label: 'Send SMS' } },
-      { icon: '🔔', label: 'Push',     type: 'send', badgeClass: 'text-purple-700 bg-purple-100', iconClass: 'bg-purple-100', data: { channelType: 'PUSH' as ChannelType,     label: 'Send Push' } },
-      { icon: '📱', label: 'In-App',   type: 'send', badgeClass: 'text-orange-700 bg-orange-100', iconClass: 'bg-orange-100', data: { channelType: 'IN_APP' as ChannelType,   label: 'Send In-App' } },
-      { icon: '🎮', label: 'Discord',  type: 'send', badgeClass: 'text-indigo-700 bg-indigo-100', iconClass: 'bg-indigo-100', data: { channelType: 'DISCORD' as ChannelType,  label: 'Send Discord' } },
-      { icon: '✈️', label: 'Telegram', type: 'send', badgeClass: 'text-cyan-700 bg-cyan-100',     iconClass: 'bg-cyan-100',   data: { channelType: 'TELEGRAM' as ChannelType, label: 'Send Telegram' } },
+      { icon: '✉️', label: 'Email', type: 'send', badgeClass: 'text-blue-700 bg-blue-100', iconClass: 'bg-blue-100', data: { channelType: 'EMAIL' as ChannelType, label: 'Send Email' } },
+      { icon: '💬', label: 'SMS', type: 'send', badgeClass: 'text-green-700 bg-green-100', iconClass: 'bg-green-100', data: { channelType: 'SMS' as ChannelType, label: 'Send SMS' } },
+      { icon: '🔔', label: 'Push', type: 'send', badgeClass: 'text-purple-700 bg-purple-100', iconClass: 'bg-purple-100', data: { channelType: 'PUSH' as ChannelType, label: 'Send Push' } },
+      { icon: '📱', label: 'In-App', type: 'send', badgeClass: 'text-orange-700 bg-orange-100', iconClass: 'bg-orange-100', data: { channelType: 'IN_APP' as ChannelType, label: 'Send In-App' } },
+      { icon: '🎮', label: 'Discord', type: 'send', badgeClass: 'text-indigo-700 bg-indigo-100', iconClass: 'bg-indigo-100', data: { channelType: 'DISCORD' as ChannelType, label: 'Send Discord' } },
+      { icon: '✈️', label: 'Telegram', type: 'send', badgeClass: 'text-cyan-700 bg-cyan-100', iconClass: 'bg-cyan-100', data: { channelType: 'TELEGRAM' as ChannelType, label: 'Send Telegram' } },
     ] satisfies DraggableItem[],
   },
   {
     title: 'Logic',
     items: [
-      { icon: '⏱', label: 'Delay',  type: 'delay',  badgeClass: 'text-amber-700 bg-amber-100', iconClass: 'bg-amber-100', data: { label: 'Delay', delayMs: 3_600_000 } },
-      { icon: '🔀', label: 'Filter', type: 'filter', badgeClass: 'text-teal-700 bg-teal-100',   iconClass: 'bg-teal-100',  data: { label: 'Filter' } },
+      { icon: '⏱', label: 'Delay', type: 'delay', badgeClass: 'text-amber-700 bg-amber-100', iconClass: 'bg-amber-100', data: { label: 'Delay', delayMs: 3_600_000 } },
+      { icon: '🔀', label: 'Filter', type: 'filter', badgeClass: 'text-teal-700 bg-teal-100', iconClass: 'bg-teal-100', data: { label: 'Filter' } },
     ] satisfies DraggableItem[],
   },
 ]

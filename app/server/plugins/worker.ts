@@ -7,7 +7,7 @@ import { processNotificationJob } from '#server/workers/notification.worker'
 import { processWorkflowJob } from '#server/workers/workflow.worker'
 import { definePlugin } from 'nitro'
 
-export default definePlugin((nitroApp) => {
+export default definePlugin((_nitroApp) => {
   console.log('[WorkerPlugin] Initializing...')
   if (import.meta.prerender) {
     console.log('[WorkerPlugin] Skipping (prerender)')

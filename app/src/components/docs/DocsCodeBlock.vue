@@ -1,22 +1,25 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+
+// Forward shiki's style="background-color:..." to the <pre> element
+defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(defineProps<{
+  // eslint-disable-next-line vue/prop-name-casing
   __node?: any
   language?: string
   filename?: string
 }>(), {})
-
-// Forward shiki's style="background-color:..." to the <pre> element
-defineOptions({ inheritAttrs: false })
 
 const codeText = ref('')
 const copied = ref(false)
 
 // Replicate minimark textContent without importing the package directly
 function extractText(node: any): string {
-  if (typeof node === 'string') return node
-  if (!Array.isArray(node)) return ''
+  if (typeof node === 'string')
+    return node
+  if (!Array.isArray(node))
+    return ''
   return node.slice(2).map(extractText).join('')
 }
 
@@ -25,18 +28,19 @@ watch(() => props.__node, (node) => {
 }, { immediate: true })
 
 async function copyCode() {
-  if (!codeText.value) return
+  if (!codeText.value)
+    return
   try {
     await navigator.clipboard.writeText(codeText.value)
     copied.value = true
-    setTimeout(() => { copied.value = false }, 2000)
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
   }
   catch {}
 }
 
 const langLabel = computed(() => props.filename || props.language || '')
-
-import { computed } from 'vue'
 </script>
 
 <template>

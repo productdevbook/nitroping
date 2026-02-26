@@ -1,9 +1,9 @@
 import type { Edge, Node } from '@vue-flow/core'
 import type { Ref } from 'vue'
+import type { TriggerNodeData, WorkflowNodeData, WorkflowStep } from '~/components/workflow/types'
 import { useVueFlow } from '@vue-flow/core'
 import { usePush } from 'notivue'
 import { computed, ref, watch } from 'vue'
-import type { TriggerNodeData, WorkflowNodeData, WorkflowStep } from '~/components/workflow/types'
 import { useUpdateWorkflow, useWorkflow } from '~/graphql/workflows'
 
 // All VueFlow instances on the workflow editor page share this ID
