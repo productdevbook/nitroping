@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Comark } from 'comark/vue'
+import { MDC } from 'mdc-syntax/vue'
 import { ref } from 'vue'
 import gettingStarted from '~/docs/getting-started.md?raw'
 import authentication from '~/docs/authentication.md?raw'
@@ -58,7 +58,7 @@ function scrollTo(id: string) {
         class="scroll-mt-4"
       >
         <article class="prose prose-neutral dark:prose-invert max-w-none prose-headings:scroll-mt-4 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-muted prose-pre:border">
-          <Comark>{{ s.content }}</Comark>
+          <MDC :markdown="s.content" />
         </article>
       </section>
     </div>
