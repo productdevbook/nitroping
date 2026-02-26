@@ -42,8 +42,17 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'docs',
-        name: 'docs',
-        component: () => import('./pages/docs.vue'),
+        children: [
+          {
+            path: '',
+            redirect: '/docs/getting-started',
+          },
+          {
+            path: ':slug',
+            name: 'docs-page',
+            component: () => import('./pages/docs/[slug].vue'),
+          },
+        ],
       },
       {
         path: 'apps',

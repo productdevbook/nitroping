@@ -25,8 +25,19 @@ const pageTitle = computed(() => {
     return 'Device Testing'
   if (path.startsWith('/test-webpush'))
     return 'Web Push Test'
-  if (path.startsWith('/docs'))
-    return 'Documentation'
+  if (path.startsWith('/docs')) {
+    const slug = path.split('/docs/')[1] ?? ''
+    const titles: Record<string, string> = {
+      'getting-started': 'Getting Started',
+      'authentication': 'Authentication',
+      'channels': 'Channels',
+      'contacts': 'Contacts',
+      'workflows': 'Workflows',
+      'notifications': 'Notifications',
+      'sdk': 'SDK & Examples',
+    }
+    return titles[slug] ?? 'Documentation'
+  }
   if (path.startsWith('/settings'))
     return 'Settings'
   return 'Dashboard'

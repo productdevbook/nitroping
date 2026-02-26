@@ -28,6 +28,7 @@ const appId = computed(() => {
 })
 
 const isAppContext = computed(() => !!appId.value)
+const isDocsContext = computed(() => route.path.startsWith('/docs'))
 
 const { data: appData } = useApp(appId as any)
 const currentApp = computed(() => appData.value)
@@ -65,8 +66,24 @@ const navTools = computed(() => [
 ])
 
 const navHelp = computed(() => [
-  { title: 'Documentation', url: '/docs', icon: 'lucide:file-text', isActive: route.path.startsWith('/docs') },
+  { title: 'Documentation', url: '/docs/getting-started', icon: 'lucide:book-open', isActive: route.path.startsWith('/docs') },
   { title: 'GitHub', url: 'https://github.com/productdevbook/nitroping', icon: 'lucide:github', isActive: false },
+])
+
+const navDocsGuide = computed(() => [
+  { title: 'Getting Started', url: '/docs/getting-started', icon: 'lucide:play-circle', isActive: route.path === '/docs/getting-started' },
+  { title: 'Authentication', url: '/docs/authentication', icon: 'lucide:key', isActive: route.path === '/docs/authentication' },
+])
+
+const navDocsFeatures = computed(() => [
+  { title: 'Channels', url: '/docs/channels', icon: 'lucide:radio', isActive: route.path === '/docs/channels' },
+  { title: 'Contacts', url: '/docs/contacts', icon: 'lucide:users', isActive: route.path === '/docs/contacts' },
+  { title: 'Workflows', url: '/docs/workflows', icon: 'lucide:git-branch', isActive: route.path === '/docs/workflows' },
+  { title: 'Notifications', url: '/docs/notifications', icon: 'lucide:bell', isActive: route.path === '/docs/notifications' },
+])
+
+const navDocsReference = computed(() => [
+  { title: 'SDK & Examples', url: '/docs/sdk', icon: 'lucide:code-2', isActive: route.path === '/docs/sdk' },
 ])
 
 const userData = computed(() => ({
@@ -91,6 +108,15 @@ const userData = computed(() => ({
                 <span class="truncate text-xs text-muted-foreground">Back to list</span>
               </div>
             </RouterLink>
+            <RouterLink v-else-if="isDocsContext" to="/">
+              <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <Icon name="lucide:arrow-left" class="size-4" />
+              </div>
+              <div class="grid flex-1 text-left text-sm leading-tight">
+                <span class="truncate font-semibold">Documentation</span>
+                <span class="truncate text-xs text-muted-foreground">Back to app</span>
+              </div>
+            </RouterLink>
             <RouterLink v-else to="/">
               <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                 <Icon name="lucide:zap" class="size-4" />
@@ -108,6 +134,11 @@ const userData = computed(() => ({
     <SidebarContent>
       <template v-if="isAppContext">
         <AppNavMain :items="appNavItems" label="Application" />
+      </template>
+      <template v-else-if="isDocsContext">
+        <AppNavMain :items="navDocsGuide" label="Guide" />
+        <AppNavMain :items="navDocsFeatures" label="Features" />
+        <AppNavMain :items="navDocsReference" label="Reference" />
       </template>
       <template v-else>
         <AppNavMain :items="navMain" label="Main" />
