@@ -75,6 +75,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      comark:
+        specifier: ^0.0.1
+        version: 0.0.1
       dataloader:
         specifier: ^2.2.3
         version: 2.2.3
@@ -2951,6 +2954,9 @@ packages:
 
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
+
+  comark@0.0.1:
+    resolution: {integrity: sha512-n+mpE2OsQVxuBBj0es7WO13Pp6HE2cMmTZYxPNCg+5m7EaKtArSforUkcLIIuuSsHV7Ni1PWK0rcas2JzKyPDQ==}
 
   commander@11.1.0:
     resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
@@ -8559,6 +8565,8 @@ snapshots:
       color-name: 1.1.4
 
   color-name@1.1.4: {}
+
+  comark@0.0.1: {}
 
   commander@11.1.0: {}
 

@@ -93,8 +93,18 @@ const routes: RouteRecordRaw[] = [
               },
               {
                 path: 'channels',
-                name: 'app-channels',
-                component: () => import('./pages/apps/[id]/channels.vue'),
+                children: [
+                  {
+                    path: '',
+                    name: 'app-channels',
+                    component: () => import('./pages/apps/[id]/channels/index.vue'),
+                  },
+                  {
+                    path: 'new',
+                    name: 'app-channels-new',
+                    component: () => import('./pages/apps/[id]/channels/new.vue'),
+                  },
+                ],
               },
               {
                 path: 'templates',

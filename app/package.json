@@ -39,6 +39,7 @@
     "bullmq": "^5.70.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "comark": "^0.0.1",
     "dataloader": "^2.2.3",
     "drizzle-orm": "1.0.0-beta.15-859cf75",
     "drizzle-zod": "^0.8.3",
