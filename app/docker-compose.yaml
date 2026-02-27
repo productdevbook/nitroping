@@ -19,7 +19,7 @@ services:
       start_period: 10s
 
   redis:
-    image: redis:7-alpine
+    image: redis:8.0.6-alpine
     restart: always
     ports:
       - '6380:6379'

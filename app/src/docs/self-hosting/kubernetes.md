@@ -35,6 +35,7 @@ The CNPG operator must be installed once per cluster before deploying NitroPing.
 helm repo add cnpg https://cloudnative-pg.github.io/charts
 helm repo update
 helm install cnpg cnpg/cloudnative-pg \
+  --version 0.27.1 \
   --namespace cnpg-system \
   --create-namespace \
   --wait
@@ -131,7 +132,7 @@ autoscaling:
 cnpg:
   enabled: true
   instances: 3
-  imageName: "ghcr.io/cloudnative-pg/postgresql:18"
+  imageName: "ghcr.io/cloudnative-pg/postgresql:18.3-standard-trixie"
   database: nitroping
   owner: nitroping
   storage:
@@ -144,7 +145,7 @@ cnpg:
 # Redis — bundled lightweight deployment
 redis:
   enabled: true
-  image: redis:7-alpine
+  image: redis:8.0.6-alpine
   storage: 4Gi
 ```
 
@@ -405,9 +406,9 @@ kubectl delete namespace nitroping
 | `ingress.className` | `""` | Ingress class (`traefik`, `nginx`, …) |
 | `cnpg.enabled` | `true` | Create a CloudNativePG Cluster |
 | `cnpg.instances` | `1` | PostgreSQL instances (3+ for HA) |
-| `cnpg.imageName` | `ghcr.io/cloudnative-pg/postgresql:18` | PostgreSQL image |
+| `cnpg.imageName` | `ghcr.io/cloudnative-pg/postgresql:18.3-standard-trixie` | PostgreSQL image |
 | `cnpg.storage.size` | `10Gi` | Storage per PostgreSQL instance |
 | `redis.enabled` | `true` | Deploy bundled Redis |
-| `redis.image` | `redis:7-alpine` | Redis image |
+| `redis.image` | `redis:8.0.6-alpine` | Redis image |
 | `autoscaling.enabled` | `false` | Enable HorizontalPodAutoscaler |
 | `existingSecret` | `""` | Use an existing Kubernetes Secret for all env vars |

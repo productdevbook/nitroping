@@ -47,7 +47,7 @@ services:
       retries: 5
 
   redis:
-    image: redis:7-alpine
+    image: redis:8.0.6-alpine
     restart: always
     volumes:
       - redis_data:/data

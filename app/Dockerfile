@@ -1,4 +1,4 @@
-FROM platformatic/node-caged:25-slim AS base
+FROM platformatic/node-caged:25.6.1-slim AS base
 
 RUN npm install -g pnpm@latest
 
@@ -31,7 +31,7 @@ EXPOSE 3412
 
 CMD ["pnpm", "run", "dev"]
 
-FROM platformatic/node-caged:25-slim AS production
+FROM platformatic/node-caged:25.6.1-slim AS production
 
 WORKDIR /app
 

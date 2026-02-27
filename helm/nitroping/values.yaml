@@ -96,9 +96,10 @@ cnpg:
   # Number of PostgreSQL instances (1 = single node, 3+ = HA)
   instances: 1
 
-  # PostgreSQL 18 image from the CNPG registry
+  # PostgreSQL image from the CNPG registry
   # See available tags: https://github.com/cloudnative-pg/postgresql/pkgs/container/postgresql
-  imageName: "ghcr.io/cloudnative-pg/postgresql:18"
+  # Use -standard-trixie flavor (system flavor is deprecated since CNPG 1.28)
+  imageName: "ghcr.io/cloudnative-pg/postgresql:18.3-standard-trixie"
 
   # Database bootstrap settings
   database: nitroping
@@ -135,7 +136,7 @@ externalDatabase:
 
 redis:
   enabled: true
-  image: redis:7-alpine
+  image: redis:8.0.6-alpine
   storageClass: ""
   storage: 2Gi
 
