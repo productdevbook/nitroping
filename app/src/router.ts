@@ -53,6 +53,17 @@ const routes: RouteRecordRaw[] = [
             component: () => import('./pages/docs/channels/[type].vue'),
           },
           {
+            path: 'self-hosting',
+            children: [
+              { path: '', redirect: '/docs/self-hosting/docker' },
+              {
+                path: ':topic',
+                name: 'docs-self-hosting-topic',
+                component: () => import('./pages/docs/self-hosting/[topic].vue'),
+              },
+            ],
+          },
+          {
             path: ':slug',
             name: 'docs-page',
             component: () => import('./pages/docs/[slug].vue'),

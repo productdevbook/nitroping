@@ -1,0 +1,155 @@
+# Default values for nitroping.
+# Override with: helm install nitroping nitroping/nitroping --values my-values.yaml
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/productdevbook/nitroping
+  pullPolicy: IfNotPresent
+  # Overrides the image tag (default: Chart.appVersion)
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 3412
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  hosts:
+    - host: nitroping.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: nitroping-tls
+  #    hosts:
+  #      - nitroping.local
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+# ── NitroPing application config ─────────────────────────────────────────────
+
+config:
+  # Required secrets — generate with: openssl rand -hex 64
+  jwtSecret: ""
+  # Required — generate with: openssl rand -hex 32
+  encryptionKey: ""
+  # Required — generate with: openssl rand -hex 32
+  webhookSecret: ""
+
+  rateLimitDefault: "1000"
+  rateLimitWindow: "3600"
+  rateLimitDisabled: "false"
+  schedulerEnabled: "true"
+
+  smtp:
+    host: ""
+    port: "587"
+    user: ""
+    password: ""
+
+# Supply an existing Secret instead of letting the chart create one.
+# The secret must contain all required env vars (DATABASE_URL, JWT_SECRET, etc.)
+existingSecret: ""
+
+# ── CloudNativePG (https://cloudnative-pg.io) ────────────────────────────────
+# Requires the CNPG operator to be installed in your cluster:
+#   helm repo add cnpg https://cloudnative-pg.github.io/charts
+#   helm install cnpg cnpg/cloudnative-pg --namespace cnpg-system --create-namespace
+
+cnpg:
+  # Set to true to create a CloudNativePG Cluster resource in this namespace.
+  # Set to false when using an external/managed PostgreSQL instance.
+  enabled: true
+
+  # Number of PostgreSQL instances (1 = single node, 3+ = HA)
+  instances: 1
+
+  # PostgreSQL 18 image from the CNPG registry
+  # See available tags: https://github.com/cloudnative-pg/postgresql/pkgs/container/postgresql
+  imageName: "ghcr.io/cloudnative-pg/postgresql:18"
+
+  # Database bootstrap settings
+  database: nitroping
+  owner: nitroping
+
+  # Storage for each PostgreSQL instance
+  storage:
+    size: 10Gi
+    storageClass: ""   # leave empty to use cluster default
+
+  # Enable PodMonitor for Prometheus scraping (requires prometheus-operator)
+  enablePodMonitor: false
+
+  # PostgreSQL parameters
+  parameters:
+    max_connections: "200"
+    shared_buffers: "256MB"
+
+# ── External PostgreSQL (when cnpg.enabled = false) ───────────────────────────
+
+externalDatabase:
+  host: ""
+  port: 5432
+  user: nitroping
+  password: ""
+  database: nitroping
+  # Reference an existing secret for the password
+  existingSecret: ""
+  existingSecretPasswordKey: "postgresql-password"
+
+# ── Redis ─────────────────────────────────────────────────────────────────────
+# A lightweight Redis Deployment + Service is included in templates/redis.yaml.
+# Set enabled: false and configure externalRedis to use a managed Redis instance.
+
+redis:
+  enabled: true
+  image: redis:7-alpine
+  storageClass: ""
+  storage: 2Gi
+
+# ── External Redis (when redis.enabled = false) ───────────────────────────────
+
+externalRedis:
+  host: ""
+  port: 6379
+  password: ""
+  existingSecret: ""
+  existingSecretPasswordKey: "redis-password"
+
+# ── Kubernetes scheduling ─────────────────────────────────────────────────────
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

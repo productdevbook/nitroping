@@ -1,0 +1,22 @@
+apiVersion: v2
+name: nitroping
+description: Self-hosted, multi-channel notification infrastructure
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - notifications
+  - push
+  - email
+  - sms
+  - telegram
+  - discord
+home: https://nitroping.dev
+sources:
+  - https://github.com/productdevbook/nitroping
+maintainers:
+  - name: productdevbook
+    url: https://github.com/productdevbook
+# No sub-chart dependencies:
+# PostgreSQL is managed by the CloudNativePG operator (install separately).
+# Redis is bundled as a simple Deployment in templates/redis.yaml.

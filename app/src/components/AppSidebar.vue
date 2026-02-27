@@ -72,6 +72,18 @@ const navHelp = computed(() => [
 
 const navDocsGuide = computed(() => [
   { title: 'Getting Started', url: '/docs/getting-started', icon: 'lucide:play-circle', isActive: route.path === '/docs/getting-started' },
+  {
+    title: 'Self-Hosting',
+    url: '/docs/self-hosting/docker',
+    icon: 'lucide:server',
+    isActive: route.path.startsWith('/docs/self-hosting'),
+    items: [
+      { title: 'Docker Compose', url: '/docs/self-hosting/docker', isActive: route.path === '/docs/self-hosting/docker' },
+      { title: 'Kubernetes (Helm)', url: '/docs/self-hosting/kubernetes', isActive: route.path === '/docs/self-hosting/kubernetes' },
+      { title: 'Configuration', url: '/docs/self-hosting/configuration', isActive: route.path === '/docs/self-hosting/configuration' },
+      { title: 'Reverse Proxy', url: '/docs/self-hosting/reverse-proxy', isActive: route.path === '/docs/self-hosting/reverse-proxy' },
+    ],
+  },
   { title: 'Authentication', url: '/docs/authentication', icon: 'lucide:key', isActive: route.path === '/docs/authentication' },
 ])
 

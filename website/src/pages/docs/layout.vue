@@ -7,6 +7,16 @@ const router = useRouter()
 
 const navGuide = [
   { slug: 'getting-started', title: 'Getting Started' },
+  {
+    slug: 'self-hosting',
+    title: 'Self-Hosting',
+    children: [
+      { topic: 'docker', title: 'Docker Compose' },
+      { topic: 'kubernetes', title: 'Kubernetes (Helm)' },
+      { topic: 'configuration', title: 'Configuration' },
+      { topic: 'reverse-proxy', title: 'Reverse Proxy' },
+    ],
+  },
   { slug: 'authentication', title: 'Authentication' },
 ]
 
@@ -35,14 +45,19 @@ const navReference = [
 
 const currentSlug = computed(() => route.params.slug as string | undefined)
 const currentType = computed(() => route.params.type as string | undefined)
+const currentTopic = computed(() => route.params.topic as string | undefined)
 
 const isChannelsActive = computed(() => route.path.startsWith('/docs/channels'))
+const isSelfHostingActive = computed(() => route.path.startsWith('/docs/self-hosting'))
 
 function isActive(slug: string) {
   return currentSlug.value === slug
 }
 function isChannelActive(type: string) {
   return currentType.value === type
+}
+function isSelfHostingTopicActive(topic: string) {
+  return currentTopic.value === topic
 }
 </script>
 
@@ -83,17 +98,47 @@ function isChannelActive(type: string) {
             Guide
           </p>
           <nav class="mb-6 space-y-0.5">
-            <RouterLink
-              v-for="item in navGuide"
-              :key="item.slug"
-              :to="`/docs/${item.slug}`"
-              class="block rounded-md px-2 py-1.5 text-sm transition-colors"
-              :class="isActive(item.slug)
-                ? 'bg-primary/10 text-primary font-medium'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
-            >
-              {{ item.title }}
-            </RouterLink>
+            <template v-for="item in navGuide" :key="item.slug">
+              <!-- Simple item (no children) -->
+              <RouterLink
+                v-if="!item.children"
+                :to="`/docs/${item.slug}`"
+                class="block rounded-md px-2 py-1.5 text-sm transition-colors"
+                :class="isActive(item.slug)
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
+              >
+                {{ item.title }}
+              </RouterLink>
+              <!-- Self-Hosting with children -->
+              <template v-else>
+                <button
+                  class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors"
+                  :class="isSelfHostingActive
+                    ? 'text-primary font-medium'
+                    : 'text-muted-foreground hover:text-foreground'"
+                  @click="router.push('/docs/self-hosting/docker')"
+                >
+                  <span class="flex-1 text-left">{{ item.title }}</span>
+                  <svg class="size-3.5 transition-transform" :class="isSelfHostingActive ? 'rotate-90' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <div v-if="isSelfHostingActive" class="ml-2 border-l border-border pl-3 space-y-0.5">
+                  <RouterLink
+                    v-for="child in item.children"
+                    :key="child.topic"
+                    :to="`/docs/self-hosting/${child.topic}`"
+                    class="block rounded-md px-2 py-1 text-[0.8rem] transition-colors"
+                    :class="isSelfHostingTopicActive(child.topic)
+                      ? 'text-primary font-medium'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'"
+                  >
+                    {{ child.title }}
+                  </RouterLink>
+                </div>
+              </template>
+            </template>
           </nav>
 
           <!-- Features -->

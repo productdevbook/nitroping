@@ -11,13 +11,27 @@ services:
       - '5433:5432'
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     restart: always
     ports:
       - '6380:6379'
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
   server:
     profiles: [prod]
     image: ghcr.io/productdevbook/nitroping:latest
@@ -32,8 +46,11 @@ services:
     ports:
       - '3412:3412'
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   server-dev:
     profiles: [dev]
     container_name: nitro_dev
@@ -51,8 +68,10 @@ services:
     ports:
       - '3412:3412'
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - .:/app
 

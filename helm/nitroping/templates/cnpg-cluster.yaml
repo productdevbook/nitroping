@@ -1,0 +1,34 @@
+{{- if .Values.cnpg.enabled }}
+# CloudNativePG Cluster — requires the CNPG operator:
+#   helm repo add cnpg https://cloudnative-pg.github.io/charts
+#   helm install cnpg cnpg/cloudnative-pg -n cnpg-system --create-namespace
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ include "nitroping.cnpgClusterName" . }}
+  labels:
+    {{- include "nitroping.labels" . | nindent 4 }}
+spec:
+  instances: {{ .Values.cnpg.instances }}
+  imageName: {{ .Values.cnpg.imageName | quote }}
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.cnpg.database | quote }}
+      owner: {{ .Values.cnpg.owner | quote }}
+
+  storage:
+    size: {{ .Values.cnpg.storage.size }}
+    {{- if .Values.cnpg.storage.storageClass }}
+    storageClass: {{ .Values.cnpg.storage.storageClass | quote }}
+    {{- end }}
+
+  postgresql:
+    parameters:
+      {{- range $key, $val := .Values.cnpg.parameters }}
+      {{ $key }}: {{ $val | quote }}
+      {{- end }}
+
+  monitoring:
+    enablePodMonitor: {{ .Values.cnpg.enablePodMonitor }}
+{{- end }}
