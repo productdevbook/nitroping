@@ -98,11 +98,11 @@ replicaCount: 2
 
 image:
   repository: ghcr.io/productdevbook/nitroping
-  tag: "1.2.0"   # always pin in production
+  tag: 1.2.0 # always pin in production
 
 ingress:
   enabled: true
-  className: traefik   # or nginx
+  className: traefik # or nginx
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
@@ -132,15 +132,15 @@ autoscaling:
 cnpg:
   enabled: true
   instances: 3
-  imageName: "ghcr.io/cloudnative-pg/postgresql:18.3-standard-trixie"
+  imageName: 'ghcr.io/cloudnative-pg/postgresql:18.3-standard-trixie'
   database: nitroping
   owner: nitroping
   storage:
     size: 20Gi
   parameters:
-    max_connections: "300"
-    shared_buffers: "512MB"
-  enablePodMonitor: true   # requires prometheus-operator
+    max_connections: '300'
+    shared_buffers: 512MB
+  enablePodMonitor: true # requires prometheus-operator
 
 # Redis — bundled lightweight deployment
 redis:
@@ -175,7 +175,7 @@ externalDatabase:
   port: 5432
   user: nitroping
   database: nitroping
-  password: ""   # use existingSecret instead
+  password: '' # use existingSecret instead
 
 redis:
   enabled: false
@@ -183,7 +183,7 @@ redis:
 externalRedis:
   host: my-redis.upstash.io
   port: 6379
-  password: ""   # use existingSecret instead
+  password: '' # use existingSecret instead
 ```
 
 ---
@@ -232,7 +232,7 @@ metadata:
 spec:
   refreshInterval: 1h
   secretStoreRef:
-    name: vault-backend   # or aws-parameter-store, gcp-secrets, etc.
+    name: vault-backend # or aws-parameter-store, gcp-secrets, etc.
     kind: ClusterSecretStore
   target:
     name: nitroping-secrets
@@ -263,7 +263,7 @@ ingress:
   className: traefik
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls: 'true'
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: notify.example.com
@@ -286,7 +286,7 @@ ingress:
   className: nginx
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '300'
   hosts:
     - host: notify.example.com
       paths:
@@ -310,8 +310,8 @@ The Helm Deployment is configured with:
 strategy:
   type: RollingUpdate
   rollingUpdate:
-    maxSurge: 1        # spin up 1 new pod
-    maxUnavailable: 0  # never kill old pods until new pod is Ready
+    maxSurge: 1 # spin up 1 new pod
+    maxUnavailable: 0 # never kill old pods until new pod is Ready
 ```
 
 The full startup flow during a `helm upgrade`:
@@ -362,7 +362,7 @@ CNPG supports continuous WAL archiving and scheduled base backups to object stor
 # Add to your cnpg Cluster spec (advanced — edit the CRD directly or extend the chart)
 backup:
   barmanObjectStore:
-    destinationPath: "s3://my-bucket/nitroping-backups"
+    destinationPath: 's3://my-bucket/nitroping-backups'
     s3Credentials:
       accessKeyId:
         name: s3-credentials
@@ -370,7 +370,7 @@ backup:
       secretAccessKey:
         name: s3-credentials
         key: SECRET_ACCESS_KEY
-  retentionPolicy: "30d"
+  retentionPolicy: 30d
 ```
 
 ---

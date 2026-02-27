@@ -122,24 +122,24 @@ docker compose --profile prod up -d --force-recreate server
 Add it to your `docker-compose.yaml`:
 
 ```yaml
-  watchtower:
-    image: containrrr/watchtower
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      WATCHTOWER_POLL_INTERVAL: 3600        # check every hour
-      WATCHTOWER_CLEANUP: "true"             # remove old images
-      WATCHTOWER_INCLUDE_STOPPED: "false"
-      # Optional email notifications:
-      # WATCHTOWER_NOTIFICATIONS: email
-      # WATCHTOWER_NOTIFICATION_EMAIL_FROM: you@example.com
-      # WATCHTOWER_NOTIFICATION_EMAIL_TO: you@example.com
-      # WATCHTOWER_NOTIFICATION_EMAIL_SERVER: smtp.gmail.com
-      # WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT: "587"
-      # WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER: you@example.com
-      # WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD: your_app_password
-    command: --interval 3600
+watchtower:
+  image: containrrr/watchtower
+  restart: always
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+  environment:
+    WATCHTOWER_POLL_INTERVAL: 3600 # check every hour
+    WATCHTOWER_CLEANUP: 'true' # remove old images
+    WATCHTOWER_INCLUDE_STOPPED: 'false'
+    # Optional email notifications:
+    # WATCHTOWER_NOTIFICATIONS: email
+    # WATCHTOWER_NOTIFICATION_EMAIL_FROM: you@example.com
+    # WATCHTOWER_NOTIFICATION_EMAIL_TO: you@example.com
+    # WATCHTOWER_NOTIFICATION_EMAIL_SERVER: smtp.gmail.com
+    # WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT: "587"
+    # WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER: you@example.com
+    # WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD: your_app_password
+  command: --interval 3600
 ```
 
 > **Recommendation:** Use a specific version tag (e.g. `image: ghcr.io/productdevbook/nitroping:1.2.0`) in production and update it deliberately, rather than auto-pulling `:latest`. This gives you control over when breaking changes are applied.
@@ -206,7 +206,7 @@ Change the host port in `docker-compose.yaml`:
 
 ```yaml
 ports:
-  - "8080:3412"
+  - '8080:3412'
 ```
 
 **Reset everything** (destructive — deletes all data)

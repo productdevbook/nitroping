@@ -18,16 +18,16 @@ services:
     image: traefik:v3
     restart: always
     command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.email=you@example.com"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.email=you@example.com
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - letsencrypt:/letsencrypt
@@ -42,7 +42,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [CMD-SHELL, 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 5s
       retries: 5
 
@@ -69,16 +69,16 @@ services:
       redis:
         condition: service_started
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.nitroping.rule=Host(`notify.example.com`)"
-      - "traefik.http.routers.nitroping.entrypoints=websecure"
-      - "traefik.http.routers.nitroping.tls.certresolver=letsencrypt"
-      - "traefik.http.services.nitroping.loadbalancer.server.port=3412"
+      - traefik.enable=true
+      - traefik.http.routers.nitroping.rule=Host(`notify.example.com`)
+      - traefik.http.routers.nitroping.entrypoints=websecure
+      - traefik.http.routers.nitroping.tls.certresolver=letsencrypt
+      - traefik.http.services.nitroping.loadbalancer.server.port=3412
       # Redirect HTTP → HTTPS
-      - "traefik.http.routers.nitroping-http.rule=Host(`notify.example.com`)"
-      - "traefik.http.routers.nitroping-http.entrypoints=web"
-      - "traefik.http.routers.nitroping-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - traefik.http.routers.nitroping-http.rule=Host(`notify.example.com`)
+      - traefik.http.routers.nitroping-http.entrypoints=web
+      - traefik.http.routers.nitroping-http.middlewares=redirect-to-https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
 
 volumes:
   db_data:
@@ -94,14 +94,14 @@ For more control, use a static config file instead of CLI flags:
 # traefik.yaml
 entryPoints:
   web:
-    address: ":80"
+    address: ':80'
     http:
       redirections:
         entryPoint:
           to: websecure
           scheme: https
   websecure:
-    address: ":443"
+    address: ':443'
 
 certificatesResolvers:
   letsencrypt:
@@ -119,7 +119,7 @@ providers:
 
 api:
   dashboard: true
-  insecure: false   # secure the dashboard in production
+  insecure: false # secure the dashboard in production
 ```
 
 ### Traefik on Kubernetes (IngressRoute)
@@ -245,8 +245,8 @@ caddy:
   image: caddy:2-alpine
   restart: always
   ports:
-    - "80:80"
-    - "443:443"
+    - '80:80'
+    - '443:443'
   volumes:
     - ./Caddyfile:/etc/caddy/Caddyfile:ro
     - caddy_data:/data
