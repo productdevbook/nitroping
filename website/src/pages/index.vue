@@ -18,7 +18,7 @@ document.title = 'NitroPing - Bring reliability to your notifications'
           </div>
           <nav class="hidden md:flex items-center space-x-8">
             <a href="#" class="text-gray-600 hover:text-gray-900 font-medium">Product</a>
-            <a href="#" class="text-gray-600 hover:text-gray-900 font-medium">Resources</a>
+            <RouterLink to="/docs/getting-started" class="text-gray-600 hover:text-gray-900 font-medium">Docs</RouterLink>
           </nav>
           <div class="flex items-center space-x-6">
             <span class="text-gray-400 font-medium">Sign in (Coming soon)</span>
@@ -49,10 +49,10 @@ document.title = 'NitroPing - Bring reliability to your notifications'
                 <Icon icon="lucide:github" width="20" class="mr-3" />
                 View on GitHub
               </a>
-              <a href="#" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
-                <Icon icon="lucide:play" width="20" class="mr-3" />
-                Try for free
-              </a>
+              <RouterLink to="/docs/getting-started" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                <Icon icon="lucide:book-open" width="20" class="mr-3" />
+                Read the docs
+              </RouterLink>
             </div>
 
             <!-- Product Screenshot with Gradient Frame -->
@@ -64,6 +64,90 @@ document.title = 'NitroPing - Bring reliability to your notifications'
                   class="w-full h-auto rounded-2xl"
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Grid -->
+      <section class="py-24 border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center mb-14">
+            <span class="text-blue-600 font-semibold text-sm uppercase tracking-wide">What's included</span>
+            <h2 class="text-4xl font-bold text-gray-900 mt-2 mb-4">
+              Everything you need.<br>
+              <span class="text-gray-600">Nothing you don't.</span>
+            </h2>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+              Multi-channel delivery, workflow automation, contact management and real-time tracking — all self-hosted, all yours.
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="p-6 rounded-2xl border border-gray-200 bg-white hover:border-blue-200 hover:shadow-sm transition-all">
+              <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+                <Icon icon="lucide:radio" width="20" class="text-white" />
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Multi-channel delivery</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">Send via Email, Telegram, Discord, SMS (Twilio), Push (APNS/FCM/WebPush) and In-App — from a single API.</p>
+              <RouterLink to="/docs/channels" class="inline-flex items-center gap-1 mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                See channels <Icon icon="lucide:arrow-right" width="14" />
+              </RouterLink>
+            </div>
+
+            <div class="p-6 rounded-2xl border border-gray-200 bg-white hover:border-blue-200 hover:shadow-sm transition-all">
+              <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+                <Icon icon="lucide:git-branch" width="20" class="text-white" />
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Visual workflow editor</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">Build automation flows with a drag-and-drop canvas. Triggers, delays, filters, and multi-channel actions — no code required.</p>
+              <RouterLink to="/docs/workflows" class="inline-flex items-center gap-1 mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                See workflows <Icon icon="lucide:arrow-right" width="14" />
+              </RouterLink>
+            </div>
+
+            <div class="p-6 rounded-2xl border border-gray-200 bg-white hover:border-blue-200 hover:shadow-sm transition-all">
+              <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+                <Icon icon="lucide:users" width="20" class="text-white" />
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Contact management</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">Manage subscribers with preferences per channel, device tokens, and full delivery history per contact.</p>
+              <RouterLink to="/docs/contacts" class="inline-flex items-center gap-1 mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                See contacts <Icon icon="lucide:arrow-right" width="14" />
+              </RouterLink>
+            </div>
+
+            <div class="p-6 rounded-2xl border border-gray-200 bg-white hover:border-blue-200 hover:shadow-sm transition-all">
+              <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+                <Icon icon="lucide:mouse-pointer-click" width="20" class="text-white" />
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Open & click tracking</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">Invisible pixel tracking for email opens and click-through tracking for every link — with delivery rate analytics.</p>
+              <RouterLink to="/docs/notifications" class="inline-flex items-center gap-1 mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                See notifications <Icon icon="lucide:arrow-right" width="14" />
+              </RouterLink>
+            </div>
+
+            <div class="p-6 rounded-2xl border border-gray-200 bg-white hover:border-blue-200 hover:shadow-sm transition-all">
+              <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+                <Icon icon="lucide:file-text" width="20" class="text-white" />
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Message templates</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">Create reusable notification templates with variable substitution. Share across channels and workflows.</p>
+              <RouterLink to="/docs/notifications" class="inline-flex items-center gap-1 mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                Learn more <Icon icon="lucide:arrow-right" width="14" />
+              </RouterLink>
+            </div>
+
+            <div class="p-6 rounded-2xl border border-gray-200 bg-white hover:border-blue-200 hover:shadow-sm transition-all">
+              <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+                <Icon icon="lucide:webhook" width="20" class="text-white" />
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Webhooks</h3>
+              <p class="text-gray-600 text-sm leading-relaxed">Get notified on delivery, open, and click events. Connect to any system with configurable outbound webhooks.</p>
+              <RouterLink to="/docs/getting-started" class="inline-flex items-center gap-1 mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                Learn more <Icon icon="lucide:arrow-right" width="14" />
+              </RouterLink>
             </div>
           </div>
         </div>
@@ -127,9 +211,9 @@ document.title = 'NitroPing - Bring reliability to your notifications'
                 to stay connected with users — without the usual friction.
               </p>
 
-              <a href="https://github.com/productdevbook/nitroping" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 mb-8 shadow-sm hover:shadow-md">
+              <RouterLink to="/docs/getting-started" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 mb-8 shadow-sm hover:shadow-md">
                 Learn more
-              </a>
+              </RouterLink>
 
               <div class="grid grid-cols-2 gap-x-8 gap-y-8">
                 <div class="flex items-start space-x-4">
@@ -183,10 +267,10 @@ document.title = 'NitroPing - Bring reliability to your notifications'
                 Beautiful APIs that feel natural on every platform.
               </p>
 
-              <a href="https://github.com/productdevbook/nitroping" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 mb-8 shadow-sm hover:shadow-md">
+              <RouterLink to="/docs/getting-started" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 mb-8 shadow-sm hover:shadow-md">
                 <Icon icon="lucide:book-open" width="20" class="mr-3" />
                 View documentation
-              </a>
+              </RouterLink>
 
               <div class="grid grid-cols-2 gap-x-8 gap-y-8">
                 <div class="flex items-start space-x-4">
@@ -304,10 +388,10 @@ document.title = 'NitroPing - Bring reliability to your notifications'
                 Break free from vendor lock-in and own your infrastructure.
               </p>
 
-              <a href="https://github.com/productdevbook/nitroping" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 mb-8 shadow-sm hover:shadow-md">
+              <RouterLink to="/docs/getting-started" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 mb-8 shadow-sm hover:shadow-md">
                 <Icon icon="lucide:rocket" width="20" class="mr-3" />
                 Get started today
-              </a>
+              </RouterLink>
 
               <div class="grid grid-cols-2 gap-x-8 gap-y-8">
                 <div class="flex items-start space-x-4">
@@ -340,14 +424,14 @@ document.title = 'NitroPing - Bring reliability to your notifications'
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-6 justify-center">
-                  <a href="#" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
-                    <Icon icon="lucide:rocket" width="20" class="mr-3" />
-                    Get started free
-                  </a>
                   <RouterLink to="/docs/getting-started" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
                     <Icon icon="lucide:book-open" width="20" class="mr-3" />
                     View documentation
                   </RouterLink>
+                  <a href="https://github.com/productdevbook/nitroping" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-6 py-2.5 bg-blue-100 hover:bg-blue-200 rounded-full font-semibold text-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <Icon icon="lucide:github" width="20" class="mr-3" />
+                    View on GitHub
+                  </a>
                 </div>
               </div>
             </div>
