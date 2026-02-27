@@ -6,11 +6,13 @@ on:
       - main
     paths:
       - 'app/**'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'app/**'
+      - '.github/workflows/ci.yml'
 
 jobs:
   check:

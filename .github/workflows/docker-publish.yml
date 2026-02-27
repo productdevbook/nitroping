@@ -6,6 +6,9 @@ on:
       - main
     tags:
       - 'v*'
+    paths:
+      - 'app/**'
+      - '.github/workflows/docker-publish.yml'
 
 env:
   DOCKERHUB_REGISTRY: docker.io
