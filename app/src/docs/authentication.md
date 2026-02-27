@@ -30,7 +30,7 @@ curl -X POST https://your-instance.com/api/graphql \
 When using the JavaScript SDK, pass your API key during initialization:
 
 ```ts
-import { NitroPingClient } from '@nitroping/sdk'
+import { NitroPingClient } from 'nitroping'
 
 const client = new NitroPingClient({
   apiKey: 'YOUR_API_KEY',

@@ -5,15 +5,15 @@
 Install the official NitroPing SDK:
 
 ```bash
-npm install @nitroping/sdk
+npm install nitroping
 # or
-pnpm add @nitroping/sdk
+pnpm add nitroping
 ```
 
 ### Initialize
 
 ```ts
-import { NitroPingClient } from '@nitroping/sdk'
+import { NitroPingClient } from 'nitroping'
 
 const client = new NitroPingClient({
   apiKey: 'YOUR_API_KEY',
