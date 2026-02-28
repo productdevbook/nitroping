@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePush } from 'notivue'
 import { ref } from 'vue'
 import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
@@ -7,12 +8,16 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Textarea } from '~/components/ui/textarea'
+import { useSendNotification } from '~/graphql'
 
 interface Props {
   app: any
 }
 
-const _props = defineProps<Props>()
+const props = defineProps<Props>()
+
+const push = usePush()
+const { mutateAsync: sendNotificationMutation, isLoading: isSendingTest } = useSendNotification()
 
 // Reactive data
 const showSendTest = ref(false)
@@ -23,13 +28,17 @@ const testNotification = ref({
 
 async function sendTestNotification() {
   try {
-    // TODO: Implement test notification sending
-    console.log('Send test notification:', testNotification.value)
+    await sendNotificationMutation({
+      appId: props.app.id,
+      title: testNotification.value.title || 'Test Notification',
+      body: testNotification.value.body || 'This is a test notification from NitroPing',
+    })
     showSendTest.value = false
     testNotification.value = { title: '', body: '' }
+    push.success({ title: 'Test notification sent successfully' })
   }
   catch (error) {
-    console.error('Error sending test notification:', error)
+    push.error({ title: 'Failed to send test', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 }
 </script>
@@ -93,7 +102,8 @@ async function sendTestNotification() {
         <Button variant="outline" @click="showSendTest = false">
           Cancel
         </Button>
-        <Button @click="sendTestNotification">
+        <Button :disabled="isSendingTest" @click="sendTestNotification">
+          <Icon v-if="isSendingTest" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
           Send Test
         </Button>
       </DialogFooter>

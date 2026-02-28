@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DevicePlatform } from '#graphql/client'
-import { computed, onMounted, ref } from 'vue'
+import { usePush } from 'notivue'
+import { computed, ref } from 'vue'
 import Icon from '~/components/common/Icon.vue'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -10,15 +11,29 @@ import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Textarea } from '~/components/ui/textarea'
-import { useApps, useRegisterDevice } from '~/graphql'
+import { $sdk, useApps, useRegisterDevice, useSendNotification } from '~/graphql'
+import { useRecentDevices } from '~/graphql/devices'
+
+const push = usePush()
 
 // API queries
 const { data: appsData, isLoading: _appsLoading } = useApps()
 const apps = computed(() => appsData.value || [])
 const { mutateAsync: registerDeviceMutation, isLoading: isRegisteringDevice } = useRegisterDevice()
+const { mutateAsync: sendNotificationMutation } = useSendNotification()
+
+// Recent devices from real API, joined with app names
+const { data: recentDevicesData, refetch: refetchRecentDevices } = useRecentDevices()
+const recentDevices = computed(() => {
+  const deviceList = recentDevicesData.value || []
+  const appList = apps.value
+  return deviceList.map(device => ({
+    ...device,
+    appName: appList.find(a => a.id === device.appId)?.name || device.appId,
+  }))
+})
 
 // Reactive data
-const recentDevices = ref<any[]>([])
 const testLoading = ref(false)
 const deviceTestLoading = ref(false)
 const testResult = ref<any>(null)
@@ -46,32 +61,7 @@ const deviceTestForm = ref({
 // Methods
 
 async function loadRecentDevices() {
-  try {
-    // TODO: Implement recent devices API
-    recentDevices.value = [
-      {
-        id: '1',
-        appName: 'Mobile App',
-        platform: 'android',
-        userId: 'user123',
-        status: 'active',
-        createdAt: new Date(Date.now() - 1000 * 60 * 30),
-        lastSeenAt: new Date(),
-      },
-      {
-        id: '2',
-        appName: 'Web Dashboard',
-        platform: 'web',
-        userId: null,
-        status: 'active',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-        lastSeenAt: new Date(Date.now() - 1000 * 60 * 10),
-      },
-    ]
-  }
-  catch (error) {
-    console.error('Error loading recent devices:', error)
-  }
+  await refetchRecentDevices()
 }
 
 async function registerDevice() {
@@ -89,9 +79,6 @@ async function registerDevice() {
 
     await registerDeviceMutation(payload)
 
-    console.log('Device registered successfully!')
-
-    // Reset form
     registrationForm.value = {
       appId: '',
       token: '',
@@ -100,13 +87,11 @@ async function registerDevice() {
       metadata: '',
     }
 
-    await loadRecentDevices()
-
-    // TODO: Show success toast
+    await refetchRecentDevices()
+    push.success({ title: 'Device registered successfully' })
   }
   catch (error) {
-    console.error('Error registering device:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to register device', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 }
 
@@ -118,22 +103,33 @@ async function testToken() {
   testResult.value = null
 
   try {
-    // TODO: Implement token validation API
-    console.log('Would test token:', testForm.value)
+    const result = await $sdk.deviceByToken({ token: testForm.value.token })
+    const device = result.data?.deviceByToken
 
-    // Mock response
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    testResult.value = {
-      success: true,
-      message: 'Device token is valid and registered',
-      device: {
-        id: 'device-123',
-        platform: 'android',
-        status: 'active',
-        userId: 'user123',
-        lastSeenAt: new Date(),
-      },
+    if (device && device.appId === testForm.value.appId) {
+      testResult.value = {
+        success: true,
+        message: 'Device token is valid and registered',
+        device: {
+          id: device.id,
+          platform: device.platform,
+          status: device.status,
+          userId: device.userId,
+          lastSeenAt: device.lastSeenAt ? new Date(device.lastSeenAt) : new Date(),
+        },
+      }
+    }
+    else if (device) {
+      testResult.value = {
+        success: false,
+        message: 'Device token found but belongs to a different app',
+      }
+    }
+    else {
+      testResult.value = {
+        success: false,
+        message: 'Device token not found or invalid',
+      }
     }
   }
   catch {
@@ -162,19 +158,19 @@ async function sendTestToSelectedDevice() {
 
   deviceTestLoading.value = true
   try {
-    // TODO: Send test notification to specific device
-    console.log('Would send test to device:', selectedDevice.value.id, deviceTestForm.value)
-
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await sendNotificationMutation({
+      appId: selectedDevice.value.appId,
+      title: deviceTestForm.value.title,
+      body: deviceTestForm.value.body,
+      targetDevices: [selectedDevice.value.id],
+    })
 
     showTestDeviceDialog.value = false
     deviceTestForm.value = { title: '', body: '' }
-
-    // TODO: Show success toast
+    push.success({ title: 'Test notification sent successfully' })
   }
   catch (error) {
-    console.error('Error sending test notification:', error)
-    // TODO: Show error toast
+    push.error({ title: 'Failed to send test notification', message: error instanceof Error ? error.message : 'Unknown error' })
   }
   finally {
     deviceTestLoading.value = false
@@ -182,7 +178,7 @@ async function sendTestToSelectedDevice() {
 }
 
 function getPlatformBg(platform: string) {
-  switch (platform) {
+  switch (platform.toLowerCase()) {
     case 'android': return 'bg-green-100 dark:bg-green-900'
     case 'ios': return 'bg-blue-100 dark:bg-blue-900'
     case 'web': return 'bg-purple-100 dark:bg-purple-900'
@@ -191,7 +187,7 @@ function getPlatformBg(platform: string) {
 }
 
 function getPlatformText(platform: string) {
-  switch (platform) {
+  switch (platform.toLowerCase()) {
     case 'android': return 'text-green-600'
     case 'ios': return 'text-blue-600'
     case 'web': return 'text-purple-600'
@@ -205,11 +201,6 @@ function formatDate(date: Date) {
     'minute',
   )
 }
-
-// Load data on mount
-onMounted(() => {
-  loadRecentDevices()
-})
 </script>
 
 <template>
@@ -402,12 +393,12 @@ onMounted(() => {
                   {{ device.platform }} • {{ device.userId || 'Anonymous' }}
                 </p>
                 <p class="text-xs text-muted-foreground">
-                  Registered {{ formatDate(device.createdAt) }}
+                  Registered {{ formatDate(new Date(device.createdAt)) }}
                 </p>
               </div>
             </div>
             <div class="flex items-center space-x-2">
-              <Badge :variant="device.status === 'active' ? 'default' : 'secondary'">
+              <Badge :variant="device.status === 'ACTIVE' ? 'default' : 'secondary'">
                 {{ device.status }}
               </Badge>
               <Button variant="outline" size="sm" @click="sendTestToDevice(device)">

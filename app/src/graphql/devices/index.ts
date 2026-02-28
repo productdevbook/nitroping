@@ -5,6 +5,20 @@ import { ref } from 'vue'
 import { $sdk } from '../default/ofetch'
 
 // Device queries
+export function useRecentDevices(limit = 10) {
+  return useQuery({
+    key: () => ['devices', 'recent'],
+    query: async () => {
+      const result = await $sdk.devices({})
+      const all = result.data?.devices || []
+      return all
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, limit)
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  })
+}
+
 export function useDevices(appId: Ref<string | null> | string | null) {
   const appIdValue = ref(appId)
 

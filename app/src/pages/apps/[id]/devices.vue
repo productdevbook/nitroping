@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DevicePlatform } from '#graphql/client'
+import { usePush } from 'notivue'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import Icon from '~/components/common/Icon.vue'
@@ -11,24 +12,29 @@ import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/components/ui/table'
-import { useApp, useDevices, useRegisterDevice } from '~/graphql'
+import { useApp, useDeleteDevice, useDevices, useRegisterDevice } from '~/graphql'
 
 const route = useRoute()
 const appId = computed(() => route.params.id as string)
+
+const push = usePush()
 
 // API queries
 const { data: appData } = useApp(appId)
 const app = computed(() => appData.value)
 
-const { data: devicesData, isLoading: devicesLoading } = useDevices(appId)
+const { data: devicesData, isLoading: devicesLoading, refetch: refetchDevices } = useDevices(appId)
 const devices = computed(() => devicesData.value || [])
 
 const { mutateAsync: registerDeviceMutation, isLoading: isRegisteringDevice } = useRegisterDevice()
+const { mutateAsync: deleteDeviceMutation, isLoading: isDeletingDevice } = useDeleteDevice()
 
 // Reactive data
 const searchQuery = ref('')
 const selectedPlatform = ref('all')
 const showRegisterDevice = ref(false)
+const showDeleteConfirm = ref(false)
+const deviceToDelete = ref<string | null>(null)
 const deviceForm = ref({
   token: '',
   platform: 'WEB',
@@ -405,20 +411,35 @@ async function registerDevice() {
 
     showRegisterDevice.value = false
     deviceForm.value = { token: '', platform: 'WEB', userId: '' }
+    push.success({ title: 'Device registered successfully' })
   }
   catch (error) {
-    console.error('Error registering device:', error)
+    push.error({ title: 'Failed to register device', message: error instanceof Error ? error.message : 'Unknown error' })
   }
 }
 
 function deleteDevice(deviceId: string) {
-  // TODO: Implement device deletion
-  console.log('Delete device:', deviceId)
+  deviceToDelete.value = deviceId
+  showDeleteConfirm.value = true
+}
+
+async function confirmDeleteDevice() {
+  if (!deviceToDelete.value)
+    return
+
+  try {
+    await deleteDeviceMutation(deviceToDelete.value)
+    push.success({ title: 'Device deleted successfully' })
+    showDeleteConfirm.value = false
+    deviceToDelete.value = null
+  }
+  catch (error) {
+    push.error({ title: 'Failed to delete device', message: error instanceof Error ? error.message : 'Unknown error' })
+  }
 }
 
 function refreshDevices() {
-  // TODO: Refresh devices list
-  console.log('Refresh devices')
+  refetchDevices()
 }
 </script>
 
@@ -780,6 +801,25 @@ function refreshDevices() {
           <Button :disabled="isRegisteringDevice || !deviceForm.token" @click="registerDevice">
             <Icon v-if="isRegisteringDevice" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
             Register Device
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <Dialog v-model:open="showDeleteConfirm">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete Device</DialogTitle>
+          <DialogDescription>Are you sure you want to delete this device? This action cannot be undone.</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="showDeleteConfirm = false">
+            Cancel
+          </Button>
+          <Button variant="destructive" :disabled="isDeletingDevice" @click="confirmDeleteDevice">
+            <Icon v-if="isDeletingDevice" name="lucide:loader-2" class="mr-2 size-4 animate-spin" />
+            Delete Device
           </Button>
         </DialogFooter>
       </DialogContent>
