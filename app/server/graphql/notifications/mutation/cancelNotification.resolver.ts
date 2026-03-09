@@ -24,7 +24,7 @@ export const cancelNotificationMutation = defineMutation({
       }
 
       // Only scheduled or pending notifications can be cancelled
-      if (!['scheduled', 'pending'].includes(notification[0].status)) {
+      if (!['SCHEDULED', 'PENDING'].includes(notification[0].status)) {
         throw new HTTPError({
           status: 400,
           message: 'Only scheduled or pending notifications can be cancelled',

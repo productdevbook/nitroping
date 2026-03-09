@@ -1,8 +1,11 @@
 enum NotificationStatus {
   PENDING
+  QUEUED
+  PROCESSING
   SENT
   DELIVERED
   FAILED
+  PARTIAL
   SCHEDULED
 }
 
@@ -26,6 +29,9 @@ type Notification {
   sound: String
   badge: Int
   status: NotificationStatus!
+  channelType: ChannelType
+  channelId: ID
+  contactIds: JSON
   
   # Targeting
   targetDevices: JSON # Array of device IDs

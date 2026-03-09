@@ -10,7 +10,16 @@ export const categoryEnum = pgEnum('category', [
 
 export const platformEnum = pgEnum('platform', ['IOS', 'ANDROID', 'WEB'])
 
-export const notificationStatusEnum = pgEnum('notification_status', ['PENDING', 'SENT', 'DELIVERED', 'FAILED', 'SCHEDULED'])
+export const notificationStatusEnum = pgEnum('notification_status', [
+  'PENDING',
+  'QUEUED',
+  'PROCESSING',
+  'SENT',
+  'DELIVERED',
+  'FAILED',
+  'PARTIAL',
+  'SCHEDULED',
+])
 
 export const deviceStatusEnum = pgEnum('device_status', ['ACTIVE', 'INACTIVE', 'EXPIRED'])
 
@@ -33,6 +42,7 @@ export const hookEventEnum = pgEnum('hookEvent', [
   'NOTIFICATION_SENT',
   'NOTIFICATION_DELIVERED',
   'NOTIFICATION_FAILED',
+  'NOTIFICATION_OPENED',
   'NOTIFICATION_CLICKED',
   'WORKFLOW_COMPLETED',
   'WORKFLOW_FAILED',

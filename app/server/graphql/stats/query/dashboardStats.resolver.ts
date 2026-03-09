@@ -1,6 +1,6 @@
 import * as tables from '#server/database/schema'
 import { useDatabase } from '#server/utils/useDatabase'
-import { count, eq, gte, sql } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
 
 export const statsQuery = defineQuery({
@@ -12,31 +12,27 @@ export const statsQuery = defineQuery({
       yesterday.setDate(yesterday.getDate() - 1)
       const yesterdayIso = yesterday.toISOString()
 
-      // Total apps
       const totalAppsResult = await db
-        .select({ count: count() })
+        .select({ count: sql<number>`count(*)` })
         .from(tables.app)
 
-      // Active devices
       const activeDevicesResult = await db
-        .select({ count: count() })
+        .select({ count: sql<number>`count(*)` })
         .from(tables.device)
-        .where(eq(tables.device.status, 'ACTIVE'))
+        .where(sql`${tables.device.status} = 'ACTIVE'`)
 
-      // Notifications sent in last 24h
       const notificationsSentResult = await db
-        .select({ count: count() })
+        .select({ count: sql<number>`count(*)` })
         .from(tables.notification)
-        .where(gte(tables.notification.createdAt, yesterdayIso))
+        .where(sql`${tables.notification.createdAt} >= ${yesterdayIso}`)
 
-      // Calculate delivery rate
       const deliveryRateResult = await db
         .select({
           delivered: sql<number>`count(case when ${tables.deliveryLog.status} = 'DELIVERED' then 1 end)`,
-          total: count(),
+          total: sql<number>`count(*)`,
         })
         .from(tables.deliveryLog)
-        .where(gte(tables.deliveryLog.createdAt, yesterdayIso))
+        .where(sql`${tables.deliveryLog.createdAt} >= ${yesterdayIso}`)
 
       const deliveryRate = (deliveryRateResult[0]?.total ?? 0) > 0
         ? (deliveryRateResult[0]!.delivered / deliveryRateResult[0]!.total) * 100

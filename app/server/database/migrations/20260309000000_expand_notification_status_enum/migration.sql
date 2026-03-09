@@ -1,0 +1,3 @@
+ALTER TYPE "notification_status" ADD VALUE IF NOT EXISTS 'QUEUED';
+ALTER TYPE "notification_status" ADD VALUE IF NOT EXISTS 'PROCESSING';
+ALTER TYPE "notification_status" ADD VALUE IF NOT EXISTS 'PARTIAL';

@@ -1,15 +1,21 @@
-import { and, eq, inArray, lte } from 'drizzle-orm'
+import { and, eq, lte } from 'drizzle-orm'
 import { definePlugin } from 'nitro'
 import { getDatabase } from '../database/connection'
-import { device, notification } from '../database/schema'
-import { addSendNotificationJob } from '../queues/notification.queue'
+import { notification } from '../database/schema'
+import { addFanoutNotificationJob } from '../queues/notification.queue'
 
-const SCHEDULER_INTERVAL = 60000 // 1 minute
-const BATCH_SIZE = 100
+const SCHEDULER_INTERVAL = Number.parseInt(process.env.SCHEDULER_INTERVAL_MS || '5000')
+const BATCH_SIZE = Number.parseInt(process.env.SCHEDULER_BATCH_SIZE || '500')
 
 let schedulerInterval: ReturnType<typeof setInterval> | null = null
+let isSchedulerRunning = false
 
 async function processScheduledNotifications() {
+  if (isSchedulerRunning) {
+    return
+  }
+
+  isSchedulerRunning = true
   const db = getDatabase()
 
   try {
@@ -23,6 +29,7 @@ async function processScheduledNotifications() {
           lte(notification.scheduledAt, new Date().toISOString()),
         ),
       )
+      .orderBy(notification.scheduledAt, notification.id)
       .limit(BATCH_SIZE)
 
     if (dueNotifications.length === 0) {
@@ -33,98 +40,51 @@ async function processScheduledNotifications() {
 
     for (const notif of dueNotifications) {
       try {
-        // Mark as PENDING to prevent duplicate processing
-        await db
+        const now = new Date().toISOString()
+        const claimedRows = await db
           .update(notification)
-          .set({ status: 'PENDING', updatedAt: new Date().toISOString() })
-          .where(eq(notification.id, notif.id))
+          .set({ status: 'PENDING', updatedAt: now })
+          .where(and(eq(notification.id, notif.id), eq(notification.status, 'SCHEDULED')))
+          .returning({ id: notification.id })
 
-        // Get target devices
-        let targetDevices = []
-
-        if (notif.targetDevices && (notif.targetDevices as string[]).length > 0) {
-          // Specific devices
-          targetDevices = await db
-            .select()
-            .from(device)
-            .where(inArray(device.token, notif.targetDevices as string[]))
-        }
-        else {
-          // All devices for app (optionally filtered by platform)
-          const whereConditions = [eq(device.appId, notif.appId)]
-
-          if (notif.platforms && (notif.platforms as string[]).length > 0) {
-            whereConditions.push(inArray(device.platform, notif.platforms as any))
-          }
-
-          targetDevices = await db
-            .select()
-            .from(device)
-            .where(and(...whereConditions))
-        }
-
-        // Update target count
-        await db
-          .update(notification)
-          .set({ totalTargets: targetDevices.length })
-          .where(eq(notification.id, notif.id))
-
-        if (targetDevices.length === 0) {
-          // No devices to send to, mark as sent
-          await db
-            .update(notification)
-            .set({
-              status: 'SENT',
-              sentAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            })
-            .where(eq(notification.id, notif.id))
+        if (!claimedRows[0]) {
           continue
         }
 
-        // Queue jobs for each device
-        for (const dev of targetDevices) {
-          await addSendNotificationJob({
-            deliveryMode: 'device',
-            notificationId: notif.id,
-            deviceId: dev.id,
-            appId: notif.appId,
-            platform: dev.platform.toLowerCase() as 'ios' | 'android' | 'web',
-            token: dev.token,
-            webPushP256dh: dev.webPushP256dh || undefined,
-            webPushAuth: dev.webPushAuth || undefined,
-            payload: {
-              title: notif.title,
-              body: notif.body,
-              data: notif.data as Record<string, any> | undefined,
-              badge: notif.badge || undefined,
-              sound: notif.sound || undefined,
-              clickAction: notif.clickAction || undefined,
-              imageUrl: notif.imageUrl || undefined,
-            },
-          })
-        }
+        await addFanoutNotificationJob({
+          notificationId: notif.id,
+          appId: notif.appId,
+          channelType: notif.channelType || undefined,
+          channelId: notif.channelId || undefined,
+          contactIds: (notif.contactIds as string[] | null) || undefined,
+          targetDevices: (notif.targetDevices as string[] | null) || undefined,
+          platforms: (notif.platforms as string[] | null) || undefined,
+          payload: {
+            title: notif.title,
+            body: notif.body,
+            data: notif.data as Record<string, any> | undefined,
+            badge: notif.badge || undefined,
+            sound: notif.sound || undefined,
+            clickAction: notif.clickAction || undefined,
+            imageUrl: notif.imageUrl || undefined,
+          },
+        })
 
-        // Update status to SENT
         await db
           .update(notification)
           .set({
-            status: 'SENT',
-            sentAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            status: 'QUEUED',
+            updatedAt: now,
           })
           .where(eq(notification.id, notif.id))
-
-        console.log(`[Scheduler] Queued ${targetDevices.length} jobs for notification ${notif.id}`)
       }
       catch (error) {
         console.error(`[Scheduler] Error processing notification ${notif.id}:`, error)
 
-        // Mark as failed
         await db
           .update(notification)
           .set({
-            status: 'FAILED',
+            status: 'SCHEDULED',
             updatedAt: new Date().toISOString(),
           })
           .where(eq(notification.id, notif.id))
@@ -133,6 +93,9 @@ async function processScheduledNotifications() {
   }
   catch (error) {
     console.error('[Scheduler] Error in processScheduledNotifications:', error)
+  }
+  finally {
+    isSchedulerRunning = false
   }
 }
 
