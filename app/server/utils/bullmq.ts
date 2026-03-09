@@ -34,7 +34,6 @@ export function useQueue<T = any>(
       },
     })
     queueMap.set(name, queue)
-    console.log(`[Queue:${name}] Created`)
   }
   return queueMap.get(name) as Queue<T>
 }
@@ -51,15 +50,12 @@ export function useWorker<T = any, R = any>(
       connection: createRedisConnection(),
     })
 
-    worker.on('ready', () => console.log(`[Worker:${name}] Ready — listening for jobs`))
-    worker.on('active', job => console.log(`[Worker:${name}] Job ${job.id} active`))
-    worker.on('completed', job => console.log(`[Worker:${name}] Job ${job.id} completed`))
+    worker.on('ready', () => console.log(`[Worker:${name}] Ready`))
     worker.on('failed', (job, err) => console.error(`[Worker:${name}] Job ${job?.id} failed:`, err.message))
     worker.on('stalled', jobId => console.warn(`[Worker:${name}] Job ${jobId} stalled — was active when process died`))
     worker.on('error', err => console.error(`[Worker:${name}] Error:`, err.message))
 
     workerMap.set(name, worker)
-    console.log(`[Worker:${name}] Started`)
   }
   return workerMap.get(name) as Worker<T, R>
 }

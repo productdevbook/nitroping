@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto'
 import { getDatabase } from '#server/database/connection'
 import * as tables from '#server/database/schema'
+import { addDispatchWebhookJob } from '#server/queues/webhook.queue'
 import { decryptSensitiveData, isDataEncrypted } from '#server/utils/crypto'
 import { and, eq } from 'drizzle-orm'
 
@@ -22,6 +23,20 @@ export async function dispatchHooks(
   event: HookEvent,
   payload: Record<string, unknown>,
 ): Promise<void> {
+  await addDispatchWebhookJob({
+    appId,
+    event,
+    payload,
+    occurredAt: new Date().toISOString(),
+  })
+}
+
+export async function deliverHooksForEvent(
+  appId: string,
+  event: HookEvent,
+  payload: Record<string, unknown>,
+  occurredAt: string = new Date().toISOString(),
+): Promise<void> {
   const db = getDatabase()
 
   const hooks = await db
@@ -38,7 +53,7 @@ export async function dispatchHooks(
     return
   }
 
-  const body = JSON.stringify({ event, appId, timestamp: new Date().toISOString(), payload })
+  const body = JSON.stringify({ event, appId, timestamp: occurredAt, payload })
 
   await Promise.allSettled(
     matchingHooks.map(h => deliverHook(h.url, h.secret, body)),

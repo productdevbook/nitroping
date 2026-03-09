@@ -294,6 +294,7 @@ export type HookEvent =
   | 'NOTIFICATION_SENT'
   | 'NOTIFICATION_DELIVERED'
   | 'NOTIFICATION_FAILED'
+  | 'NOTIFICATION_OPENED'
   | 'NOTIFICATION_CLICKED'
   | 'WORKFLOW_COMPLETED'
   | 'WORKFLOW_FAILED';
@@ -550,6 +551,9 @@ export type Notification = {
   sound?: Maybe<Scalars['String']['output']>;
   badge?: Maybe<Scalars['Int']['output']>;
   status: NotificationStatus;
+  channelType?: Maybe<ChannelType>;
+  channelId?: Maybe<Scalars['ID']['output']>;
+  contactIds?: Maybe<Scalars['JSON']['output']>;
   targetDevices?: Maybe<Scalars['JSON']['output']>;
   platforms?: Maybe<Scalars['JSON']['output']>;
   scheduledAt?: Maybe<Scalars['Timestamp']['output']>;
@@ -580,9 +584,12 @@ export type NotificationAnalytics = {
 
 export type NotificationStatus =
   | 'PENDING'
+  | 'QUEUED'
+  | 'PROCESSING'
   | 'SENT'
   | 'DELIVERED'
   | 'FAILED'
+  | 'PARTIAL'
   | 'SCHEDULED';
 
 export type PageInfo = {

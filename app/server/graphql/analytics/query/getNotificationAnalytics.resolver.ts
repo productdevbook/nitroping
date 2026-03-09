@@ -1,6 +1,7 @@
 import * as tables from '#server/database/schema'
+import { aggregateNotificationMetrics } from '#server/utils/notificationTargeting'
 import { useDatabase } from '#server/utils/useDatabase'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { defineQuery } from 'nitro-graphql/define'
 import { HTTPError } from 'nitro/h3'
 
@@ -26,68 +27,35 @@ export const getNotificationAnalyticsQuery = defineQuery({
 
         const notif = notification[0]!
 
-        // Get delivery logs for this notification
-        const deliveryLogs = await db
-          .select()
+        const metrics = await aggregateNotificationMetrics(db, notificationId)
+
+        const platformBreakdownRows = await db
+          .select({
+            platform: sql<string>`coalesce(${tables.deliveryLog.platform}, 'unknown')`,
+            sent: sql<number>`count(*)`,
+            delivered: sql<number>`count(*) filter (where ${tables.deliveryLog.deliveredAt} is not null)`,
+            opened: sql<number>`count(*) filter (where ${tables.deliveryLog.openedAt} is not null)`,
+            clicked: sql<number>`count(*) filter (where ${tables.deliveryLog.clickedAt} is not null)`,
+            avgDeliveryTime: sql<number | null>`avg(extract(epoch from (${tables.deliveryLog.deliveredAt} - ${tables.deliveryLog.sentAt})))`,
+            avgOpenTime: sql<number | null>`avg(extract(epoch from (${tables.deliveryLog.openedAt} - ${tables.deliveryLog.deliveredAt})))`,
+          })
           .from(tables.deliveryLog)
           .where(eq(tables.deliveryLog.notificationId, notificationId))
+          .groupBy(sql`coalesce(${tables.deliveryLog.platform}, 'unknown')`)
 
-        const sentCount = notif.totalSent
-        const deliveredCount = deliveryLogs.filter((log: any) => log.deliveredAt !== null).length
-        const openedCount = deliveryLogs.filter((log: any) => log.openedAt !== null).length
-        const clickedCount = deliveryLogs.filter((log: any) => log.clickedAt !== null).length
+        const sentCount = notif.totalSent ?? metrics.sentCount
+        const deliveredCount = metrics.deliveredCount
+        const openedCount = metrics.openedCount
+        const clickedCount = metrics.clickedCount
 
-        // Calculate platform breakdown
-        const platformStats = new Map<string, any>()
-
-        deliveryLogs.forEach((log: any) => {
-          const platform = log.platform || 'unknown'
-          if (!platformStats.has(platform)) {
-            platformStats.set(platform, {
-              platform,
-              sent: 0,
-              delivered: 0,
-              opened: 0,
-              clicked: 0,
-              deliveryTimes: [],
-              openTimes: [],
-            })
-          }
-
-          const stats = platformStats.get(platform)
-          stats.sent++
-
-          if (log.deliveredAt) {
-            stats.delivered++
-            if (log.sentAt) {
-              stats.deliveryTimes.push(new Date(log.deliveredAt).getTime() - new Date(log.sentAt).getTime())
-            }
-          }
-
-          if (log.openedAt) {
-            stats.opened++
-            if (log.deliveredAt) {
-              stats.openTimes.push(new Date(log.openedAt).getTime() - new Date(log.deliveredAt).getTime())
-            }
-          }
-
-          if (log.clickedAt) {
-            stats.clicked++
-          }
-        })
-
-        const platformBreakdown = Array.from(platformStats.values()).map(stats => ({
-          platform: stats.platform,
-          sent: stats.sent,
-          delivered: stats.delivered,
-          opened: stats.opened,
-          clicked: stats.clicked,
-          avgDeliveryTime: stats.deliveryTimes.length > 0
-            ? stats.deliveryTimes.reduce((a: number, b: number) => a + b, 0) / stats.deliveryTimes.length / 1000
-            : null,
-          avgOpenTime: stats.openTimes.length > 0
-            ? stats.openTimes.reduce((a: number, b: number) => a + b, 0) / stats.openTimes.length / 1000
-            : null,
+        const platformBreakdown = platformBreakdownRows.map(row => ({
+          platform: row.platform,
+          sent: Number(row.sent ?? 0),
+          delivered: Number(row.delivered ?? 0),
+          opened: Number(row.opened ?? 0),
+          clicked: Number(row.clicked ?? 0),
+          avgDeliveryTime: row.avgDeliveryTime === null ? null : Number(row.avgDeliveryTime),
+          avgOpenTime: row.avgOpenTime === null ? null : Number(row.avgOpenTime),
         }))
 
         return {

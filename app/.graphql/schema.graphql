@@ -273,6 +273,7 @@ enum HookEvent {
   NOTIFICATION_SENT
   NOTIFICATION_DELIVERED
   NOTIFICATION_FAILED
+  NOTIFICATION_OPENED
   NOTIFICATION_CLICKED
   WORKFLOW_COMPLETED
   WORKFLOW_FAILED
@@ -344,6 +345,9 @@ type Notification {
   sound: String
   badge: Int
   status: NotificationStatus!
+  channelType: ChannelType
+  channelId: ID
+  contactIds: JSON
   targetDevices: JSON
   platforms: JSON
   scheduledAt: Timestamp
@@ -373,9 +377,12 @@ type NotificationAnalytics {
 
 enum NotificationStatus {
   PENDING
+  QUEUED
+  PROCESSING
   SENT
   DELIVERED
   FAILED
+  PARTIAL
   SCHEDULED
 }
 

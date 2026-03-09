@@ -8,7 +8,8 @@ let db: ReturnType<typeof drizzle<typeof schema>> | undefined
 export function getDatabase() {
   if (!db) {
     const connectionString = process.env.DATABASE_URL || 'postgresql://localhost:5432/nitroping'
-    pgClient = postgres(connectionString, { max: 3, idle_timeout: 30 })
+    const maxConnections = Number.parseInt(process.env.DATABASE_POOL_MAX || '20')
+    pgClient = postgres(connectionString, { max: maxConnections, idle_timeout: 30 })
     db = drizzle({ client: pgClient, schema })
   }
   return db

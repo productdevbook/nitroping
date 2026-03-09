@@ -2,7 +2,7 @@ import { index, integer, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { customJsonb, customTimestamp, uuidv7Generator } from '../shared'
 import { app } from './app'
-import { notificationStatusEnum } from './enums'
+import { channelTypeEnum, notificationStatusEnum } from './enums'
 
 export const notification = pgTable('notification', {
   id: uuid().primaryKey().$defaultFn(uuidv7Generator),
@@ -16,6 +16,9 @@ export const notification = pgTable('notification', {
   icon: text(),
   image: text(),
   imageUrl: text(),
+  channelType: channelTypeEnum(),
+  channelId: uuid(),
+  contactIds: customJsonb(),
   targetDevices: customJsonb(),
   platforms: customJsonb(),
   scheduledAt: customTimestamp(),

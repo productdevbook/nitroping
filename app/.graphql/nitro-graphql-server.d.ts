@@ -355,6 +355,7 @@ export type HookEvent =
   | 'NOTIFICATION_SENT'
   | 'NOTIFICATION_DELIVERED'
   | 'NOTIFICATION_FAILED'
+  | 'NOTIFICATION_OPENED'
   | 'NOTIFICATION_CLICKED'
   | 'WORKFLOW_COMPLETED'
   | 'WORKFLOW_FAILED';
@@ -611,6 +612,9 @@ export interface Notification {
   sound?: Maybe<Scalars['String']['output']>;
   badge?: Maybe<Scalars['Int']['output']>;
   status: NotificationStatus;
+  channelType?: Maybe<ChannelType>;
+  channelId?: Maybe<Scalars['ID']['output']>;
+  contactIds?: Maybe<Scalars['JSON']['output']>;
   targetDevices?: Maybe<Scalars['JSON']['output']>;
   platforms?: Maybe<Scalars['JSON']['output']>;
   scheduledAt?: Maybe<Scalars['Timestamp']['output']>;
@@ -641,9 +645,12 @@ export interface NotificationAnalytics {
 
 export type NotificationStatus =
   | 'PENDING'
+  | 'QUEUED'
+  | 'PROCESSING'
   | 'SENT'
   | 'DELIVERED'
   | 'FAILED'
+  | 'PARTIAL'
   | 'SCHEDULED';
 
 export interface PageInfo {
@@ -1520,6 +1527,9 @@ export type NotificationResolvers<ContextType = H3Event, ParentType extends Reso
   sound?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   badge?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['NotificationStatus'], ParentType, ContextType>;
+  channelType?: Resolver<Maybe<ResolversTypes['ChannelType']>, ParentType, ContextType>;
+  channelId?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
+  contactIds?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
   targetDevices?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
   platforms?: Resolver<Maybe<ResolversTypes['JSON']>, ParentType, ContextType>;
   scheduledAt?: Resolver<Maybe<ResolversTypes['Timestamp']>, ParentType, ContextType>;

@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 import { HTTPError } from 'nitro/h3'
 import { getDatabase } from '../database/connection'
 import { apiKey, app } from '../database/schema'
+import { ApiKeyCache } from './apiKeyCache'
 
 const JWT_SECRET = process.env.JWT_SECRET
 
@@ -17,6 +18,9 @@ if (!JWT_SECRET) {
 }
 
 const EFFECTIVE_JWT_SECRET = JWT_SECRET ?? 'dev-only-insecure-jwt-secret-do-not-use-in-production'
+const API_KEY_CACHE_TTL_MS = Number.parseInt(process.env.API_KEY_CACHE_TTL_MS || '30000')
+const API_KEY_USAGE_WRITE_INTERVAL_MS = Number.parseInt(process.env.API_KEY_USAGE_WRITE_INTERVAL_MS || '300000')
+const apiKeyCache = new ApiKeyCache(API_KEY_CACHE_TTL_MS, API_KEY_USAGE_WRITE_INTERVAL_MS)
 
 export interface JWTPayload {
   appId: string
@@ -44,6 +48,12 @@ export function generateApiKey(): string {
 
 export async function validateApiKey(apiKeyValue: string) {
   const db = getDatabase()
+  const cached = apiKeyCache.get(apiKeyValue)
+
+  if (cached) {
+    scheduleApiKeyUsageUpdate(cached.id)
+    return cached
+  }
 
   const result = await db
     .select({
@@ -77,18 +87,17 @@ export async function validateApiKey(apiKeyValue: string) {
     return null
   }
 
-  // Update last used timestamp
-  await db
-    .update(apiKey)
-    .set({ lastUsedAt: new Date().toISOString() })
-    .where(eq(apiKey.id, keyData.id))
-
-  return {
+  const value = {
     id: keyData.id,
     appId: keyData.appId,
     permissions: keyData.permissions as string[] || [],
     appName: keyData.appName,
   }
+
+  apiKeyCache.set(apiKeyValue, value)
+  scheduleApiKeyUsageUpdate(keyData.id)
+
+  return value
 }
 
 export async function verifyApiKey(apiKeyValue: string) {
@@ -161,4 +170,23 @@ export async function extractAuthFromEvent(event: H3Event) {
       message: 'Invalid authorization format. Use "Bearer <jwt>" or "ApiKey <key>"',
     })
   }
+}
+
+function scheduleApiKeyUsageUpdate(apiKeyId: string) {
+  if (!apiKeyCache.shouldWriteUsage(apiKeyId)) {
+    return
+  }
+
+  const db = getDatabase()
+  void db
+    .update(apiKey)
+    .set({ lastUsedAt: new Date().toISOString() })
+    .where(eq(apiKey.id, apiKeyId))
+    .catch((error) => {
+      console.error('[Auth] Failed to update API key lastUsedAt:', error)
+    })
+}
+
+export function clearApiKeyCacheForTests() {
+  apiKeyCache.clear()
 }
