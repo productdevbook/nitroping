@@ -73,7 +73,7 @@ export async function addSendNotificationJobs(data: SendNotificationJobData[]) {
 export async function addFanoutNotificationJob(data: FanoutNotificationJobData) {
   const queue = getNotificationQueue()
   return queue.add('fanout-notification', data, {
-    jobId: `fanout:${data.notificationId}`,
+    jobId: `fanout-${data.notificationId}`,
     attempts: 5,
     backoff: {
       type: 'exponential',
