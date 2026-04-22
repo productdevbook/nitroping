@@ -14,7 +14,7 @@ describe('getSendNotificationJobId', () => {
         title: 'Hello',
         body: 'World',
       },
-    })).toBe('notification:n1:device:d1')
+    })).toBe('notification-n1-device-d1')
   })
 
   it('builds deterministic ids for channel jobs', () => {
@@ -29,6 +29,21 @@ describe('getSendNotificationJobId', () => {
         title: 'Hello',
         body: 'World',
       },
-    })).toBe('notification:n1:channel:c1:foo@example.com')
+    })).toBe('notification-n1-channel-c1-foo@example.com')
+  })
+
+  it('sanitizes colons in channel "to" field (e.g. Web Push endpoints)', () => {
+    expect(getSendNotificationJobId({
+      deliveryMode: 'channel',
+      notificationId: 'n1',
+      appId: 'a1',
+      channelId: 'c1',
+      to: 'https://fcm.googleapis.com/fcm/send/abc',
+      channelType: 'PUSH',
+      payload: {
+        title: 'Hello',
+        body: 'World',
+      },
+    })).not.toContain(':')
   })
 })
