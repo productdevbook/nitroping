@@ -1,11 +1,14 @@
 package com.nitroping.sdk
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -32,9 +35,13 @@ fun NitroPingFeedback(
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var categoryId by remember { mutableStateOf("") }
+    var categoryMenuOpen by remember { mutableStateOf(false) }
+    var publicConfig by remember { mutableStateOf<NitroPingPublicConfig?>(null) }
     var status by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    LaunchedEffect(client) { publicConfig = runCatching { client.fetchPublicConfig() }.getOrNull() }
 
     Card(modifier = modifier) {
         Column(
@@ -56,6 +63,20 @@ fun NitroPingFeedback(
                 label = { Text("Description") },
                 minLines = 4,
             )
+            if (!publicConfig?.categories.isNullOrEmpty()) {
+                Box {
+                    Button(onClick = { categoryMenuOpen = true }) {
+                        val selected = publicConfig?.categories?.firstOrNull { it.id == categoryId }?.name
+                        Text(selected ?: "Select category")
+                    }
+                    DropdownMenu(expanded = categoryMenuOpen, onDismissRequest = { categoryMenuOpen = false }) {
+                        DropdownMenuItem(text = { Text("No category") }, onClick = { categoryId = ""; categoryMenuOpen = false })
+                        publicConfig?.categories.orEmpty().forEach { category ->
+                            DropdownMenuItem(text = { Text(category.name) }, onClick = { categoryId = category.id; categoryMenuOpen = false })
+                        }
+                    }
+                }
+            }
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -74,6 +95,7 @@ fun NitroPingFeedback(
                                     type = type,
                                     title = title.trim(),
                                     body = description.trim(),
+                                    categoryId = categoryId.ifEmpty { null },
                                     email = email.trim().ifEmpty { null },
                                 ),
                             )

@@ -11,6 +11,8 @@ public struct NitroPingFeedbackForm: View {
     @State private var title = ""
     @State private var description = ""
     @State private var email = ""
+    @State private var categoryId = ""
+    @State private var publicConfig: NitroPingPublicConfig?
     @State private var status = ""
     @State private var sending = false
 
@@ -25,6 +27,14 @@ public struct NitroPingFeedbackForm: View {
                 TextField("Title", text: $title)
                 TextEditor(text: $description)
                     .frame(minHeight: 100)
+                if let categories = publicConfig?.categories, !categories.isEmpty {
+                    Picker("Category", selection: $categoryId) {
+                        Text("No category").tag("")
+                        ForEach(categories, id: \.id) { category in
+                            Text(category.name).tag(category.id)
+                        }
+                    }
+                }
                 TextField("Email (optional)", text: $email)
                 Button(sending ? "Sending…" : "Submit feedback") {
                     submit()
@@ -32,6 +42,9 @@ public struct NitroPingFeedbackForm: View {
                 .disabled(sending || title.trimmingCharacters(in: .whitespacesAndNewlines).count < 3 || description.trimmingCharacters(in: .whitespacesAndNewlines).count < 3)
                 if !status.isEmpty { Text(status).foregroundStyle(.secondary) }
             }
+        }
+        .task {
+            publicConfig = try? await client.fetchPublicConfig()
         }
     }
 
@@ -41,6 +54,7 @@ public struct NitroPingFeedbackForm: View {
             type: type,
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             body: description.trimmingCharacters(in: .whitespacesAndNewlines),
+            categoryId: categoryId.isEmpty ? nil : categoryId,
             email: email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : email.trimmingCharacters(in: .whitespacesAndNewlines)
         )
         Task {
