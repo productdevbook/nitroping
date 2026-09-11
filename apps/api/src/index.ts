@@ -1302,7 +1302,7 @@ const sendTransactionalEmail = async (
   });
 };
 
-const claimEmailDelivery = async (
+export const claimEmailDelivery = async (
   env: Env,
   event: { eventId?: string; organizationId?: string; projectId?: string },
 ): Promise<boolean> => {
