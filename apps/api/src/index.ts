@@ -357,6 +357,84 @@ export default {
         const subscription = await env.DB.prepare("SELECT plan, status, provider_customer_id AS providerCustomerId, provider_subscription_id AS providerSubscriptionId, current_period_end AS currentPeriodEnd, created_at AS createdAt, updated_at AS updatedAt FROM subscriptions WHERE organization_id = ?").bind(context.organizationId).first();
         return jsonResponse(subscription ?? { plan: "free", status: "active" }, { headers: cors });
       }
+      const categoriesDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/categories$/);
+      if (categoriesDashboardMatch && ["GET", "POST"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, categoriesDashboardMatch[1], rid);
+        if (context instanceof Response) return context;
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT id, name, slug, created_at AS createdAt FROM categories WHERE organization_id = ? AND project_id = ? ORDER BY name ASC").bind(context.organizationId, context.projectId).all();
+          return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+        }
+        const body = await jsonBody(request);
+        const name = typeof body.name === "string" ? body.name.trim() : "";
+        const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        if (name.length < 2 || name.length > 80 || !/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) return error("VALIDATION_ERROR", "Category name or slug is invalid", rid, 400);
+        const category = { id: id(), name, slug, createdAt: new Date().toISOString() };
+        try { await env.DB.prepare("INSERT INTO categories (id, organization_id, project_id, name, slug, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(category.id, context.organizationId, context.projectId, name, slug, category.createdAt).run(); }
+        catch { return error("CATEGORY_SLUG_TAKEN", "Category slug is already in use", rid, 409); }
+        return jsonResponse(category, { status: 201, headers: cors });
+      }
+      const roadmapDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/roadmap$/);
+      if (roadmapDashboardMatch && ["GET", "POST"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, roadmapDashboardMatch[1], rid);
+        if (context instanceof Response) return context;
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT id, title, body, status, created_at AS createdAt, updated_at AS updatedAt FROM roadmap_items WHERE organization_id = ? AND project_id = ? ORDER BY updated_at DESC").bind(context.organizationId, context.projectId).all();
+          return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+        }
+        const body = await jsonBody(request);
+        const title = typeof body.title === "string" ? body.title.trim() : "";
+        const description = typeof body.body === "string" ? body.body.trim() : "";
+        const status = typeof body.status === "string" ? body.status : "planned";
+        if (title.length < 2 || title.length > 160 || description.length > 20_000 || !["planned", "in_progress", "completed"].includes(status)) return error("VALIDATION_ERROR", "Roadmap item is invalid", rid, 400);
+        const now = new Date().toISOString();
+        const item = { id: id(), title, body: description, status, createdAt: now, updatedAt: now };
+        await env.DB.prepare("INSERT INTO roadmap_items (id, organization_id, project_id, title, body, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(item.id, context.organizationId, context.projectId, title, description, status, now, now).run();
+        return jsonResponse(item, { status: 201, headers: cors });
+      }
+      const roadmapUpdateMatch = path.match(/^\/api\/v1\/dashboard\/roadmap\/([^/]+)$/);
+      if (roadmapUpdateMatch && request.method === "PATCH") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const authError = await requireServerKey(request, env, context, rid);
+        if (authError) return authError;
+        const body = await jsonBody(request);
+        const current = await env.DB.prepare("SELECT title, body, status FROM roadmap_items WHERE id = ? AND organization_id = ? AND project_id = ?").bind(roadmapUpdateMatch[1], context.organizationId, context.projectId).first<{ title: string; body: string; status: string }>();
+        if (!current) return error("ROADMAP_NOT_FOUND", "Roadmap item was not found", rid, 404);
+        const title = body.title === undefined ? current.title : String(body.title).trim();
+        const description = body.body === undefined ? current.body : String(body.body).trim();
+        const status = body.status === undefined ? current.status : String(body.status);
+        if (title.length < 2 || title.length > 160 || description.length > 20_000 || !["planned", "in_progress", "completed"].includes(status)) return error("VALIDATION_ERROR", "Roadmap item is invalid", rid, 400);
+        const updatedAt = new Date().toISOString();
+        await env.DB.prepare("UPDATE roadmap_items SET title = ?, body = ?, status = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ?").bind(title, description, status, updatedAt, roadmapUpdateMatch[1], context.organizationId, context.projectId).run();
+        return jsonResponse({ id: roadmapUpdateMatch[1], title, body: description, status, updatedAt }, { headers: cors });
+      }
+      const changelogDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/changelog$/);
+      if (changelogDashboardMatch && ["GET", "POST"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, changelogDashboardMatch[1], rid);
+        if (context instanceof Response) return context;
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT id, title, body, published_at AS publishedAt, created_at AS createdAt, updated_at AS updatedAt FROM changelog_items WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC").bind(context.organizationId, context.projectId).all();
+          return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+        }
+        const body = await jsonBody(request);
+        const title = typeof body.title === "string" ? body.title.trim() : "";
+        const description = typeof body.body === "string" ? body.body.trim() : "";
+        const publishedAt = body.publishedAt === null ? null : typeof body.publishedAt === "string" ? body.publishedAt : new Date().toISOString();
+        if (title.length < 2 || title.length > 160 || description.length < 1 || description.length > 20_000 || (publishedAt !== null && Number.isNaN(Date.parse(publishedAt)))) return error("VALIDATION_ERROR", "Changelog item is invalid", rid, 400);
+        const now = new Date().toISOString();
+        const item = { id: id(), title, body: description, publishedAt, createdAt: now, updatedAt: now };
+        await env.DB.prepare("INSERT INTO changelog_items (id, organization_id, project_id, title, body, published_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(item.id, context.organizationId, context.projectId, title, description, publishedAt, now, now).run();
+        return jsonResponse(item, { status: 201, headers: cors });
+      }
       const match = path.match(/^\/api\/v1\/projects\/([^/]+)\/feedback(?:\/([^/]+))?$/);
       if (match && request.method === "POST" && !match[2]) {
         const input = validateInput(await request.json());
