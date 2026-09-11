@@ -44,9 +44,10 @@ fun NitroPingFeedback(
     var sending by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(client) { publicConfig = runCatching { client.fetchPublicConfig() }.getOrNull() }
-    val primaryButtonColors = publicConfig?.theme?.colors?.get("primary")?.let { value ->
-        runCatching { ButtonDefaults.buttonColors(containerColor = Color(android.graphics.Color.parseColor(value))) }.getOrNull()
-    } ?: ButtonDefaults.buttonColors()
+    val primaryColor = publicConfig?.theme?.colors?.get("primary")?.let { value ->
+        try { Color(android.graphics.Color.parseColor(value)) } catch (_: IllegalArgumentException) { null }
+    }
+    val primaryButtonColors = primaryColor?.let { ButtonDefaults.buttonColors(containerColor = it) } ?: ButtonDefaults.buttonColors()
 
     Card(modifier = modifier) {
         Column(
