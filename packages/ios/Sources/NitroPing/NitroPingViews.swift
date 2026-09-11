@@ -70,16 +70,16 @@ public struct NitroPingFollowUpView: View {
 
     public var body: some View {
         Group {
-            if let followUp {
+            if followUp != nil {
                 List {
                     Section("Feedback") {
-                        Text(followUp.feedback.title).font(.headline)
-                        Text(followUp.feedback.body)
-                        Label(followUp.feedback.status.replacingOccurrences(of: "_", with: " "), systemImage: "clock")
+                        Text(followUp!.feedback.title).font(.headline)
+                        Text(followUp!.feedback.body)
+                        Label(followUp!.feedback.status.replacingOccurrences(of: "_", with: " "), systemImage: "clock")
                     }
                     Section("Replies") {
-                        if followUp.comments.isEmpty { Text("No public replies yet.").foregroundStyle(.secondary) }
-                        ForEach(followUp.comments, id: \.id) { comment in
+                        if followUp!.comments.isEmpty { Text("No public replies yet.").foregroundStyle(.secondary) }
+                        ForEach(followUp!.comments, id: \.id) { comment in
                             VStack(alignment: .leading, spacing: 4) { Text(comment.body); Text(comment.createdAt).font(.caption).foregroundStyle(.secondary) }
                         }
                     }
