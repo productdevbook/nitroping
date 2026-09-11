@@ -222,6 +222,10 @@ const enqueueWatcherEmails = async (env: Env, feedbackId: string, subject: strin
   for (const watcher of watchers.results ?? []) await env.EVENTS.send({ type: "email.send", email: watcher.email, subject, text, html, eventId: id() });
 };
 
+const recordMetric = (env: Env, event: string, organizationId: string, projectId: string, doubles: number[] = []): void => {
+  try { env.ANALYTICS.writeDataPoint({ blobs: [event, organizationId, projectId], doubles, indexes: [event] }); } catch { /* Analytics must never break product traffic. */ }
+};
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const rid = requestId(request);
@@ -356,6 +360,20 @@ export default {
         const usage = await currentUsage(env, context.organizationId);
         return jsonResponse({ ...usage, projectId: context.projectId }, { headers: cors });
       }
+      const analyticsMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/analytics$/);
+      if (analyticsMatch && request.method === "GET") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, analyticsMatch[1], rid);
+        if (context instanceof Response) return context;
+        const [total, statuses, platforms, types] = await Promise.all([
+          env.DB.prepare("SELECT COUNT(*) AS count FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(context.organizationId, context.projectId).first<{ count: number }>(),
+          env.DB.prepare("SELECT status, COUNT(*) AS count FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL GROUP BY status ORDER BY count DESC").bind(context.organizationId, context.projectId).all(),
+          env.DB.prepare("SELECT COALESCE(platform, 'unknown') AS platform, COUNT(*) AS count FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL GROUP BY platform ORDER BY count DESC").bind(context.organizationId, context.projectId).all(),
+          env.DB.prepare("SELECT type, COUNT(*) AS count FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL GROUP BY type ORDER BY count DESC").bind(context.organizationId, context.projectId).all(),
+        ]);
+        return jsonResponse({ total: Number(total?.count ?? 0), statuses: statuses.results ?? [], platforms: platforms.results ?? [], types: types.results ?? [], generatedAt: new Date().toISOString() }, { headers: cors });
+      }
       if (path === "/api/v1/dashboard/billing" && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
@@ -465,6 +483,7 @@ export default {
         if (usage.feedbackCount >= usage.feedbackLimit) return error("PLAN_LIMIT_REACHED", `The ${usage.plan} plan has reached its monthly feedback limit`, rid, 402, { period: usage.period, limit: usage.feedbackLimit });
         const result = await Effect.runPromise(createFeedback(repo, context, input, rid));
         await env.DB.prepare("INSERT INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 1, 0) ON CONFLICT(organization_id, period) DO UPDATE SET feedback_count = feedback_count + 1").bind(context.organizationId, usage.period).run();
+        recordMetric(env, "feedback.created", context.organizationId, context.projectId, [1]);
         if (idem) await env.DB.prepare("INSERT OR IGNORE INTO idempotency_keys (organization_id, project_id, key, response_json, status_code, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(context.organizationId, context.projectId, idem, JSON.stringify(result), 201, result.createdAt).run();
         if (env.EVENTS) {
           const eventId = id();
@@ -582,6 +601,7 @@ export default {
         await env.ATTACHMENTS.put(raw.objectKey, body, { httpMetadata: { contentType: raw.contentType } });
         await env.DB.prepare("INSERT INTO attachments (id, organization_id, project_id, feedback_id, object_key, content_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(raw.attachmentId, raw.organizationId, raw.projectId, raw.feedbackId, raw.objectKey, raw.contentType, raw.size, new Date().toISOString()).run();
         await env.DB.prepare("INSERT INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 0, ?) ON CONFLICT(organization_id, period) DO UPDATE SET attachment_bytes = attachment_bytes + excluded.attachment_bytes").bind(raw.organizationId, new Date().toISOString().slice(0, 7), raw.size).run();
+        recordMetric(env, "attachment.created", raw.organizationId, raw.projectId, [raw.size]);
         await env.CACHE.delete(`upload:${uploadPut[1]}`);
         return jsonResponse({ attachmentId: raw.attachmentId, objectKey: raw.objectKey }, { status: 201, headers: cors });
       }
@@ -695,6 +715,7 @@ export default {
         const comment = { id: id(), feedbackId: replyMatch[1], body: body.body.trim(), isInternal: internal, createdAt: new Date().toISOString() };
         await env.DB.prepare("INSERT INTO feedback_comments (id, organization_id, project_id, feedback_id, body, is_internal, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(comment.id, context.organizationId, context.projectId, comment.feedbackId, comment.body, internal ? 1 : 0, comment.createdAt).run();
         if (!internal) {
+          recordMetric(env, "feedback.replied", context.organizationId, context.projectId, [1]);
           const eventId = id();
           ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, replyMatch[1], "feedback.replied", eventId));
           ctx.waitUntil(enqueueWatcherEmails(env, replyMatch[1], "New reply to your NitroPing feedback", "Your feedback received a new reply. Open your NitroPing follow-up link to read it.", "<p>Your feedback received a new reply.</p><p>Open your NitroPing follow-up link to read it.</p>"));
@@ -714,6 +735,7 @@ export default {
         if (authError) return authError;
         const result = await Effect.runPromise(changeFeedbackStatus(repo, context, statusMatch[1], body.status));
         if (!result) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        recordMetric(env, "feedback.updated", context.organizationId, context.projectId, [1]);
         const eventId = id();
         ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, result.id, "feedback.updated", eventId));
         ctx.waitUntil(enqueueWatcherEmails(env, result.id, "Your NitroPing feedback was updated", `The status of your feedback changed to ${result.status}.`, `<p>The status of your feedback changed to <strong>${result.status}</strong>.</p>`));
