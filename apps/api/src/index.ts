@@ -5689,6 +5689,23 @@ export default {
           "UPDATE attachments SET deleted_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
         ).bind(now, feedback.id, feedback.organizationId, feedback.projectId),
         env.DB.prepare(
+          "UPDATE feedback_comments SET body = '[retained data removed]', deleted_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+        ).bind(
+          now,
+          feedback.id,
+          feedback.organizationId,
+          feedback.projectId,
+        ),
+        env.DB.prepare(
+          "DELETE FROM feedback_watchers WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+        ).bind(feedback.id, feedback.organizationId, feedback.projectId),
+        env.DB.prepare(
+          "DELETE FROM magic_link_tokens WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+        ).bind(feedback.id, feedback.organizationId, feedback.projectId),
+        env.DB.prepare(
+          "DELETE FROM feedback_status_history WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+        ).bind(feedback.id, feedback.organizationId, feedback.projectId),
+        env.DB.prepare(
           "INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'delete', 'completed', ?, ?)",
         ).bind(id(), feedback.organizationId, feedback.projectId, now, now),
       ]);
