@@ -12,6 +12,15 @@ bun run check
 bun run dev:api
 ```
 
+Run the deployment configuration preflight without printing secret values:
+
+```bash
+bun run preflight
+bun run preflight -- --strict
+```
+
+The default mode reports optional integrations that are intentionally disabled. Strict mode fails on incomplete configuration and is intended for production deployment gates.
+
 API health check:
 
 ```bash

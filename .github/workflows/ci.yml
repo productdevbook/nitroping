@@ -17,6 +17,7 @@ jobs:
         with:
           bun-version: 1.4.2
       - run: bun install --frozen-lockfile
+      - run: bun run preflight
       - run: bun run check
       - run: bun run --filter @nitroping/contracts build
       - run: bun run test
