@@ -301,6 +301,7 @@ export default {
         if (accessError) return accessError;
         const context = await requireProjectServer(request, env, url, settingsMatch[1], rid);
         if (context instanceof Response) return context;
+        await env.DB.prepare("INSERT OR IGNORE INTO project_settings (project_id) VALUES (?)").bind(context.projectId).run();
         if (request.method === "GET") {
           const settings = await env.DB.prepare("SELECT theme_json AS theme, allowed_metadata_json AS allowedMetadata, retention_days AS retentionDays, origins_json AS origins FROM project_settings WHERE project_id = ?").bind(context.projectId).first<Record<string, unknown>>();
           return jsonResponse({ theme: JSON.parse(String(settings?.theme ?? "{}")), allowedMetadata: JSON.parse(String(settings?.allowedMetadata ?? "[]")), retentionDays: Number(settings?.retentionDays ?? 365), origins: JSON.parse(String(settings?.origins ?? "[]")) }, { headers: cors });
