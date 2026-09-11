@@ -1,0 +1,74 @@
+{
+  "$schema": "https://unpkg.com/wrangler@latest/config-schema.json",
+  "name": "nitroping-self-host",
+  "main": "../../apps/api/src/index.ts",
+  "compatibility_date": "2026-09-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true, "head_sampling_rate": 0.1 },
+  "assets": {
+    "directory": "../../apps/api/public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "html_handling": "none"
+  },
+  "ai": { "binding": "AI" },
+  "vectorize": [
+    {
+      "binding": "FEEDBACK_SEARCH",
+      "index_name": "REPLACE_WITH_VECTORIZE_INDEX"
+    }
+  ],
+  "send_email": [{ "name": "EMAIL" }],
+  "analytics_engine_datasets": [
+    { "binding": "ANALYTICS", "dataset": "REPLACE_WITH_ANALYTICS_DATASET" }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "REPLACE_WITH_D1_DATABASE",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ATTACHMENTS",
+      "bucket_name": "REPLACE_WITH_R2_BUCKET",
+      "jurisdiction": "eu"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "EVENT_STREAM", "class_name": "ProjectEventStream" }]
+  },
+  "exports": {
+    "ProjectEventStream": { "type": "durable-object", "storage": "sqlite" }
+  },
+  "kv_namespaces": [
+    { "binding": "CACHE", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }
+  ],
+  "queues": {
+    "producers": [
+      { "binding": "EVENTS", "queue": "REPLACE_WITH_QUEUE_NAME" }
+    ],
+    "consumers": [
+      {
+        "queue": "REPLACE_WITH_QUEUE_NAME",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5
+      }
+    ]
+  },
+  "triggers": { "crons": ["0 3 * * *"] },
+  "vars": {
+    "ENVIRONMENT": "self-hosted",
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUDIENCE": "",
+    "EMAIL_FROM": "notifications@example.com",
+    "PUBLIC_APP_URL": "https://feedback.example.com",
+    "TURNSTILE_SITE_KEY": "",
+    "CUSTOM_HOSTNAME_ZONE_ID": "",
+    "CUSTOM_HOSTNAME_ZONE_NAME": "",
+    "CUSTOM_HOSTNAME_FALLBACK_ORIGIN": ""
+  }
+}

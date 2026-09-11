@@ -3044,7 +3044,7 @@ function WidgetBuilder({
       "customFields",
       customFields.filter((field) => field.id !== id),
     );
-  const snippet = `import { NitroPing } from "@nitroping/web";\n\nNitroPing.init({\n  projectKey: "${publicKey}",\n  mode: "${mode}",\n  theme: "system",\n  colors: { primary: "${value("primary", "#7C3AED")}" },\n  fields: ${JSON.stringify(fields)},${customFields.length ? `\n  customFields: ${JSON.stringify(customFields)},` : ""}${categories.length ? `\n  categoryOptions: ${JSON.stringify(categories.map((category) => ({ id: category.id, name: category.name })))},` : ""}\n});`;
+  const snippet = `import { NitroPing } from "@nitroping/web";\n\nNitroPing.init({\n  projectKey: "${publicKey}",\n  mode: "${mode}",\n  theme: "system",\n  brandName: "${value("brandName", "Your feedback")}",\n  colors: { primary: "${value("primary", "#7C3AED")}" },\n  fields: ${JSON.stringify(fields)},${customFields.length ? `\n  customFields: ${JSON.stringify(customFields)},` : ""}${categories.length ? `\n  categoryOptions: ${JSON.stringify(categories.map((category) => ({ id: category.id, name: category.name })))},` : ""}\n});`;
   const copy = async () => {
     await navigator.clipboard?.writeText(snippet);
     setCopied(true);
@@ -3129,6 +3129,32 @@ function WidgetBuilder({
               maxLength={40}
             />
           </label>
+          <label className="form-field">
+            <span>Brand name</span>
+            <input
+              value={value("brandName", "Your feedback")}
+              onChange={(event) => updateTheme("brandName", event.target.value)}
+              maxLength={80}
+              placeholder="Your product name"
+            />
+          </label>
+          <label className="form-field">
+            <span>Logo URL (optional)</span>
+            <input
+              type="url"
+              value={value("logoUrl", "")}
+              onChange={(event) => updateTheme("logoUrl", event.target.value)}
+              placeholder="https://cdn.example.com/logo.png"
+            />
+          </label>
+          <label className="field-check">
+            <input
+              type="checkbox"
+              checked={theme.showPoweredBy !== false}
+              onChange={(event) => updateTheme("showPoweredBy", event.target.checked)}
+            />
+            Show “Powered by NitroPing” on the success message
+          </label>
           <div className="field-picker">
             <span>Form fields</span>
             {[
@@ -3180,7 +3206,7 @@ function WidgetBuilder({
                 N
               </span>
               <div>
-                <strong>Your feedback</strong>
+                <strong>{value("brandName", "Your feedback")}</strong>
                 <small>Help us make this product better.</small>
               </div>
             </div>

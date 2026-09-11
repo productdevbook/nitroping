@@ -458,6 +458,12 @@ export const publicWidgetConfig = (
     theme.mode = raw.mode;
   if (typeof raw.buttonLabel === "string")
     theme.buttonLabel = raw.buttonLabel.slice(0, 40);
+  if (typeof raw.brandName === "string")
+    theme.brandName = raw.brandName.slice(0, 80);
+  if (typeof raw.logoUrl === "string" && /^https:\/\//i.test(raw.logoUrl))
+    theme.logoUrl = raw.logoUrl.slice(0, 2_048);
+  if (typeof raw.showPoweredBy === "boolean")
+    theme.showPoweredBy = raw.showPoweredBy;
   if (Array.isArray(raw.fields))
     theme.fields = raw.fields.filter(
       (field): field is string =>
@@ -541,6 +547,23 @@ export const validateWidgetTheme = (theme: unknown): string | null => {
     (typeof raw.buttonLabel !== "string" || raw.buttonLabel.length > 80)
   )
     return "Button label must be 80 characters or fewer";
+  if (
+    raw.brandName !== undefined &&
+    (typeof raw.brandName !== "string" || raw.brandName.length > 80)
+  )
+    return "Brand name must be 80 characters or fewer";
+  if (
+    raw.logoUrl !== undefined &&
+    (typeof raw.logoUrl !== "string" ||
+      raw.logoUrl.length > 2_048 ||
+      !/^https:\/\//i.test(raw.logoUrl))
+  )
+    return "Logo URL must be an HTTPS URL";
+  if (
+    raw.showPoweredBy !== undefined &&
+    typeof raw.showPoweredBy !== "boolean"
+  )
+    return "showPoweredBy must be boolean";
   if (
     raw.fields !== undefined &&
     (!Array.isArray(raw.fields) ||

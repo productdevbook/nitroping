@@ -29,6 +29,19 @@ describe("widget theme contract", () => {
     ).toBeNull();
   });
 
+  it("accepts white-label branding and only permits HTTPS logos", () => {
+    expect(
+      validateWidgetTheme({
+        brandName: "Acme Support",
+        logoUrl: "https://cdn.example.com/acme.png",
+        showPoweredBy: false,
+      }),
+    ).toBeNull();
+    expect(validateWidgetTheme({ logoUrl: "javascript:alert(1)" })).toContain(
+      "HTTPS",
+    );
+  });
+
   it("rejects duplicate IDs and invalid select options", () => {
     expect(
       validateWidgetTheme({
@@ -52,6 +65,9 @@ describe("widget theme contract", () => {
       JSON.stringify({
         mode: "modal",
         buttonLabel: "Send feedback",
+        brandName: "Acme Support",
+        logoUrl: "https://cdn.example.com/acme.png",
+        showPoweredBy: false,
         customFields: [
           {
             id: "plan",
@@ -71,6 +87,9 @@ describe("widget theme contract", () => {
     expect(result.theme).toEqual({
       mode: "modal",
       buttonLabel: "Send feedback",
+      brandName: "Acme Support",
+      logoUrl: "https://cdn.example.com/acme.png",
+      showPoweredBy: false,
       customFields: [
         {
           id: "plan",

@@ -21,6 +21,9 @@ export type NitroPingPublicConfig = {
   theme: {
     mode?: WidgetMode;
     buttonLabel?: string;
+    brandName?: string;
+    logoUrl?: string;
+    showPoweredBy?: boolean;
     fields?: WidgetField[];
     customFields?: WidgetCustomField[];
     colors?: WidgetColors;
@@ -36,6 +39,9 @@ export type NitroPingOptions = {
   locale?: string;
   target?: string | HTMLElement;
   buttonLabel?: string;
+  brandName?: string;
+  logoUrl?: string;
+  showPoweredBy?: boolean;
   title?: string;
   description?: string;
   fields?: WidgetField[];
@@ -276,9 +282,18 @@ const buildForm = (
   card.className = "np-card";
   card.innerHTML = `<button type="button" class="np-close" aria-label="Close">×</button><h2></h2><p></p><div class="np-grid"></div>${options.turnstileSiteKey ? '<div class="np-turnstile" aria-live="polite"></div>' : ""}<div class="np-actions"><button type="button" class="np-secondary">Cancel</button><button class="np-submit">Submit</button></div>`;
   (card.querySelector("h2") as HTMLElement).textContent =
-    options.title ?? "Your feedback";
+    options.title ?? options.brandName ?? "Your feedback";
   (card.querySelector("p") as HTMLElement).textContent =
     options.description ?? "Tell us what would make this product better.";
+  if (options.logoUrl) {
+    const logo = document.createElement("img");
+    logo.src = options.logoUrl;
+    logo.alt = options.brandName ?? "";
+    logo.width = 32;
+    logo.height = 32;
+    logo.style.cssText = "display:block;object-fit:contain;margin-bottom:10px;border-radius:8px";
+    card.insertBefore(logo, card.querySelector("h2"));
+  }
   const grid = card.querySelector(".np-grid")!;
   const add = (html: string) => grid.insertAdjacentHTML("beforeend", html);
   if (fields.includes("type"))
@@ -386,7 +401,7 @@ const buildForm = (
         },
         file ? [file] : [],
       );
-      card.innerHTML = `<div class="np-success"><strong>Thank you!</strong><br />Your feedback has been sent to the team.</div>`;
+      card.innerHTML = `<div class="np-success"><strong>Thank you!</strong><br />Your feedback has been sent to the team.${options.showPoweredBy === false ? "" : "<br /><small>Powered by NitroPing</small>"}</div>`;
       setTimeout(close, 2600);
     } catch (cause) {
       card.querySelector(".np-error")?.remove();

@@ -8,3 +8,4 @@ coverage
 **/.alchemy
 *.cpuprofile
 .tmp
+deploy/self-host/wrangler.self-host.jsonc
