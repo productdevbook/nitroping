@@ -52,6 +52,18 @@ bunx wrangler secret put TURNSTILE_SECRET_KEY --config apps/api/wrangler.jsonc
 # Add TURNSTILE_SITE_KEY to the deployment variables, then redeploy.
 ```
 
+Custom domains are a Business feature backed by Cloudflare for SaaS custom hostnames. The API is intentionally disabled with `CUSTOM_DOMAIN_NOT_CONFIGURED` until the Cloudflare for SaaS zone, fallback origin, and token are configured. The token must be stored as a secret and must have the custom-hostname certificate permission required by Cloudflare:
+
+```bash
+bunx wrangler secret put CUSTOM_HOSTNAME_API_TOKEN --config apps/api/wrangler.jsonc
+# Set these deployment variables before redeploying:
+# CUSTOM_HOSTNAME_ZONE_ID=<Cloudflare zone id>
+# CUSTOM_HOSTNAME_ZONE_NAME=nitroping.dev
+# CUSTOM_HOSTNAME_FALLBACK_ORIGIN=https://origin.nitroping.dev
+```
+
+Customers manage one custom hostname per project through `GET`, `POST`, and `DELETE /api/v1/dashboard/projects/:projectId/custom-domain`. Creation returns the Cloudflare SSL validation records that the customer must publish in DNS. The route is tenant-scoped, Business-plan gated, audited, and removed during organization deletion. Cloudflare for SaaS setup and custom-hostname API permissions are external prerequisites; configuring the variables alone does not activate hostname routing.
+
 ## Dashboard architecture
 
 The dashboard is a React 19 application built with Vite 8 and Bun. It uses a small local design system instead of a large UI kit so the panel stays fast, brand-consistent, and easy to embed in the Worker asset pipeline.

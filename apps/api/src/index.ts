@@ -26,6 +26,10 @@ import {
   verifyTurnstile,
   type TurnstileEnvironment,
 } from "./turnstile";
+import {
+  CloudflareCustomHostnameProvider,
+  validateCustomHostname,
+} from "./custom-domains";
 
 export { ProjectEventStream };
 
@@ -61,6 +65,29 @@ const planAttachmentLimits: Record<string, number> = {
   free: 25 * 1024 * 1024,
   pro: 5 * 1024 * 1024 * 1024,
   business: 50 * 1024 * 1024 * 1024,
+};
+type CustomDomainEnvironment = Env & {
+  CUSTOM_HOSTNAME_API_TOKEN?: string;
+  CUSTOM_HOSTNAME_ZONE_ID?: string;
+  CUSTOM_HOSTNAME_ZONE_NAME?: string;
+  CUSTOM_HOSTNAME_FALLBACK_ORIGIN?: string;
+};
+
+const customDomainProvider = (
+  env: Env,
+): CloudflareCustomHostnameProvider | null => {
+  const customEnv = env as CustomDomainEnvironment;
+  if (
+    !customEnv.CUSTOM_HOSTNAME_API_TOKEN ||
+    !customEnv.CUSTOM_HOSTNAME_ZONE_ID ||
+    !customEnv.CUSTOM_HOSTNAME_FALLBACK_ORIGIN
+  )
+    return null;
+  return new CloudflareCustomHostnameProvider(
+    customEnv.CUSTOM_HOSTNAME_API_TOKEN,
+    customEnv.CUSTOM_HOSTNAME_ZONE_ID,
+    customEnv.CUSTOM_HOSTNAME_FALLBACK_ORIGIN,
+  );
 };
 export const requestId = (request: Request): string => {
   const supplied = request.headers.get("x-request-id")?.trim();
@@ -1466,6 +1493,11 @@ export default {
         )
           .bind(organizationDeleteMatch[1])
           .all<{ objectKey: string; projectId: string }>();
+        const customDomains = await env.DB.prepare(
+          "SELECT project_id AS projectId, cloudflare_hostname_id AS cloudflareHostnameId FROM custom_domains WHERE organization_id = ? AND deleted_at IS NULL",
+        )
+          .bind(organizationDeleteMatch[1])
+          .all<{ projectId: string; cloudflareHostnameId: string | null }>();
         const webhooks = await env.DB.prepare(
           "SELECT id FROM webhooks WHERE organization_id = ?",
         )
@@ -1543,6 +1575,9 @@ export default {
             "DELETE FROM subscriptions WHERE organization_id = ?",
           ).bind(organizationDeleteMatch[1]),
           env.DB.prepare(
+            "UPDATE custom_domains SET deleted_at = ?, updated_at = ? WHERE organization_id = ? AND deleted_at IS NULL",
+          ).bind(now, now, organizationDeleteMatch[1]),
+          env.DB.prepare(
             "DELETE FROM organization_members WHERE organization_id = ?",
           ).bind(organizationDeleteMatch[1]),
           env.DB.prepare(
@@ -1564,6 +1599,17 @@ export default {
               eventId: id(),
             }),
           );
+        for (const domain of customDomains.results ?? [])
+          if (domain.cloudflareHostnameId)
+            ctx.waitUntil(
+              env.EVENTS.send({
+                type: "custom-domain.delete",
+                cloudflareHostnameId: domain.cloudflareHostnameId,
+                organizationId: organizationDeleteMatch[1],
+                projectId: domain.projectId,
+                eventId: id(),
+              }),
+            );
         for (const webhook of webhooks.results ?? [])
           ctx.waitUntil(env.CACHE.delete(`webhook:secret:${webhook.id}`));
         for (const prefix of ["follow:", "upload:"]) {
@@ -2190,6 +2236,168 @@ export default {
           .bind(stripeEventId, event.type ?? "unknown", new Date().toISOString())
           .run();
         return jsonResponse({ received: true }, { headers: cors });
+      }
+      const customDomainMatch = path.match(
+        /^\/api\/v1\/dashboard\/projects\/([^/]+)\/custom-domain$/,
+      );
+      if (
+        customDomainMatch &&
+        ["GET", "POST", "DELETE"].includes(request.method)
+      ) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireDashboardProject(
+          request,
+          env,
+          url,
+          customDomainMatch[1],
+          rid,
+          "project:manage",
+        );
+        if (context instanceof Response) return context;
+        const existing = await env.DB.prepare(
+          "SELECT id, hostname, cloudflare_hostname_id AS cloudflareHostnameId, status, ssl_status AS sslStatus, validation_records_json AS validationRecords, created_at AS createdAt, updated_at AS updatedAt FROM custom_domains WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1",
+        )
+          .bind(context.organizationId, context.projectId)
+          .first<Record<string, unknown>>();
+        const toResponse = (row: Record<string, unknown> | null) =>
+          row
+            ? {
+                ...row,
+                validationRecords: JSON.parse(
+                  String(row.validationRecords ?? "[]"),
+                ),
+              }
+            : null;
+        if (request.method === "GET")
+          return jsonResponse({ domain: toResponse(existing) }, { headers: cors });
+        if (request.method === "DELETE") {
+          if (!existing)
+            return error(
+              "CUSTOM_DOMAIN_NOT_FOUND",
+              "No custom domain is configured for this project",
+              rid,
+              404,
+            );
+          const provider = customDomainProvider(env);
+          if (provider && existing.cloudflareHostnameId) {
+            try {
+              await provider.remove(String(existing.cloudflareHostnameId));
+            } catch (cause) {
+              return error(
+                "CUSTOM_DOMAIN_PROVIDER_ERROR",
+                "Cloudflare rejected the custom-domain removal",
+                rid,
+                502,
+                String(env.ENVIRONMENT) === "development"
+                  ? String(cause)
+                  : {},
+              );
+            }
+          }
+          const now = new Date().toISOString();
+          await env.DB.prepare(
+            "UPDATE custom_domains SET deleted_at = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+          )
+            .bind(now, now, String(existing.id), context.organizationId, context.projectId)
+            .run();
+          await writeAudit(
+            env,
+            context,
+            "custom_domain.deleted",
+            "custom_domain",
+            String(existing.id),
+          );
+          return new Response(null, { status: 204, headers: cors });
+        }
+        const customEnv = env as CustomDomainEnvironment;
+        const subscription = await env.DB.prepare(
+          "SELECT plan FROM subscriptions WHERE organization_id = ?",
+        )
+          .bind(context.organizationId)
+          .first<{ plan: string }>();
+        if ((subscription?.plan ?? "free") !== "business")
+          return error(
+            "PLAN_FEATURE_REQUIRED",
+            "Custom domains are available on the Business plan",
+            rid,
+            402,
+            { feature: "custom_domains", requiredPlan: "business" },
+          );
+        const provider = customDomainProvider(env);
+        if (!provider)
+          return error(
+            "CUSTOM_DOMAIN_NOT_CONFIGURED",
+            "Custom domains require Cloudflare for SaaS configuration",
+            rid,
+            503,
+          );
+        if (existing)
+          return error(
+            "CUSTOM_DOMAIN_EXISTS",
+            "This project already has a custom domain",
+            rid,
+            409,
+          );
+        const body = await jsonBody(request);
+        const hostname = typeof body.hostname === "string" ? body.hostname : "";
+        const normalizedHostname = hostname.trim().toLowerCase().replace(/\.$/, "");
+        const validationError = validateCustomHostname(
+          normalizedHostname,
+          customEnv.CUSTOM_HOSTNAME_ZONE_NAME ?? "nitroping.dev",
+        );
+        if (validationError)
+          return error("INVALID_CUSTOM_DOMAIN", validationError, rid, 400);
+        try {
+          const remote = await provider.create(normalizedHostname, {
+            organizationId: context.organizationId,
+            projectId: context.projectId,
+          });
+          const now = new Date().toISOString();
+          const domainId = id();
+          await env.DB.prepare(
+            "INSERT INTO custom_domains (id, organization_id, project_id, hostname, cloudflare_hostname_id, status, ssl_status, validation_records_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          )
+            .bind(
+              domainId,
+              context.organizationId,
+              context.projectId,
+              remote.hostname,
+              remote.id,
+              remote.status,
+              remote.sslStatus,
+              JSON.stringify(remote.validationRecords),
+              now,
+              now,
+            )
+            .run();
+          await writeAudit(env, context, "custom_domain.created", "custom_domain", domainId, {
+            hostname: remote.hostname,
+            status: remote.status,
+          });
+          return jsonResponse(
+            {
+              domain: {
+                id: domainId,
+                hostname: remote.hostname,
+                status: remote.status,
+                sslStatus: remote.sslStatus,
+                validationRecords: remote.validationRecords,
+                createdAt: now,
+                updatedAt: now,
+              },
+            },
+            { status: 201, headers: cors },
+          );
+        } catch (cause) {
+          return error(
+            "CUSTOM_DOMAIN_PROVIDER_ERROR",
+            "Cloudflare rejected the custom domain",
+            rid,
+            502,
+            String(env.ENVIRONMENT) === "development" ? String(cause) : {},
+          );
+        }
       }
       const webhookMatch = path.match(
         /^\/api\/v1\/dashboard\/projects\/([^/]+)\/webhooks(?:\/([^/]+))?$/,
@@ -5660,6 +5868,7 @@ export default {
         text?: string;
         html?: string;
         token?: string;
+        cloudflareHostnameId?: string;
       };
       if (event.eventId) {
         const seen = await env.DB.prepare(
@@ -5764,6 +5973,19 @@ export default {
         await env.ATTACHMENTS.delete(
           (event as { objectKey: string }).objectKey,
         );
+      }
+      if (event.type === "custom-domain.delete" && event.cloudflareHostnameId) {
+        const provider = customDomainProvider(env);
+        if (provider) {
+          try {
+            await provider.remove(event.cloudflareHostnameId);
+          } catch {
+            message.retry({
+              delaySeconds: Math.min(900, 10 * 2 ** message.attempts),
+            });
+            continue;
+          }
+        }
       }
       if (
         event.type === "feedback.created" &&

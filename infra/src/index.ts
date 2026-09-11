@@ -54,6 +54,9 @@ export default Alchemy.Stack(
         EMAIL_FROM: "notifications@nitroping.dev",
         PUBLIC_APP_URL: stage === "production" ? "https://nitroping.dev" : `https://nitroping-${stage}.dev`,
         TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY ?? "",
+        CUSTOM_HOSTNAME_ZONE_ID: process.env.CUSTOM_HOSTNAME_ZONE_ID ?? "",
+        CUSTOM_HOSTNAME_ZONE_NAME: process.env.CUSTOM_HOSTNAME_ZONE_NAME ?? "nitroping.dev",
+        CUSTOM_HOSTNAME_FALLBACK_ORIGIN: process.env.CUSTOM_HOSTNAME_FALLBACK_ORIGIN ?? "",
       },
     });
     const consumer = yield* Cloudflare.Queues.Consumer("EventsConsumer", {
