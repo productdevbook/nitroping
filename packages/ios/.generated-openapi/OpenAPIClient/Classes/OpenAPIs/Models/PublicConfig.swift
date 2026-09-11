@@ -14,15 +14,19 @@ public struct PublicConfig: Codable, JSONEncodable, Hashable {
 
     public var theme: PublicTheme
     public var categories: [Category]
+    /** Public Turnstile site key when bot protection is enabled */
+    public var turnstileSiteKey: String?
 
-    public init(theme: PublicTheme, categories: [Category]) {
+    public init(theme: PublicTheme, categories: [Category], turnstileSiteKey: String? = nil) {
         self.theme = theme
         self.categories = categories
+        self.turnstileSiteKey = turnstileSiteKey
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case theme
         case categories
+        case turnstileSiteKey
     }
 
     // Encodable protocol methods
@@ -31,6 +35,7 @@ public struct PublicConfig: Codable, JSONEncodable, Hashable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(theme, forKey: .theme)
         try container.encode(categories, forKey: .categories)
+        try container.encodeIfPresent(turnstileSiteKey, forKey: .turnstileSiteKey)
     }
 }
 

@@ -35,6 +35,7 @@ import kotlinx.serialization.encoding.*
  *
  * @param theme 
  * @param categories 
+ * @param turnstileSiteKey Public Turnstile site key when bot protection is enabled
  */
 @Serializable
 
@@ -42,7 +43,10 @@ data class PublicConfig (
 
     @SerialName(value = "theme") @Required val theme: PublicTheme,
 
-    @SerialName(value = "categories") @Required val categories: kotlin.collections.List<Category>
+    @SerialName(value = "categories") @Required val categories: kotlin.collections.List<Category>,
+
+    /* Public Turnstile site key when bot protection is enabled */
+    @SerialName(value = "turnstileSiteKey") val turnstileSiteKey: kotlin.String? = null
 
 ) {
 

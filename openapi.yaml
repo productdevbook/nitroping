@@ -511,6 +511,7 @@ components:
       properties:
         theme: { $ref: '#/components/schemas/PublicTheme' }
         categories: { type: array, items: { $ref: '#/components/schemas/Category' } }
+        turnstileSiteKey: { type: string, description: Public Turnstile site key when bot protection is enabled }
     FollowUpFeedback:
       type: object
       required: [id, type, status, priority, title, body, createdAt, updatedAt]

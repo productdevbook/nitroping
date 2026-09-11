@@ -21,6 +21,7 @@ data class Feedback(
     val categoryId: String? = null,
     val email: String? = null,
     val appVersion: String? = null,
+    val turnstileToken: String? = null,
     val metadata: Map<String, Any> = emptyMap(),
 )
 
@@ -29,7 +30,7 @@ data class NitroPingAttachment(val bytes: ByteArray, val contentType: String)
 data class NitroPingCategory(val id: String, val name: String, val slug: String)
 data class NitroPingCustomField(val id: String, val label: String, val type: String, val required: Boolean = false, val options: List<String> = emptyList())
 data class NitroPingPublicTheme(val mode: String?, val buttonLabel: String?, val brandName: String?, val logoUrl: String?, val showPoweredBy: Boolean?, val fields: List<String>, val customFields: List<NitroPingCustomField>, val colors: Map<String, String>)
-data class NitroPingPublicConfig(val theme: NitroPingPublicTheme, val categories: List<NitroPingCategory>)
+data class NitroPingPublicConfig(val theme: NitroPingPublicTheme, val categories: List<NitroPingCategory>, val turnstileSiteKey: String? = null)
 data class FollowUpComment(val id: String, val body: String, val createdAt: String)
 data class FollowUpSnapshot(val feedbackId: String, val status: String, val title: String, val body: String, val comments: List<FollowUpComment>)
 data class NitroPingDeleteResponse(val deleted: Boolean, val feedbackId: String)
@@ -96,7 +97,7 @@ class NitroPingClient(
                 add(NitroPingCategory(category.optString("id"), category.optString("name"), category.optString("slug")))
             }
         }
-        NitroPingPublicConfig(NitroPingPublicTheme(themeJson.optString("mode").ifEmpty { null }, themeJson.optString("buttonLabel").ifEmpty { null }, themeJson.optString("brandName").ifEmpty { null }, themeJson.optString("logoUrl").ifEmpty { null }, if (themeJson.has("showPoweredBy")) themeJson.optBoolean("showPoweredBy") else null, fields, customFields, colors), categories)
+        NitroPingPublicConfig(NitroPingPublicTheme(themeJson.optString("mode").ifEmpty { null }, themeJson.optString("buttonLabel").ifEmpty { null }, themeJson.optString("brandName").ifEmpty { null }, themeJson.optString("logoUrl").ifEmpty { null }, if (themeJson.has("showPoweredBy")) themeJson.optBoolean("showPoweredBy") else null, fields, customFields, colors), categories, root.optString("turnstileSiteKey").ifEmpty { null })
     }
 
     suspend fun uploadAttachment(feedbackId: String, attachment: NitroPingAttachment): String = withContext(Dispatchers.IO) {
@@ -171,7 +172,7 @@ class NitroPingClient(
     private fun feedbackJson(feedback: Feedback): String {
         val type = feedback.type.name.lowercase(Locale.ROOT)
         val metadata = feedback.metadata.entries.joinToString(",") { "${quote(it.key)}:${jsonValue(it.value)}" }
-        return """{"type":${quote(type)},"title":${quote(feedback.title)},"body":${quote(feedback.body)},"priority":${feedback.priority?.let(::quote) ?: "null"},"categoryId":${feedback.categoryId?.let(::quote) ?: "null"},"email":${feedback.email?.let(::quote) ?: "null"},"platform":"android","appVersion":${feedback.appVersion?.let(::quote) ?: "null"},"osVersion":${quote(Build.VERSION.RELEASE)},"locale":${quote(Locale.getDefault().toLanguageTag())},"metadata":{$metadata}}"""
+        return """{"type":${quote(type)},"title":${quote(feedback.title)},"body":${quote(feedback.body)},"priority":${feedback.priority?.let(::quote) ?: "null"},"categoryId":${feedback.categoryId?.let(::quote) ?: "null"},"email":${feedback.email?.let(::quote) ?: "null"},"platform":"android","appVersion":${feedback.appVersion?.let(::quote) ?: "null"},"osVersion":${quote(Build.VERSION.RELEASE)},"locale":${quote(Locale.getDefault().toLanguageTag())},"turnstileToken":${feedback.turnstileToken?.let(::quote) ?: "null"},"metadata":{$metadata}}"""
     }
 
     private data class PendingAttachment(val bytesBase64: String, val contentType: String)

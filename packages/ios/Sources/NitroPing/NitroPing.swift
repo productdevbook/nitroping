@@ -65,6 +65,7 @@ public struct NitroPingPublicTheme: Codable, Sendable {
 public struct NitroPingPublicConfig: Codable, Sendable {
     public let theme: NitroPingPublicTheme
     public let categories: [NitroPingCategory]
+    public let turnstileSiteKey: String?
 }
 
 public enum NitroPingMetadataValue: Codable, Sendable {
@@ -101,18 +102,20 @@ public struct NitroPingFeedback: Codable, Sendable {
     public let osVersion: String?
     public let locale: String?
     public let metadata: [String: NitroPingMetadataValue]?
+    /// A short-lived Turnstile token supplied by the host application when bot protection is enabled.
+    public let turnstileToken: String?
 
-    public init(type: NitroPingFeedbackType, title: String, body: String, priority: String? = nil, categoryId: String? = nil, email: String? = nil, appVersion: String? = nil, metadata: [String: String]? = nil) {
+    public init(type: NitroPingFeedbackType, title: String, body: String, priority: String? = nil, categoryId: String? = nil, email: String? = nil, appVersion: String? = nil, metadata: [String: String]? = nil, turnstileToken: String? = nil) {
         self.type = type; self.title = title; self.body = body; self.priority = priority; self.categoryId = categoryId; self.email = email
         self.platform = .ios; self.appVersion = appVersion; self.osVersion = ProcessInfo.processInfo.operatingSystemVersionString
-        self.locale = Locale.current.identifier
+        self.locale = Locale.current.identifier; self.turnstileToken = turnstileToken
         self.metadata = metadata?.mapValues { .string($0) }
     }
 
-    public init(type: NitroPingFeedbackType, title: String, body: String, priority: String? = nil, categoryId: String? = nil, email: String? = nil, appVersion: String? = nil, metadataValues: [String: NitroPingMetadataValue]?) {
+    public init(type: NitroPingFeedbackType, title: String, body: String, priority: String? = nil, categoryId: String? = nil, email: String? = nil, appVersion: String? = nil, metadataValues: [String: NitroPingMetadataValue]?, turnstileToken: String? = nil) {
         self.type = type; self.title = title; self.body = body; self.priority = priority; self.categoryId = categoryId; self.email = email
         self.platform = .ios; self.appVersion = appVersion; self.osVersion = ProcessInfo.processInfo.operatingSystemVersionString
-        self.locale = Locale.current.identifier; self.metadata = metadataValues
+        self.locale = Locale.current.identifier; self.metadata = metadataValues; self.turnstileToken = turnstileToken
     }
 }
 
@@ -251,7 +254,8 @@ public actor NitroPingClient {
         )
         return NitroPingPublicConfig(
             theme: theme,
-            categories: generated.categories.map { NitroPingCategory(id: $0.id, name: $0.name, slug: $0.slug) }
+            categories: generated.categories.map { NitroPingCategory(id: $0.id, name: $0.name, slug: $0.slug) },
+            turnstileSiteKey: generated.turnstileSiteKey
         )
     }
 
@@ -325,7 +329,8 @@ public actor NitroPingClient {
                 case .number(let value): return .typeDouble(value)
                 case .boolean(let value): return .typeBool(value)
                 }
-            }
+            },
+            turnstileToken: feedback.turnstileToken
         )
         request.httpBody = try JSONEncoder().encode(generated)
         let (data, response) = try await session.data(for: request)
