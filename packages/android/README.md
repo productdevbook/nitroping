@@ -2,6 +2,8 @@
 
 The Android library module is based on Kotlin coroutines. It includes ready-to-embed Views and Jetpack Compose feedback forms, while the core network contract matches the web and iOS SDKs. It persists offline submissions, provides `requestFollowUp` and `fetchFollowUp` for status and public replies, and supports `NitroPingAttachment` uploads.
 
+The module publishes as `dev.nitroping:nitroping:0.1.0`; registry credentials are intentionally kept out of the repository.
+
 Compose usage:
 
 ```kotlin
