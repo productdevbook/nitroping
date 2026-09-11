@@ -52,7 +52,7 @@ bunx wrangler secret put TURNSTILE_SECRET_KEY --config apps/api/wrangler.jsonc
 # Add TURNSTILE_SITE_KEY to the deployment variables, then redeploy.
 ```
 
-Custom domains are a Business feature backed by Cloudflare for SaaS custom hostnames. The API is intentionally disabled with `CUSTOM_DOMAIN_NOT_CONFIGURED` until the Cloudflare for SaaS zone, fallback origin, and token are configured. The token must be stored as a secret and must have the custom-hostname certificate permission required by Cloudflare:
+Custom domains are a Business feature backed by Cloudflare for SaaS custom hostnames. After validation completes, the Worker resolves the hostname to its tenant-scoped project and serves the public portal at both `/` and `/portal`; API routes remain versioned under `/api/v1`. The API is intentionally disabled with `CUSTOM_DOMAIN_NOT_CONFIGURED` until the Cloudflare for SaaS zone, fallback origin, and token are configured. The token must be stored as a secret and must have the custom-hostname certificate permission required by Cloudflare:
 
 ```bash
 bunx wrangler secret put CUSTOM_HOSTNAME_API_TOKEN --config apps/api/wrangler.jsonc

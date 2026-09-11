@@ -787,6 +787,9 @@ const requestHeaders = (
   "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
   "access-control-expose-headers": "etag, x-request-id",
   "cache-control": "no-store",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "no-referrer",
+  "permissions-policy": "camera=(), microphone=(), geolocation=()",
   "x-request-id": rid,
 });
 
