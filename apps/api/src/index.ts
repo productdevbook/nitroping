@@ -333,7 +333,7 @@ export default {
         const contentType = typeof body.contentType === "string" ? body.contentType : "application/octet-stream";
         const size = Number(body.size ?? 0);
         if (!Number.isFinite(size) || size < 1 || size > 10 * 1024 * 1024) return error("ATTACHMENT_TOO_LARGE", "Attachments cannot exceed 10 MB", rid, 413);
-        if (!/^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/plain)$/.test(contentType)) return error("UNSUPPORTED_ATTACHMENT", "Desteklenmeyen dosya tipi", rid, 415);
+        if (!/^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/plain)$/.test(contentType)) return error("UNSUPPORTED_ATTACHMENT", "Unsupported attachment type", rid, 415);
         const token = randomToken("upl");
         const attachmentId = id();
         const objectKey = `${context.organizationId}/${context.projectId}/${attachmentId}`;
