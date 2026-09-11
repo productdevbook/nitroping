@@ -33,6 +33,15 @@ NITROPING_STAGE=staging ALCHEMY_STAGE=staging bun run infra:deploy
 
 Production Alchemy adoption requires a Cloudflare token with Workers Scripts Edit and Queues Edit permissions. Wrangler deploy remains the operational production path until that token is available.
 
+Stripe billing is provider-isolated and disabled until production secrets are configured:
+
+```bash
+bunx wrangler secret put STRIPE_SECRET_KEY --config apps/api/wrangler.jsonc
+bunx wrangler secret put STRIPE_PRICE_PRO --config apps/api/wrangler.jsonc
+bunx wrangler secret put STRIPE_PRICE_BUSINESS --config apps/api/wrangler.jsonc
+bunx wrangler secret put STRIPE_WEBHOOK_SECRET --config apps/api/wrangler.jsonc
+```
+
 ## Dashboard architecture
 
 The dashboard is a React 19 application built with Vite 8 and Bun. It uses a small local design system instead of a large UI kit so the panel stays fast, brand-consistent, and easy to embed in the Worker asset pipeline.
