@@ -65,10 +65,24 @@ export type NitroPingClient = {
 const defaultFields: WidgetField[] = ["type", "title", "description", "email"];
 const base = (options: NitroPingOptions) =>
   options.apiBaseUrl ?? "https://nitroping.dev/api/v1";
+const escapeHtml = (value: unknown): string =>
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[character] ?? character,
+  );
 const labelFor = (value: string) =>
-  value
-    .replaceAll("_", " ")
-    .replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+  escapeHtml(
+    value
+      .replaceAll("_", " ")
+      .replace(/(^|\s)\S/g, (letter) => letter.toUpperCase()),
+  );
 let configured: Partial<NitroPingOptions> = {};
 
 const request = async <T>(
@@ -266,7 +280,7 @@ const buildForm = (
     );
   if (fields.includes("category") && options.categoryOptions?.length)
     add(
-      `<label class="np-label">Category<select class="np-select" name="categoryId"><option value="">Select a category</option>${options.categoryOptions.map((category) => `<option value="${category.id}">${labelFor(category.name)}</option>`).join("")}</select></label>`,
+      `<label class="np-label">Category<select class="np-select" name="categoryId"><option value="">Select a category</option>${options.categoryOptions.map((category) => `<option value="${escapeHtml(category.id)}">${labelFor(category.name)}</option>`).join("")}</select></label>`,
     );
   if (fields.includes("title"))
     add(
@@ -288,19 +302,19 @@ const buildForm = (
     const required = field.required ? " required" : "";
     if (field.type === "textarea")
       add(
-        `<label class="np-label">${labelFor(field.label)}<textarea class="np-input np-textarea" name="custom_${field.id}" maxlength="2000"${required}></textarea></label>`,
+        `<label class="np-label">${labelFor(field.label)}<textarea class="np-input np-textarea" name="custom_${escapeHtml(field.id)}" maxlength="2000"${required}></textarea></label>`,
       );
     else if (field.type === "select")
       add(
-        `<label class="np-label">${labelFor(field.label)}<select class="np-select" name="custom_${field.id}"${required}><option value="">Select an option</option>${(field.options ?? []).map((option) => `<option value="${option.replaceAll("&", "&amp;").replaceAll('"', "&quot;")}">${labelFor(option)}</option>`).join("")}</select></label>`,
+        `<label class="np-label">${labelFor(field.label)}<select class="np-select" name="custom_${escapeHtml(field.id)}"${required}><option value="">Select an option</option>${(field.options ?? []).map((option) => `<option value="${escapeHtml(option)}">${labelFor(option)}</option>`).join("")}</select></label>`,
       );
     else if (field.type === "boolean")
       add(
-        `<label class="np-label"><span>${labelFor(field.label)}</span><input class="np-input" type="checkbox" name="custom_${field.id}" value="true"${required} /></label>`,
+        `<label class="np-label"><span>${labelFor(field.label)}</span><input class="np-input" type="checkbox" name="custom_${escapeHtml(field.id)}" value="true"${required} /></label>`,
       );
     else
       add(
-        `<label class="np-label">${labelFor(field.label)}<input class="np-input" type="${field.type === "number" ? "number" : "text"}" name="custom_${field.id}" maxlength="512"${required} /></label>`,
+        `<label class="np-label">${labelFor(field.label)}<input class="np-input" type="${field.type === "number" ? "number" : "text"}" name="custom_${escapeHtml(field.id)}" maxlength="512"${required} /></label>`,
       );
   }
   let turnstileToken: string | undefined;
