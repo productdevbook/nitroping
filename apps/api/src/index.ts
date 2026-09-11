@@ -321,7 +321,7 @@ export default {
       if (origin && projectKey) {
         const project = await env.DB.prepare("SELECT id, organization_id FROM projects WHERE public_key = ? AND deleted_at IS NULL").bind(projectKey).first<{ id: string; organization_id: string }>();
         if (project) {
-          const settings = await env.DB.prepare("SELECT origins_json FROM project_settings WHERE project_id = ? AND project_id IN (SELECT id FROM projects WHERE organization_id = ?)").bind(project.id, project.organization_id).first<{ origins_json: string }>();
+          const settings = await env.DB.prepare("SELECT origins_json FROM project_settings WHERE project_id = ? AND organization_id = ?").bind(project.id, project.organization_id).first<{ origins_json: string }>();
           const origins = JSON.parse(settings?.origins_json ?? "[]") as string[];
           if (origins.length > 0 && !origins.includes(origin)) return error("ORIGIN_NOT_ALLOWED", "This origin is not allowed for the project", rid, 403);
         }
@@ -575,13 +575,14 @@ export default {
         if (accessError) return accessError;
         const context = await requireDashboardProject(request, env, url, settingsMatch[1], rid, "project:manage");
         if (context instanceof Response) return context;
-        await env.DB.prepare("INSERT OR IGNORE INTO project_settings (project_id) VALUES (?)").bind(context.projectId).run();
+        const now = new Date().toISOString();
+        await env.DB.prepare("INSERT OR IGNORE INTO project_settings (project_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?)").bind(context.projectId, context.organizationId, now, now).run();
         if (request.method === "GET") {
-          const settings = await env.DB.prepare("SELECT theme_json AS theme, allowed_metadata_json AS allowedMetadata, retention_days AS retentionDays, origins_json AS origins FROM project_settings WHERE project_id = ?").bind(context.projectId).first<Record<string, unknown>>();
+          const settings = await env.DB.prepare("SELECT theme_json AS theme, allowed_metadata_json AS allowedMetadata, retention_days AS retentionDays, origins_json AS origins FROM project_settings WHERE project_id = ? AND organization_id = ?").bind(context.projectId, context.organizationId).first<Record<string, unknown>>();
           return jsonResponse({ theme: JSON.parse(String(settings?.theme ?? "{}")), allowedMetadata: JSON.parse(String(settings?.allowedMetadata ?? "[]")), retentionDays: Number(settings?.retentionDays ?? 365), origins: JSON.parse(String(settings?.origins ?? "[]")) }, { headers: cors });
         }
         const body = await jsonBody(request);
-        const current = await env.DB.prepare("SELECT theme_json, allowed_metadata_json, retention_days, origins_json FROM project_settings WHERE project_id = ?").bind(context.projectId).first<{ theme_json: string; allowed_metadata_json: string; retention_days: number; origins_json: string }>();
+        const current = await env.DB.prepare("SELECT theme_json, allowed_metadata_json, retention_days, origins_json FROM project_settings WHERE project_id = ? AND organization_id = ?").bind(context.projectId, context.organizationId).first<{ theme_json: string; allowed_metadata_json: string; retention_days: number; origins_json: string }>();
         if (!current) return error("PROJECT_SETTINGS_NOT_FOUND", "Project settings were not found", rid, 404);
         const theme = body.theme && typeof body.theme === "object" && !Array.isArray(body.theme) ? body.theme : JSON.parse(current.theme_json);
         const allowedMetadata = body.allowedMetadata === undefined ? JSON.parse(current.allowed_metadata_json) : body.allowedMetadata;
@@ -590,7 +591,7 @@ export default {
         if (!Array.isArray(allowedMetadata) || allowedMetadata.length > 100 || allowedMetadata.some((field) => typeof field !== "string" || !/^[a-zA-Z][a-zA-Z0-9_.-]{0,63}$/.test(field))) return error("VALIDATION_ERROR", "Allowed metadata fields are invalid", rid, 400);
         if (!Number.isInteger(retentionDays) || retentionDays < 1 || retentionDays > 3650) return error("VALIDATION_ERROR", "Retention must be between 1 and 3650 days", rid, 400);
         if (!Array.isArray(origins) || origins.length > 50 || origins.some((origin) => typeof origin !== "string" || !/^https:\/\//.test(origin))) return error("VALIDATION_ERROR", "Origins must be HTTPS URLs", rid, 400);
-        await env.DB.prepare("UPDATE project_settings SET theme_json = ?, allowed_metadata_json = ?, retention_days = ?, origins_json = ? WHERE project_id = ?").bind(JSON.stringify(theme), JSON.stringify(allowedMetadata), retentionDays, JSON.stringify(origins), context.projectId).run();
+        await env.DB.prepare("UPDATE project_settings SET theme_json = ?, allowed_metadata_json = ?, retention_days = ?, origins_json = ?, updated_at = ? WHERE project_id = ? AND organization_id = ?").bind(JSON.stringify(theme), JSON.stringify(allowedMetadata), retentionDays, JSON.stringify(origins), now, context.projectId, context.organizationId).run();
         await writeAudit(env, context, "project.settings.updated", "project", context.projectId, { retentionDays, originCount: origins.length, metadataFieldCount: allowedMetadata.length });
         return jsonResponse({ theme, allowedMetadata, retentionDays, origins }, { headers: cors });
       }
@@ -1301,7 +1302,7 @@ export default {
   },
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
     await env.DB.prepare("DELETE FROM magic_link_tokens WHERE expires_at <= ? OR used_at IS NOT NULL").bind(new Date().toISOString()).run();
-    const candidates = await env.DB.prepare("SELECT f.id, f.organization_id AS organizationId, f.project_id AS projectId FROM feedback_items f JOIN project_settings s ON s.project_id = f.project_id WHERE f.deleted_at IS NULL AND datetime(f.created_at) < datetime('now', '-' || s.retention_days || ' days') LIMIT 100").all<{ id: string; organizationId: string; projectId: string }>();
+    const candidates = await env.DB.prepare("SELECT f.id, f.organization_id AS organizationId, f.project_id AS projectId FROM feedback_items f JOIN project_settings s ON s.project_id = f.project_id AND s.organization_id = f.organization_id WHERE f.deleted_at IS NULL AND datetime(f.created_at) < datetime('now', '-' || s.retention_days || ' days') LIMIT 100").all<{ id: string; organizationId: string; projectId: string }>();
     for (const feedback of candidates.results ?? []) {
       const attachments = await env.DB.prepare("SELECT object_key AS objectKey FROM attachments WHERE feedback_id = ? AND project_id = ? AND deleted_at IS NULL").bind(feedback.id, feedback.projectId).all<{ objectKey: string }>();
       for (const attachment of attachments.results ?? []) await env.EVENTS.send({ type: "attachment.delete", objectKey: attachment.objectKey, eventId: id(), projectId: feedback.projectId });
