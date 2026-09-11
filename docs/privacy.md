@@ -20,6 +20,10 @@ Workspace data is processed to provide the service under the customer agreement.
 
 Hosted NitroPing uses Cloudflare Workers, D1, R2, KV, Queues, Durable Objects, Email Service, and Analytics Engine. Tenant queries include organization and project scope. Attachments are private R2 objects and are served only through an authorized dashboard route. Webhook payloads are signed with an HMAC secret.
 
+## Consent and email updates
+
+When an end user requests a follow-up email, NitroPing records the email, purpose, grant time, and tenant scope. Every follow-up email contains a token-scoped unsubscribe link. Unsubscribing removes that address from future feedback notifications and records the withdrawal time.
+
 ## Retention and deletion
 
 Each project has a configurable retention period. The scheduled cleanup job anonymizes expired feedback, removes comments, watchers, magic-link tokens, status history, and attachment objects, and records a privacy request. Customers can export project data or anonymize individual feedback from the dashboard. Organization deletion removes tenant records and queues attachment deletion.

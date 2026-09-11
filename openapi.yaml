@@ -142,6 +142,15 @@ paths:
       summary: Delete the feedback owned by the scoped magic link
       parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
       responses: { '200': { description: Feedback deleted }, '404': { $ref: '#/components/responses/Error' } }
+  /follow-up/{token}/unsubscribe:
+    get:
+      summary: Unsubscribe the email address associated with a scoped follow-up token
+      parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Unsubscribed }, '404': { $ref: '#/components/responses/Error' } }
+    post:
+      summary: Unsubscribe the email address associated with a scoped follow-up token
+      parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Unsubscribed }, '404': { $ref: '#/components/responses/Error' } }
   /projects/{projectId}/follow-up/request:
     post:
       summary: Request a private follow-up link by email

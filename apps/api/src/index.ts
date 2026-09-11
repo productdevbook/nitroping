@@ -1549,6 +1549,9 @@ export default {
             "DELETE FROM feedback_watchers WHERE organization_id = ?",
           ).bind(organizationDeleteMatch[1]),
           env.DB.prepare(
+            "DELETE FROM consent_records WHERE organization_id = ?",
+          ).bind(organizationDeleteMatch[1]),
+          env.DB.prepare(
             "DELETE FROM feedback_status_history WHERE organization_id = ?",
           ).bind(organizationDeleteMatch[1]),
           env.DB.prepare(
@@ -4712,7 +4715,7 @@ export default {
             now,
           ),
           env.DB.prepare(
-            "INSERT INTO magic_link_tokens (id, organization_id, project_id, feedback_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO magic_link_tokens (id, organization_id, project_id, feedback_id, token_hash, expires_at, created_at, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
           ).bind(
             id(),
             context.organizationId,
@@ -4721,10 +4724,21 @@ export default {
             await sha256(token),
             expiresAt,
             now,
+            body.email.toLowerCase(),
           ),
           env.DB.prepare(
             "INSERT OR IGNORE INTO feedback_watchers (organization_id, project_id, feedback_id, email, created_at) VALUES (?, ?, ?, ?, ?)",
           ).bind(
+            context.organizationId,
+            context.projectId,
+            body.feedbackId,
+            body.email.toLowerCase(),
+            now,
+          ),
+          env.DB.prepare(
+            "INSERT INTO consent_records (id, organization_id, project_id, feedback_id, email, purpose, legal_basis, granted_at) VALUES (?, ?, ?, ?, ?, 'feedback_follow_up', 'consent', ?)",
+          ).bind(
+            id(),
             context.organizationId,
             context.projectId,
             body.feedbackId,
@@ -4745,6 +4759,69 @@ export default {
         return jsonResponse({ accepted: true }, { status: 202, headers: cors });
       }
       const followUpReadMatch = path.match(/^\/api\/v1\/follow-up\/([^/]+)$/);
+      const followUpUnsubscribeMatch = path.match(
+        /^\/api\/v1\/follow-up\/([^/]+)\/unsubscribe$/,
+      );
+      if (
+        followUpUnsubscribeMatch &&
+        (request.method === "GET" || request.method === "POST")
+      ) {
+        const raw = await env.DB.prepare(
+          `SELECT t.feedback_id AS feedbackId, t.organization_id AS organizationId,
+            t.project_id AS projectId, t.email
+           FROM magic_link_tokens t
+           WHERE t.token_hash = ? AND t.used_at IS NULL AND t.expires_at > ?`,
+        )
+          .bind(
+            await sha256(followUpUnsubscribeMatch[1]),
+            new Date().toISOString(),
+          )
+          .first<{
+            feedbackId: string;
+            organizationId: string;
+            projectId: string;
+            email: string | null;
+          }>();
+        if (!raw || !raw.email)
+          return error(
+            "FOLLOW_UP_EXPIRED",
+            "The follow-up link is invalid or expired",
+            rid,
+            404,
+          );
+        const now = new Date().toISOString();
+        await env.DB.batch([
+          env.DB.prepare(
+            "DELETE FROM feedback_watchers WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND email = ?",
+          ).bind(
+            raw.feedbackId,
+            raw.organizationId,
+            raw.projectId,
+            raw.email,
+          ),
+          env.DB.prepare(
+            "UPDATE consent_records SET withdrawn_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND email = ? AND withdrawn_at IS NULL",
+          ).bind(
+            now,
+            raw.feedbackId,
+            raw.organizationId,
+            raw.projectId,
+            raw.email,
+          ),
+        ]);
+        if (request.method === "GET")
+          return new Response(
+            "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>Unsubscribed</title><body style=\"font:16px system-ui;max-width:36rem;margin:4rem auto;padding:1rem\"><h1>Updates disabled</h1><p>You will no longer receive email updates for this feedback.</p></body></html>",
+            {
+              status: 200,
+              headers: {
+                "content-type": "text/html; charset=utf-8",
+                ...cors,
+              },
+            },
+          );
+        return jsonResponse({ unsubscribed: true }, { headers: cors });
+      }
       if (followUpReadMatch && request.method === "DELETE") {
         const raw = await env.DB.prepare(
           `SELECT t.feedback_id AS feedbackId, f.organization_id AS organizationId, f.project_id AS projectId
@@ -4797,6 +4874,9 @@ export default {
           ).bind(raw.feedbackId, raw.organizationId, raw.projectId),
           env.DB.prepare(
             "DELETE FROM magic_link_tokens WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+          ).bind(raw.feedbackId, raw.organizationId, raw.projectId),
+          env.DB.prepare(
+            "DELETE FROM consent_records WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
           ).bind(raw.feedbackId, raw.organizationId, raw.projectId),
           env.DB.prepare(
             "INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'delete', 'completed', ?, ?)",
@@ -4888,6 +4968,11 @@ export default {
         )
           .bind(context.organizationId, context.projectId)
           .all();
+        const consent = await env.DB.prepare(
+          "SELECT id, feedback_id AS feedbackId, email, purpose, legal_basis AS legalBasis, granted_at AS grantedAt, withdrawn_at AS withdrawnAt FROM consent_records WHERE organization_id = ? AND project_id = ? ORDER BY granted_at ASC",
+        )
+          .bind(context.organizationId, context.projectId)
+          .all();
         await env.DB.prepare(
           "INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'export', 'completed', ?, ?)",
         )
@@ -4905,6 +4990,7 @@ export default {
             feedback: feedback.results ?? [],
             comments: comments.results ?? [],
             attachments: attachments.results ?? [],
+            consentRecords: consent.results ?? [],
           }),
           {
             status: 200,
@@ -5985,7 +6071,7 @@ export default {
             email: event.email,
             subject: "Track your NitroPing feedback",
             text: `Your feedback was received. Follow this link to track updates: ${link}`,
-            html: `<p>Your feedback was received.</p><p><a href="${link}">Track your feedback</a></p>`,
+            html: `<p>Your feedback was received.</p><p><a href="${link}">Track your feedback</a></p><p style="color:#667085;font-size:12px">You requested email updates for this feedback. <a href="${env.PUBLIC_APP_URL}/api/v1/follow-up/${encodeURIComponent(event.token)}/unsubscribe">Unsubscribe from updates</a>.</p>`,
           });
         } catch {
           message.retry({
@@ -6140,6 +6226,9 @@ export default {
         ).bind(feedback.id, feedback.organizationId, feedback.projectId),
         env.DB.prepare(
           "DELETE FROM magic_link_tokens WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+        ).bind(feedback.id, feedback.organizationId, feedback.projectId),
+        env.DB.prepare(
+          "DELETE FROM consent_records WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
         ).bind(feedback.id, feedback.organizationId, feedback.projectId),
         env.DB.prepare(
           "DELETE FROM feedback_status_history WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
