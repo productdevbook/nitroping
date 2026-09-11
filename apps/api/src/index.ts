@@ -241,6 +241,16 @@ const recordMetric = (env: Env, event: string, organizationId: string, projectId
   try { env.ANALYTICS.writeDataPoint({ blobs: [event, organizationId, projectId], doubles, indexes: [event] }); } catch { /* Analytics must never break product traffic. */ }
 };
 
+const writeAudit = async (env: Env, context: TenantContext, action: string, entityType: string, entityId: string, metadata: Record<string, unknown> = {}): Promise<void> => {
+  await env.DB.prepare("INSERT INTO audit_logs (id, organization_id, project_id, action, entity_type, entity_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id(), context.organizationId, context.projectId, action, entityType, entityId, JSON.stringify(metadata), new Date().toISOString()).run();
+};
+
+const writeOrganizationAudit = async (env: Env, organizationId: string, action: string, entityType: string, entityId: string, actorUserId: string | null, metadata: Record<string, unknown> = {}): Promise<void> => {
+  await env.DB.prepare("INSERT INTO audit_logs (id, organization_id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id(), organizationId, actorUserId, action, entityType, entityId, JSON.stringify(metadata), new Date().toISOString()).run();
+};
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const rid = requestId(request);
@@ -282,6 +292,7 @@ export default {
             env.DB.prepare("INSERT INTO subscriptions (organization_id, plan, status, created_at, updated_at) VALUES (?, 'free', 'active', ?, ?)").bind(organizationId, now, now),
           ]);
         } catch { return error("ORGANIZATION_SLUG_TAKEN", "Organization slug is already in use", rid, 409); }
+        await writeOrganizationAudit(env, organizationId, "organization.created", "organization", organizationId, userId);
         return jsonResponse({ id: organizationId, name, slug, role: "owner", createdAt: now }, { status: 201, headers: cors });
       }
       const organizationDeleteMatch = path.match(/^\/api\/v1\/dashboard\/organizations\/([^/]+)$/);
@@ -326,6 +337,7 @@ export default {
         if (membersMatch[2] === userId) return error("MEMBER_SELF_REMOVE", "You cannot remove yourself from an organization", rid, 400);
         const removed = await env.DB.prepare("DELETE FROM organization_members WHERE organization_id = ? AND user_id = ?").bind(membersMatch[1], membersMatch[2]).run();
         if (!removed.meta.changes) return error("MEMBER_NOT_FOUND", "Member was not found", rid, 404);
+        await writeOrganizationAudit(env, membersMatch[1], "member.removed", "user", membersMatch[2], userId);
         return new Response(null, { status: 204, headers: cors });
       }
       const inviteMatch = path.match(/^\/api\/v1\/dashboard\/organizations\/([^/]+)\/invites$/);
@@ -345,6 +357,7 @@ export default {
         catch { return error("INVITE_ALREADY_EXISTS", "An active invite already exists for this email", rid, 409); }
         const link = `${env.PUBLIC_APP_URL}/api/v1/dashboard/invites/${token}/accept`;
         await env.EVENTS.send({ type: "email.send", email, subject: "You have been invited to NitroPing", text: `You have been invited to join a NitroPing organization. Accept the invitation: ${link}`, html: `<p>You have been invited to join a NitroPing organization.</p><p><a href="${link}">Accept invitation</a></p>`, eventId: id() });
+        await writeOrganizationAudit(env, inviteMatch[1], "member.invited", "organization_invite", email, userId, { role });
         return jsonResponse({ accepted: false, email, role, expiresAt }, { status: 202, headers: cors });
       }
       const inviteAcceptMatch = path.match(/^\/api\/v1\/dashboard\/invites\/([^/]+)\/accept$/);
@@ -358,6 +371,7 @@ export default {
           env.DB.prepare("INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, created_at) VALUES (?, ?, ?, ?)").bind(invite.organizationId, userId, invite.role, now),
           env.DB.prepare("UPDATE organization_invites SET accepted_at = ? WHERE id = ? AND accepted_at IS NULL").bind(now, invite.id),
         ]);
+        await writeOrganizationAudit(env, invite.organizationId, "member.joined", "user", userId, userId, { role: invite.role });
         return jsonResponse({ accepted: true, organizationId: invite.organizationId, role: invite.role }, { headers: cors });
       }
       const projectsPath = path === "/api/v1/dashboard/projects";
@@ -386,6 +400,7 @@ export default {
             env.DB.prepare("INSERT INTO project_api_keys (id, organization_id, project_id, kind, label, key_prefix, key_hash, created_at) VALUES (?, ?, ?, 'public', 'default public key', ?, ?, ?), (?, ?, ?, 'server', 'default server key', ?, ?, ?)").bind(id(), projectCreateMatch[1], projectId, publicKey.slice(0, 12), await sha256(publicKey), now, id(), projectCreateMatch[1], projectId, serverKey.slice(0, 12), await sha256(serverKey), now),
           ]);
         } catch { return error("PROJECT_SLUG_TAKEN", "Project slug is already in use", rid, 409); }
+        await writeOrganizationAudit(env, projectCreateMatch[1], "project.created", "project", projectId, userId);
         return jsonResponse({ id: projectId, organizationId: projectCreateMatch[1], name, slug, publicKey, serverKey, createdAt: now }, { status: 201, headers: cors });
       }
       const webhookMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/webhooks(?:\/([^/]+))?$/);
@@ -403,6 +418,7 @@ export default {
           const result = await env.DB.prepare("UPDATE webhooks SET active = 0 WHERE id = ? AND organization_id = ? AND project_id = ?").bind(webhookMatch[2], context.organizationId, context.projectId).run();
           if (!result.meta.changes) return error("WEBHOOK_NOT_FOUND", "Webhook was not found", rid, 404);
           await env.CACHE.delete(`webhook:secret:${webhookMatch[2]}`);
+          await writeAudit(env, context, "webhook.disabled", "webhook", webhookMatch[2]);
           return new Response(null, { status: 204, headers: cors });
         }
         const body = await jsonBody(request);
@@ -416,6 +432,7 @@ export default {
         const now = new Date().toISOString();
         await env.DB.prepare("INSERT INTO webhooks (id, organization_id, project_id, url, secret_hash, events_json, active, created_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?)").bind(webhookId, context.organizationId, context.projectId, webhookUrl.toString(), await sha256(secret), JSON.stringify(events), now).run();
         await env.CACHE.put(`webhook:secret:${webhookId}`, secret);
+        await writeAudit(env, context, "webhook.created", "webhook", webhookId, { events });
         return jsonResponse({ id: webhookId, url: webhookUrl.toString(), events, active: true, secret, createdAt: now }, { status: 201, headers: cors });
       }
       const settingsMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/settings$/);
@@ -440,6 +457,7 @@ export default {
         if (!Number.isInteger(retentionDays) || retentionDays < 1 || retentionDays > 3650) return error("VALIDATION_ERROR", "Retention must be between 1 and 3650 days", rid, 400);
         if (!Array.isArray(origins) || origins.length > 50 || origins.some((origin) => typeof origin !== "string" || !/^https:\/\//.test(origin))) return error("VALIDATION_ERROR", "Origins must be HTTPS URLs", rid, 400);
         await env.DB.prepare("UPDATE project_settings SET theme_json = ?, allowed_metadata_json = ?, retention_days = ?, origins_json = ? WHERE project_id = ?").bind(JSON.stringify(theme), JSON.stringify(allowedMetadata), retentionDays, JSON.stringify(origins), context.projectId).run();
+        await writeAudit(env, context, "project.settings.updated", "project", context.projectId, { retentionDays, originCount: origins.length, metadataFieldCount: allowedMetadata.length });
         return jsonResponse({ theme, allowedMetadata, retentionDays, origins }, { headers: cors });
       }
       const usageMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/usage$/);
@@ -479,6 +497,7 @@ export default {
           if (!apiKeysMatch[2]) return error("API_KEY_ID_REQUIRED", "API key ID is required", rid, 400);
           const result = await env.DB.prepare("UPDATE project_api_keys SET revoked_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND revoked_at IS NULL").bind(new Date().toISOString(), apiKeysMatch[2], context.organizationId, context.projectId).run();
           if (!result.meta.changes) return error("API_KEY_NOT_FOUND", "API key was not found", rid, 404);
+          await writeAudit(env, context, "api_key.revoked", "api_key", apiKeysMatch[2]);
           return new Response(null, { status: 204, headers: cors });
         }
         const body = await jsonBody(request);
@@ -490,6 +509,7 @@ export default {
         const now = new Date().toISOString();
         if (kind === "public") await env.DB.prepare("UPDATE projects SET public_key = ?, updated_at = ? WHERE id = ? AND organization_id = ?").bind(key, now, context.projectId, context.organizationId).run();
         await env.DB.prepare("INSERT INTO project_api_keys (id, organization_id, project_id, kind, label, key_prefix, key_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(keyId, context.organizationId, context.projectId, kind, label, key.slice(0, 12), await sha256(key), now).run();
+        await writeAudit(env, context, "api_key.created", "api_key", keyId, { kind, label });
         return jsonResponse({ id: keyId, kind, label, key, keyPrefix: key.slice(0, 12), createdAt: now }, { status: 201, headers: cors });
       }
       if (path === "/api/v1/dashboard/billing" && request.method === "GET") {
@@ -880,6 +900,7 @@ export default {
         const internal = body.internal === true;
         const comment = { id: id(), feedbackId: replyMatch[1], body: body.body.trim(), isInternal: internal, createdAt: new Date().toISOString() };
         await env.DB.prepare("INSERT INTO feedback_comments (id, organization_id, project_id, feedback_id, body, is_internal, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(comment.id, context.organizationId, context.projectId, comment.feedbackId, comment.body, internal ? 1 : 0, comment.createdAt).run();
+        await writeAudit(env, context, internal ? "feedback.internal_note.created" : "feedback.reply.created", "feedback", replyMatch[1]);
         if (!internal) {
           recordMetric(env, "feedback.replied", context.organizationId, context.projectId, [1]);
           const eventId = id();
@@ -901,6 +922,7 @@ export default {
         if (context instanceof Response) return context;
         const result = await Effect.runPromise(changeFeedbackStatus(repo, context, statusMatch[1], body.status));
         if (!result) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        await writeAudit(env, context, "feedback.status.updated", "feedback", result.id, { status: result.status });
         recordMetric(env, "feedback.updated", context.organizationId, context.projectId, [1]);
         const eventId = id();
         ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, result.id, "feedback.updated", eventId));
