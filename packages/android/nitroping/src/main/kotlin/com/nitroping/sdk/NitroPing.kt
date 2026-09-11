@@ -23,6 +23,7 @@ data class Feedback(
 )
 
 data class FeedbackResponse(val id: String, val status: String, val title: String, val createdAt: String)
+data class NitroPingAttachment(val bytes: ByteArray, val contentType: String)
 data class FollowUpComment(val id: String, val body: String, val createdAt: String)
 data class FollowUpSnapshot(val feedbackId: String, val status: String, val title: String, val body: String, val comments: List<FollowUpComment>)
 
@@ -57,6 +58,19 @@ class NitroPingClient(
     }
 
     fun pendingCount(): Int = queue().size
+
+    suspend fun submit(feedback: Feedback, attachments: List<NitroPingAttachment>): FeedbackResponse = withContext(Dispatchers.IO) {
+        val response = submit(feedback)
+        attachments.forEach { uploadAttachment(response.id, it) }
+        response
+    }
+
+    suspend fun uploadAttachment(feedbackId: String, attachment: NitroPingAttachment): String = withContext(Dispatchers.IO) {
+        if (attachment.bytes.isEmpty() || attachment.bytes.size > 10 * 1024 * 1024) throw NitroPingHttpException(413, "Attachments cannot exceed 10 MB")
+        val initiated = JSONObject(requestRaw("POST", "/projects/$projectKey/uploads/initiate", "{\"feedbackId\":${quote(feedbackId)},\"contentType\":${quote(attachment.contentType)},\"size\":${attachment.bytes.size}}"))
+        uploadRaw(initiated.getString("uploadUrl"), attachment.bytes, attachment.contentType)
+        initiated.getString("attachmentId")
+    }
 
     suspend fun requestFollowUp(feedbackId: String, email: String): Boolean = withContext(Dispatchers.IO) {
         requestRaw("POST", "/projects/$projectKey/follow-up/request", "{\"feedbackId\":${quote(feedbackId)},\"email\":${quote(email)}}")
@@ -101,6 +115,17 @@ class NitroPingClient(
             val responseBody = (if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
             if (connection.responseCode !in 200..299) throw NitroPingHttpException(connection.responseCode, responseBody)
             return responseBody
+        } finally { connection.disconnect() }
+    }
+
+    private fun uploadRaw(path: String, bytes: ByteArray, contentType: String) {
+        val origin = URL(apiBaseUrl).let { "${it.protocol}://${it.authority}" }
+        val connection = URL(if (path.startsWith("http")) path else "$origin$path").openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "PUT"; connection.doOutput = true
+            connection.setRequestProperty("Content-Type", contentType); connection.setRequestProperty("X-NitroPing-Project-Key", projectKey)
+            connection.outputStream.use { it.write(bytes) }
+            if (connection.responseCode !in 200..299) throw NitroPingHttpException(connection.responseCode, "Attachment upload failed")
         } finally { connection.disconnect() }
     }
 

@@ -1,3 +1,9 @@
 # NitroPing Android SDK
 
-The Android library module is based on Kotlin coroutines. Compose and Views widget layers can be built on top of this core; its network contract matches the web and iOS SDKs. It persists offline submissions and provides `requestFollowUp` and `fetchFollowUp` for status and public replies.
+The Android library module is based on Kotlin coroutines. It includes ready-to-embed Views and Jetpack Compose feedback forms, while the core network contract matches the web and iOS SDKs. It persists offline submissions, provides `requestFollowUp` and `fetchFollowUp` for status and public replies, and supports `NitroPingAttachment` uploads.
+
+Compose usage:
+
+```kotlin
+NitroPingFeedback(client = nitroPingClient)
+```

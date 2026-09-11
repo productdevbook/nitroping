@@ -1,0 +1,46 @@
+package com.nitroping.sdk
+
+import android.content.Context
+import android.graphics.Color
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/** A ready-to-embed Android Views feedback form. */
+class NitroPingFeedbackView(
+    context: Context,
+    private val client: NitroPingClient,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
+) : LinearLayout(context) {
+    private val titleField = EditText(context).apply { hint = "Title" }
+    private val bodyField = EditText(context).apply { hint = "Description"; minLines = 4; gravity = android.view.Gravity.TOP }
+    private val emailField = EditText(context).apply { hint = "Email (optional)" }
+    private val status = TextView(context).apply { setTextColor(Color.GRAY) }
+    private val submit = Button(context).apply { text = "Submit feedback" }
+
+    init {
+        orientation = VERTICAL; setPadding(24, 24, 24, 24)
+        listOf(titleField, bodyField, emailField, submit, status).forEach { addView(it, LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 12 }) }
+        submit.setOnClickListener { send() }
+    }
+
+    private fun send() {
+        val title = titleField.text.toString().trim(); val body = bodyField.text.toString().trim()
+        if (title.length < 3 || body.length < 3) { status.text = "Please enter a title and description."; return }
+        submit.isEnabled = false
+        scope.launch {
+            try {
+                client.submit(Feedback(FeedbackType.SUGGESTION, title, body, email = emailField.text.toString().trim().ifEmpty { null }))
+                status.text = "Thanks — your feedback was sent."; titleField.text.clear(); bodyField.text.clear(); emailField.text.clear()
+            } catch (_: NitroPingQueuedException) { status.text = "Saved locally and will retry when online." }
+            catch (_: Exception) { status.text = "Unable to send feedback." }
+            finally { submit.isEnabled = true }
+        }
+    }
+}

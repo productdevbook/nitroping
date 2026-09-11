@@ -44,6 +44,15 @@ public struct NitroPingFeedbackResponse: Codable, Sendable {
     public let createdAt: String
 }
 
+public struct NitroPingAttachment: Sendable {
+    public let data: Data
+    public let contentType: String
+
+    public init(data: Data, contentType: String) {
+        self.data = data; self.contentType = contentType
+    }
+}
+
 public struct NitroPingFollowUpFeedback: Codable, Sendable {
     public let id: String
     public let type: String
@@ -114,6 +123,25 @@ public actor NitroPingClient {
 
     public var pendingCount: Int { pending.count }
 
+    public func submit(_ feedback: NitroPingFeedback, attachments: [NitroPingAttachment]) async throws -> NitroPingFeedbackResponse {
+        let response = try await submit(feedback)
+        for attachment in attachments { _ = try await uploadAttachment(feedbackId: response.id, attachment: attachment) }
+        return response
+    }
+
+    @discardableResult
+    public func uploadAttachment(feedbackId: String, attachment: NitroPingAttachment) async throws -> String {
+        guard attachment.data.count > 0, attachment.data.count <= 10 * 1024 * 1024 else { throw NitroPingError.server(statusCode: 413, message: "Attachments cannot exceed 10 MB") }
+        var initiate = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("projects/\(configuration.projectKey)/uploads/initiate"))
+        initiate.httpMethod = "POST"; initiate.setValue("application/json", forHTTPHeaderField: "Content-Type"); initiate.setValue(configuration.projectKey, forHTTPHeaderField: "X-NitroPing-Project-Key")
+        initiate.httpBody = try JSONSerialization.data(withJSONObject: ["feedbackId": feedbackId, "contentType": attachment.contentType, "size": attachment.data.count])
+        let initiated = try JSONDecoder().decode(NitroPingUploadInitiation.self, from: try await perform(initiate))
+        guard let uploadURL = URL(string: initiated.uploadUrl, relativeTo: configuration.apiBaseURL)?.absoluteURL else { throw NitroPingError.invalidResponse }
+        var upload = URLRequest(url: uploadURL); upload.httpMethod = "PUT"; upload.httpBody = attachment.data; upload.setValue(attachment.contentType, forHTTPHeaderField: "Content-Type"); upload.setValue(configuration.projectKey, forHTTPHeaderField: "X-NitroPing-Project-Key")
+        _ = try await perform(upload)
+        return initiated.attachmentId
+    }
+
     public func requestFollowUp(feedbackId: String, email: String) async throws {
         var request = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("projects/\(configuration.projectKey)/follow-up/request"))
         request.httpMethod = "POST"
@@ -161,4 +189,9 @@ public actor NitroPingClient {
     private func persist() {
         UserDefaults.standard.set(try? JSONEncoder().encode(pending), forKey: pendingStorageKey)
     }
+}
+
+private struct NitroPingUploadInitiation: Codable, Sendable {
+    let attachmentId: String
+    let uploadUrl: String
 }
