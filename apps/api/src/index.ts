@@ -1317,6 +1317,30 @@ export default {
         { headers: cors },
       );
     try {
+      const hostname = url.hostname.toLowerCase().replace(/\.$/, "");
+      const platformHostnames = new Set([
+        "nitroping.dev",
+        "www.nitroping.dev",
+        "api.nitroping.dev",
+        "localhost",
+        "127.0.0.1",
+      ]);
+      if (
+        !platformHostnames.has(hostname) &&
+        (path === "" || path === "/portal")
+      ) {
+        const customPortal = await env.DB.prepare(
+          "SELECT d.project_id AS projectId, p.public_key AS publicKey FROM custom_domains d JOIN projects p ON p.id = d.project_id AND p.organization_id = d.organization_id AND p.deleted_at IS NULL WHERE d.hostname = ? AND d.deleted_at IS NULL LIMIT 1",
+        )
+          .bind(hostname)
+          .first<{ projectId: string; publicKey: string }>();
+        if (customPortal) {
+          const portalUrl = new URL("/portal.html", request.url);
+          portalUrl.searchParams.set("projectId", customPortal.projectId);
+          portalUrl.searchParams.set("projectKey", customPortal.publicKey);
+          return env.ASSETS.fetch(new Request(portalUrl, request));
+        }
+      }
       const origin = request.headers.get("origin");
       const projectKey =
         request.headers.get("x-nitroping-project-key") ??
