@@ -1487,8 +1487,8 @@ export default {
               "INSERT INTO organizations (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
             ).bind(organizationId, name, slug, now, now),
             env.DB.prepare(
-              "INSERT INTO organization_members (organization_id, user_id, role, created_at) VALUES (?, ?, 'owner', ?)",
-            ).bind(organizationId, userId, now),
+              "INSERT INTO organization_members (organization_id, user_id, role, created_at, updated_at) VALUES (?, ?, 'owner', ?, ?)",
+            ).bind(organizationId, userId, now, now),
             env.DB.prepare(
               "INSERT INTO subscriptions (organization_id, plan, status, created_at, updated_at) VALUES (?, 'free', 'active', ?, ?)",
             ).bind(organizationId, now, now),
@@ -1878,8 +1878,11 @@ export default {
         const now = new Date().toISOString();
         await env.DB.batch([
           env.DB.prepare(
-            "INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, created_at) VALUES (?, ?, ?, ?)",
-          ).bind(invite.organizationId, userId, invite.role, now),
+            `INSERT INTO organization_members (organization_id, user_id, role, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?)
+             ON CONFLICT(organization_id, user_id) DO UPDATE SET
+               role = excluded.role, updated_at = excluded.updated_at, deleted_at = NULL`,
+          ).bind(invite.organizationId, userId, invite.role, now, now),
           env.DB.prepare(
             "UPDATE organization_invites SET accepted_at = ? WHERE id = ? AND accepted_at IS NULL",
           ).bind(now, invite.id),
