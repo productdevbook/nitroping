@@ -7,6 +7,13 @@ const stage = process.env.NITROPING_STAGE ?? "production";
 const suffix = stage === "production" ? "" : `-${stage}`;
 const manageDns = process.env.NITROPING_MANAGE_DNS === "true";
 const apiOrigin = process.env.NITROPING_API_ORIGIN ?? "nitroping-api.srvrun.workers.dev";
+const accessTeamDomain = process.env.ACCESS_TEAM_DOMAIN ?? "https://anadolu-ekspresi.cloudflareaccess.com";
+const accessAudience = process.env.ACCESS_AUDIENCE ?? "b269ef7350f4c5fae49034984f7dcca401553077292e0ca118f985a01e32358c";
+const publicAppUrl = process.env.NITROPING_PUBLIC_APP_URL ?? (
+  stage === "production"
+    ? "https://nitroping.dev"
+    : `https://nitroping-api${suffix}.srvrun.workers.dev`
+);
 
 export default Alchemy.Stack(
   `nitroping-${stage}`,
@@ -68,12 +75,12 @@ export default Alchemy.Stack(
         AI: Cloudflare.Workers.AI(),
         FEEDBACK_SEARCH: feedbackSearch,
         ENVIRONMENT: stage,
-        ACCESS_TEAM_DOMAIN: process.env.ACCESS_TEAM_DOMAIN ?? "",
-        ACCESS_AUDIENCE: process.env.ACCESS_AUDIENCE ?? "",
+        ACCESS_TEAM_DOMAIN: accessTeamDomain,
+        ACCESS_AUDIENCE: accessAudience,
         OIDC_ISSUER_URL: process.env.OIDC_ISSUER_URL ?? "",
         OIDC_AUDIENCE: process.env.OIDC_AUDIENCE ?? "",
         EMAIL_FROM: "notifications@nitroping.dev",
-        PUBLIC_APP_URL: stage === "production" ? "https://nitroping.dev" : `https://nitroping-${stage}.dev`,
+        PUBLIC_APP_URL: publicAppUrl,
         TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY ?? "",
         CUSTOM_HOSTNAME_ZONE_ID: process.env.CUSTOM_HOSTNAME_ZONE_ID ?? "",
         CUSTOM_HOSTNAME_ZONE_NAME: process.env.CUSTOM_HOSTNAME_ZONE_NAME ?? "nitroping.dev",
