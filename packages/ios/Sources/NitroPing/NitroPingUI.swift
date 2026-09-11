@@ -87,7 +87,10 @@ private struct NitroPingCustomFieldView: View {
     var body: some View {
         Group {
             if field.type == "textarea" {
-                TextField(field.label, text: textBinding, axis: .vertical).lineLimit(3...6)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(field.label).font(.caption)
+                    TextEditor(text: textBinding).frame(minHeight: 90)
+                }
             } else if field.type == "select" {
                 Picker(field.label, selection: textBinding) {
                     Text("Select an option").tag("")
