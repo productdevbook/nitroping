@@ -27,11 +27,12 @@ bunx wrangler d1 migrations apply nitroping --local --config apps/api/wrangler.j
 Alchemy infrastructure plan/deploy:
 
 ```bash
-NITROPING_STAGE=production ALCHEMY_STAGE=production bun run infra:plan
-NITROPING_STAGE=staging ALCHEMY_STAGE=staging bun run infra:deploy
+set -a; source /home/opensrc/.cf.env; set +a
+CLOUDFLARE_ACCOUNT_ID="$ACCOUNT_ID" CLOUDFLARE_API_TOKEN="$ACCOUNT_TOKEN" NITROPING_STAGE=staging bun run infra:plan
+CLOUDFLARE_ACCOUNT_ID="$ACCOUNT_ID" CLOUDFLARE_API_TOKEN="$ACCOUNT_TOKEN" NITROPING_STAGE=staging bun run infra:deploy
 ```
 
-Production Alchemy adoption requires a Cloudflare token with Workers Scripts Edit and Queues Edit permissions. Wrangler deploy remains the operational production path until that token is available.
+The Alchemy stack is intentionally isolated in `infra/` and uses the same Cloudflare account credentials as the operational tooling. Review the plan before deploying: an empty Alchemy state will propose new resources rather than adopting resources already managed by Wrangler. Production currently uses Wrangler deployment until the Alchemy state is explicitly adopted.
 
 Stripe billing is provider-isolated and disabled until production secrets are configured:
 
@@ -52,7 +53,7 @@ The dashboard is a React 19 application built with Vite 8 and Bun. It uses a sma
 - `apps/api/public/dashboard.html`: generated production entry served by the Worker
 - `apps/api/public/assets`: generated JavaScript bundle
 
-The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Changelog, Audit log, Developer controls, Team, and Settings. Each view talks to the versioned API through the authenticated organization-member boundary, with a project-key/server-key fallback for local development. Authentication is kept outside the visual components.
+The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Changelog, Audit log, Developer controls, Team, Notifications, and Settings. Each view talks to the versioned API through the authenticated organization-member boundary, with a project-key/server-key fallback for local development. Authentication is kept outside the visual components.
 
 The hosted public portal is available at `/portal?projectId=<project-id>&projectKey=<public-key>`. It provides feedback submission, community browsing, voting, roadmap, and changelog views without requiring the customer to build a separate public page.
 
