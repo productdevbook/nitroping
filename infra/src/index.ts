@@ -14,7 +14,10 @@ export default Alchemy.Stack(
       name: `nitroping${suffix}`,
       jurisdiction: "eu",
       primaryLocationHint: "weur",
-      migrations: { dir: "../migrations" },
+      // Production D1 is already managed by Wrangler's migration ledger. Alchemy
+      // adopts that database without replaying the full history; fresh staging
+      // and development stacks still receive the complete migration directory.
+      ...(stage === "production" ? {} : { migrations: { dir: "../migrations" } }),
     });
     const attachments = yield* Cloudflare.R2.Bucket("Attachments", {
       name: `nitroping-attachments${suffix}`,
