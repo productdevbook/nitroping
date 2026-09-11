@@ -227,13 +227,13 @@ const etagged = async (data: unknown, request: Request, headers: Record<string, 
 };
 
 const enqueueWebhookDeliveries = async (env: Env, projectId: string, feedbackId: string, eventType: WebhookEventType, sourceEventId: string): Promise<void> => {
-  const webhooks = await env.DB.prepare("SELECT id, events_json AS events FROM webhooks WHERE project_id = ? AND active = 1").bind(projectId).all<{ id: string; events: string }>();
+  const webhooks = await env.DB.prepare("SELECT id, organization_id AS organizationId, events_json AS events FROM webhooks WHERE project_id = ? AND active = 1").bind(projectId).all<{ id: string; organizationId: string; events: string }>();
   for (const webhook of webhooks.results ?? []) {
     const events = JSON.parse(webhook.events || "[]") as string[];
     if (!events.includes(eventType)) continue;
     const deliveryId = id();
-    const inserted = await env.DB.prepare("INSERT OR IGNORE INTO webhook_deliveries (id, webhook_id, event_id, status, attempts, created_at) VALUES (?, ?, ?, 'pending', 0, ?)")
-      .bind(deliveryId, webhook.id, sourceEventId, new Date().toISOString()).run();
+    const inserted = await env.DB.prepare("INSERT OR IGNORE INTO webhook_deliveries (id, organization_id, project_id, webhook_id, event_id, status, attempts, created_at) VALUES (?, ?, ?, ?, ?, 'pending', 0, ?)")
+      .bind(deliveryId, webhook.organizationId, projectId, webhook.id, sourceEventId, new Date().toISOString()).run();
     if (inserted.meta.changes) await env.EVENTS.send({ type: "webhook.deliver", deliveryId, webhookId: webhook.id, eventId: deliveryId, sourceEventId, eventType, feedbackId, projectId });
   }
 };
@@ -243,22 +243,22 @@ const deliverWebhook = async (env: Env, event: { deliveryId: string; webhookId: 
   if (!webhook) return true;
   const secret = await env.CACHE.get(`webhook:secret:${event.webhookId}`);
   if (!secret) {
-    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'failed', attempts = attempts + 1 WHERE id = ?").bind(event.deliveryId).run();
+    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'failed', attempts = attempts + 1 WHERE id = ? AND project_id = ?").bind(event.deliveryId, event.projectId).run();
     return true;
   }
   const feedback = await env.DB.prepare("SELECT id, project_id AS projectId, type, status, priority, title, body, email, platform, app_version AS appVersion, os_version AS osVersion, locale, metadata_json AS metadata, created_at AS createdAt, updated_at AS updatedAt FROM feedback_items WHERE id = ? AND project_id = ? AND deleted_at IS NULL").bind(event.feedbackId, event.projectId).first<Record<string, unknown>>();
   const payload = JSON.stringify({ id: event.sourceEventId, type: event.eventType, projectId: event.projectId, feedback: feedback ? { ...feedback, metadata: JSON.parse(String(feedback.metadata ?? "{}")) } : null, createdAt: new Date().toISOString() });
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const signature = await hmacSha256(secret, `${timestamp}.${payload}`);
-  await env.DB.prepare("UPDATE webhook_deliveries SET attempts = attempts + 1, status = 'pending' WHERE id = ?").bind(event.deliveryId).run();
+  await env.DB.prepare("UPDATE webhook_deliveries SET attempts = attempts + 1, status = 'pending' WHERE id = ? AND project_id = ?").bind(event.deliveryId, event.projectId).run();
   try {
     const response = await fetch(webhook.url, { method: "POST", headers: { "content-type": "application/json", "user-agent": "NitroPing-Webhooks/1", "x-nitroping-event": event.eventType, "x-nitroping-signature": `t=${timestamp},v1=${signature}` }, body: payload, signal: AbortSignal.timeout(10_000) });
     if (!response.ok) throw new Error(`Webhook responded with ${response.status}`);
-    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'delivered', next_attempt_at = NULL WHERE id = ?").bind(event.deliveryId).run();
+    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'delivered', next_attempt_at = NULL WHERE id = ? AND project_id = ?").bind(event.deliveryId, event.projectId).run();
     return true;
   } catch {
     const retryAt = new Date(Date.now() + 60_000).toISOString();
-    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'failed', next_attempt_at = ? WHERE id = ?").bind(retryAt, event.deliveryId).run();
+    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'failed', next_attempt_at = ? WHERE id = ? AND project_id = ?").bind(retryAt, event.deliveryId, event.projectId).run();
     return false;
   }
 };
@@ -278,7 +278,7 @@ const sendTransactionalEmail = async (env: Env, event: { email: string; subject:
 const enqueueWatcherEmails = async (env: Env, feedbackId: string, subject: string, text: string, html: string): Promise<void> => {
   const feedback = await env.DB.prepare("SELECT organization_id AS organizationId, project_id AS projectId FROM feedback_items WHERE id = ?").bind(feedbackId).first<{ organizationId: string; projectId: string }>();
   if (!feedback) return;
-  const watchers = await env.DB.prepare("SELECT email FROM feedback_watchers WHERE feedback_id = ?").bind(feedbackId).all<{ email: string }>();
+  const watchers = await env.DB.prepare("SELECT w.email FROM feedback_watchers w WHERE w.feedback_id = ? AND w.organization_id = ? AND w.project_id = ?").bind(feedbackId, feedback.organizationId, feedback.projectId).all<{ email: string }>();
   for (const watcher of watchers.results ?? []) await env.EVENTS.send({ type: "email.send", organizationId: feedback.organizationId, projectId: feedback.projectId, email: watcher.email, subject, text, html, eventId: id() });
 };
 
@@ -366,21 +366,23 @@ export default {
           env.DB.prepare("UPDATE feedback_items SET email = NULL, body = '[organization deleted]', metadata_json = '{}', deleted_at = ?, updated_at = ? WHERE organization_id = ? AND deleted_at IS NULL").bind(now, now, organizationDeleteMatch[1]),
           env.DB.prepare("UPDATE feedback_comments SET body = '[organization deleted]', deleted_at = ? WHERE organization_id = ? AND deleted_at IS NULL").bind(now, organizationDeleteMatch[1]),
           env.DB.prepare("UPDATE attachments SET deleted_at = ? WHERE organization_id = ? AND deleted_at IS NULL").bind(now, organizationDeleteMatch[1]),
-          env.DB.prepare("DELETE FROM feedback_votes WHERE feedback_id IN (SELECT id FROM feedback_items WHERE organization_id = ?)").bind(organizationDeleteMatch[1]),
-          env.DB.prepare("DELETE FROM feedback_watchers WHERE feedback_id IN (SELECT id FROM feedback_items WHERE organization_id = ?)").bind(organizationDeleteMatch[1]),
+          env.DB.prepare("DELETE FROM feedback_votes WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
+          env.DB.prepare("DELETE FROM feedback_watchers WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM feedback_status_history WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
-          env.DB.prepare("DELETE FROM feedback_tag_links WHERE tag_id IN (SELECT id FROM feedback_tags WHERE organization_id = ?)").bind(organizationDeleteMatch[1]),
-          env.DB.prepare("DELETE FROM roadmap_feedback_links WHERE roadmap_id IN (SELECT id FROM roadmap_items WHERE organization_id = ?)").bind(organizationDeleteMatch[1]),
-          env.DB.prepare("DELETE FROM changelog_feedback_links WHERE changelog_id IN (SELECT id FROM changelog_items WHERE organization_id = ?)").bind(organizationDeleteMatch[1]),
+          env.DB.prepare("DELETE FROM feedback_tag_links WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
+          env.DB.prepare("DELETE FROM roadmap_feedback_links WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
+          env.DB.prepare("DELETE FROM changelog_feedback_links WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM feedback_tags WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM categories WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM roadmap_items WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM changelog_items WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM project_api_keys WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
+          env.DB.prepare("DELETE FROM webhook_deliveries WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM webhooks WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
+          env.DB.prepare("DELETE FROM project_settings WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM organization_invites WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM notification_preferences WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
-          env.DB.prepare("DELETE FROM magic_link_tokens WHERE feedback_id IN (SELECT id FROM feedback_items WHERE organization_id = ?)").bind(organizationDeleteMatch[1]),
+          env.DB.prepare("DELETE FROM magic_link_tokens WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM idempotency_keys WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM usage_counters WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM subscriptions WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
@@ -482,7 +484,7 @@ export default {
         try {
           await env.DB.batch([
             env.DB.prepare("INSERT INTO projects (id, organization_id, name, slug, public_key, server_key_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(projectId, projectCreateMatch[1], name, slug, publicKey, await sha256(serverKey), now, now),
-            env.DB.prepare("INSERT INTO project_settings (project_id) VALUES (?)").bind(projectId),
+            env.DB.prepare("INSERT INTO project_settings (project_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?)").bind(projectId, projectCreateMatch[1], now, now),
             env.DB.prepare("INSERT INTO project_api_keys (id, organization_id, project_id, kind, label, key_prefix, key_hash, created_at) VALUES (?, ?, ?, 'public', 'default public key', ?, ?, ?), (?, ?, ?, 'server', 'default server key', ?, ?, ?)").bind(id(), projectCreateMatch[1], projectId, publicKey.slice(0, 12), await sha256(publicKey), now, id(), projectCreateMatch[1], projectId, serverKey.slice(0, 12), await sha256(serverKey), now),
           ]);
         } catch { return error("PROJECT_SLUG_TAKEN", "Project slug is already in use", rid, 409); }
@@ -766,8 +768,8 @@ export default {
         if (!tagId) return error("TAG_ID_REQUIRED", "tagId is required", rid, 400);
         const tag = await env.DB.prepare("SELECT id FROM feedback_tags WHERE id = ? AND organization_id = ? AND project_id = ?").bind(tagId, context.organizationId, context.projectId).first();
         if (!tag) return error("TAG_NOT_FOUND", "Tag was not found", rid, 404);
-        if (request.method === "POST") await env.DB.prepare("INSERT OR IGNORE INTO feedback_tag_links (feedback_id, tag_id, created_at) VALUES (?, ?, ?)").bind(feedbackTagsMatch[1], tagId, new Date().toISOString()).run();
-        else await env.DB.prepare("DELETE FROM feedback_tag_links WHERE feedback_id = ? AND tag_id = ?").bind(feedbackTagsMatch[1], tagId).run();
+        if (request.method === "POST") await env.DB.prepare("INSERT OR IGNORE INTO feedback_tag_links (organization_id, project_id, feedback_id, tag_id, created_at) VALUES (?, ?, ?, ?, ?)").bind(context.organizationId, context.projectId, feedbackTagsMatch[1], tagId, new Date().toISOString()).run();
+        else await env.DB.prepare("DELETE FROM feedback_tag_links WHERE organization_id = ? AND project_id = ? AND feedback_id = ? AND tag_id = ?").bind(context.organizationId, context.projectId, feedbackTagsMatch[1], tagId).run();
         await writeAudit(env, context, request.method === "POST" ? "feedback.tag.added" : "feedback.tag.removed", "feedback", feedbackTagsMatch[1], { tagId });
         return request.method === "POST" ? jsonResponse({ feedbackId: feedbackTagsMatch[1], tagId }, { status: 201, headers: cors }) : new Response(null, { status: 204, headers: cors });
       }
@@ -962,8 +964,8 @@ export default {
         if (scopeError) return scopeError;
         if (!(await rateLimit(env, request, `vote:${context.projectId}`))) return error("RATE_LIMITED", "Too many requests", rid, 429);
         const voter = await sha256(`${clientIp(request)}:${request.headers.get("user-agent") ?? ""}`);
-        await env.DB.prepare("INSERT OR IGNORE INTO feedback_votes (feedback_id, voter_fingerprint, created_at) SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND status <> 'spam' AND deleted_at IS NULL)").bind(voteMatch[2], voter, new Date().toISOString(), voteMatch[2], context.organizationId, context.projectId).run();
-        const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM feedback_votes WHERE feedback_id = ?").bind(voteMatch[2]).first<{ count: number }>();
+        await env.DB.prepare("INSERT OR IGNORE INTO feedback_votes (organization_id, project_id, feedback_id, voter_fingerprint, created_at) SELECT ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND status <> 'spam' AND deleted_at IS NULL)").bind(context.organizationId, context.projectId, voteMatch[2], voter, new Date().toISOString(), voteMatch[2], context.organizationId, context.projectId).run();
+        const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM feedback_votes WHERE feedback_id = ? AND organization_id = ? AND project_id = ?").bind(voteMatch[2], context.organizationId, context.projectId).first<{ count: number }>();
         return jsonResponse({ feedbackId: voteMatch[2], votes: Number(count?.count ?? 0) }, { headers: cors });
       }
       const uploadMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/uploads\/initiate$/);
@@ -1035,9 +1037,9 @@ export default {
         const now = new Date().toISOString();
         const expiresAt = new Date(Date.now() + 86_400_000).toISOString();
         await env.DB.batch([
-          env.DB.prepare("UPDATE magic_link_tokens SET used_at = ? WHERE feedback_id = ? AND used_at IS NULL AND expires_at > ?").bind(now, body.feedbackId, now),
-          env.DB.prepare("INSERT INTO magic_link_tokens (id, feedback_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?)").bind(id(), body.feedbackId, await sha256(token), expiresAt, now),
-          env.DB.prepare("INSERT OR IGNORE INTO feedback_watchers (feedback_id, email, created_at) VALUES (?, ?, ?)").bind(body.feedbackId, body.email.toLowerCase(), now),
+          env.DB.prepare("UPDATE magic_link_tokens SET used_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND used_at IS NULL AND expires_at > ?").bind(now, body.feedbackId, context.organizationId, context.projectId, now),
+          env.DB.prepare("INSERT INTO magic_link_tokens (id, organization_id, project_id, feedback_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(id(), context.organizationId, context.projectId, body.feedbackId, await sha256(token), expiresAt, now),
+          env.DB.prepare("INSERT OR IGNORE INTO feedback_watchers (organization_id, project_id, feedback_id, email, created_at) VALUES (?, ?, ?, ?, ?)").bind(context.organizationId, context.projectId, body.feedbackId, body.email.toLowerCase(), now),
         ]);
         if (env.EVENTS) await env.EVENTS.send({ type: "follow-up.requested", token, email: body.email, feedbackId: body.feedbackId, organizationId: context.organizationId, projectId: context.projectId, eventId: id() });
         return jsonResponse({ accepted: true }, { status: 202, headers: cors });
@@ -1046,7 +1048,7 @@ export default {
       if (followUpReadMatch && request.method === "GET") {
         const raw = await env.DB.prepare(`SELECT t.feedback_id AS feedbackId, f.organization_id AS organizationId, f.project_id AS projectId
           FROM magic_link_tokens t JOIN feedback_items f ON f.id = t.feedback_id
-          WHERE t.token_hash = ? AND t.used_at IS NULL AND t.expires_at > ? AND f.deleted_at IS NULL AND f.status <> 'spam'`)
+          WHERE t.token_hash = ? AND t.organization_id = f.organization_id AND t.project_id = f.project_id AND t.used_at IS NULL AND t.expires_at > ? AND f.deleted_at IS NULL AND f.status <> 'spam'`)
           .bind(await sha256(followUpReadMatch[1]), new Date().toISOString()).first<{ feedbackId: string; organizationId: string; projectId: string }>();
         if (!raw) return error("FOLLOW_UP_EXPIRED", "The follow-up link is invalid or expired", rid, 404);
         const feedback = await env.DB.prepare("SELECT id, type, status, priority, title, body, platform, app_version AS appVersion, created_at AS createdAt, updated_at AS updatedAt FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(raw.feedbackId, raw.organizationId, raw.projectId).first();
