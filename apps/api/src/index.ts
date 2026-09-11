@@ -1834,6 +1834,42 @@ export default {
         ].includes(String(body.role))
           ? String(body.role)
           : "member";
+        if (role !== "member") {
+          const featureError = await requirePlanFeature(
+            env,
+            inviteMatch[1],
+            "advancedRoles",
+            rid,
+          );
+          if (featureError) return featureError;
+        }
+        const subscription = await env.DB.prepare(
+          "SELECT plan FROM subscriptions WHERE organization_id = ?",
+        )
+          .bind(inviteMatch[1])
+          .first<{ plan: string }>();
+        const memberLimit = entitlementsFor(subscription?.plan).teamMembers;
+        const memberCount = await env.DB.prepare(
+          "SELECT COUNT(*) AS count FROM organization_members WHERE organization_id = ? AND deleted_at IS NULL",
+        )
+          .bind(inviteMatch[1])
+          .first<{ count: number }>();
+        const inviteCount = await env.DB.prepare(
+          "SELECT COUNT(*) AS count FROM organization_invites WHERE organization_id = ? AND accepted_at IS NULL AND expires_at > ? AND deleted_at IS NULL",
+        )
+          .bind(inviteMatch[1], new Date().toISOString())
+          .first<{ count: number }>();
+        if (
+          Number(memberCount?.count ?? 0) + Number(inviteCount?.count ?? 0) >=
+          memberLimit
+        )
+          return error(
+            "PLAN_LIMIT_REACHED",
+            `The ${normalizePlan(subscription?.plan)} plan has reached its team member limit`,
+            rid,
+            402,
+            { limit: memberLimit, resource: "teamMembers" },
+          );
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320)
           return error(
             "VALIDATION_ERROR",
@@ -2731,6 +2767,15 @@ export default {
           );
         }
         const body = await jsonBody(request);
+        if (body.theme !== undefined) {
+          const featureError = await requirePlanFeature(
+            env,
+            context.organizationId,
+            "customTheme",
+            rid,
+          );
+          if (featureError) return featureError;
+        }
         const current = await env.DB.prepare(
           "SELECT theme_json, allowed_metadata_json, retention_days, origins_json FROM project_settings WHERE project_id = ? AND organization_id = ?",
         )

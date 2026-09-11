@@ -3,6 +3,7 @@ export type BillingPlan = "free" | "pro" | "business";
 export type Entitlements = {
   organizations: number;
   projects: number;
+  teamMembers: number;
   monthlyFeedback: number;
   attachmentBytes: number;
   customDomains: boolean;
@@ -23,6 +24,7 @@ export const entitlements: Record<BillingPlan, Entitlements> = {
   free: {
     organizations: 1,
     projects: 1,
+    teamMembers: 1,
     monthlyFeedback: 100,
     attachmentBytes: 25 * 1024 * 1024,
     customDomains: false,
@@ -34,6 +36,7 @@ export const entitlements: Record<BillingPlan, Entitlements> = {
   pro: {
     organizations: 20,
     projects: 20,
+    teamMembers: 10,
     monthlyFeedback: 5_000,
     attachmentBytes: 5 * 1024 * 1024 * 1024,
     customDomains: false,
@@ -45,6 +48,7 @@ export const entitlements: Record<BillingPlan, Entitlements> = {
   business: {
     organizations: 1_000,
     projects: 1_000,
+    teamMembers: 1_000,
     monthlyFeedback: 50_000,
     attachmentBytes: 50 * 1024 * 1024 * 1024,
     customDomains: true,
