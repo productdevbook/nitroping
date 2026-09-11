@@ -812,7 +812,7 @@ const allowedMetadata = async (
   rid: string,
 ): Promise<Response | null> => {
   const settings = await env.DB.prepare(
-    "SELECT allowed_metadata_json, theme_json FROM project_settings WHERE project_id = ? AND organization_id = ?",
+    "SELECT allowed_metadata_json, theme_json FROM project_settings WHERE project_id = ? AND organization_id = ? AND deleted_at IS NULL",
   )
     .bind(context.projectId, context.organizationId)
     .first<{ allowed_metadata_json: string; theme_json: string }>();
@@ -1223,12 +1223,12 @@ const currentUsage = async (
 }> => {
   const period = new Date().toISOString().slice(0, 7);
   const subscription = await env.DB.prepare(
-    "SELECT plan FROM subscriptions WHERE organization_id = ?",
+    "SELECT plan FROM subscriptions WHERE organization_id = ? AND deleted_at IS NULL",
   )
     .bind(organizationId)
     .first<{ plan: string }>();
   const usage = await env.DB.prepare(
-    "SELECT feedback_count AS feedbackCount, attachment_bytes AS attachmentBytes FROM usage_counters WHERE organization_id = ? AND period = ?",
+    "SELECT feedback_count AS feedbackCount, attachment_bytes AS attachmentBytes FROM usage_counters WHERE organization_id = ? AND period = ? AND deleted_at IS NULL",
   )
     .bind(organizationId, period)
     .first<{ feedbackCount: number; attachmentBytes: number }>();
@@ -1275,7 +1275,7 @@ const requirePlanFeature = async (
   rid: string,
 ): Promise<Response | null> => {
   const subscription = await env.DB.prepare(
-    "SELECT plan FROM subscriptions WHERE organization_id = ?",
+    "SELECT plan FROM subscriptions WHERE organization_id = ? AND deleted_at IS NULL",
   )
     .bind(organizationId)
     .first<{ plan: string }>();
@@ -1587,7 +1587,7 @@ export default {
           .first<{ id: string; organization_id: string }>();
         if (project) {
           const settings = await env.DB.prepare(
-            "SELECT origins_json FROM project_settings WHERE project_id = ? AND organization_id = ?",
+            "SELECT origins_json FROM project_settings WHERE project_id = ? AND organization_id = ? AND deleted_at IS NULL",
           )
             .bind(project.id, project.organization_id)
             .first<{ origins_json: string }>();
@@ -2003,7 +2003,7 @@ export default {
           if (featureError) return featureError;
         }
         const subscription = await env.DB.prepare(
-          "SELECT plan FROM subscriptions WHERE organization_id = ?",
+          "SELECT plan FROM subscriptions WHERE organization_id = ? AND deleted_at IS NULL",
         )
           .bind(inviteMatch[1])
           .first<{ plan: string }>();
@@ -2223,7 +2223,7 @@ export default {
             400,
           );
         const subscription = await env.DB.prepare(
-          "SELECT plan FROM subscriptions WHERE organization_id = ?",
+          "SELECT plan FROM subscriptions WHERE organization_id = ? AND deleted_at IS NULL",
         )
           .bind(organizationId)
           .first<{ plan: string }>();
@@ -2519,7 +2519,7 @@ export default {
         ) {
           const subscriptionId = typeof object.id === "string" ? object.id : "";
           const existing = await env.DB.prepare(
-            "SELECT organization_id AS organizationId FROM subscriptions WHERE provider_subscription_id = ?",
+            "SELECT organization_id AS organizationId FROM subscriptions WHERE provider_subscription_id = ? AND deleted_at IS NULL",
           )
             .bind(subscriptionId)
             .first<{ organizationId: string }>();
@@ -2658,7 +2658,7 @@ export default {
         }
         const customEnv = env as CustomDomainEnvironment;
         const subscription = await env.DB.prepare(
-          "SELECT plan FROM subscriptions WHERE organization_id = ?",
+          "SELECT plan FROM subscriptions WHERE organization_id = ? AND deleted_at IS NULL",
         )
           .bind(context.organizationId)
           .first<{ plan: string }>();
@@ -3416,7 +3416,7 @@ export default {
         );
         if (context instanceof Response) return context;
         const subscription = await env.DB.prepare(
-          "SELECT plan, status, provider_customer_id AS providerCustomerId, provider_subscription_id AS providerSubscriptionId, current_period_end AS currentPeriodEnd, created_at AS createdAt, updated_at AS updatedAt FROM subscriptions WHERE organization_id = ?",
+          "SELECT plan, status, provider_customer_id AS providerCustomerId, provider_subscription_id AS providerSubscriptionId, current_period_end AS currentPeriodEnd, created_at AS createdAt, updated_at AS updatedAt FROM subscriptions WHERE organization_id = ? AND deleted_at IS NULL",
         )
           .bind(context.organizationId)
           .first();
@@ -3477,7 +3477,7 @@ export default {
             503,
           );
         const subscription = await env.DB.prepare(
-          "SELECT provider_customer_id AS providerCustomerId FROM subscriptions WHERE organization_id = ?",
+          "SELECT provider_customer_id AS providerCustomerId FROM subscriptions WHERE organization_id = ? AND deleted_at IS NULL",
         )
           .bind(context.organizationId)
           .first<{ providerCustomerId: string | null }>();
@@ -4686,7 +4686,7 @@ export default {
         if (scopeError) return scopeError;
         const [settings, categories] = await Promise.all([
           env.DB.prepare(
-            "SELECT theme_json FROM project_settings WHERE organization_id = ? AND project_id = ?",
+            "SELECT theme_json FROM project_settings WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL",
           )
             .bind(context.organizationId, context.projectId)
             .first<{ theme_json: string }>(),
