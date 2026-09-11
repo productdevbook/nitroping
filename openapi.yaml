@@ -94,6 +94,11 @@ paths:
       summary: List public categories
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }]
       responses: { '200': { description: Categories } }
+  /projects/{projectId}/public/config:
+    get:
+      summary: Read the safe public widget configuration
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/IfNoneMatch' }]
+      responses: { '200': { description: Public widget configuration }, '304': { description: Configuration unchanged }, '401': { $ref: '#/components/responses/Error' } }
   /projects/{projectId}/public/roadmap:
     get:
       summary: List public roadmap items
@@ -232,6 +237,20 @@ paths:
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], properties: { name: { type: string }, slug: { type: string } } } } } }
       responses: { '201': { description: Created }, '409': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/categories/{categoryId}:
+    get:
+      summary: Read one project category
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: categoryId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Category }, '404': { $ref: '#/components/responses/Error' } }
+    patch:
+      summary: Update a project category
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: categoryId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { name: { type: string }, slug: { type: string } } } } } }
+      responses: { '200': { description: Updated }, '404': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
+    delete:
+      summary: Delete a project category and clear category links
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: categoryId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '204': { description: Deleted }, '404': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/roadmap:
     get:
       summary: List roadmap items
@@ -330,6 +349,7 @@ components:
     FeedbackId: { name: feedbackId, in: path, required: true, schema: { type: string, format: uuid } }
     ProjectKey: { name: X-NitroPing-Project-Key, in: header, required: true, schema: { type: string } }
     IdempotencyKey: { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 128 } }
+    IfNoneMatch: { name: If-None-Match, in: header, required: false, schema: { type: string } }
     Cursor: { name: cursor, in: query, required: false, schema: { type: string } }
     FeedbackQuery: { name: q, in: query, required: false, schema: { type: string, maxLength: 120 }, description: Search title and body }
     FeedbackStatus: { name: status, in: query, required: false, schema: { type: string, enum: [new, triaged, planned, in_progress, resolved, closed, spam] } }

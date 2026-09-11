@@ -57,6 +57,8 @@ The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Chang
 
 The hosted public portal is available at `/portal?projectId=<project-id>&projectKey=<public-key>`. It provides feedback submission, community browsing, voting, roadmap, and changelog views without requiring the customer to build a separate public page.
 
+Public clients can load the safe project configuration from `/api/v1/projects/:projectId/public/config`. The response contains the published widget theme and categories only; retention settings, allowed origins, API keys, and organization data are never exposed. The Web SDK wraps this endpoint with `loadNitroPingConfig` and `NitroPing.initAsync`.
+
 Run the dashboard locally:
 
 ```bash

@@ -105,6 +105,30 @@ const publicFeedback = (feedback: Feedback) => {
   return { ...safe, metadata: {} };
 };
 
+const publicWidgetConfig = (themeJson: string, categories: unknown[]): { theme: Record<string, unknown>; categories: unknown[] } => {
+  let raw: Record<string, unknown> = {};
+  try {
+    const parsed = JSON.parse(themeJson);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) raw = parsed as Record<string, unknown>;
+  } catch {
+    raw = {};
+  }
+  const theme: Record<string, unknown> = {};
+  if (["floating", "modal", "side-panel", "inline", "portal", "headless"].includes(String(raw.mode))) theme.mode = raw.mode;
+  if (typeof raw.buttonLabel === "string") theme.buttonLabel = raw.buttonLabel.slice(0, 40);
+  if (Array.isArray(raw.fields)) theme.fields = raw.fields.filter((field): field is string => typeof field === "string" && ["type", "category", "title", "description", "attachment", "email"].includes(field));
+  const colorSource = raw.colors && typeof raw.colors === "object" && !Array.isArray(raw.colors) ? raw.colors as Record<string, unknown> : raw;
+  if (colorSource && typeof colorSource === "object") {
+    const colors: Record<string, string> = {};
+    for (const key of ["primary", "background", "text", "muted"]) {
+      const value = colorSource[key];
+      if (typeof value === "string" && /^#[0-9a-f]{3,8}$/i.test(value)) colors[key] = value;
+    }
+    if (Object.keys(colors).length) theme.colors = colors;
+  }
+  return { theme, categories };
+};
+
 const contextFrom = (url: URL): TenantContext => ({ organizationId: url.searchParams.get("organizationId") ?? "demo-org", projectId: url.searchParams.get("projectId") ?? url.pathname.split("/")[3] ?? "demo-project", publicKey: url.searchParams.get("projectKey") ?? undefined });
 
 const projectFromRequest = async (request: Request, env: Env, url: URL, rid: string): Promise<TenantContext | Response> => {
@@ -721,25 +745,49 @@ export default {
         const checkout = await provider.createCheckoutSession({ organizationId: context.organizationId, plan, customerId: subscription?.providerCustomerId ?? undefined, successUrl: `${env.PUBLIC_APP_URL}/dashboard?billing=success`, cancelUrl: `${env.PUBLIC_APP_URL}/dashboard?billing=cancelled` });
         return jsonResponse(checkout, { status: 201, headers: cors });
       }
-      const categoriesDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/categories$/);
-      if (categoriesDashboardMatch && ["GET", "POST"].includes(request.method)) {
+      const categoriesDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/categories(?:\/([^/]+))?$/);
+      if (categoriesDashboardMatch && ["GET", "POST", "PATCH", "DELETE"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireDashboardProject(request, env, url, categoriesDashboardMatch[1], rid, "project:manage");
+        const context = await requireDashboardProject(request, env, url, categoriesDashboardMatch[1], rid, request.method === "GET" ? "feedback:read" : "project:manage");
         if (context instanceof Response) return context;
         if (request.method === "GET") {
+          if (categoriesDashboardMatch[2]) {
+            const category = await env.DB.prepare("SELECT id, name, slug, created_at AS createdAt FROM categories WHERE id = ? AND organization_id = ? AND project_id = ?").bind(categoriesDashboardMatch[2], context.organizationId, context.projectId).first();
+            return category ? jsonResponse(category, { headers: cors }) : error("CATEGORY_NOT_FOUND", "Category was not found", rid, 404);
+          }
           const rows = await env.DB.prepare("SELECT id, name, slug, created_at AS createdAt FROM categories WHERE organization_id = ? AND project_id = ? ORDER BY name ASC").bind(context.organizationId, context.projectId).all();
           return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
         }
+        if (request.method === "POST" && !categoriesDashboardMatch[2]) {
+          const body = await jsonBody(request);
+          const name = typeof body.name === "string" ? body.name.trim() : "";
+          const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+          if (name.length < 2 || name.length > 80 || !/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) return error("VALIDATION_ERROR", "Category name or slug is invalid", rid, 400);
+          const category = { id: id(), name, slug, createdAt: new Date().toISOString() };
+          try { await env.DB.prepare("INSERT INTO categories (id, organization_id, project_id, name, slug, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(category.id, context.organizationId, context.projectId, name, slug, category.createdAt).run(); }
+          catch { return error("CATEGORY_SLUG_TAKEN", "Category slug is already in use", rid, 409); }
+          await writeAudit(env, context, "category.created", "category", category.id, { name, slug });
+          return jsonResponse(category, { status: 201, headers: cors });
+        }
+        if (!categoriesDashboardMatch[2]) return error("CATEGORY_ID_REQUIRED", "Category ID is required", rid, 400);
+        const existing = await env.DB.prepare("SELECT id, name, slug, created_at AS createdAt FROM categories WHERE id = ? AND organization_id = ? AND project_id = ?").bind(categoriesDashboardMatch[2], context.organizationId, context.projectId).first<{ id: string; name: string; slug: string; createdAt: string }>();
+        if (!existing) return error("CATEGORY_NOT_FOUND", "Category was not found", rid, 404);
+        if (request.method === "DELETE") {
+          await env.DB.prepare("UPDATE feedback_items SET category_id = NULL WHERE category_id = ? AND organization_id = ? AND project_id = ?").bind(existing.id, context.organizationId, context.projectId).run();
+          await env.DB.prepare("DELETE FROM categories WHERE id = ? AND organization_id = ? AND project_id = ?").bind(existing.id, context.organizationId, context.projectId).run();
+          await writeAudit(env, context, "category.deleted", "category", existing.id, { name: existing.name, slug: existing.slug });
+          return new Response(null, { status: 204, headers: cors });
+        }
         const body = await jsonBody(request);
-        const name = typeof body.name === "string" ? body.name.trim() : "";
-        const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        const name = body.name === undefined ? existing.name : typeof body.name === "string" ? body.name.trim() : "";
+        const slug = body.slug === undefined ? existing.slug : typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
         if (name.length < 2 || name.length > 80 || !/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) return error("VALIDATION_ERROR", "Category name or slug is invalid", rid, 400);
-        const category = { id: id(), name, slug, createdAt: new Date().toISOString() };
-        try { await env.DB.prepare("INSERT INTO categories (id, organization_id, project_id, name, slug, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(category.id, context.organizationId, context.projectId, name, slug, category.createdAt).run(); }
+        const category = { id: existing.id, name, slug, createdAt: existing.createdAt, updatedAt: new Date().toISOString() };
+        try { await env.DB.prepare("UPDATE categories SET name = ?, slug = ? WHERE id = ? AND organization_id = ? AND project_id = ?").bind(name, slug, category.id, context.organizationId, context.projectId).run(); }
         catch { return error("CATEGORY_SLUG_TAKEN", "Category slug is already in use", rid, 409); }
-        await writeAudit(env, context, "category.created", "category", category.id, { name, slug });
-        return jsonResponse(category, { status: 201, headers: cors });
+        await writeAudit(env, context, "category.updated", "category", category.id, { name, slug });
+        return jsonResponse(category, { headers: cors });
       }
       const tagsDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/tags$/);
       if (tagsDashboardMatch && ["GET", "POST"].includes(request.method)) {
@@ -915,6 +963,18 @@ export default {
         if (scopeError) return scopeError;
         const rows = await env.DB.prepare("SELECT id, name, slug FROM categories WHERE organization_id = ? AND project_id = ? ORDER BY name ASC").bind(context.organizationId, context.projectId).all();
         return await etagged({ items: rows.results ?? [] }, request, cors);
+      }
+      const publicConfigMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/public\/config$/);
+      if (publicConfigMatch && request.method === "GET") {
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, publicConfigMatch[1], rid);
+        if (scopeError) return scopeError;
+        const [settings, categories] = await Promise.all([
+          env.DB.prepare("SELECT theme_json FROM project_settings WHERE organization_id = ? AND project_id = ?").bind(context.organizationId, context.projectId).first<{ theme_json: string }>(),
+          env.DB.prepare("SELECT id, name, slug FROM categories WHERE organization_id = ? AND project_id = ? ORDER BY name ASC").bind(context.organizationId, context.projectId).all(),
+        ]);
+        return await etagged(publicWidgetConfig(settings?.theme_json ?? "{}", categories.results ?? []), request, cors);
       }
       const roadmapMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/public\/roadmap$/);
       if (roadmapMatch && request.method === "GET") {

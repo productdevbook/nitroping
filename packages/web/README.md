@@ -17,6 +17,23 @@ const client = NitroPing.init({
 });
 ```
 
+To consume the project configuration saved in the NitroPing dashboard, use the asynchronous initializer. It loads only the safe public theme and category data; no dashboard credentials are returned.
+
+```ts
+const client = await NitroPing.initAsync({
+  projectKey: "pk_live_xxx",
+  mode: "floating", // explicit options override the saved project mode
+});
+```
+
+The lower-level loader is available when an application needs to render its own UI:
+
+```ts
+import { loadNitroPingConfig } from "@nitroping/web";
+
+const config = await loadNitroPingConfig({ projectKey: "pk_live_xxx" });
+```
+
 Headless usage is also available:
 
 ```ts

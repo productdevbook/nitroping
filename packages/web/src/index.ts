@@ -4,6 +4,7 @@ export type WidgetMode = "floating" | "modal" | "side-panel" | "inline" | "porta
 export type WidgetField = "type" | "category" | "title" | "description" | "attachment" | "email";
 export type WidgetCategory = { id: string; name: string };
 export type WidgetColors = { primary?: string; background?: string; text?: string; muted?: string };
+export type NitroPingPublicConfig = { theme: { mode?: WidgetMode; buttonLabel?: string; fields?: WidgetField[]; colors?: WidgetColors }; categories: WidgetCategory[] };
 export type NitroPingOptions = {
   projectKey: string; apiBaseUrl?: string; mode?: WidgetMode; theme?: "light" | "dark" | "system"; locale?: string;
   target?: string | HTMLElement; buttonLabel?: string; title?: string; description?: string;
@@ -31,6 +32,13 @@ const request = async <T>(options: NitroPingOptions, path: string, init: Request
   const result = await response.json().catch(() => ({})) as T & { error?: { message?: string } };
   if (!response.ok) throw new Error(result.error?.message ?? "NitroPing request failed");
   return result;
+};
+
+export const loadNitroPingConfig = async (options: Pick<NitroPingOptions, "projectKey" | "apiBaseUrl">): Promise<NitroPingPublicConfig> => {
+  const response = await fetch(`${options.apiBaseUrl ?? "https://nitroping.dev/api/v1"}/projects/${encodeURIComponent(options.projectKey)}/public/config`, { headers: { "x-nitroping-project-key": options.projectKey } });
+  const result = await response.json().catch(() => ({})) as NitroPingPublicConfig & { error?: { message?: string } };
+  if (!response.ok) throw new Error(result.error?.message ?? "NitroPing configuration could not be loaded");
+  return { theme: result.theme ?? {}, categories: Array.isArray(result.categories) ? result.categories : [] };
 };
 
 const css = `.np-root{all:initial;font-family:system-ui,sans-serif;color:var(--np-text,#181221)}.np-root *{box-sizing:border-box}.np-button{position:fixed;right:20px;bottom:20px;z-index:2147483647;border:0;border-radius:999px;padding:12px 16px;background:var(--np-primary,#7c3aed);color:#fff;font:600 14px system-ui;cursor:pointer;box-shadow:0 8px 30px #0003}.np-inline{width:100%}.np-backdrop{position:fixed;inset:0;z-index:2147483646;background:#120b1b99;display:grid;place-items:center;padding:20px}.np-backdrop.np-side{place-items:stretch;padding:0;background:#120b1b66}.np-card{width:min(100%,520px);max-height:calc(100vh - 40px);overflow:auto;background:var(--np-background,#fff);border-radius:18px;padding:24px;box-shadow:0 20px 80px #0005}.np-side .np-card{width:min(100%,520px);height:100%;max-height:none;margin-left:auto;border-radius:22px 0 0 22px}.np-card h2{margin:0 0 6px;font-size:22px}.np-card p{color:var(--np-muted,#665d70);margin:0 0 18px}.np-grid{display:grid;gap:12px}.np-label{display:grid;gap:6px;font:600 13px system-ui}.np-input,.np-select{font:400 15px system-ui;padding:11px 12px;border:1px solid #ddd5e8;border-radius:10px;background:var(--np-background,#fff);color:var(--np-text,#181221)}.np-textarea{min-height:120px;resize:vertical}.np-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.np-secondary,.np-submit{border:0;border-radius:10px;padding:11px 16px;font:700 14px system-ui;cursor:pointer}.np-secondary{background:#f0ebf6;color:#39284d}.np-submit{background:var(--np-primary,#7c3aed);color:#fff}.np-error{color:#b42318;font-size:13px}.np-success{padding:16px;border-radius:12px;background:#f1ebff;color:#4c1d95;line-height:1.5}.np-close{float:right;border:0;background:transparent;font-size:22px;color:var(--np-muted,#665d70);cursor:pointer}.np-file{font-size:13px}`;
@@ -96,6 +104,19 @@ export const NitroPing = {
     if (mode === "inline" || mode === "portal") { const inlineRoot = document.createElement("div"); inlineRoot.className = "np-inline"; buildForm(merged, client, inlineRoot, () => inlineRoot.remove()); root.appendChild(inlineRoot); (host ?? document.body).appendChild(root); }
     else { const button = document.createElement("button"); button.type = "button"; button.className = "np-button"; button.textContent = merged.buttonLabel ?? "Give feedback"; button.addEventListener("click", open); (host ?? document.body).appendChild(root); if (host) host.appendChild(button); else root.appendChild(button); }
     return { ...client, destroy() { root.remove(); } };
+  },
+  async initAsync(options: NitroPingOptions): Promise<NitroPingClient> {
+    const remote = await loadNitroPingConfig(options);
+    const theme = remote.theme;
+    return this.init({
+      ...theme,
+      ...options,
+      mode: options.mode ?? theme.mode,
+      buttonLabel: options.buttonLabel ?? theme.buttonLabel,
+      fields: options.fields ?? theme.fields,
+      categoryOptions: options.categoryOptions ?? remote.categories,
+      colors: { ...theme.colors, ...options.colors },
+    });
   },
   configure(options: Partial<NitroPingOptions>) { configured = { ...configured, ...options, colors: { ...configured.colors, ...options.colors } }; return this; },
 };
