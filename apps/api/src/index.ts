@@ -60,9 +60,12 @@ const repository = (env: Env): FeedbackRepository => ({
     return { items, ...(hasNext && items.length ? { nextCursor: items[items.length - 1].createdAt } : {}) };
   },
   async updateStatus(context, feedbackId, status) {
+    const previous = await env.DB.prepare("SELECT status FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(feedbackId, context.organizationId, context.projectId).first<{ status: string }>();
+    if (!previous) return null;
     const now = new Date().toISOString();
     const result = await env.DB.prepare(`UPDATE feedback_items SET status = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL`).bind(status, now, feedbackId, context.organizationId, context.projectId).run();
     if (!result.meta.changes) return null;
+    if (previous.status !== status) await env.DB.prepare("INSERT INTO feedback_status_history (id, organization_id, project_id, feedback_id, from_status, to_status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(id(), context.organizationId, context.projectId, feedbackId, previous.status, status, now).run();
     return this.get(context, feedbackId);
   },
 });
@@ -487,6 +490,44 @@ export default {
         const result = await Effect.runPromise(listFeedback(repo, context, url.searchParams.get("cursor") ?? undefined));
         return jsonResponse(result, { headers: cors });
       }
+      const dashboardFeedbackMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)$/);
+      if (dashboardFeedbackMatch && request.method === "GET") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const authError = await requireServerKey(request, env, context, rid);
+        if (authError) return authError;
+        const feedback = await env.DB.prepare("SELECT * FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).first<Record<string, unknown>>();
+        if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        const [comments, history] = await Promise.all([
+          env.DB.prepare("SELECT id, feedback_id AS feedbackId, body, author_user_id AS authorUserId, is_internal AS isInternal, created_at AS createdAt FROM feedback_comments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at ASC").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).all(),
+          env.DB.prepare("SELECT id, from_status AS fromStatus, to_status AS toStatus, actor_user_id AS actorUserId, created_at AS createdAt FROM feedback_status_history WHERE feedback_id = ? AND organization_id = ? AND project_id = ? ORDER BY created_at ASC").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).all(),
+        ]);
+        return jsonResponse({ feedback: fromRow(feedback), comments: comments.results ?? [], statusHistory: history.results ?? [] }, { headers: cors });
+      }
+      const replyMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)\/reply$/);
+      if (replyMatch && request.method === "POST") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const authError = await requireServerKey(request, env, context, rid);
+        if (authError) return authError;
+        const body = await jsonBody(request);
+        if (typeof body.body !== "string" || body.body.trim().length < 1 || body.body.length > 10_000) return error("VALIDATION_ERROR", "Reply must be 1-10000 characters", rid, 400);
+        const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(replyMatch[1], context.organizationId, context.projectId).first();
+        if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        const internal = body.internal === true;
+        const comment = { id: id(), feedbackId: replyMatch[1], body: body.body.trim(), isInternal: internal, createdAt: new Date().toISOString() };
+        await env.DB.prepare("INSERT INTO feedback_comments (id, organization_id, project_id, feedback_id, body, is_internal, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(comment.id, context.organizationId, context.projectId, comment.feedbackId, comment.body, internal ? 1 : 0, comment.createdAt).run();
+        if (!internal) {
+          const eventId = id();
+          ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, replyMatch[1], "feedback.replied", eventId));
+          if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(context.projectId).publish({ type: "feedback.replied", feedbackId: replyMatch[1], projectId: context.projectId, createdAt: comment.createdAt }));
+        }
+        return jsonResponse(comment, { status: 201, headers: cors });
+      }
       const statusMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)\/status$/);
       if (statusMatch && request.method === "POST") {
         const accessError = await requireDashboardAccess(request, env, rid);
@@ -498,7 +539,11 @@ export default {
         const authError = await requireServerKey(request, env, context, rid);
         if (authError) return authError;
         const result = await Effect.runPromise(changeFeedbackStatus(repo, context, statusMatch[1], body.status));
-        return result ? jsonResponse(result, { headers: cors }) : error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        if (!result) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        const eventId = id();
+        ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, result.id, "feedback.updated", eventId));
+        if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(context.projectId).publish({ type: "feedback.updated", feedbackId: result.id, projectId: context.projectId, createdAt: result.updatedAt }));
+        return jsonResponse(result, { headers: cors });
       }
       if (env.ASSETS) {
         if (path === "/dashboard" || path === "/dashboard/") return env.ASSETS.fetch(new Request(new URL("/dashboard.html", request.url), request));
