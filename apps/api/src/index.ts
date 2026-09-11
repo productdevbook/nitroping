@@ -18,6 +18,7 @@ const planAttachmentLimits: Record<string, number> = { free: 25 * 1024 * 1024, p
 const requestId = (request: Request) => request.headers.get("x-request-id") ?? `req_${id()}`;
 const error = (code: string, message: string, requestId: string, status: number, details?: unknown) =>
   jsonResponse({ error: { code, message, requestId, details } }, { status, headers: { "x-request-id": requestId } });
+const htmlEscape = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
 
 const validateInput = (body: unknown): CreateFeedbackInput | string => {
   if (!body || typeof body !== "object") return "Body must be valid JSON";
@@ -279,6 +280,17 @@ const enqueueWatcherEmails = async (env: Env, feedbackId: string, subject: strin
   if (!feedback) return;
   const watchers = await env.DB.prepare("SELECT email FROM feedback_watchers WHERE feedback_id = ?").bind(feedbackId).all<{ email: string }>();
   for (const watcher of watchers.results ?? []) await env.EVENTS.send({ type: "email.send", organizationId: feedback.organizationId, projectId: feedback.projectId, email: watcher.email, subject, text, html, eventId: id() });
+};
+
+const enqueueTeamNotifications = async (env: Env, organizationId: string, projectId: string, eventType: string, subject: string, text: string, html: string): Promise<void> => {
+  const recipients = await env.DB.prepare(`SELECT u.email
+    FROM organization_members m JOIN users u ON u.id = m.user_id
+    LEFT JOIN notification_preferences p ON p.organization_id = m.organization_id AND p.project_id = ? AND p.email = u.email AND p.event_type = ?
+    WHERE m.organization_id = ? AND COALESCE(p.enabled, 1) = 1`)
+    .bind(projectId, eventType, organizationId).all<{ email: string }>();
+  for (const recipient of recipients.results ?? []) {
+    await env.EVENTS.send({ type: "email.send", organizationId, projectId, email: recipient.email, subject, text, html, eventId: id() });
+  }
 };
 
 const recordMetric = (env: Env, event: string, organizationId: string, projectId: string, doubles: number[] = []): void => {
@@ -855,6 +867,7 @@ export default {
           ctx.waitUntil(enqueueWebhookDeliveries(env, result.projectId, result.id, "feedback.created", eventId));
         }
         if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(result.projectId).publish({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, createdAt: result.createdAt }));
+        ctx.waitUntil(enqueueTeamNotifications(env, context.organizationId, context.projectId, "feedback.created", "New NitroPing feedback", `New feedback: ${result.title}`, `<p>New feedback: <strong>${htmlEscape(result.title)}</strong></p>`));
         return jsonResponse(safeResult, { status: 201, headers: cors });
       }
       if (match && request.method === "GET" && match[2]) {
@@ -1203,6 +1216,7 @@ export default {
           const eventId = id();
           ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, replyMatch[1], "feedback.replied", eventId));
           ctx.waitUntil(enqueueWatcherEmails(env, replyMatch[1], "New reply to your NitroPing feedback", "Your feedback received a new reply. Open your NitroPing follow-up link to read it.", "<p>Your feedback received a new reply.</p><p>Open your NitroPing follow-up link to read it.</p>"));
+          ctx.waitUntil(enqueueTeamNotifications(env, context.organizationId, context.projectId, "feedback.replied", "A NitroPing feedback item received a reply", "A team member replied to feedback.", "<p>A team member replied to feedback.</p>"));
           if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(context.projectId).publish({ type: "feedback.replied", feedbackId: replyMatch[1], projectId: context.projectId, createdAt: comment.createdAt }));
         }
         return jsonResponse(comment, { status: 201, headers: cors });
@@ -1224,6 +1238,7 @@ export default {
         const eventId = id();
         ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, result.id, "feedback.updated", eventId));
         ctx.waitUntil(enqueueWatcherEmails(env, result.id, "Your NitroPing feedback was updated", `The status of your feedback changed to ${result.status}.`, `<p>The status of your feedback changed to <strong>${result.status}</strong>.</p>`));
+        ctx.waitUntil(enqueueTeamNotifications(env, context.organizationId, context.projectId, "feedback.updated", "NitroPing feedback status updated", `Feedback status changed to ${result.status}.`, `<p>Feedback status changed to <strong>${result.status}</strong>.</p>`));
         if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(context.projectId).publish({ type: "feedback.updated", feedbackId: result.id, projectId: context.projectId, createdAt: result.updatedAt }));
         return jsonResponse(result, { headers: cors });
       }
