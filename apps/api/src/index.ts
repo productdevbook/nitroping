@@ -1136,6 +1136,12 @@ const deliverWebhook = async (
     projectId: string;
   },
 ): Promise<boolean> => {
+  const delivery = await env.DB.prepare(
+    "SELECT status FROM webhook_deliveries WHERE id = ? AND organization_id = ? AND project_id = ?",
+  )
+    .bind(event.deliveryId, event.organizationId, event.projectId)
+    .first<{ status: string }>();
+  if (!delivery || delivery.status === "delivered") return true;
   const webhook = await env.DB.prepare(
     "SELECT url FROM webhooks WHERE id = ? AND organization_id = ? AND project_id = ? AND active = 1",
   )
@@ -6654,7 +6660,7 @@ export default {
               }
             : baseAnalysis;
           await env.DB.prepare(
-            "INSERT INTO moderation_events (id, organization_id, project_id, feedback_id, kind, outcome, metadata_json, created_at) VALUES (?, ?, ?, ?, 'rules', 'pending', ?, ?)",
+            "INSERT OR IGNORE INTO moderation_events (id, organization_id, project_id, feedback_id, kind, outcome, metadata_json, created_at, event_id) VALUES (?, ?, ?, ?, 'rules', 'pending', ?, ?, ?)",
           )
             .bind(
               id(),
@@ -6663,6 +6669,7 @@ export default {
               event.feedbackId,
               JSON.stringify(analysis),
               new Date().toISOString(),
+              event.eventId ?? null,
             )
             .run();
         }
