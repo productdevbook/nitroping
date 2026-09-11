@@ -1371,7 +1371,14 @@ export default {
         await env.DB.prepare("UPDATE feedback_items SET type = ?, priority = ?, category_id = ?, title = ?, body = ?, email = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(type, priority, categoryId, title, description, email, updatedAt, dashboardFeedbackMatch[1], context.organizationId, context.projectId).run();
         await writeAudit(env, context, "feedback.updated", "feedback", dashboardFeedbackMatch[1], { fields: ["type", "priority", "categoryId", "title", "body", "email"] });
         const updated = await env.DB.prepare("SELECT * FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).first<Record<string, unknown>>();
-        return updated ? jsonResponse(fromRow(updated), { headers: cors }) : error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        if (!updated) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        const eventId = id();
+        recordMetric(env, "feedback.updated", context.organizationId, context.projectId, [1]);
+        ctx.waitUntil(enqueueWebhookDeliveries(env, context.organizationId, context.projectId, dashboardFeedbackMatch[1], "feedback.updated", eventId));
+        ctx.waitUntil(enqueueWatcherEmails(env, context.organizationId, context.projectId, dashboardFeedbackMatch[1], "Your NitroPing feedback was updated", "Your feedback received an update. Open your NitroPing follow-up link to review it.", "<p>Your feedback received an update.</p><p>Open your NitroPing follow-up link to review it.</p>"));
+        ctx.waitUntil(enqueueTeamNotifications(env, context.organizationId, context.projectId, "feedback.updated", "NitroPing feedback updated", `Feedback updated: ${title}`, `<p>Feedback updated: <strong>${htmlEscape(title)}</strong></p>`));
+        if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(context.projectId).publish({ type: "feedback.updated", feedbackId: dashboardFeedbackMatch[1], projectId: context.projectId, createdAt: updatedAt }));
+        return jsonResponse(fromRow(updated), { headers: cors });
       }
       if (dashboardFeedbackMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
