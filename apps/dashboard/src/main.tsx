@@ -142,7 +142,14 @@ function App() {
       const project = await api<Project>(`/dashboard/organizations/${activeOrganization.id}/projects`, { method: "POST", body: JSON.stringify({ name: newProjectName.trim() }) });
       setProjects((items) => [...items, project]);
       setNewProjectName("");
-      selectProject(project.id);
+      setProjectId(project.id);
+      setPublicKey(project.publicKey);
+      setSelected(null);
+      setView("inbox");
+      setFilter("all");
+      setQuery("");
+      localStorage.setItem("np.project", project.id);
+      localStorage.setItem("np.public", project.publicKey);
       setNotice({ text: "Project created" });
     } catch (error) {
       setNotice({ text: error instanceof Error ? error.message : "Unable to create project", error: true });
