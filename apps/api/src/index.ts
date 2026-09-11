@@ -1300,6 +1300,51 @@ const enqueueWatcherEmails = async (
     });
 };
 
+export const issueFollowUpLink = async (
+  env: Env,
+  context: TenantContext,
+  feedbackId: string,
+  email: string,
+): Promise<void> => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const token = randomToken("follow");
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 86_400_000).toISOString();
+  await env.DB.batch([
+    env.DB.prepare(
+      "UPDATE magic_link_tokens SET used_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND used_at IS NULL AND expires_at > ?",
+    ).bind(now, feedbackId, context.organizationId, context.projectId, now),
+    env.DB.prepare(
+      "INSERT INTO magic_link_tokens (id, organization_id, project_id, feedback_id, token_hash, expires_at, created_at, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    ).bind(
+      id(),
+      context.organizationId,
+      context.projectId,
+      feedbackId,
+      await sha256(token),
+      expiresAt,
+      now,
+      normalizedEmail,
+    ),
+    env.DB.prepare(
+      "INSERT OR IGNORE INTO feedback_watchers (organization_id, project_id, feedback_id, email, created_at) VALUES (?, ?, ?, ?, ?)",
+    ).bind(context.organizationId, context.projectId, feedbackId, normalizedEmail, now),
+    env.DB.prepare(
+      "INSERT INTO consent_records (id, organization_id, project_id, feedback_id, email, purpose, legal_basis, granted_at) VALUES (?, ?, ?, ?, ?, 'feedback_follow_up', 'consent', ?)",
+    ).bind(id(), context.organizationId, context.projectId, feedbackId, normalizedEmail, now),
+  ]);
+  if (env.EVENTS)
+    await env.EVENTS.send({
+      type: "follow-up.requested",
+      token,
+      email: normalizedEmail,
+      feedbackId,
+      organizationId: context.organizationId,
+      projectId: context.projectId,
+      eventId: id(),
+    });
+};
+
 const enqueueTeamNotifications = async (
   env: Env,
   organizationId: string,
@@ -4376,6 +4421,12 @@ export default {
               body: result.body,
             }).catch(() => undefined),
           );
+        if (result.email)
+          ctx.waitUntil(
+            issueFollowUpLink(env, context, result.id, result.email).catch(
+              () => undefined,
+            ),
+          );
         if (idem)
           await env.DB.prepare(
             "INSERT OR IGNORE INTO idempotency_keys (organization_id, project_id, key, response_json, status_code, created_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -4965,61 +5016,7 @@ export default {
             rid,
             404,
           );
-        const token = randomToken("follow");
-        const now = new Date().toISOString();
-        const expiresAt = new Date(Date.now() + 86_400_000).toISOString();
-        await env.DB.batch([
-          env.DB.prepare(
-            "UPDATE magic_link_tokens SET used_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND used_at IS NULL AND expires_at > ?",
-          ).bind(
-            now,
-            body.feedbackId,
-            context.organizationId,
-            context.projectId,
-            now,
-          ),
-          env.DB.prepare(
-            "INSERT INTO magic_link_tokens (id, organization_id, project_id, feedback_id, token_hash, expires_at, created_at, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-          ).bind(
-            id(),
-            context.organizationId,
-            context.projectId,
-            body.feedbackId,
-            await sha256(token),
-            expiresAt,
-            now,
-            body.email.toLowerCase(),
-          ),
-          env.DB.prepare(
-            "INSERT OR IGNORE INTO feedback_watchers (organization_id, project_id, feedback_id, email, created_at) VALUES (?, ?, ?, ?, ?)",
-          ).bind(
-            context.organizationId,
-            context.projectId,
-            body.feedbackId,
-            body.email.toLowerCase(),
-            now,
-          ),
-          env.DB.prepare(
-            "INSERT INTO consent_records (id, organization_id, project_id, feedback_id, email, purpose, legal_basis, granted_at) VALUES (?, ?, ?, ?, ?, 'feedback_follow_up', 'consent', ?)",
-          ).bind(
-            id(),
-            context.organizationId,
-            context.projectId,
-            body.feedbackId,
-            body.email.toLowerCase(),
-            now,
-          ),
-        ]);
-        if (env.EVENTS)
-          await env.EVENTS.send({
-            type: "follow-up.requested",
-            token,
-            email: body.email,
-            feedbackId: body.feedbackId,
-            organizationId: context.organizationId,
-            projectId: context.projectId,
-            eventId: id(),
-          });
+        await issueFollowUpLink(env, context, body.feedbackId, body.email);
         return jsonResponse({ accepted: true }, { status: 202, headers: cors });
       }
       const followUpReadMatch = path.match(/^\/api\/v1\/follow-up\/([^/]+)$/);

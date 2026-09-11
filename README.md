@@ -99,6 +99,8 @@ The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Chang
 
 The hosted public portal is available at `/portal?projectId=<project-id>&projectKey=<public-key>`. It provides feedback submission, community browsing, voting, roadmap, and changelog views without requiring the customer to build a separate public page.
 
+When a feedback submission includes an email address, NitroPing automatically creates a 24-hour scoped follow-up link, rotates any previous active link for that feedback, records the consent, and queues the notification email. The explicit `/follow-up/request` endpoint remains available for headless clients that collect consent after submission.
+
 Public clients can load the safe project configuration from `/api/v1/projects/:projectId/public/config`. The response contains the published widget theme and categories only; retention settings, allowed origins, API keys, and organization data are never exposed. Theme fields, colors, metadata keys, metadata values, and SDK context lengths are validated server-side. The Web SDK wraps this endpoint with `loadNitroPingConfig` and `NitroPing.initAsync`.
 
 Run the dashboard locally:
