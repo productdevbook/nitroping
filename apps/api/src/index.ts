@@ -857,6 +857,32 @@ export default {
         return jsonResponse(item, { status: 201, headers: cors });
       }
       const roadmapUpdateMatch = path.match(/^\/api\/v1\/dashboard\/roadmap\/([^/]+)$/);
+      const roadmapFeedbackMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/roadmap\/([^/]+)\/feedback(?:\/([^/]+))?$/);
+      if (roadmapFeedbackMatch && ["GET", "POST", "DELETE"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireDashboardProject(request, env, url, roadmapFeedbackMatch[1], rid, request.method === "GET" ? "feedback:read" : "roadmap:manage");
+        if (context instanceof Response) return context;
+        const roadmap = await env.DB.prepare("SELECT id FROM roadmap_items WHERE id = ? AND organization_id = ? AND project_id = ?").bind(roadmapFeedbackMatch[2], context.organizationId, context.projectId).first();
+        if (!roadmap) return error("ROADMAP_NOT_FOUND", "Roadmap item was not found", rid, 404);
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT f.id, f.title, f.type, f.status, f.created_at AS createdAt FROM roadmap_feedback_links l JOIN feedback_items f ON f.id = l.feedback_id WHERE l.roadmap_id = ? AND l.organization_id = ? AND l.project_id = ? AND f.organization_id = ? AND f.project_id = ? AND f.deleted_at IS NULL ORDER BY f.created_at DESC").bind(roadmapFeedbackMatch[2], context.organizationId, context.projectId, context.organizationId, context.projectId).all();
+          return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+        }
+        const body = request.method === "POST" ? await jsonBody(request) : {};
+        const feedbackId = roadmapFeedbackMatch[3] ?? (typeof body.feedbackId === "string" ? body.feedbackId : "");
+        if (!feedbackId) return error("FEEDBACK_ID_REQUIRED", "feedbackId is required", rid, 400);
+        const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(feedbackId, context.organizationId, context.projectId).first();
+        if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        if (request.method === "POST") {
+          await env.DB.prepare("INSERT OR IGNORE INTO roadmap_feedback_links (roadmap_id, feedback_id, organization_id, project_id, created_at) VALUES (?, ?, ?, ?, ?)").bind(roadmapFeedbackMatch[2], feedbackId, context.organizationId, context.projectId, new Date().toISOString()).run();
+          await writeAudit(env, context, "roadmap.feedback.linked", "roadmap", roadmapFeedbackMatch[2], { feedbackId });
+          return jsonResponse({ roadmapId: roadmapFeedbackMatch[2], feedbackId }, { status: 201, headers: cors });
+        }
+        await env.DB.prepare("DELETE FROM roadmap_feedback_links WHERE roadmap_id = ? AND feedback_id = ? AND organization_id = ? AND project_id = ?").bind(roadmapFeedbackMatch[2], feedbackId, context.organizationId, context.projectId).run();
+        await writeAudit(env, context, "roadmap.feedback.unlinked", "roadmap", roadmapFeedbackMatch[2], { feedbackId });
+        return new Response(null, { status: 204, headers: cors });
+      }
       if (roadmapUpdateMatch && request.method === "PATCH") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
@@ -877,6 +903,32 @@ export default {
         return jsonResponse({ id: roadmapUpdateMatch[1], title, body: description, status, updatedAt }, { headers: cors });
       }
       const changelogDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/changelog$/);
+      const changelogFeedbackMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/changelog\/([^/]+)\/feedback(?:\/([^/]+))?$/);
+      if (changelogFeedbackMatch && ["GET", "POST", "DELETE"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireDashboardProject(request, env, url, changelogFeedbackMatch[1], rid, request.method === "GET" ? "feedback:read" : "roadmap:manage");
+        if (context instanceof Response) return context;
+        const changelog = await env.DB.prepare("SELECT id FROM changelog_items WHERE id = ? AND organization_id = ? AND project_id = ?").bind(changelogFeedbackMatch[2], context.organizationId, context.projectId).first();
+        if (!changelog) return error("CHANGELOG_NOT_FOUND", "Changelog item was not found", rid, 404);
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT f.id, f.title, f.type, f.status, f.created_at AS createdAt FROM changelog_feedback_links l JOIN feedback_items f ON f.id = l.feedback_id WHERE l.changelog_id = ? AND l.organization_id = ? AND l.project_id = ? AND f.organization_id = ? AND f.project_id = ? AND f.deleted_at IS NULL ORDER BY f.created_at DESC").bind(changelogFeedbackMatch[2], context.organizationId, context.projectId, context.organizationId, context.projectId).all();
+          return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+        }
+        const body = await jsonBody(request);
+        const feedbackId = changelogFeedbackMatch[3] ?? (typeof body.feedbackId === "string" ? body.feedbackId : "");
+        if (!feedbackId) return error("FEEDBACK_ID_REQUIRED", "feedbackId is required", rid, 400);
+        const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(feedbackId, context.organizationId, context.projectId).first();
+        if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        if (request.method === "POST") {
+          await env.DB.prepare("INSERT OR IGNORE INTO changelog_feedback_links (changelog_id, feedback_id, organization_id, project_id, created_at) VALUES (?, ?, ?, ?, ?)").bind(changelogFeedbackMatch[2], feedbackId, context.organizationId, context.projectId, new Date().toISOString()).run();
+          await writeAudit(env, context, "changelog.feedback.linked", "changelog", changelogFeedbackMatch[2], { feedbackId });
+          return jsonResponse({ changelogId: changelogFeedbackMatch[2], feedbackId }, { status: 201, headers: cors });
+        }
+        await env.DB.prepare("DELETE FROM changelog_feedback_links WHERE changelog_id = ? AND feedback_id = ? AND organization_id = ? AND project_id = ?").bind(changelogFeedbackMatch[2], feedbackId, context.organizationId, context.projectId).run();
+        await writeAudit(env, context, "changelog.feedback.unlinked", "changelog", changelogFeedbackMatch[2], { feedbackId });
+        return new Response(null, { status: 204, headers: cors });
+      }
       if (changelogDashboardMatch && ["GET", "POST"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;

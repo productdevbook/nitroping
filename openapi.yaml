@@ -269,6 +269,21 @@ paths:
       summary: Update a roadmap item
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Updated }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/roadmap/{roadmapId}/feedback:
+    get:
+      summary: List feedback linked to a roadmap item
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: roadmapId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Linked feedback }, '404': { $ref: '#/components/responses/Error' } }
+    post:
+      summary: Link feedback to a roadmap item
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: roadmapId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [feedbackId], properties: { feedbackId: { type: string } } } } } }
+      responses: { '201': { description: Linked }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/roadmap/{roadmapId}/feedback/{feedbackId}:
+    delete:
+      summary: Unlink feedback from a roadmap item
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: roadmapId, in: path, required: true, schema: { type: string } }, { name: feedbackId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '204': { description: Unlinked }, '404': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/changelog:
     get:
       summary: List changelog items
@@ -278,6 +293,21 @@ paths:
       summary: Create a changelog item
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '201': { description: Created }, '400': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/changelog/{changelogId}/feedback:
+    get:
+      summary: List feedback linked to a changelog item
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: changelogId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Linked feedback }, '404': { $ref: '#/components/responses/Error' } }
+    post:
+      summary: Link feedback to a changelog item
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: changelogId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [feedbackId], properties: { feedbackId: { type: string } } } } } }
+      responses: { '201': { description: Linked }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/changelog/{changelogId}/feedback/{feedbackId}:
+    delete:
+      summary: Unlink feedback from a changelog item
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: changelogId, in: path, required: true, schema: { type: string } }, { name: feedbackId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '204': { description: Unlinked }, '404': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/webhooks:
     get:
       summary: List project webhooks
