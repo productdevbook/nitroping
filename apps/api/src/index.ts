@@ -109,7 +109,7 @@ const htmlEscape = (value: string) =>
         character
       ] ?? character,
   );
-const isPrivateWebhookHost = (hostname: string): boolean => {
+export const isPrivateWebhookHost = (hostname: string): boolean => {
   const host = hostname
     .toLowerCase()
     .replace(/^\[|\]$/g, "")
@@ -118,19 +118,25 @@ const isPrivateWebhookHost = (hostname: string): boolean => {
     host === "localhost" ||
     host.endsWith(".localhost") ||
     host.endsWith(".local") ||
+    host === "::" ||
     host === "::1"
   )
     return true;
-  if (
-    /^(127|10)\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^169\.254\./.test(host)
-  )
-    return true;
-  const private172 = host.match(/^172\.(\d{1,3})\./);
-  if (private172 && Number(private172[1]) >= 16 && Number(private172[1]) <= 31)
-    return true;
-  return /^(fc|fd|fe80:)/i.test(host);
+  const ipv4 = host.split(".");
+  if (ipv4.length === 4 && ipv4.every((part) => /^\d+$/.test(part))) {
+    const [first, second] = ipv4.map(Number);
+    if (first === 0 || first === 10 || first === 127 || first >= 224)
+      return true;
+    if (first === 100 && second >= 64 && second <= 127) return true;
+    if (first === 169 && second === 254) return true;
+    if (first === 172 && second >= 16 && second <= 31) return true;
+    if (first === 192 && (second === 0 || second === 168)) return true;
+    if (first === 192 && second === 0) return true;
+    if (first === 198 && (second === 18 || second === 19 || second === 51))
+      return true;
+    if (first === 203 && second === 0) return true;
+  }
+  return /^(fc|fd)[0-9a-f]*:/i.test(host) || /^fe80:/i.test(host) || /^ff[0-9a-f]*:/i.test(host) || /^2001:db8:/i.test(host);
 };
 
 const validateInput = (body: unknown): CreateFeedbackInput | string => {
@@ -1146,6 +1152,7 @@ const deliverWebhook = async (
   try {
     const response = await fetch(webhook.url, {
       method: "POST",
+      redirect: "error",
       headers: {
         "content-type": "application/json",
         "user-agent": "NitroPing-Webhooks/1",
