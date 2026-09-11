@@ -32,6 +32,7 @@ data class NitroPingPublicTheme(val mode: String?, val buttonLabel: String?, val
 data class NitroPingPublicConfig(val theme: NitroPingPublicTheme, val categories: List<NitroPingCategory>)
 data class FollowUpComment(val id: String, val body: String, val createdAt: String)
 data class FollowUpSnapshot(val feedbackId: String, val status: String, val title: String, val body: String, val comments: List<FollowUpComment>)
+data class NitroPingDeleteResponse(val deleted: Boolean, val feedbackId: String)
 
 class NitroPingClient(
     private val projectKey: String,
@@ -121,6 +122,11 @@ class NitroPingClient(
             }
         }
         FollowUpSnapshot(feedback.optString("id"), feedback.optString("status"), feedback.optString("title"), feedback.optString("body"), comments)
+    }
+
+    suspend fun deleteFollowUp(token: String): NitroPingDeleteResponse = withContext(Dispatchers.IO) {
+        val root = JSONObject(requestRaw("DELETE", "/follow-up/$token", null))
+        NitroPingDeleteResponse(root.optBoolean("deleted"), root.optString("feedbackId"))
     }
 
     private fun send(body: String, idempotencyKey: String): FeedbackResponse {

@@ -146,6 +146,11 @@ public struct NitroPingFollowUp: Codable, Sendable {
     public let comments: [NitroPingFollowUpComment]
 }
 
+public struct NitroPingDeleteResponse: Codable, Sendable {
+    public let deleted: Bool
+    public let feedbackId: String
+}
+
 public enum NitroPingError: Error, Sendable {
     case invalidResponse
     case server(statusCode: Int, message: String)
@@ -252,6 +257,14 @@ public actor NitroPingClient {
         let request = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("follow-up/\(token)"))
         let data = try await perform(request)
         return try JSONDecoder().decode(NitroPingFollowUp.self, from: data)
+    }
+
+    @discardableResult
+    public func deleteFollowUp(token: String) async throws -> NitroPingDeleteResponse {
+        var request = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("follow-up/\(token)"))
+        request.httpMethod = "DELETE"
+        request.setValue(configuration.projectKey, forHTTPHeaderField: "X-NitroPing-Project-Key")
+        return try JSONDecoder().decode(NitroPingDeleteResponse.self, from: try await perform(request))
     }
 
     private func perform(_ request: URLRequest) async throws -> Data {

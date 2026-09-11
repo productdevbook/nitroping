@@ -62,6 +62,7 @@ public struct NitroPingFollowUpView: View {
     private let token: String
     @State private var followUp: NitroPingFollowUp?
     @State private var errorMessage = ""
+    @State private var deleting = false
 
     public init(client: NitroPingClient, token: String) {
         self.client = client; self.token = token
@@ -81,6 +82,20 @@ public struct NitroPingFollowUpView: View {
                         ForEach(followUp.comments, id: \.id) { comment in
                             VStack(alignment: .leading, spacing: 4) { Text(comment.body); Text(comment.createdAt).font(.caption).foregroundStyle(.secondary) }
                         }
+                    }
+                    Section {
+                        Button(deleting ? "Deleting…" : "Delete my feedback", role: .destructive) {
+                            deleting = true
+                            Task {
+                                do {
+                                    _ = try await client.deleteFollowUp(token: token)
+                                    await MainActor.run { followUp = nil; errorMessage = "Your feedback was deleted."; deleting = false }
+                                } catch {
+                                    await MainActor.run { errorMessage = "Unable to delete this feedback."; deleting = false }
+                                }
+                            }
+                        }
+                        .disabled(deleting)
                     }
                 }
             } else if !errorMessage.isEmpty {

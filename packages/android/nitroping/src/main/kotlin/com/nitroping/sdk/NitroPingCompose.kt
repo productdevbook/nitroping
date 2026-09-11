@@ -170,6 +170,8 @@ fun NitroPingFollowUp(
 ) {
     var snapshot by remember(token) { mutableStateOf<FollowUpSnapshot?>(null) }
     var error by remember(token) { mutableStateOf("") }
+    var deleting by remember(token) { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     LaunchedEffect(token) {
         try { snapshot = client.fetchFollowUp(token) }
         catch (_: Exception) { error = "This follow-up link is invalid or expired." }
@@ -186,6 +188,19 @@ fun NitroPingFollowUp(
                     Text(comment.body)
                     Text(comment.createdAt, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                Button(
+                    onClick = {
+                        deleting = true
+                        scope.launch {
+                            runCatching { client.deleteFollowUp(token) }
+                                .onSuccess { snapshot = null; error = "Your feedback was deleted." }
+                                .onFailure { error = "Unable to delete this feedback." }
+                            deleting = false
+                        }
+                    },
+                    enabled = !deleting,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) { Text(if (deleting) "Deleting…" else "Delete my feedback") }
             } else if (error.isNotEmpty()) Text(error, color = MaterialTheme.colorScheme.error)
             else Text("Loading feedback…")
         }
