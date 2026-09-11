@@ -46,6 +46,13 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
       - run: bun install --frozen-lockfile
+      - name: Apply release version to npm packages
+        env:
+          RELEASE_VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          npm version "$RELEASE_VERSION" --no-git-tag-version --prefix packages/contracts
+          npm version "$RELEASE_VERSION" --no-git-tag-version --prefix packages/web
+          npm pkg set "dependencies.@nitroping/contracts=^$RELEASE_VERSION" --prefix packages/web
       - run: bun run --filter '@nitroping/contracts' build
       - run: bun run --filter '@nitroping/web' build
       - run: npm publish ./packages/contracts --access public --provenance
