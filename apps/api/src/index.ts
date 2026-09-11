@@ -568,6 +568,9 @@ const contextFrom = (url: URL): TenantContext => ({
   publicKey: url.searchParams.get("projectKey") ?? undefined,
 });
 
+export const allowsDevelopmentFallback = (environment: string): boolean =>
+  ["development", "test"].includes(environment.toLowerCase());
+
 const projectFromRequest = async (
   request: Request,
   env: Env,
@@ -577,7 +580,13 @@ const projectFromRequest = async (
   const projectKey =
     request.headers.get("x-nitroping-project-key") ??
     url.searchParams.get("projectKey");
-  if (!projectKey && String(env.ENVIRONMENT) !== "production")
+  // Only local development may use the fixture context. Staging is a real
+  // tenant-isolated environment and must exercise the same public-key gate as
+  // production.
+  if (
+    !projectKey &&
+    allowsDevelopmentFallback(String(env.ENVIRONMENT))
+  )
     return contextFrom(url);
   if (!projectKey)
     return error("PROJECT_KEY_REQUIRED", "Project key is required", rid, 401);
