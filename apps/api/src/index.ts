@@ -1124,7 +1124,7 @@ const enqueueWebhookDeliveries = async (
   }
 };
 
-const deliverWebhook = async (
+export const deliverWebhook = async (
   env: Env,
   event: {
     deliveryId: string;
