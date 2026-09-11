@@ -400,6 +400,31 @@ const publicFeedback = (feedback: Feedback) => {
   return { ...safe, metadata: {} };
 };
 
+const publicFeedbackWithVotes = async (
+  env: Env,
+  context: TenantContext,
+  feedback: Feedback[],
+) => {
+  if (!feedback.length) return [];
+  const placeholders = feedback.map(() => "?").join(",");
+  const rows = await env.DB.prepare(
+    `SELECT feedback_id AS feedbackId, COUNT(*) AS count
+     FROM feedback_votes
+     WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL
+       AND feedback_id IN (${placeholders})
+     GROUP BY feedback_id`,
+  )
+    .bind(context.organizationId, context.projectId, ...feedback.map((item) => item.id))
+    .all<{ feedbackId: string; count: number }>();
+  const counts = new Map(
+    (rows.results ?? []).map((row) => [row.feedbackId, Number(row.count)]),
+  );
+  return feedback.map((item) => ({
+    ...publicFeedback(item),
+    votes: counts.get(item.id) ?? 0,
+  }));
+};
+
 export const publicWidgetConfig = (
   themeJson: string,
   categories: unknown[],
@@ -4286,7 +4311,11 @@ export default {
           getFeedback(repo, context, match[2]),
         );
         return result && result.status !== "spam"
-          ? await etagged(publicFeedback(result), request, cors)
+          ? await etagged(
+              (await publicFeedbackWithVotes(env, context, [result]))[0],
+              request,
+              cors,
+            )
           : error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
       }
       if (match && request.method === "GET" && !match[2]) {
@@ -4314,13 +4343,9 @@ export default {
               : undefined,
           }),
         );
+        const visibleItems = result.items.filter((item) => item.status !== "spam");
         return await etagged(
-          {
-            ...result,
-            items: result.items
-              .filter((item) => item.status !== "spam")
-              .map(publicFeedback),
-          },
+          { ...result, items: await publicFeedbackWithVotes(env, context, visibleItems) },
           request,
           cors,
         );
@@ -4499,6 +4524,15 @@ export default {
             comment.createdAt,
           )
           .run();
+        if (env.EVENT_STREAM)
+          ctx.waitUntil(
+            env.EVENT_STREAM.getByName(context.projectId).publish({
+              type: "feedback.comment.created",
+              feedbackId: comment.feedbackId,
+              projectId: context.projectId,
+              createdAt: comment.createdAt,
+            }),
+          );
         return jsonResponse(comment, { status: 201, headers: cors });
       }
       const voteMatch = path.match(
@@ -4529,10 +4563,19 @@ export default {
           )
           .run();
         const count = await env.DB.prepare(
-          "SELECT COUNT(*) AS count FROM feedback_votes WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+          "SELECT COUNT(*) AS count FROM feedback_votes WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(voteMatch[2], context.organizationId, context.projectId)
           .first<{ count: number }>();
+        if (env.EVENT_STREAM)
+          ctx.waitUntil(
+            env.EVENT_STREAM.getByName(context.projectId).publish({
+              type: "feedback.voted",
+              feedbackId: voteMatch[2],
+              projectId: context.projectId,
+              createdAt: new Date().toISOString(),
+            }),
+          );
         return jsonResponse(
           { feedbackId: voteMatch[2], votes: Number(count?.count ?? 0) },
           { headers: cors },
