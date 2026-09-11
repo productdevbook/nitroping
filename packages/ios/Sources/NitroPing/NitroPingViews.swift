@@ -43,6 +43,48 @@ public struct NitroPingFeedbackView: View {
         }
     }
 }
+
+/// A scoped status screen for a user's magic-link follow-up token.
+@available(iOS 15.0, macOS 12.0, *)
+public struct NitroPingFollowUpView: View {
+    private let client: NitroPingClient
+    private let token: String
+    @State private var followUp: NitroPingFollowUp?
+    @State private var errorMessage = ""
+
+    public init(client: NitroPingClient, token: String) {
+        self.client = client; self.token = token
+    }
+
+    public var body: some View {
+        Group {
+            if let followUp {
+                List {
+                    Section("Feedback") {
+                        Text(followUp.feedback.title).font(.headline)
+                        Text(followUp.feedback.body)
+                        Label(followUp.feedback.status.replacingOccurrences(of: "_", with: " "), systemImage: "clock")
+                    }
+                    Section("Replies") {
+                        if followUp.comments.isEmpty { Text("No public replies yet.").foregroundStyle(.secondary) }
+                        ForEach(followUp.comments, id: \.id) { comment in
+                            VStack(alignment: .leading, spacing: 4) { Text(comment.body); Text(comment.createdAt).font(.caption).foregroundStyle(.secondary) }
+                        }
+                    }
+                }
+            } else if !errorMessage.isEmpty {
+                Text(errorMessage).foregroundStyle(.secondary).padding()
+            } else {
+                ProgressView("Loading feedback…")
+            }
+        }
+        .navigationTitle("Feedback status")
+        .task {
+            do { followUp = try await client.fetchFollowUp(token: token) }
+            catch { errorMessage = "This follow-up link is invalid or expired." }
+        }
+    }
+}
 #endif
 
 #if canImport(UIKit)

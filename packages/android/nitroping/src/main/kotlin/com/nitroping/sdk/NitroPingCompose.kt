@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -95,6 +96,37 @@ fun NitroPingFeedback(
                 Text(if (sending) "Sending…" else "Submit feedback")
             }
             if (status.isNotEmpty()) Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** A scoped status screen for a user's magic-link follow-up token. */
+@Composable
+fun NitroPingFollowUp(
+    client: NitroPingClient,
+    token: String,
+    modifier: Modifier = Modifier,
+) {
+    var snapshot by remember(token) { mutableStateOf<FollowUpSnapshot?>(null) }
+    var error by remember(token) { mutableStateOf("") }
+    LaunchedEffect(token) {
+        try { snapshot = client.fetchFollowUp(token) }
+        catch (_: Exception) { error = "This follow-up link is invalid or expired." }
+    }
+    Card(modifier = modifier) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (snapshot != null) {
+                Text(snapshot!!.title, style = MaterialTheme.typography.headlineSmall)
+                Text(snapshot!!.body)
+                Text("Status: ${snapshot!!.status.replace('_', ' ')}", color = MaterialTheme.colorScheme.primary)
+                Text("Replies", style = MaterialTheme.typography.titleMedium)
+                if (snapshot!!.comments.isEmpty()) Text("No public replies yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                snapshot!!.comments.forEach { comment ->
+                    Text(comment.body)
+                    Text(comment.createdAt, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            } else if (error.isNotEmpty()) Text(error, color = MaterialTheme.colorScheme.error)
+            else Text("Loading feedback…")
         }
     }
 }

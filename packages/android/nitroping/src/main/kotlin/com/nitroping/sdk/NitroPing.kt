@@ -26,6 +26,9 @@ data class Feedback(
 
 data class FeedbackResponse(val id: String, val status: String, val title: String, val createdAt: String)
 data class NitroPingAttachment(val bytes: ByteArray, val contentType: String)
+data class NitroPingCategory(val id: String, val name: String, val slug: String)
+data class NitroPingPublicTheme(val mode: String?, val buttonLabel: String?, val fields: List<String>, val colors: Map<String, String>)
+data class NitroPingPublicConfig(val theme: NitroPingPublicTheme, val categories: List<NitroPingCategory>)
 data class FollowUpComment(val id: String, val body: String, val createdAt: String)
 data class FollowUpSnapshot(val feedbackId: String, val status: String, val title: String, val body: String, val comments: List<FollowUpComment>)
 
@@ -68,6 +71,23 @@ class NitroPingClient(
     }
 
     fun pendingCount(): Int = queue().size
+
+    suspend fun fetchPublicConfig(): NitroPingPublicConfig = withContext(Dispatchers.IO) {
+        val root = JSONObject(requestRaw("GET", "/projects/$projectKey/public/config", null))
+        val themeJson = root.optJSONObject("theme") ?: JSONObject()
+        val colorsJson = themeJson.optJSONObject("colors") ?: JSONObject()
+        val colors = buildMap { colorsJson.keys().forEach { key -> put(key, colorsJson.optString(key)) } }
+        val fieldsJson = themeJson.optJSONArray("fields") ?: org.json.JSONArray()
+        val fields = buildList { for (index in 0 until fieldsJson.length()) add(fieldsJson.optString(index)) }
+        val categoriesJson = root.optJSONArray("categories") ?: org.json.JSONArray()
+        val categories = buildList {
+            for (index in 0 until categoriesJson.length()) {
+                val category = categoriesJson.getJSONObject(index)
+                add(NitroPingCategory(category.optString("id"), category.optString("name"), category.optString("slug")))
+            }
+        }
+        NitroPingPublicConfig(NitroPingPublicTheme(themeJson.optString("mode").ifEmpty { null }, themeJson.optString("buttonLabel").ifEmpty { null }, fields, colors), categories)
+    }
 
     suspend fun uploadAttachment(feedbackId: String, attachment: NitroPingAttachment): String = withContext(Dispatchers.IO) {
         if (attachment.bytes.isEmpty() || attachment.bytes.size > 10 * 1024 * 1024) throw NitroPingHttpException(413, "Attachments cannot exceed 10 MB")

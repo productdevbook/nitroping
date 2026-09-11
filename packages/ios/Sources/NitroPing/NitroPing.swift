@@ -18,6 +18,24 @@ public struct NitroPingConfiguration: Sendable {
     }
 }
 
+public struct NitroPingCategory: Codable, Sendable {
+    public let id: String
+    public let name: String
+    public let slug: String
+}
+
+public struct NitroPingPublicTheme: Codable, Sendable {
+    public let mode: String?
+    public let buttonLabel: String?
+    public let fields: [String]?
+    public let colors: [String: String]?
+}
+
+public struct NitroPingPublicConfig: Codable, Sendable {
+    public let theme: NitroPingPublicTheme
+    public let categories: [NitroPingCategory]
+}
+
 public struct NitroPingFeedback: Codable, Sendable {
     public let type: NitroPingFeedbackType
     public let title: String
@@ -149,6 +167,12 @@ public actor NitroPingClient {
     }
 
     public var pendingCount: Int { pending.count }
+
+    public func fetchPublicConfig() async throws -> NitroPingPublicConfig {
+        var request = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("projects/\(configuration.projectKey)/public/config"))
+        request.setValue(configuration.projectKey, forHTTPHeaderField: "X-NitroPing-Project-Key")
+        return try JSONDecoder().decode(NitroPingPublicConfig.self, from: try await perform(request))
+    }
 
     @discardableResult
     public func uploadAttachment(feedbackId: String, attachment: NitroPingAttachment) async throws -> String {
