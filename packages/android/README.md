@@ -4,6 +4,8 @@ The Android library module is based on Kotlin coroutines. It includes ready-to-e
 
 The module publishes as `dev.nitroping:nitroping:0.1.0`; registry credentials are intentionally kept out of the repository.
 
+Use `NitroPingScreenshot.attachment(view)` to capture a rendered Android View and pass the result to `client.submit(feedback, attachments)`.
+
 Compose usage:
 
 ```kotlin
