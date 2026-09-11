@@ -3849,7 +3849,7 @@ export default {
         if (!tag) return error("TAG_NOT_FOUND", "Tag was not found", rid, 404);
         if (request.method === "POST")
           await env.DB.prepare(
-            "INSERT OR IGNORE INTO feedback_tag_links (organization_id, project_id, feedback_id, tag_id, created_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO feedback_tag_links (organization_id, project_id, feedback_id, tag_id, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, NULL)",
           )
             .bind(
               context.organizationId,
@@ -3857,13 +3857,28 @@ export default {
               feedbackTagsMatch[1],
               tagId,
               new Date().toISOString(),
+              new Date().toISOString(),
+            )
+            .run();
+        if (request.method === "POST")
+          await env.DB.prepare(
+            "UPDATE feedback_tag_links SET deleted_at = NULL, updated_at = ? WHERE organization_id = ? AND project_id = ? AND feedback_id = ? AND tag_id = ?",
+          )
+            .bind(
+              new Date().toISOString(),
+              context.organizationId,
+              context.projectId,
+              feedbackTagsMatch[1],
+              tagId,
             )
             .run();
         else
           await env.DB.prepare(
-            "DELETE FROM feedback_tag_links WHERE organization_id = ? AND project_id = ? AND feedback_id = ? AND tag_id = ?",
+            "UPDATE feedback_tag_links SET deleted_at = ?, updated_at = ? WHERE organization_id = ? AND project_id = ? AND feedback_id = ? AND tag_id = ? AND deleted_at IS NULL",
           )
             .bind(
+              new Date().toISOString(),
+              new Date().toISOString(),
               context.organizationId,
               context.projectId,
               feedbackTagsMatch[1],
@@ -4014,7 +4029,7 @@ export default {
           );
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
-            "SELECT f.id, f.title, f.type, f.status, f.created_at AS createdAt FROM roadmap_feedback_links l JOIN feedback_items f ON f.id = l.feedback_id WHERE l.roadmap_id = ? AND l.organization_id = ? AND l.project_id = ? AND f.organization_id = ? AND f.project_id = ? AND f.deleted_at IS NULL ORDER BY f.created_at DESC",
+            "SELECT f.id, f.title, f.type, f.status, f.created_at AS createdAt FROM roadmap_feedback_links l JOIN feedback_items f ON f.id = l.feedback_id WHERE l.roadmap_id = ? AND l.organization_id = ? AND l.project_id = ? AND l.deleted_at IS NULL AND f.organization_id = ? AND f.project_id = ? AND f.deleted_at IS NULL ORDER BY f.created_at DESC",
           )
             .bind(
               roadmapFeedbackMatch[2],
@@ -4051,7 +4066,7 @@ export default {
           );
         if (request.method === "POST") {
           await env.DB.prepare(
-            "INSERT OR IGNORE INTO roadmap_feedback_links (roadmap_id, feedback_id, organization_id, project_id, created_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO roadmap_feedback_links (roadmap_id, feedback_id, organization_id, project_id, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, NULL)",
           )
             .bind(
               roadmapFeedbackMatch[2],
@@ -4059,6 +4074,18 @@ export default {
               context.organizationId,
               context.projectId,
               new Date().toISOString(),
+              new Date().toISOString(),
+            )
+            .run();
+          await env.DB.prepare(
+            "UPDATE roadmap_feedback_links SET deleted_at = NULL, updated_at = ? WHERE roadmap_id = ? AND feedback_id = ? AND organization_id = ? AND project_id = ?",
+          )
+            .bind(
+              new Date().toISOString(),
+              roadmapFeedbackMatch[2],
+              feedbackId,
+              context.organizationId,
+              context.projectId,
             )
             .run();
           await writeAudit(
@@ -4075,9 +4102,11 @@ export default {
           );
         }
         await env.DB.prepare(
-          "DELETE FROM roadmap_feedback_links WHERE roadmap_id = ? AND feedback_id = ? AND organization_id = ? AND project_id = ?",
+          "UPDATE roadmap_feedback_links SET deleted_at = ?, updated_at = ? WHERE roadmap_id = ? AND feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(
+            new Date().toISOString(),
+            new Date().toISOString(),
             roadmapFeedbackMatch[2],
             feedbackId,
             context.organizationId,
@@ -4234,7 +4263,7 @@ export default {
           );
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
-            "SELECT f.id, f.title, f.type, f.status, f.created_at AS createdAt FROM changelog_feedback_links l JOIN feedback_items f ON f.id = l.feedback_id WHERE l.changelog_id = ? AND l.organization_id = ? AND l.project_id = ? AND f.organization_id = ? AND f.project_id = ? AND f.deleted_at IS NULL ORDER BY f.created_at DESC",
+            "SELECT f.id, f.title, f.type, f.status, f.created_at AS createdAt FROM changelog_feedback_links l JOIN feedback_items f ON f.id = l.feedback_id WHERE l.changelog_id = ? AND l.organization_id = ? AND l.project_id = ? AND l.deleted_at IS NULL AND f.organization_id = ? AND f.project_id = ? AND f.deleted_at IS NULL ORDER BY f.created_at DESC",
           )
             .bind(
               changelogFeedbackMatch[2],
@@ -4271,7 +4300,7 @@ export default {
           );
         if (request.method === "POST") {
           await env.DB.prepare(
-            "INSERT OR IGNORE INTO changelog_feedback_links (changelog_id, feedback_id, organization_id, project_id, created_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO changelog_feedback_links (changelog_id, feedback_id, organization_id, project_id, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, NULL)",
           )
             .bind(
               changelogFeedbackMatch[2],
@@ -4279,6 +4308,18 @@ export default {
               context.organizationId,
               context.projectId,
               new Date().toISOString(),
+              new Date().toISOString(),
+            )
+            .run();
+          await env.DB.prepare(
+            "UPDATE changelog_feedback_links SET deleted_at = NULL, updated_at = ? WHERE changelog_id = ? AND feedback_id = ? AND organization_id = ? AND project_id = ?",
+          )
+            .bind(
+              new Date().toISOString(),
+              changelogFeedbackMatch[2],
+              feedbackId,
+              context.organizationId,
+              context.projectId,
             )
             .run();
           await writeAudit(
@@ -4295,9 +4336,11 @@ export default {
           );
         }
         await env.DB.prepare(
-          "DELETE FROM changelog_feedback_links WHERE changelog_id = ? AND feedback_id = ? AND organization_id = ? AND project_id = ?",
+          "UPDATE changelog_feedback_links SET deleted_at = ?, updated_at = ? WHERE changelog_id = ? AND feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(
+            new Date().toISOString(),
+            new Date().toISOString(),
             changelogFeedbackMatch[2],
             feedbackId,
             context.organizationId,
