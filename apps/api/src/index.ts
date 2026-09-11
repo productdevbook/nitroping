@@ -4898,8 +4898,8 @@ export default {
         await env.ATTACHMENTS.put(raw.objectKey, bytes, {
           httpMetadata: { contentType: raw.contentType },
         });
-        await env.DB.prepare(
-          "INSERT INTO attachments (id, organization_id, project_id, feedback_id, object_key, content_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        const attachmentInsert = await env.DB.prepare(
+          "INSERT OR IGNORE INTO attachments (id, organization_id, project_id, feedback_id, object_key, content_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
           .bind(
             raw.attachmentId,
@@ -4912,22 +4912,24 @@ export default {
             new Date().toISOString(),
           )
           .run();
-        await env.DB.prepare(
-          "INSERT INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 0, ?) ON CONFLICT(organization_id, period) DO UPDATE SET attachment_bytes = attachment_bytes + excluded.attachment_bytes",
-        )
-          .bind(
-            raw.organizationId,
-            new Date().toISOString().slice(0, 7),
-            raw.size,
+        if (attachmentInsert.meta.changes > 0) {
+          await env.DB.prepare(
+            "INSERT INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 0, ?) ON CONFLICT(organization_id, period) DO UPDATE SET attachment_bytes = attachment_bytes + excluded.attachment_bytes",
           )
-          .run();
-        recordMetric(
-          env,
-          "attachment.created",
-          raw.organizationId,
-          raw.projectId,
-          [raw.size],
-        );
+            .bind(
+              raw.organizationId,
+              new Date().toISOString().slice(0, 7),
+              raw.size,
+            )
+            .run();
+          recordMetric(
+            env,
+            "attachment.created",
+            raw.organizationId,
+            raw.projectId,
+            [raw.size],
+          );
+        }
         await env.CACHE.delete(`upload:${uploadPut[1]}`);
         return jsonResponse(
           { attachmentId: raw.attachmentId, objectKey: raw.objectKey },
