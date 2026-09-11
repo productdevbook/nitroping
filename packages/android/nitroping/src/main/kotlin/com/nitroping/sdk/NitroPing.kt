@@ -8,6 +8,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
 import java.util.UUID
+import org.json.JSONObject
 
 enum class FeedbackType { COMPLAINT, BUG, SUGGESTION, FEATURE_REQUEST }
 
@@ -22,6 +23,8 @@ data class Feedback(
 )
 
 data class FeedbackResponse(val id: String, val status: String, val title: String, val createdAt: String)
+data class FollowUpComment(val id: String, val body: String, val createdAt: String)
+data class FollowUpSnapshot(val feedbackId: String, val status: String, val title: String, val body: String, val comments: List<FollowUpComment>)
 
 class NitroPingClient(
     private val projectKey: String,
@@ -55,6 +58,24 @@ class NitroPingClient(
 
     fun pendingCount(): Int = queue().size
 
+    suspend fun requestFollowUp(feedbackId: String, email: String): Boolean = withContext(Dispatchers.IO) {
+        requestRaw("POST", "/projects/$projectKey/follow-up/request", "{\"feedbackId\":${quote(feedbackId)},\"email\":${quote(email)}}")
+        true
+    }
+
+    suspend fun fetchFollowUp(token: String): FollowUpSnapshot = withContext(Dispatchers.IO) {
+        val root = JSONObject(requestRaw("GET", "/follow-up/$token", null))
+        val feedback = root.getJSONObject("feedback")
+        val commentsJson = root.optJSONArray("comments") ?: org.json.JSONArray()
+        val comments = buildList {
+            for (index in 0 until commentsJson.length()) {
+                val comment = commentsJson.getJSONObject(index)
+                add(FollowUpComment(comment.optString("id"), comment.optString("body"), comment.optString("createdAt")))
+            }
+        }
+        FollowUpSnapshot(feedback.optString("id"), feedback.optString("status"), feedback.optString("title"), feedback.optString("body"), comments)
+    }
+
     private fun send(body: String, idempotencyKey: String): FeedbackResponse {
         val connection = URL("$apiBaseUrl/projects/$projectKey/feedback").openConnection() as HttpURLConnection
         try {
@@ -67,6 +88,19 @@ class NitroPingClient(
             val responseBody = (if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
             if (connection.responseCode !in 200..299) throw NitroPingHttpException(connection.responseCode, responseBody)
             return parseResponse(responseBody)
+        } finally { connection.disconnect() }
+    }
+
+    private fun requestRaw(method: String, path: String, body: String?): String {
+        val connection = URL("$apiBaseUrl$path").openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = method
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("X-NitroPing-Project-Key", projectKey)
+            if (body != null) { connection.doOutput = true; connection.outputStream.use { it.write(body.toByteArray()) } }
+            val responseBody = (if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
+            if (connection.responseCode !in 200..299) throw NitroPingHttpException(connection.responseCode, responseBody)
+            return responseBody
         } finally { connection.disconnect() }
     }
 

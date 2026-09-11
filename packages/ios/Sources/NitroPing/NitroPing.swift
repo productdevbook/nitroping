@@ -44,6 +44,28 @@ public struct NitroPingFeedbackResponse: Codable, Sendable {
     public let createdAt: String
 }
 
+public struct NitroPingFollowUpFeedback: Codable, Sendable {
+    public let id: String
+    public let type: String
+    public let status: String
+    public let priority: String
+    public let title: String
+    public let body: String
+    public let createdAt: String
+    public let updatedAt: String
+}
+
+public struct NitroPingFollowUpComment: Codable, Sendable {
+    public let id: String
+    public let body: String
+    public let createdAt: String
+}
+
+public struct NitroPingFollowUp: Codable, Sendable {
+    public let feedback: NitroPingFollowUpFeedback
+    public let comments: [NitroPingFollowUpComment]
+}
+
 public enum NitroPingError: Error, Sendable {
     case invalidResponse
     case server(statusCode: Int, message: String)
@@ -91,6 +113,32 @@ public actor NitroPingClient {
     }
 
     public var pendingCount: Int { pending.count }
+
+    public func requestFollowUp(feedbackId: String, email: String) async throws {
+        var request = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("projects/\(configuration.projectKey)/follow-up/request"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(configuration.projectKey, forHTTPHeaderField: "X-NitroPing-Project-Key")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["feedbackId": feedbackId, "email": email])
+        _ = try await perform(request)
+    }
+
+    public func fetchFollowUp(token: String) async throws -> NitroPingFollowUp {
+        let request = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("follow-up/\(token)"))
+        let data = try await perform(request)
+        return try JSONDecoder().decode(NitroPingFollowUp.self, from: data)
+    }
+
+    private func perform(_ request: URLRequest) async throws -> Data {
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw NitroPingError.invalidResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            let root = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+            let error = root["error"] as? [String: Any]
+            throw NitroPingError.server(statusCode: http.statusCode, message: error?["message"] as? String ?? "NitroPing request failed")
+        }
+        return data
+    }
 
     private func send(_ feedback: NitroPingFeedback, idempotencyKey: String) async throws -> NitroPingFeedbackResponse {
         var request = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("projects/\(configuration.projectKey)/feedback"))
