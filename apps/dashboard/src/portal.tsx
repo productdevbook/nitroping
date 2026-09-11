@@ -34,6 +34,7 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [live, setLive] = useState(false);
 
   const refresh = async () => {
     if (!projectId || !projectKey) { setError("This portal link is missing its project configuration."); return; }
@@ -49,6 +50,21 @@ function App() {
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not load this portal."); }
   };
   useEffect(() => { void refresh(); }, [projectId, projectKey]);
+  useEffect(() => {
+    if (!projectId || !projectKey || typeof WebSocket === "undefined") return;
+    const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(`${protocol}//${location.host}${api}/projects/${encodeURIComponent(projectId)}/events?projectKey=${encodeURIComponent(projectKey)}`);
+    socket.onopen = () => setLive(true);
+    socket.onclose = () => setLive(false);
+    socket.onerror = () => setLive(false);
+    socket.onmessage = (event) => {
+      try {
+        const message = JSON.parse(String(event.data)) as { type?: string };
+        if (message.type !== "connected") void refresh();
+      } catch { /* Ignore malformed realtime payloads and keep the current view. */ }
+    };
+    return () => { socket.close(); setLive(false); };
+  }, [projectId, projectKey]);
   const filtered = useMemo(() => items.filter((item) => !query || `${item.title} ${item.body}`.toLowerCase().includes(query.toLowerCase())), [items, query]);
   const openItem = async (item: PortalItem) => { setSelected(item); const result = await request<{ items: Comment[] }>(`/projects/${encodeURIComponent(projectId)}/feedback/${item.id}/comments`); setComments(result.items ?? []); };
   const vote = async (item: PortalItem) => { const result = await request<{ votes: number }>(`/projects/${encodeURIComponent(projectId)}/feedback/${item.id}/vote`, { method: "POST" }); setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, votes: result.votes } : entry)); };
@@ -58,7 +74,7 @@ function App() {
     <header className="portal-header"><div className="portal-brand"><span>✦</span>NitroPing</div><nav>{(["feedback", "roadmap", "changelog"] as const).map((value) => <button className={tab === value ? "active" : ""} onClick={() => setTab(value)} key={value}>{titleCase(value)}</button>)}</nav><button className="portal-submit" onClick={() => setShowForm(true)}>Share feedback</button></header>
     <section className="portal-hero"><p className="portal-eyebrow">Community feedback</p><h1>Help shape what comes next.</h1><p>Vote on ideas, report problems, and follow the progress of work that matters to you.</p><div className="portal-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void refresh()} placeholder="Search feedback" /></div></section>
     {error && <div className="portal-error">{error}</div>}
-    <section className="portal-content">
+    <section className="portal-content"><div className={`portal-live ${live ? "connected" : ""}`}><i />{live ? "Live updates enabled" : "Updates refresh automatically"}</div>
       {tab === "feedback" && <><div className="portal-section-head"><div><p className="portal-eyebrow">Open conversation</p><h2>Feedback board</h2></div><span>{filtered.length} ideas</span></div><div className="feedback-grid">{filtered.map((item) => <article className="public-card" key={item.id} onClick={() => void openItem(item)}><div className="card-top"><span className={`type-pill ${item.type}`}>{titleCase(item.type)}</span><span className="card-time">{relativeTime(item.createdAt)}</span></div><h3>{item.title}</h3><p>{item.body}</p><div className="card-bottom"><span className={`status-pill ${item.status}`}>{titleCase(item.status)}</span><button onClick={(event) => { event.stopPropagation(); void vote(item); }}>▲ {item.votes ?? 0}</button></div></article>)}</div>{filtered.length === 0 && <div className="portal-empty">No feedback matches your search yet.</div>}</>}
       {tab === "roadmap" && <><div className="portal-section-head"><div><p className="portal-eyebrow">Product direction</p><h2>Roadmap</h2></div></div><div className="roadmap-public">{roadmap.map((item) => <article className="public-card" key={item.id}><span className={`status-pill ${item.status}`}>{titleCase(item.status)}</span><h3>{item.title}</h3><p>{item.body}</p></article>)}</div></>}
       {tab === "changelog" && <><div className="portal-section-head"><div><p className="portal-eyebrow">What shipped</p><h2>Changelog</h2></div></div><div className="changelog-public">{changelog.map((item) => <article className="public-card" key={item.id}><time>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString("en", { dateStyle: "medium" }) : "Recently"}</time><h3>{item.title}</h3><p>{item.body}</p></article>)}</div></>}
