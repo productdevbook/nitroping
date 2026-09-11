@@ -3857,7 +3857,7 @@ export default {
           getFeedback(repo, context, match[2]),
         );
         return result && result.status !== "spam"
-          ? jsonResponse(publicFeedback(result), { headers: cors })
+          ? await etagged(publicFeedback(result), request, cors)
           : error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
       }
       if (match && request.method === "GET" && !match[2]) {
@@ -3885,14 +3885,15 @@ export default {
               : undefined,
           }),
         );
-        return jsonResponse(
+        return await etagged(
           {
             ...result,
             items: result.items
               .filter((item) => item.status !== "spam")
               .map(publicFeedback),
           },
-          { headers: cors },
+          request,
+          cors,
         );
       }
       const categoriesMatch = path.match(
@@ -4013,9 +4014,10 @@ export default {
         )
           .bind(commentMatch[2], context.organizationId, context.projectId)
           .all();
-        return jsonResponse(
+        return await etagged(
           { items: comments.results ?? [] },
-          { headers: cors },
+          request,
+          cors,
         );
       }
       if (commentMatch && request.method === "POST") {
