@@ -190,6 +190,12 @@ paths:
       parameters: [{ name: projectId, in: query, required: true, schema: { type: string } }]
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [plan], properties: { plan: { type: string, enum: [pro, business] } } } } } }
       responses: { '201': { description: Checkout session }, '503': { $ref: '#/components/responses/Error' } }
+  /webhooks/stripe:
+    post:
+      summary: Receive a signed Stripe subscription event
+      parameters: [{ name: Stripe-Signature, in: header, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
+      responses: { '200': { description: Event accepted }, '401': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/categories:
     get:
       summary: List project categories

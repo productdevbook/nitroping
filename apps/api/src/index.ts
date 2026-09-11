@@ -404,6 +404,33 @@ export default {
         await writeOrganizationAudit(env, projectCreateMatch[1], "project.created", "project", projectId, userId);
         return jsonResponse({ id: projectId, organizationId: projectCreateMatch[1], name, slug, publicKey, serverKey, createdAt: now }, { status: 201, headers: cors });
       }
+      if (path === "/api/v1/webhooks/stripe" && request.method === "POST") {
+        const billingEnv = env as Env & { STRIPE_WEBHOOK_SECRET?: string };
+        if (!billingEnv.STRIPE_WEBHOOK_SECRET) return error("BILLING_NOT_CONFIGURED", "Stripe webhooks are not configured for this deployment", rid, 503);
+        const payload = await request.text();
+        const signature = request.headers.get("stripe-signature") ?? "";
+        const provider = new StripeBillingProvider("unused", { pro: "", business: "" }, billingEnv.STRIPE_WEBHOOK_SECRET);
+        if (!(await provider.verifyWebhook(payload, signature))) return error("INVALID_STRIPE_SIGNATURE", "The Stripe webhook signature is invalid", rid, 401);
+        const event = JSON.parse(payload) as { type?: string; data?: { object?: Record<string, unknown> } };
+        const object = event.data?.object ?? {};
+        if (event.type === "checkout.session.completed") {
+          const organizationId = typeof object.client_reference_id === "string" ? object.client_reference_id : typeof (object.subscription as Record<string, unknown> | undefined)?.metadata === "object" ? String(((object.subscription as Record<string, unknown>).metadata as Record<string, unknown>).organizationId ?? "") : "";
+          const subscriptionId = typeof object.subscription === "string" ? object.subscription : "";
+          const customerId = typeof object.customer === "string" ? object.customer : null;
+          const plan = typeof (object.metadata as Record<string, unknown> | undefined)?.plan === "string" ? String((object.metadata as Record<string, unknown>).plan) : "pro";
+          if (organizationId && subscriptionId) await env.DB.prepare("INSERT INTO subscriptions (organization_id, plan, status, provider_customer_id, provider_subscription_id, created_at, updated_at) VALUES (?, ?, 'active', ?, ?, ?, ?) ON CONFLICT(organization_id) DO UPDATE SET plan = excluded.plan, status = 'active', provider_customer_id = excluded.provider_customer_id, provider_subscription_id = excluded.provider_subscription_id, updated_at = excluded.updated_at").bind(organizationId, plan, customerId, subscriptionId, new Date().toISOString(), new Date().toISOString()).run();
+        }
+        if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+          const subscriptionId = typeof object.id === "string" ? object.id : "";
+          const existing = await env.DB.prepare("SELECT organization_id AS organizationId FROM subscriptions WHERE provider_subscription_id = ?").bind(subscriptionId).first<{ organizationId: string }>();
+          if (existing) {
+            const status = event.type === "customer.subscription.deleted" ? "canceled" : String(object.status ?? "active");
+            const currentPeriodEnd = typeof object.current_period_end === "number" ? new Date(object.current_period_end * 1000).toISOString() : null;
+            await env.DB.prepare("UPDATE subscriptions SET status = ?, current_period_end = ?, updated_at = ? WHERE organization_id = ?").bind(status, currentPeriodEnd, new Date().toISOString(), existing.organizationId).run();
+          }
+        }
+        return jsonResponse({ received: true }, { headers: cors });
+      }
       const webhookMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/webhooks(?:\/([^/]+))?$/);
       if (webhookMatch && ["GET", "POST", "DELETE"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
