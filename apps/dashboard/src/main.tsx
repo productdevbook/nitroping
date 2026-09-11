@@ -50,6 +50,9 @@ function App() {
   const [setupLoading, setSetupLoading] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [creatingProject, setCreatingProject] = useState(false);
+  const [newOrganizationName, setNewOrganizationName] = useState("");
+  const [newWorkspaceProjectName, setNewWorkspaceProjectName] = useState("");
+  const [creatingWorkspace, setCreatingWorkspace] = useState(false);
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [selected, setSelected] = useState<FeedbackDetail | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -158,6 +161,22 @@ function App() {
     }
   };
 
+  const createOrganizationWorkspace = async () => {
+    if (newOrganizationName.trim().length < 2 || newWorkspaceProjectName.trim().length < 2) return;
+    setCreatingWorkspace(true);
+    try {
+      const organization = await api<Organization>("/dashboard/organizations", { method: "POST", body: JSON.stringify({ name: newOrganizationName.trim() }) });
+      const project = await api<Project>(`/dashboard/organizations/${organization.id}/projects`, { method: "POST", body: JSON.stringify({ name: newWorkspaceProjectName.trim() }) });
+      setOrganizations((items) => [...items, organization]);
+      setProjects((items) => [...items, project]);
+      setProjectId(project.id); setPublicKey(project.publicKey); setSelected(null); setView("inbox"); setFilter("all"); setQuery("");
+      localStorage.setItem("np.project", project.id); localStorage.setItem("np.public", project.publicKey);
+      setNewOrganizationName(""); setNewWorkspaceProjectName(""); setCreatingWorkspace(false); setNotice({ text: "Workspace created" });
+    } catch (error) {
+      setNotice({ text: error instanceof Error ? error.message : "Unable to create workspace", error: true });
+    } finally { setCreatingWorkspace(false); }
+  };
+
   const loadView = async (nextView: View) => {
     setView(nextView);
     try {
@@ -225,7 +244,7 @@ function App() {
     <aside className="sidebar">
       <div className="brand"><span className="brand-mark">N</span><span>Nitro<strong>Ping</strong></span></div>
       <div className="workspace-switcher"><span className="workspace-icon">{(activeOrganization?.name ?? "N")[0]}</span><div className="workspace-switcher-copy"><small>{activeOrganization?.name ?? "Workspace"}</small><select aria-label="Switch project" value={projectId} onChange={(event) => selectProject(event.target.value)}>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></div><span className="chevron">⌄</span></div>
-      {activeOrganization && <div className="project-create"><button className="project-create-trigger" onClick={() => setCreatingProject((value) => !value)}>＋ New project</button>{creatingProject && <form onSubmit={(event) => { event.preventDefault(); void createProject(); }}><input value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="Project name" autoFocus /><button type="submit" disabled={creatingProject || newProjectName.trim().length < 2}>{creatingProject ? "Creating…" : "Create"}</button></form>}</div>}
+      {activeOrganization && <div className="project-create"><button className="project-create-trigger" onClick={() => setCreatingProject((value) => !value)}>＋ New project</button>{creatingProject && <form onSubmit={(event) => { event.preventDefault(); void createProject(); }}><input value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="Project name" autoFocus /><button type="submit" disabled={creatingProject || newProjectName.trim().length < 2}>{creatingProject ? "Creating…" : "Create"}</button></form>}<button className="project-create-trigger workspace-create-trigger" onClick={() => setCreatingWorkspace((value) => !value)}>＋ New workspace</button>{creatingWorkspace && <form onSubmit={(event) => { event.preventDefault(); void createOrganizationWorkspace(); }}><input value={newOrganizationName} onChange={(event) => setNewOrganizationName(event.target.value)} placeholder="Workspace name" autoFocus /><input value={newWorkspaceProjectName} onChange={(event) => setNewWorkspaceProjectName(event.target.value)} placeholder="First project" /><button type="submit" disabled={creatingWorkspace || newOrganizationName.trim().length < 2 || newWorkspaceProjectName.trim().length < 2}>{creatingWorkspace ? "Creating…" : "Create"}</button></form>}</div>}
       <nav className="nav" aria-label="Main navigation">
         <p className="nav-label">Workspace</p>
         <NavItem active={view === "inbox"} icon="◈" label="Inbox" count={feedback.filter((item) => item.status === "new").length} onClick={() => loadView("inbox")} />
