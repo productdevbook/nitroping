@@ -14,6 +14,6 @@ To materialize generated model sources for local SDK work:
 bun run codegen:native
 ```
 
-Generated output is intentionally ignored because the SDKs keep a small, ergonomic public API and use generated models as a contract check rather than exposing the OpenAPI generator's transport internals. A native model change must be accompanied by the corresponding OpenAPI schema change; CI runs the generator for both Swift and Kotlin on every change.
+Generated model output is committed and compiled as a dedicated native contract target. The SDKs keep a small, ergonomic façade and do not expose the OpenAPI generator's transport internals, but generated request/response models are available to advanced consumers and are used by the native packages as the wire-contract boundary. A native model change must be accompanied by the corresponding OpenAPI schema change; CI regenerates and validates both Swift and Kotlin on every change.
 
 The generator version is pinned by `openapitools.json`. The generated files are model-only: API transport, authentication, offline queues, attachment handling, and platform UI remain implemented by the native SDKs.

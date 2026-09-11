@@ -1,4 +1,9 @@
 import Foundation
+import NitroPingOpenAPIGenerated
+
+/// OpenAPI-generated wire models are available to advanced SDK consumers.
+public typealias NitroPingGeneratedFeedbackRequest = NitroPingOpenAPIGenerated.CreateFeedback
+public typealias NitroPingGeneratedPublicConfig = NitroPingOpenAPIGenerated.PublicConfig
 
 public enum NitroPingFeedbackType: String, Codable, Sendable {
     case complaint, bug, suggestion, featureRequest = "feature_request"
@@ -228,7 +233,20 @@ public actor NitroPingClient {
     public func fetchPublicConfig() async throws -> NitroPingPublicConfig {
         var request = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("projects/\(configuration.projectKey)/public/config"))
         request.setValue(configuration.projectKey, forHTTPHeaderField: "X-NitroPing-Project-Key")
-        return try JSONDecoder().decode(NitroPingPublicConfig.self, from: try await perform(request))
+        let generated = try JSONDecoder().decode(NitroPingOpenAPIGenerated.PublicConfig.self, from: try await perform(request))
+        let theme = NitroPingPublicTheme(
+            mode: generated.theme.mode,
+            buttonLabel: generated.theme.buttonLabel,
+            fields: generated.theme.fields,
+            customFields: generated.theme.customFields?.map {
+                NitroPingCustomField(id: $0.id, label: $0.label, type: $0.type, required: $0._required, options: $0.options)
+            },
+            colors: generated.theme.colors
+        )
+        return NitroPingPublicConfig(
+            theme: theme,
+            categories: generated.categories.map { NitroPingCategory(id: $0.id, name: $0.name, slug: $0.slug) }
+        )
     }
 
     @discardableResult
@@ -237,7 +255,7 @@ public actor NitroPingClient {
         var initiate = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("projects/\(configuration.projectKey)/uploads/initiate"))
         initiate.httpMethod = "POST"; initiate.setValue("application/json", forHTTPHeaderField: "Content-Type"); initiate.setValue(configuration.projectKey, forHTTPHeaderField: "X-NitroPing-Project-Key")
         initiate.httpBody = try JSONSerialization.data(withJSONObject: ["feedbackId": feedbackId, "contentType": attachment.contentType, "size": attachment.data.count])
-        let initiated = try JSONDecoder().decode(NitroPingUploadInitiation.self, from: try await perform(initiate))
+        let initiated = try JSONDecoder().decode(NitroPingOpenAPIGenerated.UploadInitiation.self, from: try await perform(initiate))
         guard let uploadURL = URL(string: initiated.uploadUrl, relativeTo: configuration.apiBaseURL)?.absoluteURL else { throw NitroPingError.invalidResponse }
         var upload = URLRequest(url: uploadURL); upload.httpMethod = "PUT"; upload.httpBody = attachment.data; upload.setValue(attachment.contentType, forHTTPHeaderField: "Content-Type"); upload.setValue(configuration.projectKey, forHTTPHeaderField: "X-NitroPing-Project-Key")
         _ = try await perform(upload)
@@ -284,7 +302,26 @@ public actor NitroPingClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(configuration.projectKey, forHTTPHeaderField: "X-NitroPing-Project-Key")
         request.setValue(idempotencyKey, forHTTPHeaderField: "Idempotency-Key")
-        request.httpBody = try JSONEncoder().encode(feedback)
+        let generated = NitroPingOpenAPIGenerated.CreateFeedback(
+            type: .init(rawValue: feedback.type.rawValue)!,
+            categoryId: feedback.categoryId,
+            title: feedback.title,
+            body: feedback.body,
+            priority: feedback.priority.flatMap(NitroPingOpenAPIGenerated.FeedbackPriority.init(rawValue:)),
+            email: feedback.email,
+            platform: .ios,
+            appVersion: feedback.appVersion,
+            osVersion: feedback.osVersion,
+            locale: feedback.locale,
+            metadata: feedback.metadata?.mapValues {
+                switch $0 {
+                case .string(let value): return .typeString(value)
+                case .number(let value): return .typeDouble(value)
+                case .boolean(let value): return .typeBool(value)
+                }
+            }
+        )
+        request.httpBody = try JSONEncoder().encode(generated)
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw NitroPingError.invalidResponse }
         guard (200..<300).contains(http.statusCode) else {
@@ -299,9 +336,4 @@ public actor NitroPingClient {
     private func persist() {
         UserDefaults.standard.set(try? JSONEncoder().encode(pending), forKey: pendingStorageKey)
     }
-}
-
-private struct NitroPingUploadInitiation: Codable, Sendable {
-    let attachmentId: String
-    let uploadUrl: String
 }

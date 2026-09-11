@@ -1,4 +1,4 @@
-import { mkdir, rm } from "node:fs/promises";
+import { cp, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 
 const root = join(import.meta.dir, "..");
@@ -11,6 +11,7 @@ const targets = [
     generatorName: "swift5",
     output: join(root, "packages/ios/.generated-openapi"),
     properties: "packageName=NitroPingOpenAPIGenerated",
+    support: join(root, "packages/ios/GeneratedSupport.swift"),
   },
   {
     name: "Kotlin",
@@ -46,6 +47,9 @@ for (const target of targets) {
   if (result.exitCode !== 0) {
     const stderr = new TextDecoder().decode(result.stderr).trim();
     throw new Error(`${target.name} model generation failed (${result.exitCode})\n${stderr.slice(-4000)}`);
+  }
+  if (!checkOnly && target.support) {
+    await cp(target.support, join(output, "GeneratedSupport.swift"));
   }
 }
 

@@ -7,6 +7,4 @@ coverage
 *.log
 **/.alchemy
 *.cpuprofile
-packages/ios/.generated-openapi
-packages/android/.generated-openapi
 .tmp
