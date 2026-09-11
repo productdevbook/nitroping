@@ -5,6 +5,8 @@ import type { ProjectEventStream } from "../../apps/api/src/events";
 
 const stage = process.env.NITROPING_STAGE ?? "production";
 const suffix = stage === "production" ? "" : `-${stage}`;
+const manageDns = process.env.NITROPING_MANAGE_DNS === "true";
+const apiOrigin = process.env.NITROPING_API_ORIGIN ?? "nitroping-api.srvrun.workers.dev";
 
 export default Alchemy.Stack(
   `nitroping-${stage}`,
@@ -52,6 +54,7 @@ export default Alchemy.Stack(
       crons: ["0 3 * * *"],
       routes: stage === "production" ? [
         { pattern: "nitroping.dev/*", zoneId: "9e147a2369f9b648e53feee23b5d091e" },
+        { pattern: "www.nitroping.dev/*", zoneId: "9e147a2369f9b648e53feee23b5d091e" },
         { pattern: "api.nitroping.dev/*", zoneId: "9e147a2369f9b648e53feee23b5d091e" },
       ] : [],
       env: {
@@ -83,6 +86,31 @@ export default Alchemy.Stack(
       settings: { batchSize: 10, maxRetries: 5, maxWaitTimeMs: 5000 },
     });
 
-    return { api, database, attachments, cache, events, analytics, email, eventStream, feedbackSearch, consumer };
+    // DNS is opt-in because the deployment token used by local development
+    // commonly has Workers/storage permissions but not Zone DNS Edit. Alchemy
+    // refuses to adopt an existing unowned record unless explicitly adopted,
+    // so enabling this remains safe for hand-managed zones.
+    const wwwRecord = stage === "production" && manageDns
+      ? yield* Cloudflare.DNS.Record("WwwRecord", {
+          zoneId: "9e147a2369f9b648e53feee23b5d091e",
+          name: "www.nitroping.dev",
+          type: "CNAME",
+          content: "nitroping.dev",
+          proxied: true,
+          comment: "NitroPing managed website alias",
+        })
+      : undefined;
+    const apiRecord = stage === "production" && manageDns
+      ? yield* Cloudflare.DNS.Record("ApiRecord", {
+          zoneId: "9e147a2369f9b648e53feee23b5d091e",
+          name: "api.nitroping.dev",
+          type: "CNAME",
+          content: apiOrigin,
+          proxied: true,
+          comment: "NitroPing managed API hostname",
+        })
+      : undefined;
+
+    return { api, database, attachments, cache, events, analytics, email, eventStream, feedbackSearch, consumer, wwwRecord, apiRecord };
   }),
 );
