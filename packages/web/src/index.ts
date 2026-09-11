@@ -1,12 +1,13 @@
 import type { CreateFeedbackInput, Feedback, FeedbackType } from "@nitroping/contracts";
 
 export type WidgetMode = "floating" | "modal" | "side-panel" | "inline" | "portal" | "headless";
-export type WidgetField = "type" | "title" | "description" | "attachment" | "email";
+export type WidgetField = "type" | "category" | "title" | "description" | "attachment" | "email";
+export type WidgetCategory = { id: string; name: string };
 export type WidgetColors = { primary?: string; background?: string; text?: string; muted?: string };
 export type NitroPingOptions = {
   projectKey: string; apiBaseUrl?: string; mode?: WidgetMode; theme?: "light" | "dark" | "system"; locale?: string;
   target?: string | HTMLElement; buttonLabel?: string; title?: string; description?: string;
-  fields?: WidgetField[]; categories?: FeedbackType[]; colors?: WidgetColors;
+  fields?: WidgetField[]; categories?: FeedbackType[]; categoryOptions?: WidgetCategory[]; colors?: WidgetColors;
 };
 export type NitroPingClient = {
   feedback: { create(input: CreateFeedbackInput, attachments?: File[]): Promise<Feedback> };
@@ -65,6 +66,7 @@ const buildForm = (options: NitroPingOptions, client: NitroPingClient, root: HTM
   (card.querySelector("p") as HTMLElement).textContent = options.description ?? "Tell us what would make this product better.";
   const grid = card.querySelector(".np-grid")!; const add = (html: string) => grid.insertAdjacentHTML("beforeend", html);
   if (fields.includes("type")) add(`<label class="np-label">Type<select class="np-select" name="type">${categories.map((value) => `<option value="${value}">${labelFor(value)}</option>`).join("")}</select></label>`);
+  if (fields.includes("category") && options.categoryOptions?.length) add(`<label class="np-label">Category<select class="np-select" name="categoryId"><option value="">Select a category</option>${options.categoryOptions.map((category) => `<option value="${category.id}">${labelFor(category.name)}</option>`).join("")}</select></label>`);
   if (fields.includes("title")) add(`<label class="np-label">Title<input class="np-input" name="title" required minlength="3" maxlength="160" /></label>`);
   if (fields.includes("description")) add(`<label class="np-label">Description<textarea class="np-input np-textarea" name="body" required minlength="3" maxlength="20000"></textarea></label>`);
   if (fields.includes("email")) add(`<label class="np-label">Email (optional)<input class="np-input" type="email" name="email" /></label>`);
@@ -74,7 +76,7 @@ const buildForm = (options: NitroPingOptions, client: NitroPingClient, root: HTM
     event.preventDefault(); const submit = card.querySelector<HTMLButtonElement>(".np-submit")!; submit.disabled = true; submit.textContent = "Submitting…";
     const data = Object.fromEntries(new FormData(card).entries()); const file = (card.querySelector<HTMLInputElement>("input[type=file]")?.files ?? [])[0];
     try {
-      await client.feedback.create({ type: String(data.type || "suggestion") as FeedbackType, title: String(data.title || "Feedback"), body: String(data.body || ""), email: data.email ? String(data.email) : undefined, locale: options.locale ?? navigator.language, platform: "web" }, file ? [file] : []);
+      await client.feedback.create({ type: String(data.type || "suggestion") as FeedbackType, categoryId: data.categoryId ? String(data.categoryId) : undefined, title: String(data.title || "Feedback"), body: String(data.body || ""), email: data.email ? String(data.email) : undefined, locale: options.locale ?? navigator.language, platform: "web" }, file ? [file] : []);
       card.innerHTML = `<div class="np-success"><strong>Thank you!</strong><br />Your feedback has been sent to the team.</div>`; setTimeout(close, 2600);
     } catch (cause) {
       card.querySelector(".np-error")?.remove(); const message = document.createElement("div"); message.className = "np-error"; message.textContent = cause instanceof Error ? cause.message : "Submission failed."; const actions = card.querySelector(".np-actions"); if (actions) card.insertBefore(message, actions); submit.disabled = false; submit.textContent = "Submit";
