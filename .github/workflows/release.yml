@@ -1,0 +1,92 @@
+name: Release SDKs
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Semver version without the v prefix"
+        required: true
+        type: string
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version="${INPUT_VERSION:-${REF_NAME#v}}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+  npm:
+    needs: resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: bun install --frozen-lockfile
+      - run: bun run --filter '@nitroping/contracts' build
+      - run: bun run --filter '@nitroping/web' build
+      - run: npm publish ./packages/contracts --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish ./packages/web --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  android:
+    needs: resolve
+    if: ${{ secrets.MAVEN_USERNAME != '' && secrets.MAVEN_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.6.0"
+      - run: gradle -p packages/android :nitroping:publishReleasePublicationToGitHubPackagesRepository -PnitropingVersion="${{ needs.resolve.outputs.version }}" -PmavenUsername="${{ secrets.MAVEN_USERNAME }}" -PmavenToken="${{ secrets.MAVEN_TOKEN }}" --no-daemon
+
+  github-release:
+    needs: [resolve, npm, android]
+    if: ${{ always() && needs.resolve.result == 'success' && needs.npm.result == 'success' && (needs.android.result == 'success' || needs.android.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v8
+        env:
+          RELEASE_TAG: ${{ needs.resolve.outputs.tag }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = process.env.RELEASE_TAG;
+            try {
+              await github.rest.repos.getReleaseByTag({ owner: context.repo.owner, repo: context.repo.repo, tag });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              await github.rest.repos.createRelease({ owner: context.repo.owner, repo: context.repo.repo, tag_name: tag, name: tag, generate_release_notes: true });
+            }

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.nitroping"
-version = "0.1.0"
+version = providers.gradleProperty("nitropingVersion").orElse("0.1.0").get()
 
 android {
     namespace = "com.nitroping.sdk"
@@ -33,6 +33,16 @@ dependencies {
 
 afterEvaluate {
     publishing {
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri(providers.gradleProperty("mavenRepoUrl").orElse("https://maven.pkg.github.com/productdevbook/nitroping").get())
+                credentials {
+                    username = providers.gradleProperty("mavenUsername").orElse(System.getenv("GITHUB_ACTOR") ?: "").get()
+                    password = providers.gradleProperty("mavenToken").orElse(System.getenv("GITHUB_TOKEN") ?: "").get()
+                }
+            }
+        }
         publications {
             register<MavenPublication>("release") {
                 from(components["release"])

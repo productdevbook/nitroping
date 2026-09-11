@@ -53,7 +53,7 @@ The dashboard is a React 19 application built with Vite 8 and Bun. It uses a sma
 - `apps/api/public/dashboard.html`: generated production entry served by the Worker
 - `apps/api/public/assets`: generated JavaScript bundle
 
-The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Changelog, Audit log, Developer controls, Team, Notifications, and Settings. Each view talks to the versioned API through the authenticated organization-member boundary, with a project-key/server-key fallback for local development. Authentication is kept outside the visual components.
+The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Changelog, Audit log, Developer controls, Team, Notifications, Billing, Widget Builder, and Settings. It also supports creating organizations and projects from the workspace switcher. Each view talks to the versioned API through the authenticated organization-member boundary, with a project-key/server-key fallback for local development. Authentication is kept outside the visual components.
 
 The hosted public portal is available at `/portal?projectId=<project-id>&projectKey=<public-key>`. It provides feedback submission, community browsing, voting, roadmap, and changelog views without requiring the customer to build a separate public page.
 
@@ -77,6 +77,8 @@ bun run build
 - `migrations`: D1 schema migrations
 - `openapi.yaml`: public API contract
 
-## Not
+Public package artifacts are built into `dist/` for `@nitroping/contracts` and `@nitroping/web`. A `v*` tag (or the manually dispatched `Release SDKs` workflow) publishes the npm packages and, when Maven credentials are configured, the Android artifact to GitHub Packages. Configure `NPM_TOKEN`, `MAVEN_USERNAME`, and `MAVEN_TOKEN` as GitHub Actions secrets before creating a release.
+
+## Notes
 
 Production resources are provisioned on Cloudflare. The dashboard landing assets are served by the Worker, the API is available under `/api/v1`, and the native SDKs use the same OpenAPI contract.
