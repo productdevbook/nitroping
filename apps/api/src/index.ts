@@ -877,7 +877,7 @@ const requireDashboardProject = async (
     `SELECT p.id, p.organization_id AS organizationId, m.role
     FROM projects p
     JOIN organization_members m ON m.organization_id = p.organization_id
-    WHERE p.id = ? AND m.user_id = ? AND p.deleted_at IS NULL`,
+    WHERE p.id = ? AND m.user_id = ? AND m.deleted_at IS NULL AND p.deleted_at IS NULL`,
   )
     .bind(projectId, userId)
     .first<{ id: string; organizationId: string; role: string }>();
@@ -970,7 +970,7 @@ const requireOrganizationMember = async (
 ): Promise<boolean> => {
   const placeholders = roles.map(() => "?").join(",");
   const member = await env.DB.prepare(
-    `SELECT 1 FROM organization_members WHERE organization_id = ? AND user_id = ? AND role IN (${placeholders})`,
+    `SELECT 1 FROM organization_members WHERE organization_id = ? AND user_id = ? AND deleted_at IS NULL AND role IN (${placeholders})`,
   )
     .bind(organizationId, userId, ...roles)
     .first();
@@ -1226,7 +1226,7 @@ const enqueueTeamNotifications = async (
     `SELECT u.email
     FROM organization_members m JOIN users u ON u.id = m.user_id
     LEFT JOIN notification_preferences p ON p.organization_id = m.organization_id AND p.project_id = ? AND p.email = u.email AND p.event_type = ?
-    WHERE m.organization_id = ? AND COALESCE(p.enabled, 1) = 1`,
+    WHERE m.organization_id = ? AND m.deleted_at IS NULL AND COALESCE(p.enabled, 1) = 1`,
   )
     .bind(projectId, eventType, organizationId)
     .all<{ email: string }>();
@@ -1433,20 +1433,20 @@ export default {
               );
         const userId = await userForIdentity(env, identity);
         const organizationCount = await env.DB.prepare(
-          "SELECT COUNT(*) AS count FROM organization_members m JOIN organizations o ON o.id = m.organization_id WHERE m.user_id = ? AND o.deleted_at IS NULL",
+          "SELECT COUNT(*) AS count FROM organization_members m JOIN organizations o ON o.id = m.organization_id WHERE m.user_id = ? AND m.deleted_at IS NULL AND o.deleted_at IS NULL",
         )
           .bind(userId)
           .first<{ count: number }>();
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
-            "SELECT o.id, o.name, o.slug, m.role, o.created_at AS createdAt FROM organizations o JOIN organization_members m ON m.organization_id = o.id WHERE m.user_id = ? AND o.deleted_at IS NULL ORDER BY o.created_at ASC",
+            "SELECT o.id, o.name, o.slug, m.role, o.created_at AS createdAt FROM organizations o JOIN organization_members m ON m.organization_id = o.id WHERE m.user_id = ? AND m.deleted_at IS NULL AND o.deleted_at IS NULL ORDER BY o.created_at ASC",
           )
             .bind(userId)
             .all();
           return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
         }
         const currentPlan = await env.DB.prepare(
-          "SELECT plan FROM subscriptions WHERE organization_id IN (SELECT organization_id FROM organization_members WHERE user_id = ?) ORDER BY CASE plan WHEN 'business' THEN 3 WHEN 'pro' THEN 2 ELSE 1 END DESC LIMIT 1",
+            "SELECT plan FROM subscriptions WHERE organization_id IN (SELECT organization_id FROM organization_members WHERE user_id = ? AND deleted_at IS NULL) ORDER BY CASE plan WHEN 'business' THEN 3 WHEN 'pro' THEN 2 ELSE 1 END DESC LIMIT 1",
         )
           .bind(userId)
           .first<{ plan: string }>();
@@ -1705,7 +1705,7 @@ export default {
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
             `SELECT m.user_id AS userId, u.email, m.role, m.created_at AS createdAt
-            FROM organization_members m JOIN users u ON u.id = m.user_id WHERE m.organization_id = ? ORDER BY m.created_at ASC`,
+            FROM organization_members m JOIN users u ON u.id = m.user_id WHERE m.organization_id = ? AND m.deleted_at IS NULL ORDER BY m.created_at ASC`,
           )
             .bind(membersMatch[1])
             .all();
@@ -1721,9 +1721,9 @@ export default {
             400,
           );
         const removed = await env.DB.prepare(
-          "DELETE FROM organization_members WHERE organization_id = ? AND user_id = ?",
+          "UPDATE organization_members SET deleted_at = ?, updated_at = ? WHERE organization_id = ? AND user_id = ? AND deleted_at IS NULL",
         )
-          .bind(membersMatch[1], membersMatch[2])
+          .bind(new Date().toISOString(), new Date().toISOString(), membersMatch[1], membersMatch[2])
           .run();
         if (!removed.meta.changes)
           return error("MEMBER_NOT_FOUND", "Member was not found", rid, 404);
@@ -1776,7 +1776,7 @@ export default {
             400,
           );
         const existing = await env.DB.prepare(
-          "SELECT 1 FROM users u JOIN organization_members m ON m.user_id = u.id WHERE m.organization_id = ? AND u.email = ?",
+          "SELECT 1 FROM users u JOIN organization_members m ON m.user_id = u.id WHERE m.organization_id = ? AND m.deleted_at IS NULL AND u.email = ?",
         )
           .bind(inviteMatch[1], email)
           .first();
@@ -1908,7 +1908,7 @@ export default {
         if (identity instanceof Response) return identity;
         const userId = await userForIdentity(env, identity);
         const rows = await env.DB.prepare(
-          "SELECT p.id, p.organization_id AS organizationId, p.name, p.slug, p.public_key AS publicKey, p.created_at AS createdAt FROM projects p JOIN organization_members m ON m.organization_id = p.organization_id WHERE m.user_id = ? AND p.deleted_at IS NULL ORDER BY p.created_at ASC",
+            "SELECT p.id, p.organization_id AS organizationId, p.name, p.slug, p.public_key AS publicKey, p.created_at AS createdAt FROM projects p JOIN organization_members m ON m.organization_id = p.organization_id WHERE m.user_id = ? AND m.deleted_at IS NULL AND p.deleted_at IS NULL ORDER BY p.created_at ASC",
         )
           .bind(userId)
           .all();
@@ -3244,7 +3244,7 @@ export default {
         if (request.method === "GET") {
           if (categoriesDashboardMatch[2]) {
             const category = await env.DB.prepare(
-              "SELECT id, name, slug, created_at AS createdAt FROM categories WHERE id = ? AND organization_id = ? AND project_id = ?",
+              "SELECT id, name, slug, created_at AS createdAt FROM categories WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
             )
               .bind(
                 categoriesDashboardMatch[2],
@@ -3257,7 +3257,7 @@ export default {
               : error("CATEGORY_NOT_FOUND", "Category was not found", rid, 404);
           }
           const rows = await env.DB.prepare(
-            "SELECT id, name, slug, created_at AS createdAt FROM categories WHERE organization_id = ? AND project_id = ? ORDER BY name ASC",
+            "SELECT id, name, slug, created_at AS createdAt FROM categories WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY name ASC",
           )
             .bind(context.organizationId, context.projectId)
             .all();
@@ -3292,7 +3292,7 @@ export default {
           };
           try {
             await env.DB.prepare(
-              "INSERT INTO categories (id, organization_id, project_id, name, slug, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+              "INSERT INTO categories (id, organization_id, project_id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
             )
               .bind(
                 category.id,
@@ -3300,6 +3300,7 @@ export default {
                 context.projectId,
                 name,
                 slug,
+                category.createdAt,
                 category.createdAt,
               )
               .run();
@@ -3329,7 +3330,7 @@ export default {
             400,
           );
         const existing = await env.DB.prepare(
-          "SELECT id, name, slug, created_at AS createdAt FROM categories WHERE id = ? AND organization_id = ? AND project_id = ?",
+          "SELECT id, name, slug, created_at AS createdAt FROM categories WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(
             categoriesDashboardMatch[2],
@@ -3356,9 +3357,9 @@ export default {
             .bind(existing.id, context.organizationId, context.projectId)
             .run();
           await env.DB.prepare(
-            "DELETE FROM categories WHERE id = ? AND organization_id = ? AND project_id = ?",
+            "UPDATE categories SET deleted_at = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
           )
-            .bind(existing.id, context.organizationId, context.projectId)
+            .bind(new Date().toISOString(), new Date().toISOString(), existing.id, context.organizationId, context.projectId)
             .run();
           await writeAudit(
             env,
@@ -3403,11 +3404,12 @@ export default {
         };
         try {
           await env.DB.prepare(
-            "UPDATE categories SET name = ?, slug = ? WHERE id = ? AND organization_id = ? AND project_id = ?",
+            "UPDATE categories SET name = ?, slug = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
           )
             .bind(
               name,
               slug,
+              category.updatedAt,
               category.id,
               context.organizationId,
               context.projectId,
@@ -4160,7 +4162,7 @@ export default {
         if (metadataError) return metadataError;
         if (input.categoryId) {
           const category = await env.DB.prepare(
-            "SELECT id FROM categories WHERE id = ? AND organization_id = ? AND project_id = ?",
+            "SELECT id FROM categories WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
           )
             .bind(input.categoryId, context.organizationId, context.projectId)
             .first();
@@ -4329,7 +4331,7 @@ export default {
         const scopeError = projectMatchesPath(context, categoriesMatch[1], rid);
         if (scopeError) return scopeError;
         const rows = await env.DB.prepare(
-          "SELECT id, name, slug FROM categories WHERE organization_id = ? AND project_id = ? ORDER BY name ASC",
+          "SELECT id, name, slug FROM categories WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY name ASC",
         )
           .bind(context.organizationId, context.projectId)
           .all();
@@ -4354,7 +4356,7 @@ export default {
             .bind(context.organizationId, context.projectId)
             .first<{ theme_json: string }>(),
           env.DB.prepare(
-            "SELECT id, name, slug FROM categories WHERE organization_id = ? AND project_id = ? ORDER BY name ASC",
+            "SELECT id, name, slug FROM categories WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY name ASC",
           )
             .bind(context.organizationId, context.projectId)
             .all(),
@@ -5375,7 +5377,7 @@ export default {
             : String(body.assigneeUserId);
         if (assigneeUserId) {
           const member = await env.DB.prepare(
-            "SELECT 1 FROM organization_members WHERE organization_id = ? AND user_id = ?",
+            "SELECT 1 FROM organization_members WHERE organization_id = ? AND user_id = ? AND deleted_at IS NULL",
           )
             .bind(context.organizationId, assigneeUserId)
             .first();
@@ -5632,7 +5634,7 @@ export default {
           return error("VALIDATION_ERROR", "categoryId is invalid", rid, 400);
         if (categoryId) {
           const category = await env.DB.prepare(
-            "SELECT id FROM categories WHERE id = ? AND organization_id = ? AND project_id = ?",
+            "SELECT id FROM categories WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
           )
             .bind(categoryId, context.organizationId, context.projectId)
             .first();
