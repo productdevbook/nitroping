@@ -47,29 +47,70 @@ public struct NitroPingFeedbackResponse: Codable, Sendable {
 public enum NitroPingError: Error, Sendable {
     case invalidResponse
     case server(statusCode: Int, message: String)
+    case queued
+}
+
+private struct NitroPingPendingSubmission: Codable, Sendable {
+    let feedback: NitroPingFeedback
+    let idempotencyKey: String
 }
 
 public actor NitroPingClient {
     private let configuration: NitroPingConfiguration
     private let session: URLSession
+    private let pendingStorageKey = "com.nitroping.pending-submissions"
+    private var pending: [NitroPingPendingSubmission]
 
     public init(configuration: NitroPingConfiguration, session: URLSession = .shared) {
         self.configuration = configuration; self.session = session
+        self.pending = (try? JSONDecoder().decode([NitroPingPendingSubmission].self, from: UserDefaults.standard.data(forKey: pendingStorageKey) ?? Data())) ?? []
     }
 
     public func submit(_ feedback: NitroPingFeedback) async throws -> NitroPingFeedbackResponse {
+        let idempotencyKey = UUID().uuidString
+        do {
+            return try await send(feedback, idempotencyKey: idempotencyKey)
+        } catch let error as NitroPingError {
+            if case .server(let statusCode, _) = error, statusCode < 500 { throw error }
+            pending.append(NitroPingPendingSubmission(feedback: feedback, idempotencyKey: idempotencyKey)); persist()
+            throw NitroPingError.queued
+        } catch {
+            pending.append(NitroPingPendingSubmission(feedback: feedback, idempotencyKey: idempotencyKey)); persist()
+            throw NitroPingError.queued
+        }
+    }
+
+    public func flushPending() async {
+        var remaining: [NitroPingPendingSubmission] = []
+        for item in pending {
+            do { _ = try await send(item.feedback, idempotencyKey: item.idempotencyKey) }
+            catch { remaining.append(item) }
+        }
+        pending = remaining
+        persist()
+    }
+
+    public var pendingCount: Int { pending.count }
+
+    private func send(_ feedback: NitroPingFeedback, idempotencyKey: String) async throws -> NitroPingFeedbackResponse {
         var request = URLRequest(url: configuration.apiBaseURL.appendingPathComponent("projects/\(configuration.projectKey)/feedback"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(configuration.projectKey, forHTTPHeaderField: "X-NitroPing-Project-Key")
-        request.setValue(UUID().uuidString, forHTTPHeaderField: "Idempotency-Key")
+        request.setValue(idempotencyKey, forHTTPHeaderField: "Idempotency-Key")
         request.httpBody = try JSONEncoder().encode(feedback)
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw NitroPingError.invalidResponse }
         guard (200..<300).contains(http.statusCode) else {
-            let message = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["message"] as? String ?? "NitroPing request failed"
+            let root = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+            let error = root["error"] as? [String: Any]
+            let message = error?["message"] as? String ?? "NitroPing request failed"
             throw NitroPingError.server(statusCode: http.statusCode, message: message)
         }
         return try JSONDecoder().decode(NitroPingFeedbackResponse.self, from: data)
+    }
+
+    private func persist() {
+        UserDefaults.standard.set(try? JSONEncoder().encode(pending), forKey: pendingStorageKey)
     }
 }

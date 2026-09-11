@@ -213,6 +213,16 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     if (path === "/health") return jsonResponse({ ok: true, environment: env.ENVIRONMENT, requestId: rid }, { headers: cors });
     try {
+      const origin = request.headers.get("origin");
+      const projectKey = request.headers.get("x-nitroping-project-key") ?? url.searchParams.get("projectKey");
+      if (origin && projectKey) {
+        const project = await env.DB.prepare("SELECT id, organization_id FROM projects WHERE public_key = ? AND deleted_at IS NULL").bind(projectKey).first<{ id: string; organization_id: string }>();
+        if (project) {
+          const settings = await env.DB.prepare("SELECT origins_json FROM project_settings WHERE project_id = ? AND project_id IN (SELECT id FROM projects WHERE organization_id = ?)").bind(project.id, project.organization_id).first<{ origins_json: string }>();
+          const origins = JSON.parse(settings?.origins_json ?? "[]") as string[];
+          if (origins.length > 0 && !origins.includes(origin)) return error("ORIGIN_NOT_ALLOWED", "This origin is not allowed for the project", rid, 403);
+        }
+      }
       const repo = repository(env);
       const organizationsPath = path === "/api/v1/dashboard/organizations";
       if (organizationsPath && (request.method === "GET" || request.method === "POST")) {
