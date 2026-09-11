@@ -2,6 +2,6 @@
 
 Add this package with Swift Package Manager. `NitroPingClient` uses async/await and submits feedback to the NitroPing API with a public project key. It persists offline submissions, including attachment bytes, retries them with the same idempotency key, exposes `requestFollowUp(feedbackId:email:)` plus `fetchFollowUp(token:)` for status and public replies, and uploads `NitroPingAttachment` values through the private upload lifecycle.
 
-`fetchPublicConfig()` loads the safe widget theme and project categories for custom native forms. `NitroPingFollowUpView` provides a scoped SwiftUI status screen for a magic-link token, including scoped feedback deletion. The client exposes the same operation through `deleteFollowUp(token:)`.
+`fetchPublicConfig()` loads the safe widget theme and project categories for custom native forms. `NitroPingFeedbackForm` and `NitroPingFeedbackViewController` include native document pickers; `NitroPingScreenshot.attachment(from:)` can capture a UIKit view. `NitroPingFollowUpView` provides a scoped SwiftUI status screen for a magic-link token, including scoped feedback deletion. The client exposes the same operation through `deleteFollowUp(token:)`.
 
 When Turnstile is enabled, the host application must obtain a short-lived token using the published `turnstileSiteKey` and pass it as `turnstileToken` when creating `NitroPingFeedback`.

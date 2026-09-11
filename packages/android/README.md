@@ -21,3 +21,5 @@ Compose usage:
 ```kotlin
 NitroPingFeedback(client = nitroPingClient)
 ```
+
+The Compose form includes the system document picker and submits selected files through the same idempotent upload lifecycle. Views integrations can use `NitroPingScreenshot.attachment(view)` or call `client.submit(feedback, attachments)` directly.

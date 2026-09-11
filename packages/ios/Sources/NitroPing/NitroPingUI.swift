@@ -154,19 +154,21 @@ import UIKit
 
 /// A ready-to-embed UIKit feedback form.
 @available(iOS 15.0, *)
-public final class NitroPingFeedbackViewController: UIViewController {
+public final class NitroPingFeedbackViewController: UIViewController, UIDocumentPickerDelegate {
     private let client: NitroPingClient
     private let type: NitroPingFeedbackType
     private let titleField = UITextField()
     private let bodyField = UITextView()
     private let categoryField = UISegmentedControl(items: ["No category"])
     private let emailField = UITextField()
+    private let attachmentButton = UIButton(type: .system)
     private let statusLabel = UILabel()
     private let submitButton = UIButton(type: .system)
     private var categories: [NitroPingCategory] = []
     private var customInputs: [String: UITextField] = [:]
     private var customFieldTypes: [String: String] = [:]
     private var customFieldRequired: [String: Bool] = [:]
+    private var attachments: [NitroPingAttachment] = []
 
     public init(client: NitroPingClient, type: NitroPingFeedbackType = .suggestion) {
         self.client = client; self.type = type
@@ -189,10 +191,12 @@ public final class NitroPingFeedbackViewController: UIViewController {
         emailField.placeholder = "Email (optional)"
         emailField.keyboardType = .emailAddress
         emailField.autocapitalizationType = .none
+        attachmentButton.setTitle("Add attachment", for: .normal)
+        attachmentButton.addTarget(self, action: #selector(selectAttachments), for: .touchUpInside)
         submitButton.setTitle("Submit feedback", for: .normal)
         submitButton.addTarget(self, action: #selector(submit), for: .touchUpInside)
         statusLabel.textColor = .secondaryLabel
-        let stack = UIStackView(arrangedSubviews: [titleField, bodyField, categoryField, emailField, submitButton, statusLabel])
+        let stack = UIStackView(arrangedSubviews: [titleField, bodyField, categoryField, emailField, attachmentButton, submitButton, statusLabel])
         stack.axis = .vertical; stack.spacing = 12; stack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stack)
         NSLayoutConstraint.activate([
@@ -225,6 +229,25 @@ public final class NitroPingFeedbackViewController: UIViewController {
         }
     }
 
+    @objc private func selectAttachments() {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.item], asCopy: true)
+        picker.allowsMultipleSelection = true
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    public func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        let selected = urls.compactMap { url -> NitroPingAttachment? in
+            let secured = url.startAccessingSecurityScopedResource()
+            defer { if secured { url.stopAccessingSecurityScopedResource() } }
+            guard let data = try? Data(contentsOf: url), !data.isEmpty else { return nil }
+            let contentType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
+            return NitroPingAttachment(data: data, contentType: contentType)
+        }
+        attachments += selected
+        attachmentButton.setTitle(attachments.isEmpty ? "Add attachment" : "Attachments (\(attachments.count))", for: .normal)
+    }
+
     @objc private func submit() {
         let title = titleField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let body = bodyField.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -253,8 +276,8 @@ public final class NitroPingFeedbackViewController: UIViewController {
         let feedback = NitroPingFeedback(type: type, title: title, body: body, categoryId: selectedCategory, email: emailField.text?.isEmpty == true ? nil : emailField.text, metadataValues: Dictionary(uniqueKeysWithValues: metadataValues))
         Task {
             do {
-                _ = try await client.submit(feedback)
-                await MainActor.run { self.statusLabel.text = "Thanks — your feedback was sent."; self.titleField.text = ""; self.bodyField.text = ""; self.emailField.text = ""; self.customInputs.values.forEach { $0.text = "" }; self.submitButton.isEnabled = true }
+                _ = try await client.submit(feedback, attachments: attachments)
+                await MainActor.run { self.statusLabel.text = "Thanks — your feedback was sent."; self.titleField.text = ""; self.bodyField.text = ""; self.emailField.text = ""; self.customInputs.values.forEach { $0.text = "" }; self.attachments = []; self.attachmentButton.setTitle("Add attachment", for: .normal); self.submitButton.isEnabled = true }
             } catch NitroPingError.queued {
                 await MainActor.run { self.statusLabel.text = "Saved locally and will retry when online."; self.submitButton.isEnabled = true }
             } catch {
