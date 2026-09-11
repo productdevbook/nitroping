@@ -1,11 +1,11 @@
 #if canImport(SwiftUI)
 import SwiftUI
 
-@available(iOS 15.0, *)
+@available(iOS 15.0, macOS 12.0, *)
 public struct NitroPingFeedbackView: View {
     private let client: NitroPingClient
     @State private var title = ""
-    @State private var body = ""
+    @State private var message = ""
     @State private var email = ""
     @State private var status = ""
     @State private var sending = false
@@ -16,9 +16,13 @@ public struct NitroPingFeedbackView: View {
         Form {
             Section("Share feedback") {
                 TextField("Title", text: $title)
-                TextEditor(text: $body).frame(minHeight: 110)
-                TextField("Email (optional)", text: $email).textInputAutocapitalization(.never).keyboardType(.emailAddress)
-                Button(sending ? "Sending…" : "Submit feedback") { submit() }.disabled(sending || title.trimmingCharacters(in: .whitespacesAndNewlines).count < 3 || body.trimmingCharacters(in: .whitespacesAndNewlines).count < 3)
+                TextEditor(text: $message).frame(minHeight: 110)
+                TextField("Email (optional)", text: $email)
+#if os(iOS)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.emailAddress)
+#endif
+                Button(sending ? "Sending…" : "Submit feedback") { submit() }.disabled(sending || title.trimmingCharacters(in: .whitespacesAndNewlines).count < 3 || message.trimmingCharacters(in: .whitespacesAndNewlines).count < 3)
             }
             if !status.isEmpty { Section { Text(status).foregroundColor(.secondary) } }
         }
@@ -29,8 +33,8 @@ public struct NitroPingFeedbackView: View {
         sending = true
         Task {
             do {
-                _ = try await client.submit(NitroPingFeedback(type: .suggestion, title: title, body: body, email: email.isEmpty ? nil : email))
-                await MainActor.run { status = "Thanks — your feedback was sent."; title = ""; body = ""; email = ""; sending = false }
+                _ = try await client.submit(NitroPingFeedback(type: .suggestion, title: title, body: message, email: email.isEmpty ? nil : email))
+                await MainActor.run { status = "Thanks — your feedback was sent."; title = ""; message = ""; email = ""; sending = false }
             } catch NitroPingError.queued {
                 await MainActor.run { status = "Saved locally and will retry when you are online."; sending = false }
             } catch {

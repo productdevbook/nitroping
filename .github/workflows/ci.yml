@@ -37,8 +37,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
-      - run: sdkmanager "platforms;android-37" "build-tools;36.0.0"
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.4.1'
-      - run: gradle -p packages/android :nitroping:assembleRelease --no-daemon
+      - run: gradle -p packages/android :nitroping:assembleRelease -PnitropingCompileSdk=36 --no-daemon

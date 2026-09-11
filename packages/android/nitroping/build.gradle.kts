@@ -10,7 +10,7 @@ version = "0.1.0"
 
 android {
     namespace = "com.nitroping.sdk"
-    compileSdk = 37
+    compileSdk = providers.gradleProperty("nitropingCompileSdk").orElse("37").get().toInt()
 
     buildFeatures { compose = true }
 }
