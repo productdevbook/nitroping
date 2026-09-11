@@ -1804,6 +1804,9 @@ export default {
           env.DB.prepare(
             "DELETE FROM webhook_deliveries WHERE organization_id = ?",
           ).bind(organizationDeleteMatch[1]),
+          env.DB.prepare(
+            "DELETE FROM email_deliveries WHERE organization_id = ?",
+          ).bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM webhooks WHERE organization_id = ?").bind(
             organizationDeleteMatch[1],
           ),
