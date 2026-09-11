@@ -107,6 +107,16 @@ paths:
       summary: Update project widget, metadata, origin, and retention settings
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Updated settings }, '400': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/usage:
+    get:
+      summary: Read plan usage and entitlement limits
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Usage and limits }, '401': { $ref: '#/components/responses/Error' } }
+  /dashboard/billing:
+    get:
+      summary: Read the organization billing subscription
+      parameters: [{ $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Billing subscription }, '401': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/webhooks:
     get:
       summary: List project webhooks

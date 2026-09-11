@@ -10,6 +10,7 @@ export { ProjectEventStream };
 const id = () => crypto.randomUUID();
 const webhookEventTypes = ["feedback.created", "feedback.updated", "feedback.replied"] as const;
 type WebhookEventType = (typeof webhookEventTypes)[number];
+const planFeedbackLimits: Record<string, number> = { free: 100, pro: 5_000, business: 50_000 };
 const requestId = (request: Request) => request.headers.get("x-request-id") ?? `req_${id()}`;
 const error = (code: string, message: string, requestId: string, status: number, details?: unknown) =>
   jsonResponse({ error: { code, message, requestId, details } }, { status, headers: { "x-request-id": requestId } });
@@ -204,6 +205,14 @@ const deliverWebhook = async (env: Env, event: { deliveryId: string; webhookId: 
   }
 };
 
+const currentUsage = async (env: Env, organizationId: string): Promise<{ plan: string; period: string; feedbackCount: number; attachmentBytes: number; feedbackLimit: number }> => {
+  const period = new Date().toISOString().slice(0, 7);
+  const subscription = await env.DB.prepare("SELECT plan FROM subscriptions WHERE organization_id = ?").bind(organizationId).first<{ plan: string }>();
+  const usage = await env.DB.prepare("SELECT feedback_count AS feedbackCount, attachment_bytes AS attachmentBytes FROM usage_counters WHERE organization_id = ? AND period = ?").bind(organizationId, period).first<{ feedbackCount: number; attachmentBytes: number }>();
+  const plan = subscription?.plan ?? "free";
+  return { plan, period, feedbackCount: Number(usage?.feedbackCount ?? 0), attachmentBytes: Number(usage?.attachmentBytes ?? 0), feedbackLimit: planFeedbackLimits[plan] ?? planFeedbackLimits.free };
+};
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const rid = requestId(request);
@@ -329,6 +338,25 @@ export default {
         await env.DB.prepare("UPDATE project_settings SET theme_json = ?, allowed_metadata_json = ?, retention_days = ?, origins_json = ? WHERE project_id = ?").bind(JSON.stringify(theme), JSON.stringify(allowedMetadata), retentionDays, JSON.stringify(origins), context.projectId).run();
         return jsonResponse({ theme, allowedMetadata, retentionDays, origins }, { headers: cors });
       }
+      const usageMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/usage$/);
+      if (usageMatch && request.method === "GET") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, usageMatch[1], rid);
+        if (context instanceof Response) return context;
+        const usage = await currentUsage(env, context.organizationId);
+        return jsonResponse({ ...usage, projectId: context.projectId }, { headers: cors });
+      }
+      if (path === "/api/v1/dashboard/billing" && request.method === "GET") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const authError = await requireServerKey(request, env, context, rid);
+        if (authError) return authError;
+        const subscription = await env.DB.prepare("SELECT plan, status, provider_customer_id AS providerCustomerId, provider_subscription_id AS providerSubscriptionId, current_period_end AS currentPeriodEnd, created_at AS createdAt, updated_at AS updatedAt FROM subscriptions WHERE organization_id = ?").bind(context.organizationId).first();
+        return jsonResponse(subscription ?? { plan: "free", status: "active" }, { headers: cors });
+      }
       const match = path.match(/^\/api\/v1\/projects\/([^/]+)\/feedback(?:\/([^/]+))?$/);
       if (match && request.method === "POST" && !match[2]) {
         const input = validateInput(await request.json());
@@ -346,7 +374,10 @@ export default {
           const previous = await env.DB.prepare("SELECT response_json, status_code FROM idempotency_keys WHERE project_id = ? AND key = ?").bind(context.projectId, idem).first<{ response_json: string; status_code: number }>();
           if (previous) return new Response(previous.response_json, { status: previous.status_code, headers: cors });
         }
+        const usage = await currentUsage(env, context.organizationId);
+        if (usage.feedbackCount >= usage.feedbackLimit) return error("PLAN_LIMIT_REACHED", `The ${usage.plan} plan has reached its monthly feedback limit`, rid, 402, { period: usage.period, limit: usage.feedbackLimit });
         const result = await Effect.runPromise(createFeedback(repo, context, input, rid));
+        await env.DB.prepare("INSERT INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 1, 0) ON CONFLICT(organization_id, period) DO UPDATE SET feedback_count = feedback_count + 1").bind(context.organizationId, usage.period).run();
         if (idem) await env.DB.prepare("INSERT OR IGNORE INTO idempotency_keys (organization_id, project_id, key, response_json, status_code, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(context.organizationId, context.projectId, idem, JSON.stringify(result), 201, result.createdAt).run();
         if (env.EVENTS) {
           const eventId = id();
