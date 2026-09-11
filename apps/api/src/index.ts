@@ -606,11 +606,11 @@ export const validateCustomFieldMetadata = (
   return null;
 };
 
-const contextFrom = (url: URL): TenantContext => ({
+export const contextFrom = (url: URL): TenantContext => ({
   organizationId: url.searchParams.get("organizationId") ?? "demo-org",
   projectId:
     url.searchParams.get("projectId") ??
-    url.pathname.split("/")[3] ??
+    url.pathname.split("/")[4] ??
     "demo-project",
   publicKey: url.searchParams.get("projectKey") ?? undefined,
 });
