@@ -1302,6 +1302,38 @@ const sendTransactionalEmail = async (
   });
 };
 
+const claimEmailDelivery = async (
+  env: Env,
+  event: { eventId?: string; organizationId?: string; projectId?: string },
+): Promise<boolean> => {
+  if (!event.eventId) return false;
+  const result = await env.DB.prepare(
+    "INSERT OR IGNORE INTO email_deliveries (event_id, organization_id, project_id, status, created_at) VALUES (?, ?, ?, 'pending', ?)",
+  )
+    .bind(
+      event.eventId,
+      event.organizationId ?? null,
+      event.projectId ?? null,
+      new Date().toISOString(),
+    )
+    .run();
+  return Boolean(result.meta.changes);
+};
+
+const markEmailDelivered = async (env: Env, eventId: string): Promise<void> => {
+  await env.DB.prepare(
+    "UPDATE email_deliveries SET status = 'delivered', delivered_at = ? WHERE event_id = ?",
+  )
+    .bind(new Date().toISOString(), eventId)
+    .run();
+};
+
+const releaseEmailDelivery = async (env: Env, eventId: string): Promise<void> => {
+  await env.DB.prepare("DELETE FROM email_deliveries WHERE event_id = ?")
+    .bind(eventId)
+    .run();
+};
+
 const enqueueWatcherEmails = async (
   env: Env,
   organizationId: string,
@@ -1819,6 +1851,7 @@ export default {
               objectKey: attachment.objectKey,
               projectId: attachment.projectId,
               eventId: id(),
+              organizationId: organizationDeleteMatch[1],
             }),
           );
         if (env.FEEDBACK_SEARCH)
@@ -6594,6 +6627,10 @@ export default {
           message.ack();
           continue;
         }
+        if (!(await claimEmailDelivery(env, event))) {
+          message.ack();
+          continue;
+        }
         try {
           const link = `${env.PUBLIC_APP_URL}/follow-up/${event.token}`;
           await sendTransactionalEmail(env, {
@@ -6602,7 +6639,9 @@ export default {
             text: `Your feedback was received. Follow this link to track updates: ${link}`,
             html: `<p>Your feedback was received.</p><p><a href="${link}">Track your feedback</a></p><p style="color:#667085;font-size:12px">You requested email updates for this feedback. <a href="${env.PUBLIC_APP_URL}/api/v1/follow-up/${encodeURIComponent(event.token)}/unsubscribe">Unsubscribe from updates</a>.</p>`,
           });
+          await markEmailDelivered(env, event.eventId!);
         } catch {
+          await releaseEmailDelivery(env, event.eventId!);
           message.retry({
             delaySeconds: Math.min(900, 10 * 2 ** message.attempts),
           });
@@ -6627,6 +6666,10 @@ export default {
           message.ack();
           continue;
         }
+        if (!(await claimEmailDelivery(env, event))) {
+          message.ack();
+          continue;
+        }
         try {
           await sendTransactionalEmail(env, {
             email: event.email,
@@ -6634,7 +6677,9 @@ export default {
             text: event.text,
             html: event.html,
           });
+          await markEmailDelivered(env, event.eventId!);
         } catch {
+          await releaseEmailDelivery(env, event.eventId!);
           message.retry({
             delaySeconds: Math.min(900, 10 * 2 ** message.attempts),
           });
