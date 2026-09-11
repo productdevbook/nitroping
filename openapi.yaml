@@ -249,12 +249,49 @@ paths:
       summary: Get feedback with comments and status history
       parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Feedback detail }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/feedback/{feedbackId}/assign:
+    post:
+      summary: Assign feedback to an organization member
+      parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { name: projectId, in: query, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { assigneeUserId: { type: [string, 'null'] } } } } } }
+      responses: { '200': { description: Assigned feedback }, '400': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/feedback/{feedbackId}/merge:
+    post:
+      summary: Merge duplicate feedback into another feedback item
+      parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { name: projectId, in: query, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [targetFeedbackId], properties: { targetFeedbackId: { type: string } } } } } }
+      responses: { '200': { description: Merge completed }, '400': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
   /dashboard/feedback/{feedbackId}/reply:
     post:
       summary: Add a public reply or internal note
       parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [body], properties: { body: { type: string, minLength: 1, maxLength: 10000 }, internal: { type: boolean, default: false } } } } } }
       responses: { '201': { description: Comment created }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/tags:
+    get:
+      summary: List project feedback tags
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }]
+      responses: { '200': { description: Tags } }
+    post:
+      summary: Create a project feedback tag
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], properties: { name: { type: string }, slug: { type: string } } } } } }
+      responses: { '201': { description: Created }, '409': { $ref: '#/components/responses/Error' } }
+  /dashboard/feedback/{feedbackId}/tags:
+    get:
+      summary: List tags assigned to feedback
+      parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { name: projectId, in: query, required: true, schema: { type: string } }]
+      responses: { '200': { description: Feedback tags } }
+    post:
+      summary: Add a tag to feedback
+      parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { name: projectId, in: query, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [tagId], properties: { tagId: { type: string } } } } } }
+      responses: { '201': { description: Added }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/feedback/{feedbackId}/tags/{tagId}:
+    delete:
+      summary: Remove a tag from feedback
+      parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { name: tagId, in: path, required: true, schema: { type: string } }, { name: projectId, in: query, required: true, schema: { type: string } }]
+      responses: { '204': { description: Removed }, '404': { $ref: '#/components/responses/Error' } }
   /dashboard/feedback/{feedbackId}/status:
     post:
       summary: Change feedback status and record history

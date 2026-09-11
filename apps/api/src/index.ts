@@ -74,13 +74,16 @@ const repository = (env: Env): FeedbackRepository => ({
 });
 
 const fromRow = (row: Record<string, unknown>): Feedback => ({
-  id: String(row.id), organizationId: String(row.organization_id), projectId: String(row.project_id), ...(row.category_id ? { categoryId: String(row.category_id) } : {}), type: row.type as Feedback["type"], status: row.status as Feedback["status"], priority: row.priority as Feedback["priority"], title: String(row.title), body: String(row.body),
+  id: String(row.id), organizationId: String(row.organization_id), projectId: String(row.project_id), ...(row.category_id ? { categoryId: String(row.category_id) } : {}), ...(row.assigned_user_id ? { assignedUserId: String(row.assigned_user_id) } : {}), ...(row.merged_into_id ? { mergedIntoId: String(row.merged_into_id) } : {}), type: row.type as Feedback["type"], status: row.status as Feedback["status"], priority: row.priority as Feedback["priority"], title: String(row.title), body: String(row.body),
   ...(row.email ? { email: String(row.email) } : {}), ...(row.platform ? { platform: row.platform as Feedback["platform"] } : {}),
   ...(row.app_version ? { appVersion: String(row.app_version) } : {}), ...(row.os_version ? { osVersion: String(row.os_version) } : {}), ...(row.locale ? { locale: String(row.locale) } : {}),
   metadata: JSON.parse(String(row.metadata_json ?? "{}")), createdAt: String(row.created_at), updatedAt: String(row.updated_at),
 });
 
-const publicFeedback = (feedback: Feedback): Feedback => ({ ...feedback, email: undefined, metadata: {} });
+const publicFeedback = (feedback: Feedback) => {
+  const { organizationId: _organizationId, email: _email, metadata: _metadata, assignedUserId: _assignedUserId, mergedIntoId: _mergedIntoId, ...safe } = feedback;
+  return { ...safe, metadata: {} };
+};
 
 const contextFrom = (url: URL): TenantContext => ({ organizationId: url.searchParams.get("organizationId") ?? "demo-org", projectId: url.searchParams.get("projectId") ?? url.pathname.split("/")[3] ?? "demo-project", publicKey: url.searchParams.get("projectKey") ?? undefined });
 
@@ -651,6 +654,50 @@ export default {
         await writeAudit(env, context, "category.created", "category", category.id, { name, slug });
         return jsonResponse(category, { status: 201, headers: cors });
       }
+      const tagsDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/tags$/);
+      if (tagsDashboardMatch && ["GET", "POST"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireDashboardProject(request, env, url, tagsDashboardMatch[1], rid, request.method === "GET" ? "feedback:read" : "project:manage");
+        if (context instanceof Response) return context;
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT id, name, slug, created_at AS createdAt FROM feedback_tags WHERE organization_id = ? AND project_id = ? ORDER BY name ASC").bind(context.organizationId, context.projectId).all();
+          return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+        }
+        const body = await jsonBody(request);
+        const name = typeof body.name === "string" ? body.name.trim() : "";
+        const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        if (name.length < 1 || name.length > 80 || !/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) return error("VALIDATION_ERROR", "Tag name or slug is invalid", rid, 400);
+        const tag = { id: id(), name, slug, createdAt: new Date().toISOString() };
+        try { await env.DB.prepare("INSERT INTO feedback_tags (id, organization_id, project_id, name, slug, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(tag.id, context.organizationId, context.projectId, name, slug, tag.createdAt).run(); }
+        catch { return error("TAG_SLUG_TAKEN", "Tag slug is already in use", rid, 409); }
+        await writeAudit(env, context, "tag.created", "tag", tag.id, { name, slug });
+        return jsonResponse(tag, { status: 201, headers: cors });
+      }
+      const feedbackTagsMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)\/tags(?:\/([^/]+))?$/);
+      if (feedbackTagsMatch && ["GET", "POST", "DELETE"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const projectId = url.searchParams.get("projectId");
+        if (!projectId) return error("PROJECT_ID_REQUIRED", "projectId is required", rid, 400);
+        const context = await requireDashboardProject(request, env, url, projectId, rid, request.method === "GET" ? "feedback:read" : "feedback:write");
+        if (context instanceof Response) return context;
+        const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(feedbackTagsMatch[1], context.organizationId, context.projectId).first();
+        if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT t.id, t.name, t.slug, t.created_at AS createdAt FROM feedback_tags t JOIN feedback_tag_links l ON l.tag_id = t.id WHERE l.feedback_id = ? AND t.organization_id = ? AND t.project_id = ? ORDER BY t.name ASC").bind(feedbackTagsMatch[1], context.organizationId, context.projectId).all();
+          return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+        }
+        const body = await jsonBody(request);
+        const tagId = feedbackTagsMatch[2] ?? (typeof body.tagId === "string" ? body.tagId : "");
+        if (!tagId) return error("TAG_ID_REQUIRED", "tagId is required", rid, 400);
+        const tag = await env.DB.prepare("SELECT id FROM feedback_tags WHERE id = ? AND organization_id = ? AND project_id = ?").bind(tagId, context.organizationId, context.projectId).first();
+        if (!tag) return error("TAG_NOT_FOUND", "Tag was not found", rid, 404);
+        if (request.method === "POST") await env.DB.prepare("INSERT OR IGNORE INTO feedback_tag_links (feedback_id, tag_id, created_at) VALUES (?, ?, ?)").bind(feedbackTagsMatch[1], tagId, new Date().toISOString()).run();
+        else await env.DB.prepare("DELETE FROM feedback_tag_links WHERE feedback_id = ? AND tag_id = ?").bind(feedbackTagsMatch[1], tagId).run();
+        await writeAudit(env, context, request.method === "POST" ? "feedback.tag.added" : "feedback.tag.removed", "feedback", feedbackTagsMatch[1], { tagId });
+        return request.method === "POST" ? jsonResponse({ feedbackId: feedbackTagsMatch[1], tagId }, { status: 201, headers: cors }) : new Response(null, { status: 204, headers: cors });
+      }
       const roadmapDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/roadmap$/);
       if (roadmapDashboardMatch && ["GET", "POST"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
@@ -986,6 +1033,52 @@ export default {
         const result = await Effect.runPromise(listFeedback(repo, context, url.searchParams.get("cursor") ?? undefined));
         return jsonResponse(result, { headers: cors });
       }
+      const assignMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)\/assign$/);
+      if (assignMatch && request.method === "POST") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const projectId = url.searchParams.get("projectId");
+        if (!projectId) return error("PROJECT_ID_REQUIRED", "projectId is required", rid, 400);
+        const context = await requireDashboardProject(request, env, url, projectId, rid, "feedback:write");
+        if (context instanceof Response) return context;
+        const body = await jsonBody(request);
+        const assigneeUserId = body.assigneeUserId === null || body.assigneeUserId === undefined || body.assigneeUserId === "" ? null : String(body.assigneeUserId);
+        if (assigneeUserId) {
+          const member = await env.DB.prepare("SELECT 1 FROM organization_members WHERE organization_id = ? AND user_id = ?").bind(context.organizationId, assigneeUserId).first();
+          if (!member) return error("ASSIGNEE_NOT_FOUND", "The assignee is not a member of this organization", rid, 400);
+        }
+        const now = new Date().toISOString();
+        const updated = await env.DB.prepare("UPDATE feedback_items SET assigned_user_id = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(assigneeUserId, now, assignMatch[1], context.organizationId, context.projectId).run();
+        if (!updated.meta.changes) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        await writeAudit(env, context, "feedback.assigned", "feedback", assignMatch[1], { assigneeUserId });
+        const feedback = await env.DB.prepare("SELECT * FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ?").bind(assignMatch[1], context.organizationId, context.projectId).first<Record<string, unknown>>();
+        return feedback ? jsonResponse(fromRow(feedback), { headers: cors }) : error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+      }
+      const mergeMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)\/merge$/);
+      if (mergeMatch && request.method === "POST") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const projectId = url.searchParams.get("projectId");
+        if (!projectId) return error("PROJECT_ID_REQUIRED", "projectId is required", rid, 400);
+        const context = await requireDashboardProject(request, env, url, projectId, rid, "feedback:write");
+        if (context instanceof Response) return context;
+        const body = await jsonBody(request);
+        const targetFeedbackId = typeof body.targetFeedbackId === "string" ? body.targetFeedbackId : "";
+        if (!targetFeedbackId || targetFeedbackId === mergeMatch[1]) return error("VALIDATION_ERROR", "A different targetFeedbackId is required", rid, 400);
+        const [source, target] = await Promise.all([
+          env.DB.prepare("SELECT id, status FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(mergeMatch[1], context.organizationId, context.projectId).first<{ id: string; status: string }>(),
+          env.DB.prepare("SELECT id, status FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(targetFeedbackId, context.organizationId, context.projectId).first<{ id: string; status: string }>(),
+        ]);
+        if (!source || !target) return error("FEEDBACK_NOT_FOUND", "Source or target feedback was not found", rid, 404);
+        if (target.status === "spam") return error("INVALID_MERGE_TARGET", "Spam feedback cannot be a merge target", rid, 400);
+        const now = new Date().toISOString();
+        await env.DB.batch([
+          env.DB.prepare("UPDATE feedback_items SET status = 'closed', merged_into_id = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(targetFeedbackId, now, mergeMatch[1], context.organizationId, context.projectId),
+          env.DB.prepare("INSERT INTO feedback_status_history (id, organization_id, project_id, feedback_id, from_status, to_status, created_at) VALUES (?, ?, ?, ?, ?, 'closed', ?)").bind(id(), context.organizationId, context.projectId, mergeMatch[1], source.status, now),
+        ]);
+        await writeAudit(env, context, "feedback.merged", "feedback", mergeMatch[1], { targetFeedbackId });
+        return jsonResponse({ sourceFeedbackId: mergeMatch[1], targetFeedbackId, status: "closed" }, { headers: cors });
+      }
       const dashboardFeedbackMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)$/);
       if (dashboardFeedbackMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
@@ -996,11 +1089,12 @@ export default {
         if (context instanceof Response) return context;
         const feedback = await env.DB.prepare("SELECT * FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).first<Record<string, unknown>>();
         if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
-        const [comments, history] = await Promise.all([
+        const [comments, history, tags] = await Promise.all([
           env.DB.prepare("SELECT id, feedback_id AS feedbackId, body, author_user_id AS authorUserId, is_internal AS isInternal, created_at AS createdAt FROM feedback_comments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at ASC").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).all(),
           env.DB.prepare("SELECT id, from_status AS fromStatus, to_status AS toStatus, actor_user_id AS actorUserId, created_at AS createdAt FROM feedback_status_history WHERE feedback_id = ? AND organization_id = ? AND project_id = ? ORDER BY created_at ASC").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).all(),
+          env.DB.prepare("SELECT t.id, t.name, t.slug FROM feedback_tags t JOIN feedback_tag_links l ON l.tag_id = t.id WHERE l.feedback_id = ? AND t.organization_id = ? AND t.project_id = ? ORDER BY t.name ASC").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).all(),
         ]);
-        return jsonResponse({ feedback: fromRow(feedback), comments: comments.results ?? [], statusHistory: history.results ?? [] }, { headers: cors });
+        return jsonResponse({ feedback: fromRow(feedback), comments: comments.results ?? [], statusHistory: history.results ?? [], tags: tags.results ?? [] }, { headers: cors });
       }
       const replyMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)\/reply$/);
       if (replyMatch && request.method === "POST") {

@@ -17,6 +17,8 @@ export type Feedback = {
   status: FeedbackStatus;
   priority: FeedbackPriority;
   categoryId?: string;
+  assignedUserId?: string;
+  mergedIntoId?: string;
   title: string;
   body: string;
   email?: string;
