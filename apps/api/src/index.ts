@@ -746,7 +746,7 @@ const projectFromRequest = async (
   if (!projectKey)
     return error("PROJECT_KEY_REQUIRED", "Project key is required", rid, 401);
   const project = await env.DB.prepare(
-    "SELECT p.organization_id, p.id, p.public_key FROM projects p WHERE p.public_key = ? AND p.deleted_at IS NULL AND (NOT EXISTS (SELECT 1 FROM project_api_keys k0 WHERE k0.project_id = p.id AND k0.organization_id = p.organization_id AND k0.kind = 'public') OR EXISTS (SELECT 1 FROM project_api_keys k WHERE k.project_id = p.id AND k.organization_id = p.organization_id AND k.kind = 'public' AND k.key_hash = ? AND k.revoked_at IS NULL))",
+    "SELECT p.organization_id, p.id, p.public_key FROM projects p WHERE p.public_key = ? AND p.deleted_at IS NULL AND (NOT EXISTS (SELECT 1 FROM project_api_keys k0 WHERE k0.project_id = p.id AND k0.organization_id = p.organization_id AND k0.kind = 'public' AND k0.deleted_at IS NULL) OR EXISTS (SELECT 1 FROM project_api_keys k WHERE k.project_id = p.id AND k.organization_id = p.organization_id AND k.kind = 'public' AND k.key_hash = ? AND k.revoked_at IS NULL AND k.deleted_at IS NULL))",
   )
     .bind(projectKey, await sha256(projectKey))
     .first<{ organization_id: string; id: string; public_key: string }>();
@@ -2909,7 +2909,7 @@ export default {
           .run();
         if (request.method === "GET") {
           const settings = await env.DB.prepare(
-            "SELECT theme_json AS theme, allowed_metadata_json AS allowedMetadata, retention_days AS retentionDays, origins_json AS origins FROM project_settings WHERE project_id = ? AND organization_id = ?",
+            "SELECT theme_json AS theme, allowed_metadata_json AS allowedMetadata, retention_days AS retentionDays, origins_json AS origins FROM project_settings WHERE project_id = ? AND organization_id = ? AND deleted_at IS NULL",
           )
             .bind(context.projectId, context.organizationId)
             .first<Record<string, unknown>>();
@@ -2936,7 +2936,7 @@ export default {
           if (featureError) return featureError;
         }
         const current = await env.DB.prepare(
-          "SELECT theme_json, allowed_metadata_json, retention_days, origins_json FROM project_settings WHERE project_id = ? AND organization_id = ?",
+          "SELECT theme_json, allowed_metadata_json, retention_days, origins_json FROM project_settings WHERE project_id = ? AND organization_id = ? AND deleted_at IS NULL",
         )
           .bind(context.projectId, context.organizationId)
           .first<{
@@ -6801,7 +6801,7 @@ export default {
       .bind(new Date().toISOString())
       .run();
     const candidates = await env.DB.prepare(
-      "SELECT f.id, f.organization_id AS organizationId, f.project_id AS projectId FROM feedback_items f JOIN project_settings s ON s.project_id = f.project_id AND s.organization_id = f.organization_id WHERE f.deleted_at IS NULL AND datetime(f.created_at) < datetime('now', '-' || s.retention_days || ' days') LIMIT 100",
+      "SELECT f.id, f.organization_id AS organizationId, f.project_id AS projectId FROM feedback_items f JOIN project_settings s ON s.project_id = f.project_id AND s.organization_id = f.organization_id AND s.deleted_at IS NULL WHERE f.deleted_at IS NULL AND datetime(f.created_at) < datetime('now', '-' || s.retention_days || ' days') LIMIT 100",
     ).all<{ id: string; organizationId: string; projectId: string }>();
     for (const feedback of candidates.results ?? []) {
       const attachments = await env.DB.prepare(
