@@ -1,6 +1,7 @@
 package com.nitroping.sdk
 
 import android.os.Build
+import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +41,22 @@ class NitroPingClient(
     private val apiBaseUrl: String = "https://nitroping.dev/api/v1",
     private val storage: SharedPreferences? = null,
 ) {
+    /** Creates a client with persistent, project-scoped offline storage. */
+    constructor(
+        context: Context,
+        projectKey: String,
+        apiBaseUrl: String = "https://nitroping.dev/api/v1",
+    ) : this(
+        projectKey = projectKey,
+        apiBaseUrl = apiBaseUrl,
+        storage = context.applicationContext.getSharedPreferences(
+            "nitroping",
+            Context.MODE_PRIVATE,
+        ),
+    )
+
+    private val pendingStorageKey = "nitroping.pending.$projectKey"
+
     suspend fun submit(feedback: Feedback): FeedbackResponse = submit(feedback, emptyList())
 
     suspend fun submit(feedback: Feedback, attachments: List<NitroPingAttachment>): FeedbackResponse = withContext(Dispatchers.IO) {
@@ -177,7 +194,7 @@ class NitroPingClient(
 
     private data class PendingAttachment(val bytesBase64: String, val contentType: String)
     private data class PendingSubmission(val body: String, val idempotencyKey: String, val attachments: List<PendingAttachment> = emptyList())
-    private fun queue(): List<PendingSubmission> = storage?.getStringSet("nitroping.pending", emptySet()).orEmpty().mapNotNull {
+    private fun queue(): List<PendingSubmission> = storage?.getStringSet(pendingStorageKey, emptySet()).orEmpty().mapNotNull {
         if (it.startsWith("{")) {
             runCatching {
                 val root = JSONObject(it)
@@ -199,7 +216,7 @@ class NitroPingClient(
         val items = queue().toMutableList(); items += PendingSubmission(body, idempotencyKey, pendingAttachments); saveQueue(items)
     }
     private fun saveQueue(items: List<PendingSubmission>) {
-        storage?.edit()?.putStringSet("nitroping.pending", items.map { item ->
+        storage?.edit()?.putStringSet(pendingStorageKey, items.map { item ->
             JSONObject().put("idempotencyKey", item.idempotencyKey).put("body", item.body).put("attachments", org.json.JSONArray().also { array -> item.attachments.forEach { array.put(JSONObject().put("bytes", it.bytesBase64).put("contentType", it.contentType)) } }).toString()
         }.toSet())?.apply()
     }

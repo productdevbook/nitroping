@@ -193,11 +193,12 @@ private struct NitroPingPendingAttachment: Codable, Sendable {
 public actor NitroPingClient {
     private let configuration: NitroPingConfiguration
     private let session: URLSession
-    private let pendingStorageKey = "com.nitroping.pending-submissions"
+    private let pendingStorageKey: String
     private var pending: [NitroPingPendingSubmission]
 
     public init(configuration: NitroPingConfiguration, session: URLSession = .shared) {
         self.configuration = configuration; self.session = session
+        self.pendingStorageKey = "com.nitroping.pending-submissions.\(configuration.projectKey)"
         self.pending = (try? JSONDecoder().decode([NitroPingPendingSubmission].self, from: UserDefaults.standard.data(forKey: pendingStorageKey) ?? Data())) ?? []
     }
 

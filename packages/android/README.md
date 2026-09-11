@@ -10,6 +10,12 @@ When Turnstile is enabled, the host application must obtain a short-lived token 
 
 Use `NitroPingScreenshot.attachment(view)` to capture a rendered Android View and pass the result to `client.submit(feedback, attachments)`.
 
+Create the client with an Android `Context` to enable persistent, project-scoped offline storage:
+
+```kotlin
+val nitroPingClient = NitroPingClient(context, projectKey = "pk_live_xxx")
+```
+
 Compose usage:
 
 ```kotlin
