@@ -5304,9 +5304,36 @@ export default {
             context.projectId,
           ),
           env.DB.prepare(
+            "DELETE FROM feedback_tag_links WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+          ).bind(
+            anonymizeMatch[2],
+            context.organizationId,
+            context.projectId,
+          ),
+          env.DB.prepare(
+            "DELETE FROM roadmap_feedback_links WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+          ).bind(
+            anonymizeMatch[2],
+            context.organizationId,
+            context.projectId,
+          ),
+          env.DB.prepare(
+            "DELETE FROM changelog_feedback_links WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+          ).bind(
+            anonymizeMatch[2],
+            context.organizationId,
+            context.projectId,
+          ),
+          env.DB.prepare(
             "INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'anonymize', 'completed', ?, ?)",
           ).bind(id(), context.organizationId, context.projectId, now, now),
         ]);
+        if (env.FEEDBACK_SEARCH)
+          ctx.waitUntil(
+            deleteFeedbackEmbedding(env.FEEDBACK_SEARCH, anonymizeMatch[2]).catch(
+              () => undefined,
+            ),
+          );
         for (const attachment of attachments.results ?? [])
           ctx.waitUntil(
             env.EVENTS.send({
@@ -6647,9 +6674,22 @@ export default {
           "DELETE FROM feedback_status_history WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
         ).bind(feedback.id, feedback.organizationId, feedback.projectId),
         env.DB.prepare(
+          "DELETE FROM feedback_tag_links WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+        ).bind(feedback.id, feedback.organizationId, feedback.projectId),
+        env.DB.prepare(
+          "DELETE FROM roadmap_feedback_links WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+        ).bind(feedback.id, feedback.organizationId, feedback.projectId),
+        env.DB.prepare(
+          "DELETE FROM changelog_feedback_links WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+        ).bind(feedback.id, feedback.organizationId, feedback.projectId),
+        env.DB.prepare(
           "INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'delete', 'completed', ?, ?)",
         ).bind(id(), feedback.organizationId, feedback.projectId, now, now),
       ]);
+      if (env.FEEDBACK_SEARCH)
+        await deleteFeedbackEmbedding(env.FEEDBACK_SEARCH, feedback.id).catch(
+          () => undefined,
+        );
     }
   },
 };
