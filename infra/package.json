@@ -6,12 +6,12 @@
   "scripts": { "typecheck": "bunx tsc -p tsconfig.json", "plan": "bunx alchemy plan src/index.ts", "deploy": "bunx alchemy deploy src/index.ts" },
   "dependencies": {
     "alchemy": "2.0.0-beta.77",
-    "effect": "4.0.0-rc.113",
-    "@effect/platform-bun": "4.0.0-rc.113",
-    "@effect/platform-node": "4.0.0-rc.113",
-    "@effect/platform-node-shared": "4.0.0-rc.113"
+    "effect": "4.0.0-rc.112",
+    "@effect/platform-bun": "4.0.0-rc.112",
+    "@effect/platform-node": "4.0.0-rc.112",
+    "@effect/platform-node-shared": "4.0.0-rc.112"
   },
   "overrides": {
-    "@effect/platform-node-shared": "4.0.0-rc.113"
+    "@effect/platform-node-shared": "4.0.0-rc.112"
   }
 }
