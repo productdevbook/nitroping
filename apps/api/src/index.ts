@@ -1245,6 +1245,7 @@ export default {
       if (env.ASSETS) {
         if (path === "/dashboard" || path === "/dashboard/") return env.ASSETS.fetch(new Request(new URL("/dashboard.html", request.url), request));
         if (path === "/portal" || path === "/portal/") return env.ASSETS.fetch(new Request(new URL("/portal.html", request.url), request));
+        if (path.match(/^\/follow-up\/[^/]+\/?$/)) return env.ASSETS.fetch(new Request(new URL("/follow-up.html", request.url), request));
         return env.ASSETS.fetch(request);
       }
       return error("NOT_FOUND", "Endpoint was not found", rid, 404);
@@ -1266,7 +1267,7 @@ export default {
       if (event.type === "follow-up.requested" && event.email && event.token) {
         if (event.organizationId && await env.DB.prepare("SELECT 1 FROM organizations WHERE id = ? AND deleted_at IS NULL").bind(event.organizationId).first() === null) { message.ack(); continue; }
         try {
-          const link = `${env.PUBLIC_APP_URL}/api/v1/follow-up/${event.token}`;
+          const link = `${env.PUBLIC_APP_URL}/follow-up/${event.token}`;
           await sendTransactionalEmail(env, { email: event.email, subject: "Track your NitroPing feedback", text: `Your feedback was received. Follow this link to track updates: ${link}`, html: `<p>Your feedback was received.</p><p><a href="${link}">Track your feedback</a></p>` });
         } catch { message.retry({ delaySeconds: Math.min(900, 10 * 2 ** message.attempts) }); continue; }
       }

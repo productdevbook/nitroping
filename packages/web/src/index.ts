@@ -11,6 +11,10 @@ export type NitroPingOptions = {
 export type NitroPingClient = {
   feedback: { create(input: CreateFeedbackInput, attachments?: File[]): Promise<Feedback> };
   attachments: { upload(feedbackId: string, file: File): Promise<{ attachmentId: string }> };
+  followUp: {
+    request(feedbackId: string, email: string): Promise<{ accepted: boolean }>;
+    get(token: string): Promise<{ feedback: Feedback; comments: Array<{ id: string; body: string; createdAt: string }> }>;
+  };
   destroy(): void;
 };
 
@@ -46,6 +50,10 @@ export const createNitroPingClient = (options: NitroPingOptions): NitroPingClien
       return created;
     } },
     attachments: { upload }, destroy() {},
+    followUp: {
+      request: (feedbackId, email) => request<{ accepted: boolean }>(options, `/projects/${encodeURIComponent(options.projectKey)}/follow-up/request`, { method: "POST", body: JSON.stringify({ feedbackId, email }) }),
+      get: (token) => request<{ feedback: Feedback; comments: Array<{ id: string; body: string; createdAt: string }> }>(options, `/follow-up/${encodeURIComponent(token)}`),
+    },
   };
 };
 
