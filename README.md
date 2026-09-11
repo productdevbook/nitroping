@@ -54,6 +54,8 @@ bunx wrangler secret put TURNSTILE_SECRET_KEY --config apps/api/wrangler.jsonc
 
 Custom domains are a Business feature backed by Cloudflare for SaaS custom hostnames. After validation completes, the Worker resolves the hostname to its tenant-scoped project and serves the public portal at both `/` and `/portal`; API routes remain versioned under `/api/v1`. The API is intentionally disabled with `CUSTOM_DOMAIN_NOT_CONFIGURED` until the Cloudflare for SaaS zone, fallback origin, and token are configured. The token must be stored as a secret and must have the custom-hostname certificate permission required by Cloudflare:
 
+Moderation is rule-based by default. When the Workers AI binding is available, dashboard moderators can request an `AI assist` review for a feedback item. The result is stored as a pending `moderation_events` record and audit event; it can suggest a type, sentiment, risk, summary, and confidence, but it never changes status, deletes content, or bans a user automatically. Workers AI usage is optional and may incur Cloudflare AI charges.
+
 ```bash
 bunx wrangler secret put CUSTOM_HOSTNAME_API_TOKEN --config apps/api/wrangler.jsonc
 # Set these deployment variables before redeploying:

@@ -1851,6 +1851,17 @@ function Moderation({
       /* parent view will refresh on the next action */
     }
   };
+  const requestAiReview = async (feedbackId: string) => {
+    try {
+      await api(`/dashboard/projects/${projectId}/feedback/${feedbackId}/ai-review`, {
+        ...credentials,
+        method: "POST",
+      });
+      onChange();
+    } catch {
+      /* Keep the moderation queue usable if AI is unavailable or disabled. */
+    }
+  };
   return (
     <>
       <PageHeader
@@ -1887,6 +1898,12 @@ function Moderation({
                 {item.email && <small>{item.email}</small>}
               </div>
               <div className="moderation-actions">
+                <button
+                  className="secondary-button"
+                  onClick={() => requestAiReview(item.feedbackId)}
+                >
+                  AI assist
+                </button>
                 <button
                   className="secondary-button"
                   onClick={() => decide(item.feedbackId, "approved")}

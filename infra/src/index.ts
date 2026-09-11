@@ -52,6 +52,7 @@ export default Alchemy.Stack(
         ANALYTICS: analytics,
         EMAIL: email,
         EVENT_STREAM: eventStream,
+        AI: Cloudflare.Workers.AI(),
         ENVIRONMENT: stage,
         ACCESS_TEAM_DOMAIN: process.env.ACCESS_TEAM_DOMAIN ?? "",
         ACCESS_AUDIENCE: process.env.ACCESS_AUDIENCE ?? "",

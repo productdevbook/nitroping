@@ -175,6 +175,11 @@ paths:
       summary: Anonymize feedback and public comments
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Anonymized }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/feedback/{feedbackId}/ai-review:
+    post:
+      summary: Request an optional human-reviewed Workers AI moderation assist
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: AI review suggestion }, '401': { $ref: '#/components/responses/Error' }, '503': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/moderation:
     get:
       summary: List pending moderation events for a project

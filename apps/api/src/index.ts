@@ -31,6 +31,7 @@ import {
   validateCustomHostname,
 } from "./custom-domains";
 import { analyzeModeration } from "./moderation";
+import { reviewWithWorkersAI } from "./ai-moderation";
 import { attachmentSignatureMatches } from "./attachments";
 import {
   entitlementsFor,
@@ -5210,6 +5211,72 @@ export default {
           { anonymized: true, feedbackId: anonymizeMatch[2] },
           { headers: cors },
         );
+      }
+      const aiReviewMatch = path.match(
+        /^\/api\/v1\/dashboard\/projects\/([^/]+)\/feedback\/([^/]+)\/ai-review$/,
+      );
+      if (aiReviewMatch && request.method === "POST") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireDashboardProject(
+          request,
+          env,
+          url,
+          aiReviewMatch[1],
+          rid,
+          "feedback:moderate",
+        );
+        if (context instanceof Response) return context;
+        if (!env.AI)
+          return error(
+            "AI_NOT_CONFIGURED",
+            "Workers AI is not configured for this deployment",
+            rid,
+            503,
+          );
+        const feedback = await env.DB.prepare(
+          "SELECT title, body, email FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+        )
+          .bind(aiReviewMatch[2], context.organizationId, context.projectId)
+          .first<{ title: string; body: string; email: string | null }>();
+        if (!feedback)
+          return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        let review: Awaited<ReturnType<typeof reviewWithWorkersAI>>;
+        try {
+          review = await reviewWithWorkersAI(env.AI, feedback);
+        } catch {
+          return error(
+            "AI_REVIEW_FAILED",
+            "Workers AI could not produce a review",
+            rid,
+            502,
+          );
+        }
+        const now = new Date().toISOString();
+        await env.DB.batch([
+          env.DB.prepare(
+            "INSERT INTO moderation_events (id, organization_id, project_id, feedback_id, kind, outcome, metadata_json, created_at) VALUES (?, ?, ?, ?, 'ai_assist', 'pending', ?, ?)",
+          ).bind(
+            id(),
+            context.organizationId,
+            context.projectId,
+            aiReviewMatch[2],
+            JSON.stringify({ version: 1, review }),
+            now,
+          ),
+          env.DB.prepare(
+            "INSERT INTO audit_logs (id, organization_id, project_id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at) VALUES (?, ?, ?, ?, 'moderation.ai_review', 'feedback', ?, ?, ?)",
+          ).bind(
+            id(),
+            context.organizationId,
+            context.projectId,
+            context.actorUserId ?? null,
+            aiReviewMatch[2],
+            JSON.stringify({ requestId: rid, review }),
+            now,
+          ),
+        ]);
+        return jsonResponse({ feedbackId: aiReviewMatch[2], review }, { headers: cors });
       }
       const moderationMatch = path.match(
         /^\/api\/v1\/dashboard\/projects\/([^/]+)\/moderation$/,
