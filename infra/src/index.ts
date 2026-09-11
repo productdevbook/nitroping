@@ -22,6 +22,8 @@ export default Alchemy.Stack(
     });
     const cache = yield* Cloudflare.KV.Namespace("Cache", { title: `nitroping-cache${suffix}` });
     const events = yield* Cloudflare.Queues.Queue("Events", { name: `nitroping-events${suffix}` });
+    const analytics = yield* Cloudflare.AnalyticsEngine.Dataset("Analytics", { dataset: `nitroping_metrics${suffix}` });
+    const email = yield* Cloudflare.Email.SendEmail("Email", { allowedSenderAddresses: ["notifications@nitroping.dev"] });
     const eventStream = Cloudflare.DurableObject<ProjectEventStream>("EventStream", { className: "ProjectEventStream" });
 
     const api = yield* Cloudflare.Worker("Api", {
@@ -40,10 +42,14 @@ export default Alchemy.Stack(
         ATTACHMENTS: attachments,
         CACHE: cache,
         EVENTS: events,
+        ANALYTICS: analytics,
+        EMAIL: email,
         EVENT_STREAM: eventStream,
         ENVIRONMENT: stage,
         ACCESS_TEAM_DOMAIN: process.env.ACCESS_TEAM_DOMAIN ?? "",
         ACCESS_AUDIENCE: process.env.ACCESS_AUDIENCE ?? "",
+        EMAIL_FROM: "notifications@nitroping.dev",
+        PUBLIC_APP_URL: stage === "production" ? "https://nitroping.dev" : `https://nitroping-${stage}.dev`,
       },
     });
     const consumer = yield* Cloudflare.Queues.Consumer("EventsConsumer", {
@@ -52,6 +58,6 @@ export default Alchemy.Stack(
       settings: { batchSize: 10, maxRetries: 5, maxWaitTimeMs: 5000 },
     });
 
-    return { api, database, attachments, cache, events, eventStream, consumer };
+    return { api, database, attachments, cache, events, analytics, email, eventStream, consumer };
   }),
 );
