@@ -27,6 +27,7 @@ class NitroPingFeedbackView(
     private var categoryId = ""
     private val status = TextView(context).apply { setTextColor(Color.GRAY) }
     private val submit = Button(context).apply { text = "Submit feedback" }
+    private val customFields = linkedMapOf<String, EditText>()
 
     init {
         orientation = VERTICAL; setPadding(24, 24, 24, 24)
@@ -43,6 +44,11 @@ class NitroPingFeedbackView(
             config?.theme?.buttonLabel?.let { submit.text = it }
             config?.theme?.colors?.get("primary")?.let { color -> runCatching { submit.setBackgroundColor(Color.parseColor(color)) } }
             val categories = config?.categories.orEmpty()
+            config?.theme?.customFields.orEmpty().forEach { field ->
+                val input = EditText(context).apply { hint = field.label; tag = field.id; if (field.type == "number") inputType = android.text.InputType.TYPE_CLASS_NUMBER }
+                customFields[field.id] = input
+                addView(input, indexOfChild(submit), LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 12 })
+            }
             if ((config?.theme?.fields.isNullOrEmpty() || config?.theme?.fields?.contains("category") == true) && categories.isNotEmpty()) {
                 val options = listOf(CategoryOption("", "No category")) + categories.map { CategoryOption(it.id, it.name) }
                 categoryField.adapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, options)
@@ -57,8 +63,8 @@ class NitroPingFeedbackView(
         submit.isEnabled = false
         scope.launch {
             try {
-                client.submit(Feedback(FeedbackType.SUGGESTION, title, body, categoryId = categoryId.ifEmpty { null }, email = emailField.text.toString().trim().ifEmpty { null }))
-                status.text = "Thanks — your feedback was sent."; titleField.text.clear(); bodyField.text.clear(); emailField.text.clear()
+                client.submit(Feedback(FeedbackType.SUGGESTION, title, body, categoryId = categoryId.ifEmpty { null }, email = emailField.text.toString().trim().ifEmpty { null }, metadata = customFields.mapValues { it.value.text.toString().trim() }.filterValues { it.isNotEmpty() }))
+                status.text = "Thanks — your feedback was sent."; titleField.text.clear(); bodyField.text.clear(); emailField.text.clear(); customFields.values.forEach { it.text.clear() }
             } catch (_: NitroPingQueuedException) { status.text = "Saved locally and will retry when online." }
             catch (_: Exception) { status.text = "Unable to send feedback." }
             finally { submit.isEnabled = true }

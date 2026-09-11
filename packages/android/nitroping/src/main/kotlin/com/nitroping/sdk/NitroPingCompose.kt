@@ -13,6 +13,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,6 +41,7 @@ fun NitroPingFeedback(
     var categoryId by remember { mutableStateOf("") }
     var categoryMenuOpen by remember { mutableStateOf(false) }
     var publicConfig by remember { mutableStateOf<NitroPingPublicConfig?>(null) }
+    var customValues by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var status by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -93,6 +95,20 @@ fun NitroPingFeedback(
                     singleLine = true,
                 )
             }
+            publicConfig?.theme?.customFields.orEmpty().forEach { field ->
+                when (field.type) {
+                    "textarea" -> OutlinedTextField(value = customValues[field.id].orEmpty(), onValueChange = { customValues = customValues + (field.id to it) }, modifier = Modifier.fillMaxWidth(), label = { Text(field.label) }, minLines = 3)
+                    "select" -> {
+                        var expanded by remember(field.id) { mutableStateOf(false) }
+                        Box {
+                            Button(onClick = { expanded = true }, colors = primaryButtonColors) { Text(customValues[field.id] ?: field.label) }
+                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) { field.options.forEach { option -> DropdownMenuItem(text = { Text(option) }, onClick = { customValues = customValues + (field.id to option); expanded = false }) } }
+                        }
+                    }
+                    "boolean" -> androidx.compose.foundation.layout.Row { Checkbox(checked = customValues[field.id] == "true", onCheckedChange = { customValues = customValues + (field.id to it.toString()) }); Text(field.label, modifier = Modifier.padding(top = 12.dp)) }
+                    else -> OutlinedTextField(value = customValues[field.id].orEmpty(), onValueChange = { customValues = customValues + (field.id to it) }, modifier = Modifier.fillMaxWidth(), label = { Text(field.label) }, keyboardOptions = KeyboardOptions(keyboardType = if (field.type == "number") KeyboardType.Number else KeyboardType.Text), singleLine = true)
+                }
+            }
             Button(
                 onClick = {
                     sending = true
@@ -105,11 +121,13 @@ fun NitroPingFeedback(
                                     body = description.trim(),
                                     categoryId = categoryId.ifEmpty { null },
                                     email = email.trim().ifEmpty { null },
+                                    metadata = customValues.filterValues { it.isNotEmpty() },
                                 ),
                             )
                             title = ""
                             description = ""
                             email = ""
+                            customValues = emptyMap()
                             status = "Thanks — your feedback was sent."
                         } catch (_: NitroPingQueuedException) {
                             status = "Saved locally and will retry when online."

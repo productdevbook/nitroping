@@ -24,10 +24,33 @@ public struct NitroPingCategory: Codable, Sendable {
     public let slug: String
 }
 
+public struct NitroPingCustomField: Codable, Sendable, Identifiable {
+    public let id: String
+    public let label: String
+    public let type: String
+    public let required: Bool
+    public let options: [String]
+
+    public init(id: String, label: String, type: String, required: Bool = false, options: [String] = []) {
+        self.id = id; self.label = label; self.type = type; self.required = required; self.options = options
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, label, type, required, options }
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        label = try container.decode(String.self, forKey: .label)
+        type = try container.decode(String.self, forKey: .type)
+        required = try container.decodeIfPresent(Bool.self, forKey: .required) ?? false
+        options = try container.decodeIfPresent([String].self, forKey: .options) ?? []
+    }
+}
+
 public struct NitroPingPublicTheme: Codable, Sendable {
     public let mode: String?
     public let buttonLabel: String?
     public let fields: [String]?
+    public let customFields: [NitroPingCustomField]?
     public let colors: [String: String]?
 }
 

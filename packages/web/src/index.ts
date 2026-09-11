@@ -52,9 +52,7 @@ export type NitroPingClient = {
   };
   followUp: {
     request(feedbackId: string, email: string): Promise<{ accepted: boolean }>;
-    get(
-      token: string,
-    ): Promise<{
+    get(token: string): Promise<{
       feedback: Feedback;
       comments: Array<{ id: string; body: string; createdAt: string }>;
     }>;

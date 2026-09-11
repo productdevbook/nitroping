@@ -13,6 +13,7 @@ public struct NitroPingFeedbackForm: View {
     @State private var email = ""
     @State private var categoryId = ""
     @State private var publicConfig: NitroPingPublicConfig?
+    @State private var customValues: [String: String] = [:]
     @State private var status = ""
     @State private var sending = false
 
@@ -38,6 +39,20 @@ public struct NitroPingFeedbackForm: View {
                 if publicConfig?.theme.fields?.isEmpty != false || publicConfig?.theme.fields?.contains("email") == true {
                     TextField("Email (optional)", text: $email)
                 }
+                ForEach(publicConfig?.theme.customFields ?? []) { field in
+                    if field.type == "textarea" {
+                        TextField(field.label, text: Binding(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 }), axis: .vertical).lineLimit(3...6)
+                    } else if field.type == "select" {
+                        Picker(field.label, selection: Binding(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 })) {
+                            Text("Select an option").tag("")
+                            ForEach(field.options, id: \.self) { option in Text(option).tag(option) }
+                        }
+                    } else if field.type == "boolean" {
+                        Toggle(field.label, isOn: Binding(get: { customValues[field.id] == "true" }, set: { customValues[field.id] = $0 ? "true" : "false" }))
+                    } else {
+                        TextField(field.label, text: Binding(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 })).keyboardType(field.type == "number" ? .decimalPad : .default)
+                    }
+                }
                 Button(sending ? "Sending…" : publicConfig?.theme.buttonLabel ?? "Submit feedback") {
                     submit()
                 }
@@ -57,13 +72,14 @@ public struct NitroPingFeedbackForm: View {
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             body: description.trimmingCharacters(in: .whitespacesAndNewlines),
             categoryId: categoryId.isEmpty ? nil : categoryId,
-            email: email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : email.trimmingCharacters(in: .whitespacesAndNewlines)
+            email: email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : email.trimmingCharacters(in: .whitespacesAndNewlines),
+            metadata: customValues.filter { !$0.value.isEmpty }
         )
         Task {
             do {
                 _ = try await client.submit(feedback)
                 await MainActor.run {
-                    title = ""; description = ""; email = ""; status = "Thanks — your feedback was sent."; sending = false
+                    title = ""; description = ""; email = ""; customValues = [:]; status = "Thanks — your feedback was sent."; sending = false
                 }
             } catch NitroPingError.queued {
                 await MainActor.run { status = "Saved locally and will retry when online."; sending = false }

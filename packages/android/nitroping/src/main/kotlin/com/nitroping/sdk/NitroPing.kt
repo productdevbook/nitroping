@@ -27,7 +27,8 @@ data class Feedback(
 data class FeedbackResponse(val id: String, val status: String, val title: String, val createdAt: String)
 data class NitroPingAttachment(val bytes: ByteArray, val contentType: String)
 data class NitroPingCategory(val id: String, val name: String, val slug: String)
-data class NitroPingPublicTheme(val mode: String?, val buttonLabel: String?, val fields: List<String>, val colors: Map<String, String>)
+data class NitroPingCustomField(val id: String, val label: String, val type: String, val required: Boolean = false, val options: List<String> = emptyList())
+data class NitroPingPublicTheme(val mode: String?, val buttonLabel: String?, val fields: List<String>, val customFields: List<NitroPingCustomField>, val colors: Map<String, String>)
 data class NitroPingPublicConfig(val theme: NitroPingPublicTheme, val categories: List<NitroPingCategory>)
 data class FollowUpComment(val id: String, val body: String, val createdAt: String)
 data class FollowUpSnapshot(val feedbackId: String, val status: String, val title: String, val body: String, val comments: List<FollowUpComment>)
@@ -79,6 +80,14 @@ class NitroPingClient(
         val colors = buildMap { colorsJson.keys().forEach { key -> put(key, colorsJson.optString(key)) } }
         val fieldsJson = themeJson.optJSONArray("fields") ?: org.json.JSONArray()
         val fields = buildList { for (index in 0 until fieldsJson.length()) add(fieldsJson.optString(index)) }
+        val customFieldsJson = themeJson.optJSONArray("customFields") ?: org.json.JSONArray()
+        val customFields = buildList {
+            for (index in 0 until customFieldsJson.length()) {
+                val field = customFieldsJson.optJSONObject(index) ?: continue
+                val optionsJson = field.optJSONArray("options") ?: org.json.JSONArray()
+                add(NitroPingCustomField(field.optString("id"), field.optString("label"), field.optString("type"), field.optBoolean("required", false), buildList { for (optionIndex in 0 until optionsJson.length()) add(optionsJson.optString(optionIndex)) }))
+            }
+        }
         val categoriesJson = root.optJSONArray("categories") ?: org.json.JSONArray()
         val categories = buildList {
             for (index in 0 until categoriesJson.length()) {
@@ -86,7 +95,7 @@ class NitroPingClient(
                 add(NitroPingCategory(category.optString("id"), category.optString("name"), category.optString("slug")))
             }
         }
-        NitroPingPublicConfig(NitroPingPublicTheme(themeJson.optString("mode").ifEmpty { null }, themeJson.optString("buttonLabel").ifEmpty { null }, fields, colors), categories)
+        NitroPingPublicConfig(NitroPingPublicTheme(themeJson.optString("mode").ifEmpty { null }, themeJson.optString("buttonLabel").ifEmpty { null }, fields, customFields, colors), categories)
     }
 
     suspend fun uploadAttachment(feedbackId: String, attachment: NitroPingAttachment): String = withContext(Dispatchers.IO) {
