@@ -117,6 +117,39 @@ paths:
       summary: Read the organization billing subscription
       parameters: [{ $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Billing subscription }, '401': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/categories:
+    get:
+      summary: List project categories
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Categories } }
+    post:
+      summary: Create a project category
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], properties: { name: { type: string }, slug: { type: string } } } } } }
+      responses: { '201': { description: Created }, '409': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/roadmap:
+    get:
+      summary: List roadmap items
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Roadmap items } }
+    post:
+      summary: Create a roadmap item
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '201': { description: Created }, '400': { $ref: '#/components/responses/Error' } }
+  /dashboard/roadmap/{id}:
+    patch:
+      summary: Update a roadmap item
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Updated }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/changelog:
+    get:
+      summary: List changelog items
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Changelog items } }
+    post:
+      summary: Create a changelog item
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '201': { description: Created }, '400': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/webhooks:
     get:
       summary: List project webhooks
