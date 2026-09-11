@@ -34,7 +34,7 @@ CLOUDFLARE_ACCOUNT_ID="$ACCOUNT_ID" CLOUDFLARE_API_TOKEN="$ACCOUNT_TOKEN" NITROP
 
 The verified staging Worker endpoint is `https://nitroping-api-staging.srvrun.workers.dev`. After deployment, rerun `NITROPING_STAGE=staging bun run infra:plan`; a healthy stack should report no changes. Staging uses the same migration directory as the repository and is isolated from the production resources.
 
-The Alchemy stack is intentionally isolated in `infra/` and uses the same Cloudflare account credentials as the operational tooling. Review the plan before deploying: an empty Alchemy state will propose new resources rather than adopting resources already managed by Wrangler. Production currently uses Wrangler deployment until the Alchemy state is explicitly adopted.
+The Alchemy stack is intentionally isolated in `infra/` and uses the same Cloudflare account credentials as the operational tooling. Review the plan before deploying: an empty Alchemy state will propose new resources rather than adopting resources already managed by Wrangler. Staging is fully managed by Alchemy. Production infrastructure resources are Alchemy-managed, while the production `nitroping-api` Worker remains Wrangler-managed because its live Durable Object uses Wrangler's declarative `exports` flow; Alchemy beta.77 cannot safely switch that existing Worker to its migration flow. Do not run a production Alchemy deploy against the Worker until that provider limitation is resolved.
 
 Stripe billing is provider-isolated and disabled until production secrets are configured:
 
