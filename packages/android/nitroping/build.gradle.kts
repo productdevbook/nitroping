@@ -1,6 +1,5 @@
 plugins {
     id("com.android.library")
-    kotlin("android")
     id("org.jetbrains.kotlin.plugin.compose")
     `maven-publish`
 }
