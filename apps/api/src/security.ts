@@ -17,3 +17,9 @@ export const timingSafeEqual = (left: string, right: string): boolean => {
   for (let index = 0; index < a.length; index += 1) result |= a[index] ^ b[index];
   return result === 0;
 };
+
+export const hmacSha256 = async (secret: string, value: string): Promise<string> => {
+  const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(value));
+  return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+};

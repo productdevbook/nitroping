@@ -1,13 +1,15 @@
 import { Effect } from "effect";
 import { feedbackPriorities, feedbackStatuses, feedbackTypes, jsonResponse, platforms, type CreateFeedbackInput, type Feedback, type FeedbackStatus } from "@nitroping/contracts";
 import { changeFeedbackStatus, createFeedback, getFeedback, listFeedback, type FeedbackRepository, type TenantContext } from "./services";
-import { clientIp, randomToken, sha256 } from "./security";
+import { clientIp, hmacSha256, randomToken, sha256 } from "./security";
 import { type AccessClaims, verifyAccessJwt } from "./access";
 import { ProjectEventStream } from "./events";
 
 export { ProjectEventStream };
 
 const id = () => crypto.randomUUID();
+const webhookEventTypes = ["feedback.created", "feedback.updated", "feedback.replied"] as const;
+type WebhookEventType = (typeof webhookEventTypes)[number];
 const requestId = (request: Request) => request.headers.get("x-request-id") ?? `req_${id()}`;
 const error = (code: string, message: string, requestId: string, status: number, details?: unknown) =>
   jsonResponse({ error: { code, message, requestId, details } }, { status, headers: { "x-request-id": requestId } });
@@ -162,6 +164,43 @@ const etagged = async (data: unknown, request: Request, headers: Record<string, 
   return jsonResponse(data, { status, headers: { ...headers, etag } });
 };
 
+const enqueueWebhookDeliveries = async (env: Env, projectId: string, feedbackId: string, eventType: WebhookEventType, sourceEventId: string): Promise<void> => {
+  const webhooks = await env.DB.prepare("SELECT id, events_json AS events FROM webhooks WHERE project_id = ? AND active = 1").bind(projectId).all<{ id: string; events: string }>();
+  for (const webhook of webhooks.results ?? []) {
+    const events = JSON.parse(webhook.events || "[]") as string[];
+    if (!events.includes(eventType)) continue;
+    const deliveryId = id();
+    const inserted = await env.DB.prepare("INSERT OR IGNORE INTO webhook_deliveries (id, webhook_id, event_id, status, attempts, created_at) VALUES (?, ?, ?, 'pending', 0, ?)")
+      .bind(deliveryId, webhook.id, sourceEventId, new Date().toISOString()).run();
+    if (inserted.meta.changes) await env.EVENTS.send({ type: "webhook.deliver", deliveryId, webhookId: webhook.id, eventId: deliveryId, sourceEventId, eventType, feedbackId, projectId });
+  }
+};
+
+const deliverWebhook = async (env: Env, event: { deliveryId: string; webhookId: string; sourceEventId: string; eventType: WebhookEventType; feedbackId: string; projectId: string }): Promise<boolean> => {
+  const webhook = await env.DB.prepare("SELECT url FROM webhooks WHERE id = ? AND project_id = ? AND active = 1").bind(event.webhookId, event.projectId).first<{ url: string }>();
+  if (!webhook) return true;
+  const secret = await env.CACHE.get(`webhook:secret:${event.webhookId}`);
+  if (!secret) {
+    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'failed', attempts = attempts + 1 WHERE id = ?").bind(event.deliveryId).run();
+    return true;
+  }
+  const feedback = await env.DB.prepare("SELECT id, project_id AS projectId, type, status, priority, title, body, email, platform, app_version AS appVersion, os_version AS osVersion, locale, metadata_json AS metadata, created_at AS createdAt, updated_at AS updatedAt FROM feedback_items WHERE id = ? AND project_id = ? AND deleted_at IS NULL").bind(event.feedbackId, event.projectId).first<Record<string, unknown>>();
+  const payload = JSON.stringify({ id: event.sourceEventId, type: event.eventType, projectId: event.projectId, feedback: feedback ? { ...feedback, metadata: JSON.parse(String(feedback.metadata ?? "{}")) } : null, createdAt: new Date().toISOString() });
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signature = await hmacSha256(secret, `${timestamp}.${payload}`);
+  await env.DB.prepare("UPDATE webhook_deliveries SET attempts = attempts + 1, status = 'pending' WHERE id = ?").bind(event.deliveryId).run();
+  try {
+    const response = await fetch(webhook.url, { method: "POST", headers: { "content-type": "application/json", "user-agent": "NitroPing-Webhooks/1", "x-nitroping-event": event.eventType, "x-nitroping-signature": `t=${timestamp},v1=${signature}` }, body: payload, signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) throw new Error(`Webhook responded with ${response.status}`);
+    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'delivered', next_attempt_at = NULL WHERE id = ?").bind(event.deliveryId).run();
+    return true;
+  } catch {
+    const retryAt = new Date(Date.now() + 60_000).toISOString();
+    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'failed', next_attempt_at = ? WHERE id = ?").bind(retryAt, event.deliveryId).run();
+    return false;
+  }
+};
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const rid = requestId(request);
@@ -223,6 +262,36 @@ export default {
         } catch { return error("PROJECT_SLUG_TAKEN", "Project slug is already in use", rid, 409); }
         return jsonResponse({ id: projectId, organizationId: projectCreateMatch[1], name, slug, publicKey, serverKey, createdAt: now }, { status: 201, headers: cors });
       }
+      const webhookMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/webhooks(?:\/([^/]+))?$/);
+      if (webhookMatch && ["GET", "POST", "DELETE"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, webhookMatch[1], rid);
+        if (context instanceof Response) return context;
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT id, url, events_json AS events, active, created_at AS createdAt FROM webhooks WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC").bind(context.organizationId, context.projectId).all<Record<string, unknown>>();
+          return jsonResponse({ items: (rows.results ?? []).map((row) => ({ ...row, events: JSON.parse(String(row.events ?? "[]")), active: Boolean(row.active) })) }, { headers: cors });
+        }
+        if (request.method === "DELETE") {
+          if (!webhookMatch[2]) return error("WEBHOOK_ID_REQUIRED", "Webhook ID is required", rid, 400);
+          const result = await env.DB.prepare("UPDATE webhooks SET active = 0 WHERE id = ? AND organization_id = ? AND project_id = ?").bind(webhookMatch[2], context.organizationId, context.projectId).run();
+          if (!result.meta.changes) return error("WEBHOOK_NOT_FOUND", "Webhook was not found", rid, 404);
+          await env.CACHE.delete(`webhook:secret:${webhookMatch[2]}`);
+          return new Response(null, { status: 204, headers: cors });
+        }
+        const body = await jsonBody(request);
+        let webhookUrl: URL;
+        try { webhookUrl = new URL(typeof body.url === "string" ? body.url : ""); } catch { return error("VALIDATION_ERROR", "Webhook URL is invalid", rid, 400); }
+        if (webhookUrl.protocol !== "https:") return error("VALIDATION_ERROR", "Webhook URL must use HTTPS", rid, 400);
+        const events = Array.isArray(body.events) ? body.events.filter((event): event is WebhookEventType => typeof event === "string" && webhookEventTypes.includes(event as WebhookEventType)) : [...webhookEventTypes];
+        if (!events.length) return error("VALIDATION_ERROR", "At least one webhook event is required", rid, 400);
+        const webhookId = id();
+        const secret = randomToken("whsec");
+        const now = new Date().toISOString();
+        await env.DB.prepare("INSERT INTO webhooks (id, organization_id, project_id, url, secret_hash, events_json, active, created_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?)").bind(webhookId, context.organizationId, context.projectId, webhookUrl.toString(), await sha256(secret), JSON.stringify(events), now).run();
+        await env.CACHE.put(`webhook:secret:${webhookId}`, secret);
+        return jsonResponse({ id: webhookId, url: webhookUrl.toString(), events, active: true, secret, createdAt: now }, { status: 201, headers: cors });
+      }
       const match = path.match(/^\/api\/v1\/projects\/([^/]+)\/feedback(?:\/([^/]+))?$/);
       if (match && request.method === "POST" && !match[2]) {
         const input = validateInput(await request.json());
@@ -242,7 +311,11 @@ export default {
         }
         const result = await Effect.runPromise(createFeedback(repo, context, input, rid));
         if (idem) await env.DB.prepare("INSERT OR IGNORE INTO idempotency_keys (organization_id, project_id, key, response_json, status_code, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(context.organizationId, context.projectId, idem, JSON.stringify(result), 201, result.createdAt).run();
-        if (env.EVENTS) await env.EVENTS.send({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, eventId: id() });
+        if (env.EVENTS) {
+          const eventId = id();
+          await env.EVENTS.send({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, eventId });
+          ctx.waitUntil(enqueueWebhookDeliveries(env, result.projectId, result.id, "feedback.created", eventId));
+        }
         if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(result.projectId).publish({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, createdAt: result.createdAt }));
         return jsonResponse(result, { status: 201, headers: cors });
       }
@@ -438,10 +511,14 @@ export default {
   },
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     for (const message of batch.messages) {
-      const event = message.body as { type?: string; eventId?: string; feedbackId?: string; projectId?: string };
+      const event = message.body as { type?: string; eventId?: string; sourceEventId?: string; feedbackId?: string; webhookId?: string; deliveryId?: string; eventType?: WebhookEventType; projectId?: string };
       if (event.eventId) {
         const seen = await env.DB.prepare("SELECT event_id FROM processed_events WHERE event_id = ?").bind(event.eventId).first();
         if (seen) { message.ack(); continue; }
+      }
+      if (event.type === "webhook.deliver" && event.deliveryId && event.webhookId && event.sourceEventId && event.eventType && event.feedbackId && event.projectId) {
+        const delivered = await deliverWebhook(env, { deliveryId: event.deliveryId, webhookId: event.webhookId, sourceEventId: event.sourceEventId, eventType: event.eventType, feedbackId: event.feedbackId, projectId: event.projectId });
+        if (!delivered) { message.retry({ delaySeconds: Math.min(900, 10 * 2 ** message.attempts) }); continue; }
       }
       if (event.type === "attachment.delete" && typeof (event as { objectKey?: unknown }).objectKey === "string") {
         await env.ATTACHMENTS.delete((event as { objectKey: string }).objectKey);
