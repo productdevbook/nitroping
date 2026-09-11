@@ -26,8 +26,6 @@ public struct NitroPingFeedbackForm: View {
                 TextEditor(text: $description)
                     .frame(minHeight: 100)
                 TextField("Email (optional)", text: $email)
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.emailAddress)
                 Button(sending ? "Sending…" : "Submit feedback") {
                     submit()
                 }
