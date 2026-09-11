@@ -26,6 +26,27 @@ paths:
       parameters: [{ name: organizationId, in: path, required: true, schema: { type: string } }]
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], properties: { name: { type: string }, slug: { type: string } } } } } }
       responses: { '201': { description: Created with one-time public/server keys }, '403': { $ref: '#/components/responses/Error' } }
+  /dashboard/organizations/{organizationId}/members:
+    get:
+      summary: List organization members
+      parameters: [{ name: organizationId, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Members }, '403': { $ref: '#/components/responses/Error' } }
+  /dashboard/organizations/{organizationId}/members/{userId}:
+    delete:
+      summary: Remove an organization member
+      parameters: [{ name: organizationId, in: path, required: true, schema: { type: string } }, { name: userId, in: path, required: true, schema: { type: string } }]
+      responses: { '204': { description: Removed }, '403': { $ref: '#/components/responses/Error' } }
+  /dashboard/organizations/{organizationId}/invites:
+    post:
+      summary: Invite a user to an organization
+      parameters: [{ name: organizationId, in: path, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [email], properties: { email: { type: string, format: email }, role: { type: string, enum: [admin, member, moderator, viewer, billing_admin] } } } } } }
+      responses: { '202': { description: Invitation queued }, '409': { $ref: '#/components/responses/Error' } }
+  /dashboard/invites/{token}/accept:
+    post:
+      summary: Accept an organization invitation for the authenticated Access identity
+      parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Accepted }, '400': { $ref: '#/components/responses/Error' } }
   /dashboard/projects:
     get:
       summary: List projects for the Access identity
