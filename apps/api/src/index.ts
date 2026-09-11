@@ -3048,16 +3048,24 @@ export default {
         const key = randomToken(kind === "public" ? "pk_live" : "sk_live");
         const keyId = id();
         const now = new Date().toISOString();
-        if (kind === "public")
-          await env.DB.prepare(
-            "UPDATE projects SET public_key = ?, updated_at = ? WHERE id = ? AND organization_id = ?",
-          )
-            .bind(key, now, context.projectId, context.organizationId)
-            .run();
-        await env.DB.prepare(
-          "INSERT INTO project_api_keys (id, organization_id, project_id, kind, label, key_prefix, key_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        )
-          .bind(
+        const keyStatements = [
+          ...(kind === "public"
+            ? [
+                env.DB.prepare(
+                  "UPDATE project_api_keys SET revoked_at = ? WHERE organization_id = ? AND project_id = ? AND kind = 'public' AND revoked_at IS NULL",
+                ).bind(now, context.organizationId, context.projectId),
+                env.DB.prepare(
+                  "UPDATE projects SET public_key = ?, updated_at = ? WHERE id = ? AND organization_id = ?",
+                ).bind(key, now, context.projectId, context.organizationId),
+              ]
+            : [
+                env.DB.prepare(
+                  "UPDATE projects SET server_key_hash = ?, updated_at = ? WHERE id = ? AND organization_id = ?",
+                ).bind(await sha256(key), now, context.projectId, context.organizationId),
+              ]),
+          env.DB.prepare(
+            "INSERT INTO project_api_keys (id, organization_id, project_id, kind, label, key_prefix, key_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+          ).bind(
             keyId,
             context.organizationId,
             context.projectId,
@@ -3066,8 +3074,9 @@ export default {
             key.slice(0, 12),
             await sha256(key),
             now,
-          )
-          .run();
+          ),
+        ];
+        await env.DB.batch(keyStatements);
         await writeAudit(env, context, "api_key.created", "api_key", keyId, {
           kind,
           label,
