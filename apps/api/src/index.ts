@@ -1329,6 +1329,18 @@ export default {
         { ok: true, environment: env.ENVIRONMENT, requestId: rid },
         { headers: cors },
       );
+    // Workers Assets redirects HTML filenames on workers.dev hosts. Rewrite
+    // configured portal requests explicitly so staging and preview portals
+    // behave the same as the nitroping.dev route.
+    if (
+      env.ASSETS &&
+      path === "/portal" &&
+      url.searchParams.has("projectId") &&
+      url.searchParams.has("projectKey")
+    )
+      return env.ASSETS.fetch(
+        new Request(new URL("/portal.html", request.url), request),
+      );
     try {
       const hostname = url.hostname.toLowerCase().replace(/\.$/, "");
       const platformHostnames = new Set([

@@ -32,7 +32,11 @@ export default Alchemy.Stack(
     const api = yield* Cloudflare.Worker("Api", {
       name: `nitroping-api${suffix}`,
       main: "../apps/api/src/index.ts",
-      assets: { directory: "../apps/api/public", runWorkerFirst: true },
+      assets: {
+        directory: "../apps/api/public",
+        runWorkerFirst: true,
+        htmlHandling: "none",
+      },
       compatibility: { date: "2026-09-11", flags: ["nodejs_compat"] },
       observability: { enabled: true, headSamplingRate: 0.1, logs: { enabled: true, invocationLogs: true }, traces: { enabled: true, headSamplingRate: 0.1 } },
       crons: ["0 3 * * *"],
