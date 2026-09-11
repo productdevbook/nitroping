@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import type { CreateFeedbackInput, Feedback, FeedbackStatus } from "@nitroping/contracts";
 
-export type TenantContext = { organizationId: string; projectId: string };
+export type TenantContext = { organizationId: string; projectId: string; publicKey?: string };
 
 export type FeedbackRepository = {
   create: (context: TenantContext, input: CreateFeedbackInput, requestId: string) => Promise<Feedback>;

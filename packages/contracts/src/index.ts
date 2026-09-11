@@ -16,6 +16,7 @@ export type Feedback = {
   type: FeedbackType;
   status: FeedbackStatus;
   priority: FeedbackPriority;
+  categoryId?: string;
   title: string;
   body: string;
   email?: string;
@@ -33,6 +34,7 @@ export type CreateFeedbackInput = {
   title: string;
   body: string;
   priority?: FeedbackPriority;
+  categoryId?: string;
   email?: string;
   platform?: Platform;
   appVersion?: string;

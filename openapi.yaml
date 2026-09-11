@@ -182,7 +182,7 @@ paths:
   /dashboard/billing:
     get:
       summary: Read the organization billing subscription
-      parameters: [{ $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      parameters: [{ name: projectId, in: query, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Billing subscription }, '401': { $ref: '#/components/responses/Error' } }
   /dashboard/billing/checkout:
     post:
@@ -275,6 +275,7 @@ components:
       required: [type, title, body]
       properties:
         type: { type: string, enum: [complaint, bug, suggestion, feature_request] }
+        categoryId: { type: string, description: Optional project category identifier }
         title: { type: string, minLength: 3, maxLength: 160 }
         body: { type: string, minLength: 3, maxLength: 20000 }
         priority: { type: string, enum: [low, normal, high, urgent] }
