@@ -104,7 +104,7 @@ const projectMatchesPath = (context: TenantContext, projectId: string, rid: stri
   context.projectId === projectId ? null : error("PROJECT_SCOPE_MISMATCH", "The project key does not belong to this project", rid, 403);
 
 const allowedMetadata = async (env: Env, context: TenantContext, input: CreateFeedbackInput, rid: string): Promise<Response | null> => {
-  const settings = await env.DB.prepare("SELECT allowed_metadata_json FROM project_settings WHERE project_id = ?").bind(context.projectId).first<{ allowed_metadata_json: string }>();
+  const settings = await env.DB.prepare("SELECT allowed_metadata_json FROM project_settings WHERE project_id = ? AND EXISTS (SELECT 1 FROM projects WHERE projects.id = project_settings.project_id AND projects.organization_id = ?)").bind(context.projectId, context.organizationId).first<{ allowed_metadata_json: string }>();
   const allowed = new Set<string>(JSON.parse(settings?.allowed_metadata_json ?? "[]"));
   const metadata = input.metadata ?? {};
   const invalid = Object.keys(metadata).filter((key) => !allowed.has(key));
@@ -294,6 +294,29 @@ export default {
         await env.DB.prepare("INSERT INTO webhooks (id, organization_id, project_id, url, secret_hash, events_json, active, created_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?)").bind(webhookId, context.organizationId, context.projectId, webhookUrl.toString(), await sha256(secret), JSON.stringify(events), now).run();
         await env.CACHE.put(`webhook:secret:${webhookId}`, secret);
         return jsonResponse({ id: webhookId, url: webhookUrl.toString(), events, active: true, secret, createdAt: now }, { status: 201, headers: cors });
+      }
+      const settingsMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/settings$/);
+      if (settingsMatch && ["GET", "PATCH"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, settingsMatch[1], rid);
+        if (context instanceof Response) return context;
+        if (request.method === "GET") {
+          const settings = await env.DB.prepare("SELECT theme_json AS theme, allowed_metadata_json AS allowedMetadata, retention_days AS retentionDays, origins_json AS origins FROM project_settings WHERE project_id = ?").bind(context.projectId).first<Record<string, unknown>>();
+          return jsonResponse({ theme: JSON.parse(String(settings?.theme ?? "{}")), allowedMetadata: JSON.parse(String(settings?.allowedMetadata ?? "[]")), retentionDays: Number(settings?.retentionDays ?? 365), origins: JSON.parse(String(settings?.origins ?? "[]")) }, { headers: cors });
+        }
+        const body = await jsonBody(request);
+        const current = await env.DB.prepare("SELECT theme_json, allowed_metadata_json, retention_days, origins_json FROM project_settings WHERE project_id = ?").bind(context.projectId).first<{ theme_json: string; allowed_metadata_json: string; retention_days: number; origins_json: string }>();
+        if (!current) return error("PROJECT_SETTINGS_NOT_FOUND", "Project settings were not found", rid, 404);
+        const theme = body.theme && typeof body.theme === "object" && !Array.isArray(body.theme) ? body.theme : JSON.parse(current.theme_json);
+        const allowedMetadata = body.allowedMetadata === undefined ? JSON.parse(current.allowed_metadata_json) : body.allowedMetadata;
+        const retentionDays = body.retentionDays === undefined ? current.retention_days : Number(body.retentionDays);
+        const origins = body.origins === undefined ? JSON.parse(current.origins_json) : body.origins;
+        if (!Array.isArray(allowedMetadata) || allowedMetadata.length > 100 || allowedMetadata.some((field) => typeof field !== "string" || !/^[a-zA-Z][a-zA-Z0-9_.-]{0,63}$/.test(field))) return error("VALIDATION_ERROR", "Allowed metadata fields are invalid", rid, 400);
+        if (!Number.isInteger(retentionDays) || retentionDays < 1 || retentionDays > 3650) return error("VALIDATION_ERROR", "Retention must be between 1 and 3650 days", rid, 400);
+        if (!Array.isArray(origins) || origins.length > 50 || origins.some((origin) => typeof origin !== "string" || !/^https:\/\//.test(origin))) return error("VALIDATION_ERROR", "Origins must be HTTPS URLs", rid, 400);
+        await env.DB.prepare("UPDATE project_settings SET theme_json = ?, allowed_metadata_json = ?, retention_days = ?, origins_json = ? WHERE project_id = ?").bind(JSON.stringify(theme), JSON.stringify(allowedMetadata), retentionDays, JSON.stringify(origins), context.projectId).run();
+        return jsonResponse({ theme, allowedMetadata, retentionDays, origins }, { headers: cors });
       }
       const match = path.match(/^\/api\/v1\/projects\/([^/]+)\/feedback(?:\/([^/]+))?$/);
       if (match && request.method === "POST" && !match[2]) {

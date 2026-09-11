@@ -98,6 +98,47 @@ paths:
       summary: Anonymize feedback and public comments
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Anonymized }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/settings:
+    get:
+      summary: Read project widget, metadata, origin, and retention settings
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Project settings }, '401': { $ref: '#/components/responses/Error' } }
+    patch:
+      summary: Update project widget, metadata, origin, and retention settings
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Updated settings }, '400': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/webhooks:
+    get:
+      summary: List project webhooks
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Webhooks }, '401': { $ref: '#/components/responses/Error' } }
+    post:
+      summary: Create a signed project webhook
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [url], properties: { url: { type: string, format: uri }, events: { type: array, items: { type: string, enum: [feedback.created, feedback.updated, feedback.replied] } } } } } } }
+      responses: { '201': { description: Created with one-time signing secret }, '400': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/webhooks/{webhookId}:
+    delete:
+      summary: Disable a project webhook
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: webhookId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '204': { description: Disabled }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/feedback/{feedbackId}:
+    get:
+      summary: Get feedback with comments and status history
+      parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Feedback detail }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/feedback/{feedbackId}/reply:
+    post:
+      summary: Add a public reply or internal note
+      parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [body], properties: { body: { type: string, minLength: 1, maxLength: 10000 }, internal: { type: boolean, default: false } } } } } }
+      responses: { '201': { description: Comment created }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/feedback/{feedbackId}/status:
+    post:
+      summary: Change feedback status and record history
+      parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [status], properties: { status: { type: string, enum: [new, triaged, planned, in_progress, resolved, closed, spam] } } } } } }
+      responses: { '200': { description: Updated feedback }, '404': { $ref: '#/components/responses/Error' } }
 components:
   parameters:
     ProjectId: { name: projectId, in: path, required: true, schema: { type: string } }
