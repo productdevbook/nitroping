@@ -20,6 +20,7 @@ jobs:
       - run: bun run preflight
       - run: bun run check
       - run: bun run db:migrate:check
+      - run: bun run db:schema:check
       - run: bun run --filter @nitroping/contracts build
       - run: bun run test
       - run: bun run build
