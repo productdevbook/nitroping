@@ -41,6 +41,9 @@ class NitroPingClient(
     private val apiBaseUrl: String = "https://nitroping.dev/api/v1",
     private val storage: SharedPreferences? = null,
 ) {
+    /** Optional content resolver used by the Compose attachment picker. */
+    internal var contentResolver: android.content.ContentResolver? = null
+
     /** Creates a client with persistent, project-scoped offline storage. */
     constructor(
         context: Context,
@@ -53,7 +56,9 @@ class NitroPingClient(
             "nitroping",
             Context.MODE_PRIVATE,
         ),
-    )
+    ) {
+        contentResolver = context.applicationContext.contentResolver
+    }
 
     private val pendingStorageKey = "nitroping.pending.$projectKey"
 

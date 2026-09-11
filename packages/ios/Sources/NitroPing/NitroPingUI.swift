@@ -2,6 +2,7 @@ import Foundation
 
 #if canImport(SwiftUI)
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// A ready-to-embed SwiftUI feedback form.
 @available(iOS 15.0, macOS 12.0, *)
@@ -14,6 +15,8 @@ public struct NitroPingFeedbackForm: View {
     @State private var categoryId = ""
     @State private var publicConfig: NitroPingPublicConfig?
     @State private var customValues: [String: String] = [:]
+    @State private var attachments: [NitroPingAttachment] = []
+    @State private var showingFileImporter = false
     @State private var status = ""
     @State private var sending = false
 
@@ -41,6 +44,19 @@ public struct NitroPingFeedbackForm: View {
                 }
                 ForEach(publicConfig?.theme.customFields ?? []) { field in
                     NitroPingCustomFieldView(field: field, values: $customValues)
+                }
+                Button {
+                    showingFileImporter = true
+                } label: {
+                    Label(attachments.isEmpty ? "Add attachment" : "Attachments (\(attachments.count))", systemImage: "paperclip")
+                }
+                .fileImporter(
+                    isPresented: $showingFileImporter,
+                    allowedContentTypes: [.item],
+                    allowsMultipleSelection: true
+                ) { result in
+                    guard case .success(let urls) = result else { return }
+                    attachments += urls.compactMap { Self.attachment(from: $0) }
                 }
                 Button(sending ? "Sending…" : publicConfig?.theme.buttonLabel ?? "Submit feedback") {
                     submit()
@@ -77,9 +93,9 @@ public struct NitroPingFeedbackForm: View {
         )
         Task {
             do {
-                _ = try await client.submit(feedback)
+                _ = try await client.submit(feedback, attachments: attachments)
                 await MainActor.run {
-                    title = ""; description = ""; email = ""; customValues = [:]; status = "Thanks — your feedback was sent."; sending = false
+                    title = ""; description = ""; email = ""; customValues = [:]; attachments = []; status = "Thanks — your feedback was sent."; sending = false
                 }
             } catch NitroPingError.queued {
                 await MainActor.run { status = "Saved locally and will retry when online."; sending = false }
@@ -87,6 +103,14 @@ public struct NitroPingFeedbackForm: View {
                 await MainActor.run { status = "Unable to send feedback."; sending = false }
             }
         }
+    }
+
+    private static func attachment(from url: URL) -> NitroPingAttachment? {
+        let secured = url.startAccessingSecurityScopedResource()
+        defer { if secured { url.stopAccessingSecurityScopedResource() } }
+        guard let data = try? Data(contentsOf: url), !data.isEmpty else { return nil }
+        let contentType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
+        return NitroPingAttachment(data: data, contentType: contentType)
     }
 }
 

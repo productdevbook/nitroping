@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -42,9 +44,19 @@ fun NitroPingFeedback(
     var categoryMenuOpen by remember { mutableStateOf(false) }
     var publicConfig by remember { mutableStateOf<NitroPingPublicConfig?>(null) }
     var customValues by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var attachments by remember { mutableStateOf<List<NitroPingAttachment>>(emptyList()) }
     var status by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val attachmentPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        attachments = attachments + uris.mapNotNull { uri ->
+            runCatching {
+                val bytes = client.contentResolver?.openInputStream(uri)?.use { it.readBytes() } ?: return@runCatching null
+                if (bytes.isEmpty()) return@runCatching null
+                NitroPingAttachment(bytes, client.contentResolver?.getType(uri) ?: "application/octet-stream")
+            }.getOrNull()
+        }
+    }
     LaunchedEffect(client) { publicConfig = runCatching { client.fetchPublicConfig() }.getOrNull() }
     val primaryColor = publicConfig?.theme?.colors?.get("primary")?.let { value ->
         try { Color(android.graphics.Color.parseColor(value)) } catch (_: IllegalArgumentException) { null }
@@ -109,6 +121,9 @@ fun NitroPingFeedback(
                     else -> OutlinedTextField(value = customValues[field.id].orEmpty(), onValueChange = { customValues = customValues + (field.id to it) }, modifier = Modifier.fillMaxWidth(), label = { Text(field.label) }, keyboardOptions = KeyboardOptions(keyboardType = if (field.type == "number") KeyboardType.Number else KeyboardType.Text), singleLine = true)
                 }
             }
+            Button(onClick = { attachmentPicker.launch(arrayOf("*/*")) }, colors = primaryButtonColors) {
+                Text(if (attachments.isEmpty()) "Add attachment" else "Attachments (${attachments.size})")
+            }
             Button(
                 onClick = {
                     sending = true
@@ -120,8 +135,8 @@ fun NitroPingFeedback(
                                 status = "Please complete ${missingRequired.label}."
                                 return@launch
                             }
-                            client.submit(
-                                Feedback(
+                                client.submit(
+                                    Feedback(
                                     type = type,
                                     title = title.trim(),
                                     body = description.trim(),
@@ -135,11 +150,13 @@ fun NitroPingFeedback(
                                         }
                                     },
                                 ),
+                                    attachments,
                             )
                             title = ""
                             description = ""
                             email = ""
                             customValues = emptyMap()
+                            attachments = emptyList()
                             status = "Thanks — your feedback was sent."
                         } catch (_: NitroPingQueuedException) {
                             status = "Saved locally and will retry when online."
