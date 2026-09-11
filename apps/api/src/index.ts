@@ -226,39 +226,39 @@ const etagged = async (data: unknown, request: Request, headers: Record<string, 
   return jsonResponse(data, { status, headers: { ...headers, etag } });
 };
 
-const enqueueWebhookDeliveries = async (env: Env, projectId: string, feedbackId: string, eventType: WebhookEventType, sourceEventId: string): Promise<void> => {
-  const webhooks = await env.DB.prepare("SELECT id, organization_id AS organizationId, events_json AS events FROM webhooks WHERE project_id = ? AND active = 1").bind(projectId).all<{ id: string; organizationId: string; events: string }>();
+const enqueueWebhookDeliveries = async (env: Env, organizationId: string, projectId: string, feedbackId: string, eventType: WebhookEventType, sourceEventId: string): Promise<void> => {
+  const webhooks = await env.DB.prepare("SELECT id, organization_id AS organizationId, events_json AS events FROM webhooks WHERE organization_id = ? AND project_id = ? AND active = 1").bind(organizationId, projectId).all<{ id: string; organizationId: string; events: string }>();
   for (const webhook of webhooks.results ?? []) {
     const events = JSON.parse(webhook.events || "[]") as string[];
     if (!events.includes(eventType)) continue;
     const deliveryId = id();
     const inserted = await env.DB.prepare("INSERT OR IGNORE INTO webhook_deliveries (id, organization_id, project_id, webhook_id, event_id, status, attempts, created_at) VALUES (?, ?, ?, ?, ?, 'pending', 0, ?)")
       .bind(deliveryId, webhook.organizationId, projectId, webhook.id, sourceEventId, new Date().toISOString()).run();
-    if (inserted.meta.changes) await env.EVENTS.send({ type: "webhook.deliver", deliveryId, webhookId: webhook.id, eventId: deliveryId, sourceEventId, eventType, feedbackId, projectId });
+    if (inserted.meta.changes) await env.EVENTS.send({ type: "webhook.deliver", deliveryId, webhookId: webhook.id, eventId: deliveryId, sourceEventId, eventType, feedbackId, organizationId, projectId });
   }
 };
 
-const deliverWebhook = async (env: Env, event: { deliveryId: string; webhookId: string; sourceEventId: string; eventType: WebhookEventType; feedbackId: string; projectId: string }): Promise<boolean> => {
-  const webhook = await env.DB.prepare("SELECT url FROM webhooks WHERE id = ? AND project_id = ? AND active = 1").bind(event.webhookId, event.projectId).first<{ url: string }>();
+const deliverWebhook = async (env: Env, event: { deliveryId: string; webhookId: string; sourceEventId: string; eventType: WebhookEventType; feedbackId: string; organizationId: string; projectId: string }): Promise<boolean> => {
+  const webhook = await env.DB.prepare("SELECT url FROM webhooks WHERE id = ? AND organization_id = ? AND project_id = ? AND active = 1").bind(event.webhookId, event.organizationId, event.projectId).first<{ url: string }>();
   if (!webhook) return true;
   const secret = await env.CACHE.get(`webhook:secret:${event.webhookId}`);
   if (!secret) {
-    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'failed', attempts = attempts + 1 WHERE id = ? AND project_id = ?").bind(event.deliveryId, event.projectId).run();
+    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'failed', attempts = attempts + 1 WHERE id = ? AND organization_id = ? AND project_id = ?").bind(event.deliveryId, event.organizationId, event.projectId).run();
     return true;
   }
-  const feedback = await env.DB.prepare("SELECT id, project_id AS projectId, type, status, priority, title, body, email, platform, app_version AS appVersion, os_version AS osVersion, locale, metadata_json AS metadata, created_at AS createdAt, updated_at AS updatedAt FROM feedback_items WHERE id = ? AND project_id = ? AND deleted_at IS NULL").bind(event.feedbackId, event.projectId).first<Record<string, unknown>>();
+  const feedback = await env.DB.prepare("SELECT id, project_id AS projectId, type, status, priority, title, body, email, platform, app_version AS appVersion, os_version AS osVersion, locale, metadata_json AS metadata, created_at AS createdAt, updated_at AS updatedAt FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(event.feedbackId, event.organizationId, event.projectId).first<Record<string, unknown>>();
   const payload = JSON.stringify({ id: event.sourceEventId, type: event.eventType, projectId: event.projectId, feedback: feedback ? { ...feedback, metadata: JSON.parse(String(feedback.metadata ?? "{}")) } : null, createdAt: new Date().toISOString() });
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const signature = await hmacSha256(secret, `${timestamp}.${payload}`);
-  await env.DB.prepare("UPDATE webhook_deliveries SET attempts = attempts + 1, status = 'pending' WHERE id = ? AND project_id = ?").bind(event.deliveryId, event.projectId).run();
+  await env.DB.prepare("UPDATE webhook_deliveries SET attempts = attempts + 1, status = 'pending' WHERE id = ? AND organization_id = ? AND project_id = ?").bind(event.deliveryId, event.organizationId, event.projectId).run();
   try {
     const response = await fetch(webhook.url, { method: "POST", headers: { "content-type": "application/json", "user-agent": "NitroPing-Webhooks/1", "x-nitroping-event": event.eventType, "x-nitroping-signature": `t=${timestamp},v1=${signature}` }, body: payload, signal: AbortSignal.timeout(10_000) });
     if (!response.ok) throw new Error(`Webhook responded with ${response.status}`);
-    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'delivered', next_attempt_at = NULL WHERE id = ? AND project_id = ?").bind(event.deliveryId, event.projectId).run();
+    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'delivered', next_attempt_at = NULL WHERE id = ? AND organization_id = ? AND project_id = ?").bind(event.deliveryId, event.organizationId, event.projectId).run();
     return true;
   } catch {
     const retryAt = new Date(Date.now() + 60_000).toISOString();
-    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'failed', next_attempt_at = ? WHERE id = ? AND project_id = ?").bind(retryAt, event.deliveryId, event.projectId).run();
+    await env.DB.prepare("UPDATE webhook_deliveries SET status = 'failed', next_attempt_at = ? WHERE id = ? AND organization_id = ? AND project_id = ?").bind(retryAt, event.deliveryId, event.organizationId, event.projectId).run();
     return false;
   }
 };
@@ -275,8 +275,8 @@ const sendTransactionalEmail = async (env: Env, event: { email: string; subject:
   await env.EMAIL.send({ to: event.email, from: { email: env.EMAIL_FROM, name: "NitroPing" }, subject: event.subject, text: event.text, html: event.html });
 };
 
-const enqueueWatcherEmails = async (env: Env, feedbackId: string, subject: string, text: string, html: string): Promise<void> => {
-  const feedback = await env.DB.prepare("SELECT organization_id AS organizationId, project_id AS projectId FROM feedback_items WHERE id = ?").bind(feedbackId).first<{ organizationId: string; projectId: string }>();
+const enqueueWatcherEmails = async (env: Env, organizationId: string, projectId: string, feedbackId: string, subject: string, text: string, html: string): Promise<void> => {
+  const feedback = await env.DB.prepare("SELECT organization_id AS organizationId, project_id AS projectId FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ?").bind(feedbackId, organizationId, projectId).first<{ organizationId: string; projectId: string }>();
   if (!feedback) return;
   const watchers = await env.DB.prepare("SELECT w.email FROM feedback_watchers w WHERE w.feedback_id = ? AND w.organization_id = ? AND w.project_id = ?").bind(feedbackId, feedback.organizationId, feedback.projectId).all<{ email: string }>();
   for (const watcher of watchers.results ?? []) await env.EVENTS.send({ type: "email.send", organizationId: feedback.organizationId, projectId: feedback.projectId, email: watcher.email, subject, text, html, eventId: id() });
@@ -854,7 +854,7 @@ export default {
         const idem = request.headers.get("idempotency-key");
         if (idem) {
           if (idem.length > 128) return error("INVALID_IDEMPOTENCY_KEY", "Idempotency-Key is too long", rid, 400);
-          const previous = await env.DB.prepare("SELECT response_json, status_code FROM idempotency_keys WHERE project_id = ? AND key = ?").bind(context.projectId, idem).first<{ response_json: string; status_code: number }>();
+          const previous = await env.DB.prepare("SELECT response_json, status_code FROM idempotency_keys WHERE organization_id = ? AND project_id = ? AND key = ?").bind(context.organizationId, context.projectId, idem).first<{ response_json: string; status_code: number }>();
           if (previous) return new Response(previous.response_json, { status: previous.status_code, headers: cors });
         }
         const usage = await currentUsage(env, context.organizationId);
@@ -866,8 +866,8 @@ export default {
         if (idem) await env.DB.prepare("INSERT OR IGNORE INTO idempotency_keys (organization_id, project_id, key, response_json, status_code, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(context.organizationId, context.projectId, idem, JSON.stringify(safeResult), 201, result.createdAt).run();
         if (env.EVENTS) {
           const eventId = id();
-          await env.EVENTS.send({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, eventId });
-          ctx.waitUntil(enqueueWebhookDeliveries(env, result.projectId, result.id, "feedback.created", eventId));
+          await env.EVENTS.send({ type: "feedback.created", feedbackId: result.id, organizationId: context.organizationId, projectId: result.projectId, eventId });
+          ctx.waitUntil(enqueueWebhookDeliveries(env, context.organizationId, result.projectId, result.id, "feedback.created", eventId));
         }
         if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(result.projectId).publish({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, createdAt: result.createdAt }));
         ctx.waitUntil(enqueueTeamNotifications(env, context.organizationId, context.projectId, "feedback.created", "New NitroPing feedback", `New feedback: ${result.title}`, `<p>New feedback: <strong>${htmlEscape(result.title)}</strong></p>`));
@@ -1054,7 +1054,7 @@ export default {
         if (!raw) return error("FOLLOW_UP_EXPIRED", "The follow-up link is invalid or expired", rid, 404);
         const feedback = await env.DB.prepare("SELECT id, type, status, priority, title, body, platform, app_version AS appVersion, created_at AS createdAt, updated_at AS updatedAt FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(raw.feedbackId, raw.organizationId, raw.projectId).first();
         if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
-        const comments = await env.DB.prepare("SELECT id, body, created_at AS createdAt FROM feedback_comments WHERE feedback_id = ? AND project_id = ? AND is_internal = 0 AND deleted_at IS NULL ORDER BY created_at ASC").bind(raw.feedbackId, raw.projectId).all();
+        const comments = await env.DB.prepare("SELECT id, body, created_at AS createdAt FROM feedback_comments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND is_internal = 0 AND deleted_at IS NULL ORDER BY created_at ASC").bind(raw.feedbackId, raw.organizationId, raw.projectId).all();
         return jsonResponse({ feedback, comments: comments.results ?? [] }, { headers: cors });
       }
       const exportMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/export$/);
@@ -1227,8 +1227,8 @@ export default {
         if (!internal) {
           recordMetric(env, "feedback.replied", context.organizationId, context.projectId, [1]);
           const eventId = id();
-          ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, replyMatch[1], "feedback.replied", eventId));
-          ctx.waitUntil(enqueueWatcherEmails(env, replyMatch[1], "New reply to your NitroPing feedback", "Your feedback received a new reply. Open your NitroPing follow-up link to read it.", "<p>Your feedback received a new reply.</p><p>Open your NitroPing follow-up link to read it.</p>"));
+          ctx.waitUntil(enqueueWebhookDeliveries(env, context.organizationId, context.projectId, replyMatch[1], "feedback.replied", eventId));
+          ctx.waitUntil(enqueueWatcherEmails(env, context.organizationId, context.projectId, replyMatch[1], "New reply to your NitroPing feedback", "Your feedback received a new reply. Open your NitroPing follow-up link to read it.", "<p>Your feedback received a new reply.</p><p>Open your NitroPing follow-up link to read it.</p>"));
           ctx.waitUntil(enqueueTeamNotifications(env, context.organizationId, context.projectId, "feedback.replied", "A NitroPing feedback item received a reply", "A team member replied to feedback.", "<p>A team member replied to feedback.</p>"));
           if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(context.projectId).publish({ type: "feedback.replied", feedbackId: replyMatch[1], projectId: context.projectId, createdAt: comment.createdAt }));
         }
@@ -1249,8 +1249,8 @@ export default {
         await writeAudit(env, context, "feedback.status.updated", "feedback", result.id, { status: result.status });
         recordMetric(env, "feedback.updated", context.organizationId, context.projectId, [1]);
         const eventId = id();
-        ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, result.id, "feedback.updated", eventId));
-        ctx.waitUntil(enqueueWatcherEmails(env, result.id, "Your NitroPing feedback was updated", `The status of your feedback changed to ${result.status}.`, `<p>The status of your feedback changed to <strong>${result.status}</strong>.</p>`));
+        ctx.waitUntil(enqueueWebhookDeliveries(env, context.organizationId, context.projectId, result.id, "feedback.updated", eventId));
+        ctx.waitUntil(enqueueWatcherEmails(env, context.organizationId, context.projectId, result.id, "Your NitroPing feedback was updated", `The status of your feedback changed to ${result.status}.`, `<p>The status of your feedback changed to <strong>${result.status}</strong>.</p>`));
         ctx.waitUntil(enqueueTeamNotifications(env, context.organizationId, context.projectId, "feedback.updated", "NitroPing feedback status updated", `Feedback status changed to ${result.status}.`, `<p>Feedback status changed to <strong>${result.status}</strong>.</p>`));
         if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(context.projectId).publish({ type: "feedback.updated", feedbackId: result.id, projectId: context.projectId, createdAt: result.updatedAt }));
         return jsonResponse(result, { headers: cors });
@@ -1273,8 +1273,8 @@ export default {
         const seen = await env.DB.prepare("SELECT event_id FROM processed_events WHERE event_id = ?").bind(event.eventId).first();
         if (seen) { message.ack(); continue; }
       }
-      if (event.type === "webhook.deliver" && event.deliveryId && event.webhookId && event.sourceEventId && event.eventType && event.feedbackId && event.projectId) {
-        const delivered = await deliverWebhook(env, { deliveryId: event.deliveryId, webhookId: event.webhookId, sourceEventId: event.sourceEventId, eventType: event.eventType, feedbackId: event.feedbackId, projectId: event.projectId });
+      if (event.type === "webhook.deliver" && event.deliveryId && event.webhookId && event.sourceEventId && event.eventType && event.feedbackId && event.organizationId && event.projectId) {
+        const delivered = await deliverWebhook(env, { deliveryId: event.deliveryId, webhookId: event.webhookId, sourceEventId: event.sourceEventId, eventType: event.eventType, feedbackId: event.feedbackId, organizationId: event.organizationId, projectId: event.projectId });
         if (!delivered) { message.retry({ delaySeconds: Math.min(900, 10 * 2 ** message.attempts) }); continue; }
       }
       if (event.type === "follow-up.requested" && event.email && event.token) {
@@ -1292,9 +1292,9 @@ export default {
       if (event.type === "attachment.delete" && typeof (event as { objectKey?: unknown }).objectKey === "string") {
         await env.ATTACHMENTS.delete((event as { objectKey: string }).objectKey);
       }
-      if (event.type === "feedback.created" && event.feedbackId && event.projectId) {
-        await env.DB.prepare("INSERT INTO moderation_events (id, organization_id, project_id, feedback_id, kind, outcome, metadata_json, created_at) SELECT ?, organization_id, project_id, id, 'automated', 'pending', ?, ? FROM feedback_items WHERE id = ? AND project_id = ?")
-          .bind(id(), "{}", new Date().toISOString(), event.feedbackId, event.projectId).run();
+      if (event.type === "feedback.created" && event.feedbackId && event.organizationId && event.projectId) {
+        await env.DB.prepare("INSERT INTO moderation_events (id, organization_id, project_id, feedback_id, kind, outcome, metadata_json, created_at) SELECT ?, organization_id, project_id, id, 'automated', 'pending', ?, ? FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ?")
+          .bind(id(), "{}", new Date().toISOString(), event.feedbackId, event.organizationId, event.projectId).run();
       }
       if (event.eventId) await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id, event_type, processed_at) VALUES (?, ?, ?)").bind(event.eventId, event.type ?? "unknown", new Date().toISOString()).run();
       message.ack();
@@ -1304,12 +1304,12 @@ export default {
     await env.DB.prepare("DELETE FROM magic_link_tokens WHERE expires_at <= ? OR used_at IS NOT NULL").bind(new Date().toISOString()).run();
     const candidates = await env.DB.prepare("SELECT f.id, f.organization_id AS organizationId, f.project_id AS projectId FROM feedback_items f JOIN project_settings s ON s.project_id = f.project_id AND s.organization_id = f.organization_id WHERE f.deleted_at IS NULL AND datetime(f.created_at) < datetime('now', '-' || s.retention_days || ' days') LIMIT 100").all<{ id: string; organizationId: string; projectId: string }>();
     for (const feedback of candidates.results ?? []) {
-      const attachments = await env.DB.prepare("SELECT object_key AS objectKey FROM attachments WHERE feedback_id = ? AND project_id = ? AND deleted_at IS NULL").bind(feedback.id, feedback.projectId).all<{ objectKey: string }>();
-      for (const attachment of attachments.results ?? []) await env.EVENTS.send({ type: "attachment.delete", objectKey: attachment.objectKey, eventId: id(), projectId: feedback.projectId });
+      const attachments = await env.DB.prepare("SELECT object_key AS objectKey FROM attachments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(feedback.id, feedback.organizationId, feedback.projectId).all<{ objectKey: string }>();
+      for (const attachment of attachments.results ?? []) await env.EVENTS.send({ type: "attachment.delete", objectKey: attachment.objectKey, eventId: id(), organizationId: feedback.organizationId, projectId: feedback.projectId });
       const now = new Date().toISOString();
       await env.DB.batch([
-        env.DB.prepare("UPDATE feedback_items SET email = NULL, body = '[retained data removed]', metadata_json = '{}', deleted_at = ?, updated_at = ? WHERE id = ? AND project_id = ?").bind(now, now, feedback.id, feedback.projectId),
-        env.DB.prepare("UPDATE attachments SET deleted_at = ? WHERE feedback_id = ? AND project_id = ?").bind(now, feedback.id, feedback.projectId),
+        env.DB.prepare("UPDATE feedback_items SET email = NULL, body = '[retained data removed]', metadata_json = '{}', deleted_at = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ?").bind(now, now, feedback.id, feedback.organizationId, feedback.projectId),
+        env.DB.prepare("UPDATE attachments SET deleted_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ?").bind(now, feedback.id, feedback.organizationId, feedback.projectId),
         env.DB.prepare("INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'delete', 'completed', ?, ?)").bind(id(), feedback.organizationId, feedback.projectId, now, now),
       ]);
     }
