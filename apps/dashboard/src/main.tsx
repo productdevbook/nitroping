@@ -122,6 +122,20 @@ type Billing = {
   providerSubscriptionId?: string | null;
   currentPeriodEnd?: string | null;
 };
+type CustomDomain = {
+  id: string;
+  hostname: string;
+  status: string;
+  sslStatus: string | null;
+  validationRecords: Array<{
+    type?: string;
+    name?: string;
+    value?: string;
+    status?: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+};
 type Category = { id: string; name: string; slug: string; createdAt: string };
 type FeedbackPriority = "low" | "normal" | "high" | "urgent";
 
@@ -214,6 +228,7 @@ function App() {
     [],
   );
   const [billing, setBilling] = useState<Billing | null>(null);
+  const [customDomain, setCustomDomain] = useState<CustomDomain | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [filter, setFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -522,13 +537,20 @@ function App() {
             credentials,
           ),
         );
-      if (nextView === "settings")
-        setSettings(
-          await api<Settings>(
+      if (nextView === "settings") {
+        const [settingsResult, domainResult] = await Promise.all([
+          api<Settings>(
             `/dashboard/projects/${projectId}/settings?projectId=${projectId}`,
             credentials,
           ),
-        );
+          api<{ domain: CustomDomain | null }>(
+            `/dashboard/projects/${projectId}/custom-domain`,
+            credentials,
+          ),
+        ]);
+        setSettings(settingsResult);
+        setCustomDomain(domainResult.domain);
+      }
       if (nextView === "privacy")
         setSettings(
           await api<Settings>(
@@ -1109,6 +1131,7 @@ function App() {
           {view === "settings" && (
             <SettingsPanel
               settings={settings}
+              customDomain={customDomain}
               projectId={projectId}
               publicKey={publicKey}
               serverKey={serverKey}
@@ -1117,6 +1140,8 @@ function App() {
               onServer={setServerKey}
               onSave={saveWorkspace}
               onSettings={setSettings}
+              onCustomDomain={setCustomDomain}
+              onNotice={setNotice}
             />
           )}
           {view === "privacy" && (
@@ -3418,6 +3443,7 @@ function PrivacyPanel({
 
 function SettingsPanel({
   settings,
+  customDomain,
   projectId,
   publicKey,
   serverKey,
@@ -3426,8 +3452,11 @@ function SettingsPanel({
   onServer,
   onSave,
   onSettings,
+  onCustomDomain,
+  onNotice,
 }: {
   settings: Settings | null;
+  customDomain: CustomDomain | null;
   projectId: string;
   publicKey: string;
   serverKey: string;
@@ -3436,8 +3465,12 @@ function SettingsPanel({
   onServer: (value: string) => void;
   onSave: () => void;
   onSettings: (value: Settings) => void;
+  onCustomDomain: (value: CustomDomain | null) => void;
+  onNotice: (value: { text: string; error?: boolean } | null) => void;
 }) {
   const [draft, setDraft] = useState(settings);
+  const [hostname, setHostname] = useState("");
+  const [domainBusy, setDomainBusy] = useState(false);
   useEffect(() => setDraft(settings), [settings]);
   const save = async () => {
     if (!draft) return;
@@ -3567,9 +3600,121 @@ function SettingsPanel({
             />
           </label>
         </div>
+        <div className="panel settings-card settings-card-wide">
+          <div className="panel-heading">
+            <div>
+              <h2>Custom domain</h2>
+              <p>
+                Give your public feedback portal a branded Business-plan domain.
+                Cloudflare will provide the DNS validation records.
+              </p>
+            </div>
+            <span className={`status-pill ${customDomain ? "status-open" : "status-muted"}`}>
+              {customDomain?.status.replaceAll("_", " ") ?? "Not configured"}
+            </span>
+          </div>
+          {customDomain ? (
+            <>
+              <div className="domain-summary">
+                <strong>{customDomain.hostname}</strong>
+                <span>SSL: {customDomain.sslStatus?.replaceAll("_", " ") ?? "pending"}</span>
+              </div>
+              {customDomain.validationRecords.length > 0 && (
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr><th>Type</th><th>Name</th><th>Value</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                      {customDomain.validationRecords.map((record, index) => (
+                        <tr key={`${record.name ?? "record"}-${index}`}>
+                          <td>{record.type ?? "DNS"}</td>
+                          <td><code>{record.name ?? "—"}</code></td>
+                          <td><code>{record.value ?? "—"}</code></td>
+                          <td>{record.status ?? "pending"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <button
+                className="secondary-button"
+                disabled={domainBusy}
+                onClick={async () => {
+                  if (!window.confirm("Remove this custom domain?")) return;
+                  setDomainBusy(true);
+                  try {
+                    await api(`/dashboard/projects/${projectId}/custom-domain`, {
+                      ...credentialsForSettings(publicKey, serverKey),
+                      method: "DELETE",
+                    });
+                    onCustomDomain(null);
+                    onNotice({ text: "Custom domain removed" });
+                  } catch (error) {
+                    onNotice({
+                      text: error instanceof Error ? error.message : "Unable to remove custom domain",
+                      error: true,
+                    });
+                  } finally {
+                    setDomainBusy(false);
+                  }
+                }}
+              >
+                {domainBusy ? "Removing…" : "Remove domain"}
+              </button>
+            </>
+          ) : (
+            <form
+              className="inline-form"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setDomainBusy(true);
+                try {
+                  const result = await api<{ domain: CustomDomain }>(
+                    `/dashboard/projects/${projectId}/custom-domain`,
+                    {
+                      ...credentialsForSettings(publicKey, serverKey),
+                      method: "POST",
+                      body: JSON.stringify({ hostname }),
+                    },
+                  );
+                  onCustomDomain(result.domain);
+                  setHostname("");
+                  onNotice({ text: "Custom domain provisioning started" });
+                } catch (error) {
+                  onNotice({
+                    text: error instanceof Error ? error.message : "Unable to configure custom domain",
+                    error: true,
+                  });
+                } finally {
+                  setDomainBusy(false);
+                }
+              }}
+            >
+              <label className="form-field">
+                <span>Hostname</span>
+                <input
+                  value={hostname}
+                  onChange={(event) => setHostname(event.target.value)}
+                  placeholder="feedback.example.com"
+                  required
+                />
+              </label>
+              <button className="primary-button" disabled={domainBusy || hostname.trim().length < 4}>
+                {domainBusy ? "Provisioning…" : "Add custom domain"}
+              </button>
+            </form>
+          )}
+        </div>
       </section>
     </>
   );
 }
+
+const credentialsForSettings = (publicKey: string, serverKey: string) => ({
+  projectKey: publicKey || undefined,
+  serverKey: serverKey || undefined,
+});
 
 createRoot(document.getElementById("root")!).render(<App />);

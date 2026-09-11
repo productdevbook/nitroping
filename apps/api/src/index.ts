@@ -2255,7 +2255,7 @@ export default {
           "project:manage",
         );
         if (context instanceof Response) return context;
-        const existing = await env.DB.prepare(
+        let existing = await env.DB.prepare(
           "SELECT id, hostname, cloudflare_hostname_id AS cloudflareHostnameId, status, ssl_status AS sslStatus, validation_records_json AS validationRecords, created_at AS createdAt, updated_at AS updatedAt FROM custom_domains WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1",
         )
           .bind(context.organizationId, context.projectId)
@@ -2269,8 +2269,40 @@ export default {
                 ),
               }
             : null;
-        if (request.method === "GET")
+        if (request.method === "GET") {
+          const provider = customDomainProvider(env);
+          if (existing?.cloudflareHostnameId && provider) {
+            try {
+              const remote = await provider.get(
+                String(existing.cloudflareHostnameId),
+              );
+              const now = new Date().toISOString();
+              await env.DB.prepare(
+                "UPDATE custom_domains SET status = ?, ssl_status = ?, validation_records_json = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+              )
+                .bind(
+                  remote.status,
+                  remote.sslStatus,
+                  JSON.stringify(remote.validationRecords),
+                  now,
+                  String(existing.id),
+                  context.organizationId,
+                  context.projectId,
+                )
+                .run();
+              existing = {
+                ...existing,
+                status: remote.status,
+                sslStatus: remote.sslStatus,
+                validationRecords: JSON.stringify(remote.validationRecords),
+                updatedAt: now,
+              };
+            } catch {
+              // A transient Cloudflare API failure must not hide the last known state.
+            }
+          }
           return jsonResponse({ domain: toResponse(existing) }, { headers: cors });
+        }
         if (request.method === "DELETE") {
           if (!existing)
             return error(
