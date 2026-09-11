@@ -770,7 +770,7 @@ const requireServerKey = async (
     return error("SERVER_KEY_REQUIRED", "Server key is required", rid, 401);
   const hash = await sha256(key);
   const found = await env.DB.prepare(
-    "SELECT id FROM project_api_keys WHERE project_id = ? AND organization_id = ? AND kind = 'server' AND key_hash = ? AND revoked_at IS NULL",
+    "SELECT id FROM project_api_keys WHERE project_id = ? AND organization_id = ? AND kind = 'server' AND key_hash = ? AND revoked_at IS NULL AND deleted_at IS NULL",
   )
     .bind(context.projectId, context.organizationId, hash)
     .first();
@@ -1089,7 +1089,7 @@ const enqueueWebhookDeliveries = async (
   sourceEventId: string,
 ): Promise<void> => {
   const webhooks = await env.DB.prepare(
-    "SELECT id, organization_id AS organizationId, events_json AS events FROM webhooks WHERE organization_id = ? AND project_id = ? AND active = 1",
+    "SELECT id, organization_id AS organizationId, events_json AS events FROM webhooks WHERE organization_id = ? AND project_id = ? AND active = 1 AND deleted_at IS NULL",
   )
     .bind(organizationId, projectId)
     .all<{ id: string; organizationId: string; events: string }>();
@@ -1143,7 +1143,7 @@ export const deliverWebhook = async (
     .first<{ status: string }>();
   if (!delivery || delivery.status === "delivered") return true;
   const webhook = await env.DB.prepare(
-    "SELECT url FROM webhooks WHERE id = ? AND organization_id = ? AND project_id = ? AND active = 1",
+    "SELECT url FROM webhooks WHERE id = ? AND organization_id = ? AND project_id = ? AND active = 1 AND deleted_at IS NULL",
   )
     .bind(event.webhookId, event.organizationId, event.projectId)
     .first<{ url: string }>();
@@ -1345,13 +1345,13 @@ const enqueueWatcherEmails = async (
   html: string,
 ): Promise<void> => {
   const feedback = await env.DB.prepare(
-    "SELECT organization_id AS organizationId, project_id AS projectId FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ?",
+    "SELECT organization_id AS organizationId, project_id AS projectId FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
   )
     .bind(feedbackId, organizationId, projectId)
     .first<{ organizationId: string; projectId: string }>();
   if (!feedback) return;
   const watchers = await env.DB.prepare(
-    "SELECT w.email FROM feedback_watchers w WHERE w.feedback_id = ? AND w.organization_id = ? AND w.project_id = ?",
+    "SELECT w.email FROM feedback_watchers w WHERE w.feedback_id = ? AND w.organization_id = ? AND w.project_id = ? AND w.deleted_at IS NULL",
   )
     .bind(feedbackId, feedback.organizationId, feedback.projectId)
     .all<{ email: string }>();
@@ -1397,6 +1397,15 @@ export const issueFollowUpLink = async (
     env.DB.prepare(
       "INSERT OR IGNORE INTO feedback_watchers (organization_id, project_id, feedback_id, email, created_at) VALUES (?, ?, ?, ?, ?)",
     ).bind(context.organizationId, context.projectId, feedbackId, normalizedEmail, now),
+    env.DB.prepare(
+      "UPDATE feedback_watchers SET deleted_at = NULL, updated_at = ? WHERE organization_id = ? AND project_id = ? AND feedback_id = ? AND email = ?",
+    ).bind(
+      now,
+      context.organizationId,
+      context.projectId,
+      feedbackId,
+      normalizedEmail,
+    ),
     env.DB.prepare(
       "INSERT INTO consent_records (id, organization_id, project_id, feedback_id, email, purpose, legal_basis, granted_at) VALUES (?, ?, ?, ?, ?, 'feedback_follow_up', 'consent', ?)",
     ).bind(id(), context.organizationId, context.projectId, feedbackId, normalizedEmail, now),
@@ -1646,7 +1655,7 @@ export default {
           return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
         }
         const currentPlan = await env.DB.prepare(
-            "SELECT plan FROM subscriptions WHERE organization_id IN (SELECT organization_id FROM organization_members WHERE user_id = ? AND deleted_at IS NULL) ORDER BY CASE plan WHEN 'business' THEN 3 WHEN 'pro' THEN 2 ELSE 1 END DESC LIMIT 1",
+            "SELECT plan FROM subscriptions WHERE organization_id IN (SELECT organization_id FROM organization_members WHERE user_id = ? AND deleted_at IS NULL) AND deleted_at IS NULL ORDER BY CASE plan WHEN 'business' THEN 3 WHEN 'pro' THEN 2 ELSE 1 END DESC LIMIT 1",
         )
           .bind(userId)
           .first<{ plan: string }>();
@@ -2762,7 +2771,7 @@ export default {
         }
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
-            "SELECT id, url, events_json AS events, active, created_at AS createdAt FROM webhooks WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC",
+            "SELECT id, url, events_json AS events, active, created_at AS createdAt FROM webhooks WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at DESC",
           )
             .bind(context.organizationId, context.projectId)
             .all<Record<string, unknown>>();
@@ -3233,7 +3242,7 @@ export default {
             )
             .first<{ averageMinutes: number | null }>(),
           env.DB.prepare(
-            "SELECT AVG((julianday(resolved.resolvedAt) - julianday(f.created_at)) * 1440) AS averageMinutes FROM feedback_items f JOIN (SELECT feedback_id, MIN(created_at) AS resolvedAt FROM feedback_status_history WHERE organization_id = ? AND project_id = ? AND to_status = 'resolved' GROUP BY feedback_id) resolved ON resolved.feedback_id = f.id WHERE f.organization_id = ? AND f.project_id = ? AND f.deleted_at IS NULL",
+            "SELECT AVG((julianday(resolved.resolvedAt) - julianday(f.created_at)) * 1440) AS averageMinutes FROM feedback_items f JOIN (SELECT feedback_id, MIN(created_at) AS resolvedAt FROM feedback_status_history WHERE organization_id = ? AND project_id = ? AND to_status = 'resolved' AND deleted_at IS NULL GROUP BY feedback_id) resolved ON resolved.feedback_id = f.id WHERE f.organization_id = ? AND f.project_id = ? AND f.deleted_at IS NULL",
           )
             .bind(
               context.organizationId,
@@ -3280,7 +3289,7 @@ export default {
         if (context instanceof Response) return context;
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
-            "SELECT id, kind, label, key_prefix AS keyPrefix, created_at AS createdAt, revoked_at AS revokedAt FROM project_api_keys WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC",
+            "SELECT id, kind, label, key_prefix AS keyPrefix, created_at AS createdAt, revoked_at AS revokedAt FROM project_api_keys WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at DESC",
           )
             .bind(context.organizationId, context.projectId)
             .all();
@@ -3715,7 +3724,7 @@ export default {
         if (context instanceof Response) return context;
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
-            "SELECT id, name, slug, created_at AS createdAt FROM feedback_tags WHERE organization_id = ? AND project_id = ? ORDER BY name ASC",
+            "SELECT id, name, slug, created_at AS createdAt FROM feedback_tags WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY name ASC",
           )
             .bind(context.organizationId, context.projectId)
             .all();
@@ -3814,10 +3823,12 @@ export default {
           );
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
-            "SELECT t.id, t.name, t.slug, t.created_at AS createdAt FROM feedback_tags t JOIN feedback_tag_links l ON l.tag_id = t.id WHERE l.feedback_id = ? AND t.organization_id = ? AND t.project_id = ? ORDER BY t.name ASC",
+            "SELECT t.id, t.name, t.slug, t.created_at AS createdAt FROM feedback_tags t JOIN feedback_tag_links l ON l.tag_id = t.id WHERE l.feedback_id = ? AND l.organization_id = ? AND l.project_id = ? AND l.deleted_at IS NULL AND t.organization_id = ? AND t.project_id = ? AND t.deleted_at IS NULL ORDER BY t.name ASC",
           )
             .bind(
               feedbackTagsMatch[1],
+              context.organizationId,
+              context.projectId,
               context.organizationId,
               context.projectId,
             )
@@ -3831,7 +3842,7 @@ export default {
         if (!tagId)
           return error("TAG_ID_REQUIRED", "tagId is required", rid, 400);
         const tag = await env.DB.prepare(
-          "SELECT id FROM feedback_tags WHERE id = ? AND organization_id = ? AND project_id = ?",
+          "SELECT id FROM feedback_tags WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(tagId, context.organizationId, context.projectId)
           .first();
@@ -3908,7 +3919,7 @@ export default {
         }
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
-            "SELECT id, title, body, status, created_at AS createdAt, updated_at AS updatedAt FROM roadmap_items WHERE organization_id = ? AND project_id = ? ORDER BY updated_at DESC",
+            "SELECT id, title, body, status, created_at AS createdAt, updated_at AS updatedAt FROM roadmap_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC",
           )
             .bind(context.organizationId, context.projectId)
             .all();
@@ -3986,7 +3997,7 @@ export default {
           if (featureError) return featureError;
         }
         const roadmap = await env.DB.prepare(
-          "SELECT id FROM roadmap_items WHERE id = ? AND organization_id = ? AND project_id = ?",
+          "SELECT id FROM roadmap_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(
             roadmapFeedbackMatch[2],
@@ -4112,7 +4123,7 @@ export default {
         if (featureError) return featureError;
         const body = await jsonBody(request);
         const current = await env.DB.prepare(
-          "SELECT title, body, status FROM roadmap_items WHERE id = ? AND organization_id = ? AND project_id = ?",
+          "SELECT title, body, status FROM roadmap_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(
             roadmapUpdateMatch[1],
@@ -4206,7 +4217,7 @@ export default {
           if (featureError) return featureError;
         }
         const changelog = await env.DB.prepare(
-          "SELECT id FROM changelog_items WHERE id = ? AND organization_id = ? AND project_id = ?",
+          "SELECT id FROM changelog_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(
             changelogFeedbackMatch[2],
@@ -4330,7 +4341,7 @@ export default {
         }
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
-            "SELECT id, title, body, published_at AS publishedAt, created_at AS createdAt, updated_at AS updatedAt FROM changelog_items WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC",
+            "SELECT id, title, body, published_at AS publishedAt, created_at AS createdAt, updated_at AS updatedAt FROM changelog_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at DESC",
           )
             .bind(context.organizationId, context.projectId)
             .all();
@@ -4661,7 +4672,7 @@ export default {
         const scopeError = projectMatchesPath(context, roadmapMatch[1], rid);
         if (scopeError) return scopeError;
         const rows = await env.DB.prepare(
-          "SELECT id, title, body, status, created_at AS createdAt, updated_at AS updatedAt FROM roadmap_items WHERE organization_id = ? AND project_id = ? ORDER BY updated_at DESC",
+          "SELECT id, title, body, status, created_at AS createdAt, updated_at AS updatedAt FROM roadmap_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC",
         )
           .bind(context.organizationId, context.projectId)
           .all();
@@ -4676,7 +4687,7 @@ export default {
         const scopeError = projectMatchesPath(context, changelogMatch[1], rid);
         if (scopeError) return scopeError;
         const rows = await env.DB.prepare(
-          "SELECT id, title, body, published_at AS publishedAt, created_at AS createdAt FROM changelog_items WHERE organization_id = ? AND project_id = ? AND published_at IS NOT NULL ORDER BY published_at DESC",
+          "SELECT id, title, body, published_at AS publishedAt, created_at AS createdAt FROM changelog_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL AND published_at IS NOT NULL ORDER BY published_at DESC",
         )
           .bind(context.organizationId, context.projectId)
           .all();
@@ -5357,7 +5368,7 @@ export default {
           .bind(context.organizationId, context.projectId)
           .all();
         const consent = await env.DB.prepare(
-          "SELECT id, feedback_id AS feedbackId, email, purpose, legal_basis AS legalBasis, granted_at AS grantedAt, withdrawn_at AS withdrawnAt FROM consent_records WHERE organization_id = ? AND project_id = ? ORDER BY granted_at ASC",
+          "SELECT id, feedback_id AS feedbackId, email, purpose, legal_basis AS legalBasis, granted_at AS grantedAt, withdrawn_at AS withdrawnAt FROM consent_records WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY granted_at ASC",
         )
           .bind(context.organizationId, context.projectId)
           .all();
@@ -5625,7 +5636,7 @@ export default {
             400,
           );
         const event = await env.DB.prepare(
-          "SELECT id FROM moderation_events WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND outcome = 'pending' ORDER BY created_at ASC LIMIT 1",
+          "SELECT id FROM moderation_events WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND outcome = 'pending' AND deleted_at IS NULL ORDER BY created_at ASC LIMIT 1",
         )
           .bind(feedbackId, context.organizationId, context.projectId)
           .first<{ id: string }>();
@@ -5879,7 +5890,7 @@ export default {
           { assigneeUserId },
         );
         const feedback = await env.DB.prepare(
-          "SELECT * FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ?",
+          "SELECT * FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(assignMatch[1], context.organizationId, context.projectId)
           .first<Record<string, unknown>>();
@@ -6266,7 +6277,7 @@ export default {
             )
             .all(),
           env.DB.prepare(
-            "SELECT id, from_status AS fromStatus, to_status AS toStatus, actor_user_id AS actorUserId, created_at AS createdAt FROM feedback_status_history WHERE feedback_id = ? AND organization_id = ? AND project_id = ? ORDER BY created_at ASC",
+            "SELECT id, from_status AS fromStatus, to_status AS toStatus, actor_user_id AS actorUserId, created_at AS createdAt FROM feedback_status_history WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at ASC",
           )
             .bind(
               dashboardFeedbackMatch[1],
@@ -6275,10 +6286,12 @@ export default {
             )
             .all(),
           env.DB.prepare(
-            "SELECT t.id, t.name, t.slug FROM feedback_tags t JOIN feedback_tag_links l ON l.tag_id = t.id WHERE l.feedback_id = ? AND t.organization_id = ? AND t.project_id = ? ORDER BY t.name ASC",
+            "SELECT t.id, t.name, t.slug FROM feedback_tags t JOIN feedback_tag_links l ON l.tag_id = t.id WHERE l.feedback_id = ? AND l.organization_id = ? AND l.project_id = ? AND l.deleted_at IS NULL AND t.organization_id = ? AND t.project_id = ? AND t.deleted_at IS NULL ORDER BY t.name ASC",
           )
             .bind(
               dashboardFeedbackMatch[1],
+              context.organizationId,
+              context.projectId,
               context.organizationId,
               context.projectId,
             )

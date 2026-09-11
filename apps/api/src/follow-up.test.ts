@@ -31,11 +31,12 @@ describe("issueFollowUpLink", () => {
       " User@Example.com ",
     );
 
-    expect(sql).toHaveLength(4);
+    expect(sql).toHaveLength(5);
     expect(sql[0]).toContain("UPDATE magic_link_tokens");
     expect(sql[1]).toContain("INSERT INTO magic_link_tokens");
     expect(sql[2]).toContain("feedback_watchers");
-    expect(sql[3]).toContain("consent_records");
+    expect(sql[3]).toContain("feedback_watchers");
+    expect(sql[4]).toContain("consent_records");
     expect(sent).toHaveLength(1);
     expect(sent[0]).toMatchObject({
       type: "follow-up.requested",
