@@ -101,7 +101,7 @@ public struct NitroPingFeedback: Codable, Sendable {
         self.metadata = metadata?.mapValues { .string($0) }
     }
 
-    public init(type: NitroPingFeedbackType, title: String, body: String, priority: String? = nil, categoryId: String? = nil, email: String? = nil, appVersion: String? = nil, metadataValues: [String: NitroPingMetadataValue]? = nil) {
+    public init(type: NitroPingFeedbackType, title: String, body: String, priority: String? = nil, categoryId: String? = nil, email: String? = nil, appVersion: String? = nil, metadataValues: [String: NitroPingMetadataValue]?) {
         self.type = type; self.title = title; self.body = body; self.priority = priority; self.categoryId = categoryId; self.email = email
         self.platform = .ios; self.appVersion = appVersion; self.osVersion = ProcessInfo.processInfo.operatingSystemVersionString
         self.locale = Locale.current.identifier; self.metadata = metadataValues
