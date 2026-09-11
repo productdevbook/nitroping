@@ -26,6 +26,16 @@ export default Alchemy.Stack(
     const cache = yield* Cloudflare.KV.Namespace("Cache", { title: `nitroping-cache${suffix}` });
     const events = yield* Cloudflare.Queues.Queue("Events", { name: `nitroping-events${suffix}` });
     const analytics = yield* Cloudflare.AnalyticsEngine.Dataset("Analytics", { dataset: `nitroping_metrics${suffix}` });
+    const feedbackSearch = yield* Cloudflare.Vectorize.Index("FeedbackSearch", {
+      name: `nitroping-feedback-search${suffix}`,
+      preset: "@cf/baai/bge-base-en-v1.5",
+      description: "Tenant-scoped NitroPing feedback semantic search",
+    });
+    yield* Cloudflare.Vectorize.MetadataIndex("FeedbackSearchOrganization", {
+      indexName: feedbackSearch.indexName,
+      propertyName: "organizationId",
+      indexType: "string",
+    });
     const email = yield* Cloudflare.Email.SendEmail("Email", { allowedSenderAddresses: ["notifications@nitroping.dev"] });
     const eventStream = Cloudflare.DurableObject<ProjectEventStream>("EventStream", { className: "ProjectEventStream" });
 
@@ -53,6 +63,7 @@ export default Alchemy.Stack(
         EMAIL: email,
         EVENT_STREAM: eventStream,
         AI: Cloudflare.Workers.AI(),
+        FEEDBACK_SEARCH: feedbackSearch,
         ENVIRONMENT: stage,
         ACCESS_TEAM_DOMAIN: process.env.ACCESS_TEAM_DOMAIN ?? "",
         ACCESS_AUDIENCE: process.env.ACCESS_AUDIENCE ?? "",
@@ -70,6 +81,6 @@ export default Alchemy.Stack(
       settings: { batchSize: 10, maxRetries: 5, maxWaitTimeMs: 5000 },
     });
 
-    return { api, database, attachments, cache, events, analytics, email, eventStream, consumer };
+    return { api, database, attachments, cache, events, analytics, email, eventStream, feedbackSearch, consumer };
   }),
 );

@@ -165,6 +165,11 @@ paths:
       summary: List feedback for an authenticated dashboard project
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }, { $ref: '#/components/parameters/Cursor' }, { $ref: '#/components/parameters/FeedbackQuery' }, { $ref: '#/components/parameters/FeedbackStatus' }, { $ref: '#/components/parameters/FeedbackType' }, { $ref: '#/components/parameters/FeedbackPriority' }]
       responses: { '200': { $ref: '#/components/responses/FeedbackList' }, '401': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/feedback/search:
+    get:
+      summary: Search project feedback semantically with a keyword fallback
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: q, in: query, required: true, schema: { type: string, minLength: 2, maxLength: 500 } }, { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }]
+      responses: { '200': { description: Semantic or keyword feedback results }, '400': { $ref: '#/components/responses/Error' }, '401': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/export:
     get:
       summary: Export project feedback data

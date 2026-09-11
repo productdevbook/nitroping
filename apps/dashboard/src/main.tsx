@@ -234,6 +234,9 @@ function App() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [query, setQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<"keyword" | "semantic">(
+    "semantic",
+  );
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<{
     text: string;
@@ -258,25 +261,31 @@ function App() {
           (filter === "all" || item.status === filter) &&
           (typeFilter === "all" || item.type === typeFilter) &&
           (priorityFilter === "all" || item.priority === priorityFilter) &&
-          `${item.title} ${item.body} ${item.type}`
-            .toLowerCase()
-            .includes(query.toLowerCase()),
-      ),
-    [feedback, filter, typeFilter, priorityFilter, query],
+          (searchMode === "semantic" ||
+            `${item.title} ${item.body} ${item.type}`
+              .toLowerCase()
+              .includes(query.toLowerCase())),
+    ),
+    [feedback, filter, typeFilter, priorityFilter, query, searchMode],
   );
 
   const loadInbox = async (silent = false) => {
     setLoading(true);
     try {
       const feedbackQuery = new URLSearchParams({ limit: "50" });
-      if (query.trim()) feedbackQuery.set("q", query.trim());
-      if (filter !== "all") feedbackQuery.set("status", filter);
-      if (typeFilter !== "all") feedbackQuery.set("type", typeFilter);
-      if (priorityFilter !== "all")
-        feedbackQuery.set("priority", priorityFilter);
+      const useSemanticSearch = searchMode === "semantic" && query.trim().length >= 2;
+      if (!useSemanticSearch) {
+        if (query.trim()) feedbackQuery.set("q", query.trim());
+        if (filter !== "all") feedbackQuery.set("status", filter);
+        if (typeFilter !== "all") feedbackQuery.set("type", typeFilter);
+        if (priorityFilter !== "all")
+          feedbackQuery.set("priority", priorityFilter);
+      }
       const [list, insight, currentUsage] = await Promise.all([
         api<{ items: Feedback[] }>(
-          `/dashboard/projects/${encodeURIComponent(projectId)}/feedback?projectId=${encodeURIComponent(projectId)}&${feedbackQuery}`,
+          useSemanticSearch
+            ? `/dashboard/projects/${encodeURIComponent(projectId)}/feedback/search?projectId=${encodeURIComponent(projectId)}&q=${encodeURIComponent(query.trim())}&limit=50`
+            : `/dashboard/projects/${encodeURIComponent(projectId)}/feedback?projectId=${encodeURIComponent(projectId)}&${feedbackQuery}`,
           credentials,
         ),
         api<Analytics>(
@@ -586,7 +595,7 @@ function App() {
   }, []);
   useEffect(() => {
     if (workspaceReady && projectId) void loadInbox();
-  }, [workspaceReady, projectId, query, filter, typeFilter, priorityFilter]);
+  }, [workspaceReady, projectId, query, filter, typeFilter, priorityFilter, searchMode]);
 
   useEffect(() => {
     if (!workspaceReady || !projectId || !publicKey || typeof WebSocket === "undefined") {
@@ -1002,11 +1011,13 @@ function App() {
               typeFilter={typeFilter}
               priorityFilter={priorityFilter}
               query={query}
+              searchMode={searchMode}
               loading={loading}
               onFilter={setFilter}
               onTypeFilter={setTypeFilter}
               onPriorityFilter={setPriorityFilter}
               onQuery={setQuery}
+              onSearchMode={setSearchMode}
               onOpen={openFeedback}
               onStatus={changeStatus}
               onPriority={async (item, priority) => {
@@ -1338,11 +1349,13 @@ function Inbox({
   typeFilter,
   priorityFilter,
   query,
+  searchMode,
   loading,
   onFilter,
   onTypeFilter,
   onPriorityFilter,
   onQuery,
+  onSearchMode,
   onOpen,
   onStatus,
   onPriority,
@@ -1360,11 +1373,13 @@ function Inbox({
   typeFilter: string;
   priorityFilter: string;
   query: string;
+  searchMode: "keyword" | "semantic";
   loading: boolean;
   onFilter: (value: string) => void;
   onTypeFilter: (value: string) => void;
   onPriorityFilter: (value: string) => void;
   onQuery: (value: string) => void;
+  onSearchMode: (value: "keyword" | "semantic") => void;
   onOpen: (item: Feedback) => void;
   onStatus: (item: Feedback, status: FeedbackStatus) => void;
   onPriority: (item: Feedback, priority: FeedbackPriority) => void;
@@ -1449,6 +1464,14 @@ function Inbox({
                 placeholder="Search feedback"
               />
             </label>
+            <button
+              className={`filter-button ${searchMode === "semantic" ? "selected" : ""}`}
+              type="button"
+              onClick={() => onSearchMode(searchMode === "semantic" ? "keyword" : "semantic")}
+              title="Use meaning-based search powered by Workers AI"
+            >
+              {searchMode === "semantic" ? "AI search" : "Keyword search"}
+            </button>
             <select
               className="filter-button"
               value={typeFilter}

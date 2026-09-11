@@ -32,6 +32,11 @@ import {
 } from "./custom-domains";
 import { analyzeModeration } from "./moderation";
 import { reviewWithWorkersAI } from "./ai-moderation";
+import {
+  deleteFeedbackEmbedding,
+  queryFeedbackEmbeddings,
+  upsertFeedbackEmbedding,
+} from "./semantic-search";
 import { attachmentSignatureMatches } from "./attachments";
 import {
   entitlementsFor,
@@ -1576,6 +1581,11 @@ export default {
         )
           .bind(organizationDeleteMatch[1])
           .all<{ id: string }>();
+        const feedbackIds = await env.DB.prepare(
+          "SELECT id FROM feedback_items WHERE organization_id = ? AND deleted_at IS NULL",
+        )
+          .bind(organizationDeleteMatch[1])
+          .all<{ id: string }>();
         const now = new Date().toISOString();
         await env.DB.batch([
           env.DB.prepare(
@@ -1675,6 +1685,13 @@ export default {
               eventId: id(),
             }),
           );
+        if (env.FEEDBACK_SEARCH)
+          for (const feedback of feedbackIds.results ?? [])
+            ctx.waitUntil(
+              deleteFeedbackEmbedding(env.FEEDBACK_SEARCH, feedback.id).catch(
+                () => undefined,
+              ),
+            );
         for (const domain of customDomains.results ?? [])
           if (domain.cloudflareHostnameId)
             ctx.waitUntil(
@@ -4248,6 +4265,16 @@ export default {
           [1],
         );
         const safeResult = publicFeedback(result);
+        if (env.FEEDBACK_SEARCH && env.AI)
+          ctx.waitUntil(
+            upsertFeedbackEmbedding(env.FEEDBACK_SEARCH, env.AI, {
+              feedbackId: result.id,
+              organizationId: context.organizationId,
+              projectId: result.projectId,
+              title: result.title,
+              body: result.body,
+            }).catch(() => undefined),
+          );
         if (idem)
           await env.DB.prepare(
             "INSERT OR IGNORE INTO idempotency_keys (organization_id, project_id, key, response_json, status_code, created_at) VALUES (?, ?, ?, ?, ?, ?)",
@@ -4926,6 +4953,12 @@ export default {
             404,
           );
         const now = new Date().toISOString();
+        if (env.FEEDBACK_SEARCH)
+          ctx.waitUntil(
+            deleteFeedbackEmbedding(env.FEEDBACK_SEARCH, raw.feedbackId).catch(
+              () => undefined,
+            ),
+          );
         await env.DB.batch([
           env.DB.prepare(
             "DELETE FROM feedback_watchers WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND email = ?",
@@ -5424,6 +5457,67 @@ export default {
       const dashboardListMatch = path.match(
         /^\/api\/v1\/dashboard\/projects\/([^/]+)\/feedback$/,
       );
+      const dashboardSemanticSearchMatch = path.match(
+        /^\/api\/v1\/dashboard\/projects\/([^/]+)\/feedback\/search$/,
+      );
+      if (dashboardSemanticSearchMatch && request.method === "GET") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireDashboardProject(
+          request,
+          env,
+          url,
+          dashboardSemanticSearchMatch[1],
+          rid,
+          "feedback:read",
+        );
+        if (context instanceof Response) return context;
+        const query = url.searchParams.get("q")?.trim() ?? "";
+        if (query.length < 2 || query.length > 500)
+          return error(
+            "INVALID_SEARCH_QUERY",
+            "q must contain 2-500 characters",
+            rid,
+            400,
+          );
+        const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") ?? 20)));
+        if (env.FEEDBACK_SEARCH && env.AI) {
+          try {
+            const matches = await queryFeedbackEmbeddings(
+              env.FEEDBACK_SEARCH,
+              env.AI,
+              query,
+              context.organizationId,
+              context.projectId,
+              limit,
+            );
+            if (!matches.length) return jsonResponse({ items: [], mode: "semantic" }, { headers: cors });
+            const placeholders = matches.map(() => "?").join(",");
+            const rows = await env.DB.prepare(
+              `SELECT * FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL AND status <> 'spam' AND id IN (${placeholders})`,
+            )
+              .bind(context.organizationId, context.projectId, ...matches.map((match) => match.feedbackId))
+              .all<Record<string, unknown>>();
+            const byId = new Map((rows.results ?? []).map((row) => [String(row.id), row]));
+            return jsonResponse(
+              {
+                mode: "semantic",
+                items: matches.flatMap((match) => {
+                  const row = byId.get(match.feedbackId);
+                  return row ? [{ ...fromRow(row), score: match.score }] : [];
+                }),
+              },
+              { headers: cors },
+            );
+          } catch {
+            // A missing or temporarily unavailable vector index must not make the inbox unusable.
+          }
+        }
+        const fallback = await Effect.runPromise(
+          listFeedback(repo, context, { query, limit }),
+        );
+        return jsonResponse({ ...fallback, mode: "keyword" }, { headers: cors });
+      }
       if (dashboardListMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
@@ -5808,6 +5902,16 @@ export default {
             "Feedback was not found",
             rid,
             404,
+          );
+        if (env.FEEDBACK_SEARCH && env.AI)
+          ctx.waitUntil(
+            upsertFeedbackEmbedding(env.FEEDBACK_SEARCH, env.AI, {
+              feedbackId: dashboardFeedbackMatch[1],
+              organizationId: context.organizationId,
+              projectId: context.projectId,
+              title,
+              body: description,
+            }).catch(() => undefined),
           );
         const eventId = id();
         recordMetric(
