@@ -859,11 +859,12 @@ export default {
         await writeAudit(env, context, request.method === "POST" ? "feedback.tag.added" : "feedback.tag.removed", "feedback", feedbackTagsMatch[1], { tagId });
         return request.method === "POST" ? jsonResponse({ feedbackId: feedbackTagsMatch[1], tagId }, { status: 201, headers: cors }) : new Response(null, { status: 204, headers: cors });
       }
-      const roadmapDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/roadmap$/);
-      if (roadmapDashboardMatch && ["GET", "POST"].includes(request.method)) {
+      const roadmapDashboardMatch = path.match(/^\/api\/v1\/dashboard\/(?:projects\/([^/]+)\/roadmap|roadmap)$/);
+      const roadmapProjectId = roadmapDashboardMatch?.[1] ?? url.searchParams.get("projectId");
+      if (roadmapDashboardMatch && roadmapProjectId && ["GET", "POST"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireDashboardProject(request, env, url, roadmapDashboardMatch[1], rid, request.method === "GET" ? "feedback:read" : "roadmap:manage");
+        const context = await requireDashboardProject(request, env, url, roadmapProjectId, rid, request.method === "GET" ? "feedback:read" : "roadmap:manage");
         if (context instanceof Response) return context;
         if (request.method === "GET") {
           const rows = await env.DB.prepare("SELECT id, title, body, status, created_at AS createdAt, updated_at AS updatedAt FROM roadmap_items WHERE organization_id = ? AND project_id = ? ORDER BY updated_at DESC").bind(context.organizationId, context.projectId).all();
@@ -926,7 +927,8 @@ export default {
         await writeAudit(env, context, "roadmap.updated", "roadmap", roadmapUpdateMatch[1], { status });
         return jsonResponse({ id: roadmapUpdateMatch[1], title, body: description, status, updatedAt }, { headers: cors });
       }
-      const changelogDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/changelog$/);
+      const changelogDashboardMatch = path.match(/^\/api\/v1\/dashboard\/(?:projects\/([^/]+)\/changelog|changelog)$/);
+      const changelogProjectId = changelogDashboardMatch?.[1] ?? url.searchParams.get("projectId");
       const changelogFeedbackMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/changelog\/([^/]+)\/feedback(?:\/([^/]+))?$/);
       if (changelogFeedbackMatch && ["GET", "POST", "DELETE"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
@@ -953,10 +955,10 @@ export default {
         await writeAudit(env, context, "changelog.feedback.unlinked", "changelog", changelogFeedbackMatch[2], { feedbackId });
         return new Response(null, { status: 204, headers: cors });
       }
-      if (changelogDashboardMatch && ["GET", "POST"].includes(request.method)) {
+      if (changelogDashboardMatch && changelogProjectId && ["GET", "POST"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireDashboardProject(request, env, url, changelogDashboardMatch[1], rid, request.method === "GET" ? "feedback:read" : "roadmap:manage");
+        const context = await requireDashboardProject(request, env, url, changelogProjectId, rid, request.method === "GET" ? "feedback:read" : "roadmap:manage");
         if (context instanceof Response) return context;
         if (request.method === "GET") {
           const rows = await env.DB.prepare("SELECT id, title, body, published_at AS publishedAt, created_at AS createdAt, updated_at AS updatedAt FROM changelog_items WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC").bind(context.organizationId, context.projectId).all();
@@ -1341,6 +1343,36 @@ export default {
         return jsonResponse({ sourceFeedbackId: mergeMatch[1], targetFeedbackId, status: "closed" }, { headers: cors });
       }
       const dashboardFeedbackMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)$/);
+      if (dashboardFeedbackMatch && request.method === "PATCH") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const projectId = url.searchParams.get("projectId");
+        if (!projectId) return error("PROJECT_ID_REQUIRED", "projectId is required", rid, 400);
+        const context = await requireDashboardProject(request, env, url, projectId, rid, "feedback:write");
+        if (context instanceof Response) return context;
+        const current = await env.DB.prepare("SELECT * FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).first<Record<string, unknown>>();
+        if (!current) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        const body = await jsonBody(request);
+        const title = body.title === undefined ? String(current.title) : typeof body.title === "string" ? body.title.trim() : "";
+        const description = body.body === undefined ? String(current.body) : typeof body.body === "string" ? body.body.trim() : "";
+        const type = body.type === undefined ? String(current.type) : String(body.type);
+        const priority = body.priority === undefined ? String(current.priority) : String(body.priority);
+        const email = body.email === undefined ? current.email : body.email === null || body.email === "" ? null : typeof body.email === "string" ? body.email.trim() : "__invalid__";
+        const categoryId = body.categoryId === undefined ? (current.category_id ? String(current.category_id) : null) : body.categoryId === null || body.categoryId === "" ? null : typeof body.categoryId === "string" ? body.categoryId : "__invalid__";
+        if (title.length < 3 || title.length > 160 || description.length < 3 || description.length > 20_000) return error("VALIDATION_ERROR", "Title must be 3-160 characters and body must be 3-20000 characters", rid, 400);
+        if (!feedbackTypes.includes(type as never) || !feedbackPriorities.includes(priority as never)) return error("VALIDATION_ERROR", "Feedback type or priority is invalid", rid, 400);
+        if (email === "__invalid__" || (typeof email === "string" && (email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))) return error("VALIDATION_ERROR", "Email is invalid", rid, 400);
+        if (categoryId === "__invalid__") return error("VALIDATION_ERROR", "categoryId is invalid", rid, 400);
+        if (categoryId) {
+          const category = await env.DB.prepare("SELECT id FROM categories WHERE id = ? AND organization_id = ? AND project_id = ?").bind(categoryId, context.organizationId, context.projectId).first();
+          if (!category) return error("CATEGORY_NOT_FOUND", "The category does not belong to this project", rid, 400);
+        }
+        const updatedAt = new Date().toISOString();
+        await env.DB.prepare("UPDATE feedback_items SET type = ?, priority = ?, category_id = ?, title = ?, body = ?, email = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(type, priority, categoryId, title, description, email, updatedAt, dashboardFeedbackMatch[1], context.organizationId, context.projectId).run();
+        await writeAudit(env, context, "feedback.updated", "feedback", dashboardFeedbackMatch[1], { fields: ["type", "priority", "categoryId", "title", "body", "email"] });
+        const updated = await env.DB.prepare("SELECT * FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).first<Record<string, unknown>>();
+        return updated ? jsonResponse(fromRow(updated), { headers: cors }) : error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+      }
       if (dashboardFeedbackMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;

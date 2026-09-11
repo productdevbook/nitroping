@@ -269,6 +269,16 @@ paths:
       summary: Update a roadmap item
       parameters: [{ name: id, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Updated }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/roadmap:
+    get:
+      summary: List roadmap items using a project query parameter
+      parameters: [{ $ref: '#/components/parameters/DashboardProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Roadmap items } }
+    post:
+      summary: Create a roadmap item using a project query parameter
+      parameters: [{ $ref: '#/components/parameters/DashboardProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [title], properties: { title: { type: string }, body: { type: string }, status: { type: string, enum: [planned, in_progress, completed] } } } } } }
+      responses: { '201': { description: Created }, '400': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/roadmap/{roadmapId}/feedback:
     get:
       summary: List feedback linked to a roadmap item
@@ -292,6 +302,16 @@ paths:
     post:
       summary: Create a changelog item
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '201': { description: Created }, '400': { $ref: '#/components/responses/Error' } }
+  /dashboard/changelog:
+    get:
+      summary: List changelog items using a project query parameter
+      parameters: [{ $ref: '#/components/parameters/DashboardProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Changelog items } }
+    post:
+      summary: Create a changelog item using a project query parameter
+      parameters: [{ $ref: '#/components/parameters/DashboardProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [title, body], properties: { title: { type: string }, body: { type: string }, publishedAt: { type: string, format: date-time, nullable: true } } } } } }
       responses: { '201': { description: Created }, '400': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/changelog/{changelogId}/feedback:
     get:
@@ -328,6 +348,11 @@ paths:
       summary: Get feedback with comments and status history
       parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Feedback detail }, '404': { $ref: '#/components/responses/Error' } }
+    patch:
+      summary: Update editable feedback fields
+      parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/DashboardProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { type: { type: string, enum: [complaint, bug, suggestion, feature_request] }, priority: { type: string, enum: [low, normal, high, urgent] }, categoryId: { type: string, nullable: true }, title: { type: string }, body: { type: string }, email: { type: string, format: email, nullable: true } } } } } }
+      responses: { '200': { description: Updated feedback }, '400': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
   /dashboard/feedback/{feedbackId}/assign:
     post:
       summary: Assign feedback to an organization member
@@ -380,6 +405,7 @@ paths:
 components:
   parameters:
     ProjectId: { name: projectId, in: path, required: true, schema: { type: string } }
+    DashboardProjectId: { name: projectId, in: query, required: true, schema: { type: string } }
     FeedbackId: { name: feedbackId, in: path, required: true, schema: { type: string, format: uuid } }
     ProjectKey: { name: X-NitroPing-Project-Key, in: header, required: true, schema: { type: string } }
     IdempotencyKey: { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 128 } }
