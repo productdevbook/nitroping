@@ -84,7 +84,7 @@ const projectFromRequest = async (request: Request, env: Env, url: URL, rid: str
   const projectKey = request.headers.get("x-nitroping-project-key") ?? url.searchParams.get("projectKey");
   if (!projectKey && String(env.ENVIRONMENT) !== "production") return contextFrom(url);
   if (!projectKey) return error("PROJECT_KEY_REQUIRED", "Project key is required", rid, 401);
-  const project = await env.DB.prepare("SELECT organization_id, id FROM projects WHERE public_key = ? AND deleted_at IS NULL").bind(projectKey).first<{ organization_id: string; id: string }>();
+  const project = await env.DB.prepare("SELECT p.organization_id, p.id FROM projects p WHERE p.public_key = ? AND p.deleted_at IS NULL AND (NOT EXISTS (SELECT 1 FROM project_api_keys k0 WHERE k0.project_id = p.id AND k0.organization_id = p.organization_id AND k0.kind = 'public') OR EXISTS (SELECT 1 FROM project_api_keys k WHERE k.project_id = p.id AND k.organization_id = p.organization_id AND k.kind = 'public' AND k.key_hash = ? AND k.revoked_at IS NULL))").bind(projectKey, await sha256(projectKey)).first<{ organization_id: string; id: string }>();
   return project ? { organizationId: project.organization_id, projectId: project.id } : error("INVALID_PROJECT_KEY", "Invalid project key", rid, 401);
 };
 
@@ -373,6 +373,33 @@ export default {
           env.DB.prepare("SELECT type, COUNT(*) AS count FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL GROUP BY type ORDER BY count DESC").bind(context.organizationId, context.projectId).all(),
         ]);
         return jsonResponse({ total: Number(total?.count ?? 0), statuses: statuses.results ?? [], platforms: platforms.results ?? [], types: types.results ?? [], generatedAt: new Date().toISOString() }, { headers: cors });
+      }
+      const apiKeysMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/api-keys(?:\/([^/]+))?$/);
+      if (apiKeysMatch && ["GET", "POST", "DELETE"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, apiKeysMatch[1], rid);
+        if (context instanceof Response) return context;
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT id, kind, label, key_prefix AS keyPrefix, created_at AS createdAt, revoked_at AS revokedAt FROM project_api_keys WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC").bind(context.organizationId, context.projectId).all();
+          return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+        }
+        if (request.method === "DELETE") {
+          if (!apiKeysMatch[2]) return error("API_KEY_ID_REQUIRED", "API key ID is required", rid, 400);
+          const result = await env.DB.prepare("UPDATE project_api_keys SET revoked_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND revoked_at IS NULL").bind(new Date().toISOString(), apiKeysMatch[2], context.organizationId, context.projectId).run();
+          if (!result.meta.changes) return error("API_KEY_NOT_FOUND", "API key was not found", rid, 404);
+          return new Response(null, { status: 204, headers: cors });
+        }
+        const body = await jsonBody(request);
+        const kind = body.kind === "public" ? "public" : body.kind === "server" ? "server" : "";
+        const label = typeof body.label === "string" && body.label.trim().length > 0 ? body.label.trim().slice(0, 120) : `rotated ${kind} key`;
+        if (!kind) return error("VALIDATION_ERROR", "API key kind must be public or server", rid, 400);
+        const key = randomToken(kind === "public" ? "pk_live" : "sk_live");
+        const keyId = id();
+        const now = new Date().toISOString();
+        if (kind === "public") await env.DB.prepare("UPDATE projects SET public_key = ?, updated_at = ? WHERE id = ? AND organization_id = ?").bind(key, now, context.projectId, context.organizationId).run();
+        await env.DB.prepare("INSERT INTO project_api_keys (id, organization_id, project_id, kind, label, key_prefix, key_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(keyId, context.organizationId, context.projectId, kind, label, key.slice(0, 12), await sha256(key), now).run();
+        return jsonResponse({ id: keyId, kind, label, key, keyPrefix: key.slice(0, 12), createdAt: now }, { status: 201, headers: cors });
       }
       if (path === "/api/v1/dashboard/billing" && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);

@@ -123,6 +123,21 @@ paths:
       summary: Read aggregated project feedback analytics
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Aggregated analytics }, '401': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/api-keys:
+    get:
+      summary: List project API key metadata
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: API key metadata } }
+    post:
+      summary: Create and return a project API key once
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [kind], properties: { kind: { type: string, enum: [public, server] }, label: { type: string } } } } } }
+      responses: { '201': { description: Created with one-time key }, '400': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/api-keys/{keyId}:
+    delete:
+      summary: Revoke a project API key
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: keyId, in: path, required: true, schema: { type: string } }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '204': { description: Revoked }, '404': { $ref: '#/components/responses/Error' } }
   /dashboard/billing:
     get:
       summary: Read the organization billing subscription
