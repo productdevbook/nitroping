@@ -1,7 +1,6 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.plugin.compose")
-    `maven-publish`
 }
 
 group = "dev.nitroping"
@@ -23,18 +22,4 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.activity:activity-compose:1.13.0")
-}
-
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            afterEvaluate { from(components["release"]) }
-            pom {
-                name.set("NitroPing Android SDK")
-                description.set("Open-source Android SDK for collecting NitroPing feedback.")
-                url.set("https://github.com/productdevbook/nitroping")
-                licenses { license { name.set("Apache-2.0"); url.set("https://www.apache.org/licenses/LICENSE-2.0.txt") } }
-            }
-        }
-    }
 }
