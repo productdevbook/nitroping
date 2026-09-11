@@ -641,10 +641,13 @@ export default {
         const now = new Date().toISOString();
         const result = await env.DB.prepare("UPDATE feedback_items SET email = NULL, body = '[anonymized]', metadata_json = '{}', updated_at = ?, deleted_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(now, now, anonymizeMatch[2], context.organizationId, context.projectId).run();
         if (!result.meta.changes) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        const attachments = await env.DB.prepare("SELECT object_key AS objectKey FROM attachments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(anonymizeMatch[2], context.organizationId, context.projectId).all<{ objectKey: string }>();
         await env.DB.batch([
           env.DB.prepare("UPDATE feedback_comments SET body = '[anonymized]', deleted_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ?").bind(now, anonymizeMatch[2], context.organizationId, context.projectId),
+          env.DB.prepare("UPDATE attachments SET deleted_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(now, anonymizeMatch[2], context.organizationId, context.projectId),
           env.DB.prepare("INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'anonymize', 'completed', ?, ?)").bind(id(), context.organizationId, context.projectId, now, now),
         ]);
+        for (const attachment of attachments.results ?? []) ctx.waitUntil(env.EVENTS.send({ type: "attachment.delete", objectKey: attachment.objectKey, projectId: context.projectId, eventId: id() }));
         return jsonResponse({ anonymized: true, feedbackId: anonymizeMatch[2] }, { headers: cors });
       }
       const dashboardListMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/feedback$/);
