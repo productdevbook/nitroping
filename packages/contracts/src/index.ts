@@ -66,6 +66,8 @@ export type CreateFeedbackInput = {
   osVersion?: string;
   locale?: string;
   metadata?: Record<string, string | number | boolean>;
+  /** A short-lived bot-protection token; never persisted as feedback data. */
+  turnstileToken?: string;
 };
 
 export type ApiError = {

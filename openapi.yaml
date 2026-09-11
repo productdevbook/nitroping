@@ -234,7 +234,7 @@ paths:
       summary: Receive a signed Stripe subscription event
       parameters: [{ name: Stripe-Signature, in: header, required: true, schema: { type: string } }]
       requestBody: { required: true, content: { application/json: { schema: { type: object } } } }
-      responses: { '200': { description: Event accepted }, '401': { $ref: '#/components/responses/Error' } }
+      responses: { '200': { description: Event accepted }, '400': { $ref: '#/components/responses/Error' }, '401': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/categories:
     get:
       summary: List project categories
@@ -436,6 +436,7 @@ components:
         osVersion: { type: string }
         locale: { type: string }
         metadata: { type: object, additionalProperties: { oneOf: [{ type: string }, { type: number }, { type: boolean }] } }
+        turnstileToken: { type: string, maxLength: 2048, description: Optional short-lived Cloudflare Turnstile token; never persisted }
     Feedback:
       allOf:
         - $ref: '#/components/schemas/CreateFeedback'

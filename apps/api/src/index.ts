@@ -22,6 +22,10 @@ import { clientIp, hmacSha256, randomToken, sha256 } from "./security";
 import { type AccessClaims, verifyAccessJwt } from "./access";
 import { ProjectEventStream } from "./events";
 import { StripeBillingProvider, type BillingPlan } from "./billing";
+import {
+  verifyTurnstile,
+  type TurnstileEnvironment,
+} from "./turnstile";
 
 export { ProjectEventStream };
 
@@ -384,7 +388,8 @@ const publicFeedback = (feedback: Feedback) => {
 export const publicWidgetConfig = (
   themeJson: string,
   categories: unknown[],
-): { theme: Record<string, unknown>; categories: unknown[] } => {
+  turnstileSiteKey?: string,
+): { theme: Record<string, unknown>; categories: unknown[]; turnstileSiteKey?: string } => {
   let raw: Record<string, unknown> = {};
   try {
     const parsed = JSON.parse(themeJson);
@@ -461,8 +466,13 @@ export const publicWidgetConfig = (
     }
     if (Object.keys(colors).length) theme.colors = colors;
   }
-  return { theme, categories };
+  return {
+    theme,
+    categories,
+    ...(turnstileSiteKey ? { turnstileSiteKey } : {}),
+  };
 };
+
 
 export const validateWidgetTheme = (theme: unknown): string | null => {
   if (!theme || typeof theme !== "object" || Array.isArray(theme))
@@ -2062,6 +2072,7 @@ export default {
             401,
           );
         let event: {
+          id?: string;
           type?: string;
           data?: { object?: Record<string, unknown> };
         };
@@ -2078,6 +2089,24 @@ export default {
             400,
           );
         }
+        if (!event.id || !/^evt_[A-Za-z0-9_]+$/.test(event.id))
+          return error(
+            "INVALID_STRIPE_PAYLOAD",
+            "The Stripe webhook payload does not contain a valid event id",
+            rid,
+            400,
+          );
+        const stripeEventId = `stripe:${event.id}`;
+        const alreadyProcessed = await env.DB.prepare(
+          "SELECT event_id FROM processed_events WHERE event_id = ?",
+        )
+          .bind(stripeEventId)
+          .first();
+        if (alreadyProcessed)
+          return jsonResponse(
+            { received: true, duplicate: true },
+            { headers: cors },
+          );
         const object = event.data?.object ?? {};
         if (event.type === "checkout.session.completed") {
           const organizationId =
@@ -2155,6 +2184,11 @@ export default {
               .run();
           }
         }
+        await env.DB.prepare(
+          "INSERT OR IGNORE INTO processed_events (event_id, event_type, processed_at) VALUES (?, ?, ?)",
+        )
+          .bind(stripeEventId, event.type ?? "unknown", new Date().toISOString())
+          .run();
         return jsonResponse({ received: true }, { headers: cors });
       }
       const webhookMatch = path.match(
@@ -3744,7 +3778,8 @@ export default {
         /^\/api\/v1\/projects\/([^/]+)\/feedback(?:\/([^/]+))?$/,
       );
       if (match && request.method === "POST" && !match[2]) {
-        const input = validateInput(await request.json());
+        const rawBody = await request.json();
+        const input = validateInput(rawBody);
         if (typeof input === "string")
           return error("VALIDATION_ERROR", input, rid, 400);
         const context = await projectFromRequest(request, env, url, rid);
@@ -3753,6 +3788,23 @@ export default {
         if (scopeError) return scopeError;
         if (!(await rateLimit(env, request, context.projectId)))
           return error("RATE_LIMITED", "Too many requests", rid, 429);
+        const turnstileToken =
+          rawBody && typeof rawBody === "object"
+            ? (rawBody as Record<string, unknown>).turnstileToken
+            : undefined;
+        if (
+          !(await verifyTurnstile(
+            env as TurnstileEnvironment,
+            request,
+            turnstileToken,
+          ))
+        )
+          return error(
+            "TURNSTILE_REQUIRED",
+            "Complete the verification challenge and try again",
+            rid,
+            403,
+          );
         const metadataError = await allowedMetadata(env, context, input, rid);
         if (metadataError) return metadataError;
         if (input.categoryId) {
@@ -3960,6 +4012,7 @@ export default {
           publicWidgetConfig(
             settings?.theme_json ?? "{}",
             categories.results ?? [],
+            (env as TurnstileEnvironment).TURNSTILE_SITE_KEY,
           ),
           request,
           cors,
@@ -5673,6 +5726,9 @@ export default {
     }
   },
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    await env.DB.prepare(
+      "DELETE FROM processed_events WHERE datetime(processed_at) < datetime('now', '-90 days')",
+    ).run();
     await env.DB.prepare(
       "DELETE FROM magic_link_tokens WHERE expires_at <= ? OR used_at IS NOT NULL",
     )

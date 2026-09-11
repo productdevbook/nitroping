@@ -66,6 +66,7 @@ describe("widget theme contract", () => {
         allowedMetadata: ["internal.secret"],
       }),
       [],
+      "1x00000000000000000000AA",
     );
     expect(result.theme).toEqual({
       mode: "modal",
@@ -82,6 +83,7 @@ describe("widget theme contract", () => {
       colors: { primary: "#7C3AED" },
     });
     expect(JSON.stringify(result)).not.toContain("internal.secret");
+    expect(result.turnstileSiteKey).toBe("1x00000000000000000000AA");
   });
 
   it("enforces configured custom field types, options, and required values", () => {

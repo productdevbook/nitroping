@@ -45,6 +45,13 @@ bunx wrangler secret put STRIPE_PRICE_BUSINESS --config apps/api/wrangler.jsonc
 bunx wrangler secret put STRIPE_WEBHOOK_SECRET --config apps/api/wrangler.jsonc
 ```
 
+Turnstile is opt-in for public feedback. Set the public site key as a Worker variable and the secret with Wrangler; when the secret is present, every public feedback submission must pass server-side Siteverify validation:
+
+```bash
+bunx wrangler secret put TURNSTILE_SECRET_KEY --config apps/api/wrangler.jsonc
+# Add TURNSTILE_SITE_KEY to the deployment variables, then redeploy.
+```
+
 ## Dashboard architecture
 
 The dashboard is a React 19 application built with Vite 8 and Bun. It uses a small local design system instead of a large UI kit so the panel stays fast, brand-consistent, and easy to embed in the Worker asset pipeline.
