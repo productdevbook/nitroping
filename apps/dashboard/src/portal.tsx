@@ -7,12 +7,44 @@ import "./portal.css";
 type PortalItem = Omit<Feedback, "organizationId" | "metadata"> & { votes?: number };
 type Comment = { id: string; body: string; createdAt: string };
 type PortalCustomField = { id: string; label: string; type: "text" | "textarea" | "select" | "number" | "boolean"; required?: boolean; options?: string[] };
-type Config = { theme?: { buttonLabel?: string; colors?: { primary?: string }; customFields?: PortalCustomField[] }; categories?: Array<{ id: string; name: string; slug: string }> };
+type TurnstileWidget = {
+  render(element: HTMLElement, options: {
+    sitekey: string;
+    action: string;
+    callback: (token: string) => void;
+    "expired-callback": () => void;
+    "error-callback": () => void;
+  }): string;
+  reset(widgetId?: string): void;
+};
+type Config = { theme?: { buttonLabel?: string; colors?: { primary?: string }; customFields?: PortalCustomField[] }; categories?: Array<{ id: string; name: string; slug: string }>; turnstileSiteKey?: string };
 const api = "/api/v1";
 const params = new URLSearchParams(location.search);
 const projectId = params.get("projectId") ?? "";
 const projectKey = params.get("projectKey") ?? "";
 const headers = { "x-nitroping-project-key": projectKey };
+const loadTurnstile = async (): Promise<TurnstileWidget | null> => {
+  if (typeof window === "undefined") return null;
+  const globalWindow = window as Window & { turnstile?: TurnstileWidget };
+  if (globalWindow.turnstile) return globalWindow.turnstile;
+  await new Promise<void>((resolve, reject) => {
+    const current = document.querySelector<HTMLScriptElement>("script[data-nitroping-turnstile]");
+    if (current) {
+      current.addEventListener("load", () => resolve(), { once: true });
+      current.addEventListener("error", () => reject(new Error("Turnstile failed to load")), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.defer = true;
+    script.dataset.nitropingTurnstile = "true";
+    script.addEventListener("load", () => resolve(), { once: true });
+    script.addEventListener("error", () => reject(new Error("Turnstile failed to load")), { once: true });
+    document.head.appendChild(script);
+  });
+  return globalWindow.turnstile ?? null;
+};
 const request = async <T,>(path: string, init: RequestInit = {}): Promise<T> => {
   const response = await fetch(`${api}${path}`, { ...init, headers: { ...headers, ...(init.headers ?? {}) } });
   const body = await response.json().catch(() => ({}));
@@ -87,13 +119,32 @@ function App() {
 }
 
 function FeedbackForm({ projectId: project, config, onClose, onCreated }: { projectId: string; config: Config; onClose: () => void; onCreated: () => void }) {
-  const [type, setType] = useState<FeedbackType>("suggestion"); const [title, setTitle] = useState(""); const [body, setBody] = useState(""); const [email, setEmail] = useState(""); const [categoryId, setCategoryId] = useState(""); const [customValues, setCustomValues] = useState<Record<string, string | number | boolean>>({}); const [file, setFile] = useState<File | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  const [type, setType] = useState<FeedbackType>("suggestion"); const [title, setTitle] = useState(""); const [body, setBody] = useState(""); const [email, setEmail] = useState(""); const [categoryId, setCategoryId] = useState(""); const [customValues, setCustomValues] = useState<Record<string, string | number | boolean>>({}); const [file, setFile] = useState<File | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [turnstileToken, setTurnstileToken] = useState<string>(); const [turnstileWidgetId, setTurnstileWidgetId] = useState<string>();
+  useEffect(() => {
+    const siteKey = config.turnstileSiteKey;
+    if (!siteKey) return;
+    let disposed = false;
+    void loadTurnstile().then((turnstile) => {
+      if (disposed || !turnstile) return;
+      const container = document.querySelector<HTMLElement>("[data-nitroping-portal-turnstile]");
+      if (!container) return;
+      setTurnstileWidgetId(turnstile.render(container, {
+        sitekey: siteKey,
+        action: "feedback",
+        callback: setTurnstileToken,
+        "expired-callback": () => setTurnstileToken(undefined),
+        "error-callback": () => setTurnstileToken(undefined),
+      }));
+    }).catch(() => setError("Turnstile could not be loaded. Please try again."));
+    return () => { disposed = true; setTurnstileToken(undefined); };
+  }, [config.turnstileSiteKey]);
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setError("");
     try {
+      if (config.turnstileSiteKey && !turnstileToken) throw new Error("Please complete the verification challenge.");
       const missing = (config.theme?.customFields ?? []).find((field) => field.required && (customValues[field.id] === undefined || customValues[field.id] === ""));
       if (missing) throw new Error(`Please complete ${missing.label}.`);
-      const created = await request<{ id: string }>(`/projects/${encodeURIComponent(project)}/feedback`, { method: "POST", body: JSON.stringify({ type, title, body, email: email || undefined, categoryId: categoryId || undefined, metadata: customValues, platform: "web" }), headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() } });
+      const created = await request<{ id: string }>(`/projects/${encodeURIComponent(project)}/feedback`, { method: "POST", body: JSON.stringify({ type, title, body, email: email || undefined, categoryId: categoryId || undefined, metadata: customValues, platform: "web", turnstileToken }), headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() } });
       if (file) {
         const initiated = await request<{ uploadUrl: string }>(`/projects/${encodeURIComponent(project)}/uploads/initiate`, { method: "POST", body: JSON.stringify({ feedbackId: created.id, contentType: file.type || "application/octet-stream", size: file.size }), headers: { "content-type": "application/json" } });
         const uploadUrl = initiated.uploadUrl.startsWith("http") ? initiated.uploadUrl : `${location.origin}${initiated.uploadUrl}`;
@@ -103,7 +154,7 @@ function FeedbackForm({ projectId: project, config, onClose, onCreated }: { proj
       onCreated();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not send feedback."); } finally { setBusy(false); }
   };
-  return <div className="portal-modal"><form className="portal-dialog feedback-form" onSubmit={submit}><button type="button" className="dialog-close" onClick={onClose}>×</button><p className="portal-eyebrow">Your voice matters</p><h2>Share feedback</h2><label>What kind?<select value={type} onChange={(event) => setType(event.target.value as FeedbackType)}><option value="suggestion">Suggestion</option><option value="bug">Bug report</option><option value="feature_request">Feature request</option><option value="complaint">Complaint</option></select></label>{(config.categories ?? []).length > 0 && <label>Category<select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">Choose a category</option>{config.categories?.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select></label>}<label>Title<input required minLength={3} maxLength={160} value={title} onChange={(event) => setTitle(event.target.value)} /></label><label>Details<textarea required minLength={3} maxLength={20000} value={body} onChange={(event) => setBody(event.target.value)} /></label>{config.theme?.customFields?.map((field) => <label key={field.id}>{field.label}{field.required && " *"}{field.type === "textarea" ? <textarea required={field.required} value={String(customValues[field.id] ?? "")} onChange={(event) => setCustomValues((values) => ({ ...values, [field.id]: event.target.value }))} /> : field.type === "select" ? <select required={field.required} value={String(customValues[field.id] ?? "")} onChange={(event) => setCustomValues((values) => ({ ...values, [field.id]: event.target.value }))}><option value="">Choose…</option>{(field.options ?? []).map((option) => <option value={option} key={option}>{option}</option>)}</select> : field.type === "boolean" ? <input type="checkbox" checked={customValues[field.id] === true} onChange={(event) => setCustomValues((values) => ({ ...values, [field.id]: event.target.checked }))} /> : <input type={field.type === "number" ? "number" : "text"} required={field.required} value={String(customValues[field.id] ?? "")} onChange={(event) => setCustomValues((values) => ({ ...values, [field.id]: field.type === "number" ? Number(event.target.value) : event.target.value }))} />}</label>)}<label>Email <small>optional, for updates</small><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Attachment <small>optional, up to 10 MB</small><input type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" onChange={(event) => { const selected = event.target.files?.[0] ?? null; if (selected && selected.size > 10 * 1024 * 1024) { setError("Attachments cannot exceed 10 MB."); event.currentTarget.value = ""; setFile(null); return; } setError(""); setFile(selected); }} /></label>{file && <small className="portal-file-name">{file.name}</small>}{error && <p className="form-error">{error}</p>}<button className="portal-submit" disabled={busy}>{busy ? "Sending…" : "Send feedback"}</button></form></div>;
+  return <div className="portal-modal"><form className="portal-dialog feedback-form" onSubmit={submit}><button type="button" className="dialog-close" onClick={() => { if (turnstileWidgetId) { const widget = (window as Window & { turnstile?: TurnstileWidget }).turnstile; widget?.reset(turnstileWidgetId); } onClose(); }}>×</button><p className="portal-eyebrow">Your voice matters</p><h2>Share feedback</h2><label>What kind?<select value={type} onChange={(event) => setType(event.target.value as FeedbackType)}><option value="suggestion">Suggestion</option><option value="bug">Bug report</option><option value="feature_request">Feature request</option><option value="complaint">Complaint</option></select></label>{(config.categories ?? []).length > 0 && <label>Category<select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}><option value="">Choose a category</option>{config.categories?.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select></label>}<label>Title<input required minLength={3} maxLength={160} value={title} onChange={(event) => setTitle(event.target.value)} /></label><label>Details<textarea required minLength={3} maxLength={20000} value={body} onChange={(event) => setBody(event.target.value)} /></label>{config.theme?.customFields?.map((field) => <label key={field.id}>{field.label}{field.required && " *"}{field.type === "textarea" ? <textarea required={field.required} value={String(customValues[field.id] ?? "")} onChange={(event) => setCustomValues((values) => ({ ...values, [field.id]: event.target.value }))} /> : field.type === "select" ? <select required={field.required} value={String(customValues[field.id] ?? "")} onChange={(event) => setCustomValues((values) => ({ ...values, [field.id]: event.target.value }))}><option value="">Choose…</option>{(field.options ?? []).map((option) => <option value={option} key={option}>{option}</option>)}</select> : field.type === "boolean" ? <input type="checkbox" checked={customValues[field.id] === true} onChange={(event) => setCustomValues((values) => ({ ...values, [field.id]: event.target.checked }))} /> : <input type={field.type === "number" ? "number" : "text"} required={field.required} value={String(customValues[field.id] ?? "")} onChange={(event) => setCustomValues((values) => ({ ...values, [field.id]: field.type === "number" ? Number(event.target.value) : event.target.value }))} />}</label>)}<label>Email <small>optional, for updates</small><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label><label>Attachment <small>optional, up to 10 MB</small><input type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" onChange={(event) => { const selected = event.target.files?.[0] ?? null; if (selected && selected.size > 10 * 1024 * 1024) { setError("Attachments cannot exceed 10 MB."); event.currentTarget.value = ""; setFile(null); return; } setError(""); setFile(selected); }} /></label>{file && <small className="portal-file-name">{file.name}</small>}{config.turnstileSiteKey && <div data-nitroping-portal-turnstile aria-live="polite" />}{error && <p className="form-error">{error}</p>}<button className="portal-submit" disabled={busy}>{busy ? "Sending…" : "Send feedback"}</button></form></div>;
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
