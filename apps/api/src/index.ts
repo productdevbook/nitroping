@@ -377,7 +377,7 @@ const publicFeedback = (feedback: Feedback) => {
   return { ...safe, metadata: {} };
 };
 
-const publicWidgetConfig = (
+export const publicWidgetConfig = (
   themeJson: string,
   categories: unknown[],
 ): { theme: Record<string, unknown>; categories: unknown[] } => {
@@ -460,7 +460,7 @@ const publicWidgetConfig = (
   return { theme, categories };
 };
 
-const validateWidgetTheme = (theme: unknown): string | null => {
+export const validateWidgetTheme = (theme: unknown): string | null => {
   if (!theme || typeof theme !== "object" || Array.isArray(theme))
     return "Theme must be an object";
   const raw = theme as Record<string, unknown>;
