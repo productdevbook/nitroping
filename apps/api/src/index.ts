@@ -32,6 +32,12 @@ import {
 } from "./custom-domains";
 import { analyzeModeration } from "./moderation";
 import { attachmentSignatureMatches } from "./attachments";
+import {
+  entitlementsFor,
+  hasEntitlement,
+  normalizePlan,
+  type EntitlementFeature,
+} from "./entitlements";
 
 export { ProjectEventStream };
 
@@ -48,26 +54,6 @@ const notificationEventTypes = [
   "feedback.replied",
   "moderation.created",
 ] as const;
-const planFeedbackLimits: Record<string, number> = {
-  free: 100,
-  pro: 5_000,
-  business: 50_000,
-};
-const planOrganizationLimits: Record<string, number> = {
-  free: 1,
-  pro: 20,
-  business: 1_000,
-};
-const planProjectLimits: Record<string, number> = {
-  free: 1,
-  pro: 20,
-  business: 1_000,
-};
-const planAttachmentLimits: Record<string, number> = {
-  free: 25 * 1024 * 1024,
-  pro: 5 * 1024 * 1024 * 1024,
-  business: 50 * 1024 * 1024 * 1024,
-};
 type CustomDomainEnvironment = Env & {
   CUSTOM_HOSTNAME_API_TOKEN?: string;
   CUSTOM_HOSTNAME_ZONE_ID?: string;
@@ -1148,15 +1134,37 @@ const currentUsage = async (
   )
     .bind(organizationId, period)
     .first<{ feedbackCount: number; attachmentBytes: number }>();
-  const plan = subscription?.plan ?? "free";
+  const plan = normalizePlan(subscription?.plan);
+  const limits = entitlementsFor(plan);
   return {
     plan,
     period,
     feedbackCount: Number(usage?.feedbackCount ?? 0),
     attachmentBytes: Number(usage?.attachmentBytes ?? 0),
-    feedbackLimit: planFeedbackLimits[plan] ?? planFeedbackLimits.free,
-    attachmentLimit: planAttachmentLimits[plan] ?? planAttachmentLimits.free,
+    feedbackLimit: limits.monthlyFeedback,
+    attachmentLimit: limits.attachmentBytes,
   };
+};
+
+const requirePlanFeature = async (
+  env: Env,
+  organizationId: string,
+  feature: EntitlementFeature,
+  rid: string,
+): Promise<Response | null> => {
+  const subscription = await env.DB.prepare(
+    "SELECT plan FROM subscriptions WHERE organization_id = ?",
+  )
+    .bind(organizationId)
+    .first<{ plan: string }>();
+  if (hasEntitlement(subscription?.plan, feature)) return null;
+  return error(
+    "PLAN_FEATURE_UNAVAILABLE",
+    `The ${normalizePlan(subscription?.plan)} plan does not include ${feature}`,
+    rid,
+    402,
+    { feature, plan: normalizePlan(subscription?.plan) },
+  );
 };
 
 const sendTransactionalEmail = async (
@@ -1430,9 +1438,7 @@ export default {
         )
           .bind(userId)
           .first<{ plan: string }>();
-        const organizationLimit =
-          planOrganizationLimits[currentPlan?.plan ?? "free"] ??
-          planOrganizationLimits.free;
+        const organizationLimit = entitlementsFor(currentPlan?.plan).organizations;
         if (Number(organizationCount?.count ?? 0) >= organizationLimit)
           return error(
             "PLAN_LIMIT_REACHED",
@@ -1945,13 +1951,13 @@ export default {
         )
           .bind(organizationId)
           .first<{ plan: string }>();
-        const plan = subscription?.plan ?? "free";
+        const plan = normalizePlan(subscription?.plan);
         const projectCount = await env.DB.prepare(
           "SELECT COUNT(*) AS count FROM projects WHERE organization_id = ? AND deleted_at IS NULL",
         )
           .bind(organizationId)
           .first<{ count: number }>();
-        const projectLimit = planProjectLimits[plan] ?? planProjectLimits.free;
+        const projectLimit = entitlementsFor(plan).projects;
         if (Number(projectCount?.count ?? 0) >= projectLimit)
           return error(
             "PLAN_LIMIT_REACHED",
@@ -2380,7 +2386,7 @@ export default {
         )
           .bind(context.organizationId)
           .first<{ plan: string }>();
-        if ((subscription?.plan ?? "free") !== "business")
+        if (!hasEntitlement(subscription?.plan, "customDomains"))
           return error(
             "PLAN_FEATURE_REQUIRED",
             "Custom domains are available on the Business plan",
@@ -2478,6 +2484,15 @@ export default {
           "developer:manage",
         );
         if (context instanceof Response) return context;
+        if (request.method === "POST") {
+          const featureError = await requirePlanFeature(
+            env,
+            context.organizationId,
+            "webhooks",
+            rid,
+          );
+          if (featureError) return featureError;
+        }
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
             "SELECT id, url, events_json AS events, active, created_at AS createdAt FROM webhooks WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC",
@@ -3603,6 +3618,15 @@ export default {
           request.method === "GET" ? "feedback:read" : "roadmap:manage",
         );
         if (context instanceof Response) return context;
+        if (request.method === "POST") {
+          const featureError = await requirePlanFeature(
+            env,
+            context.organizationId,
+            "roadmap",
+            rid,
+          );
+          if (featureError) return featureError;
+        }
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
             "SELECT id, title, body, status, created_at AS createdAt, updated_at AS updatedAt FROM roadmap_items WHERE organization_id = ? AND project_id = ? ORDER BY updated_at DESC",
@@ -3673,6 +3697,15 @@ export default {
           request.method === "GET" ? "feedback:read" : "roadmap:manage",
         );
         if (context instanceof Response) return context;
+        if (request.method !== "GET") {
+          const featureError = await requirePlanFeature(
+            env,
+            context.organizationId,
+            "roadmap",
+            rid,
+          );
+          if (featureError) return featureError;
+        }
         const roadmap = await env.DB.prepare(
           "SELECT id FROM roadmap_items WHERE id = ? AND organization_id = ? AND project_id = ?",
         )
@@ -3791,6 +3824,13 @@ export default {
           "roadmap:manage",
         );
         if (context instanceof Response) return context;
+        const featureError = await requirePlanFeature(
+          env,
+          context.organizationId,
+          "roadmap",
+          rid,
+        );
+        if (featureError) return featureError;
         const body = await jsonBody(request);
         const current = await env.DB.prepare(
           "SELECT title, body, status FROM roadmap_items WHERE id = ? AND organization_id = ? AND project_id = ?",
@@ -3877,6 +3917,15 @@ export default {
           request.method === "GET" ? "feedback:read" : "roadmap:manage",
         );
         if (context instanceof Response) return context;
+        if (request.method !== "GET") {
+          const featureError = await requirePlanFeature(
+            env,
+            context.organizationId,
+            "roadmap",
+            rid,
+          );
+          if (featureError) return featureError;
+        }
         const changelog = await env.DB.prepare(
           "SELECT id FROM changelog_items WHERE id = ? AND organization_id = ? AND project_id = ?",
         )
@@ -3991,6 +4040,15 @@ export default {
           request.method === "GET" ? "feedback:read" : "roadmap:manage",
         );
         if (context instanceof Response) return context;
+        if (request.method === "POST") {
+          const featureError = await requirePlanFeature(
+            env,
+            context.organizationId,
+            "roadmap",
+            rid,
+          );
+          if (featureError) return featureError;
+        }
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
             "SELECT id, title, body, published_at AS publishedAt, created_at AS createdAt, updated_at AS updatedAt FROM changelog_items WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC",
