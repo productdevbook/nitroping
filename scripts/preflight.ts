@@ -77,6 +77,7 @@ const cloudflareCheck = (): PreflightCheck => {
 export const evaluatePreflight = (): PreflightCheck[] => [
   cloudflareCheck(),
   pairCheck("Dashboard identity", "ACCESS_TEAM_DOMAIN", "ACCESS_AUDIENCE", true),
+  pairCheck("GitHub customer login", "GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", false),
   pairCheck("OIDC identity adapter", "OIDC_ISSUER_URL", "OIDC_AUDIENCE", false),
   groupCheck(
     "Stripe billing",

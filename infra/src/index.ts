@@ -81,6 +81,7 @@ export default Alchemy.Stack(
         OIDC_AUDIENCE: process.env.OIDC_AUDIENCE ?? "",
         EMAIL_FROM: "notifications@nitroping.dev",
         PUBLIC_APP_URL: publicAppUrl,
+        GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID ?? "",
         TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY ?? "",
         CUSTOM_HOSTNAME_ZONE_ID: process.env.CUSTOM_HOSTNAME_ZONE_ID ?? "",
         CUSTOM_HOSTNAME_ZONE_NAME: process.env.CUSTOM_HOSTNAME_ZONE_NAME ?? "nitroping.dev",

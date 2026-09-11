@@ -95,7 +95,9 @@ The dashboard is a React 19 application built with Vite 8 and Bun. It uses a sma
 - `apps/api/public/dashboard.html`: generated production entry served by the Worker
 - `apps/api/public/assets`: generated JavaScript bundle
 
-The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Changelog, Audit log, Developer controls, Team, Notifications, Billing, Widget Builder, and Settings. It also supports creating organizations and projects from the workspace switcher, linking feedback to roadmap and changelog items, and unlinking it without leaving the tenant boundary. Each view talks to the versioned API through the authenticated organization-member boundary, with a project-key/server-key fallback for local development. Authentication is kept outside the visual components.
+The customer dashboard at `/dashboard` uses GitHub OAuth and creates a secure, 30-day session. A first-time GitHub user is taken through organization and project setup; subsequent requests are authorized through organization membership and capability checks. The operator dashboard is the same workspace surface at `/admin` and remains protected by Cloudflare Access. The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Changelog, Audit log, Developer controls, Team, Notifications, Billing, Widget Builder, and Settings. It also supports creating organizations and projects from the workspace switcher, linking feedback to roadmap and changelog items, and unlinking it without leaving the tenant boundary.
+
+Configure a GitHub OAuth App with callback URL `https://nitroping.dev/auth/github/callback`, set the client ID as `GITHUB_CLIENT_ID`, and store the client secret with `bunx wrangler secret put GITHUB_CLIENT_SECRET --config apps/api/wrangler.jsonc`. Customer login is intentionally disabled until both values are present.
 
 The hosted public portal is available at `/portal?projectId=<project-id>&projectKey=<public-key>`. It provides feedback submission, community browsing, voting, roadmap, and changelog views without requiring the customer to build a separate public page.
 

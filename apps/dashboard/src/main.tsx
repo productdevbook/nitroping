@@ -183,13 +183,22 @@ async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
     headers: requestHeaders,
   });
   const data = (await response.json().catch(() => ({}))) as T & {
-    error?: { message?: string };
+    error?: { code?: string; message?: string };
   };
   if (!response.ok)
-    throw new Error(
+    throw new ApiError(
       data.error?.message ?? `Request failed (${response.status})`,
+      response.status,
+      data.error?.code,
     );
   return data;
+}
+
+class ApiError extends Error {
+  constructor(message: string, readonly status: number, readonly code?: string) {
+    super(message);
+    this.name = "ApiError";
+  }
 }
 
 function App() {
@@ -204,6 +213,7 @@ function App() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [workspaceReady, setWorkspaceReady] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [creatingProject, setCreatingProject] = useState(false);
@@ -302,6 +312,11 @@ function App() {
       setUsage(currentUsage);
       if (!silent) setNotice({ text: "Workspace refreshed" });
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setAuthRequired(true);
+        setWorkspaceReady(true);
+        return;
+      }
       setNotice({
         text:
           error instanceof Error ? error.message : "Unable to load workspace",
@@ -711,6 +726,24 @@ function App() {
           <h1>Loading your workspace</h1>
           <p>Connecting to NitroPing securely…</p>
           <div className="loader" />
+        </div>
+      </div>
+    );
+  if (authRequired)
+    return (
+      <div className="setup-shell">
+        <div className="setup-card auth-card">
+          <span className="brand-mark">N</span>
+          <p className="eyebrow">NitroPing workspace</p>
+          <h1>Sign in to your dashboard</h1>
+          <p>Use GitHub to create or access your organization. Your projects and team permissions stay scoped to your account.</p>
+          <a
+            className="primary-button auth-button"
+            href={`/auth/github/start?returnTo=${encodeURIComponent(location.pathname === "/admin" ? "/admin" : "/dashboard")}`}
+          >
+            Continue with GitHub
+          </a>
+          <small>New here? Your first sign-in starts the workspace setup.</small>
         </div>
       </div>
     );

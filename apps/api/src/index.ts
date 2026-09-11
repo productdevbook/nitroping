@@ -66,7 +66,11 @@ type CustomDomainEnvironment = Env & {
   CUSTOM_HOSTNAME_ZONE_ID?: string;
   CUSTOM_HOSTNAME_ZONE_NAME?: string;
   CUSTOM_HOSTNAME_FALLBACK_ORIGIN?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
 };
+
+type DashboardIdentity = AccessClaims & { userId?: string };
 
 const customDomainProvider = (
   env: Env,
@@ -988,6 +992,7 @@ const requireDashboardAccess = async (
   env: Env,
   rid: string,
 ): Promise<Response | null> => {
+  if (await sessionIdentity(request, env)) return null;
   if (!identityProviderConfigured(env))
     return null;
   return (await verifyConfiguredIdentity(request, env))
@@ -1004,20 +1009,22 @@ const requireIdentity = async (
   request: Request,
   env: Env,
   rid: string,
-): Promise<AccessClaims | Response> => {
+): Promise<DashboardIdentity | Response> => {
+  const session = await sessionIdentity(request, env);
+  if (session) return session;
   if (!identityProviderConfigured(env))
     return error(
-      "DASHBOARD_ACCESS_NOT_CONFIGURED",
-      "Cloudflare Access or OIDC must be configured for organization management",
+      "DASHBOARD_AUTH_REQUIRED",
+      "Sign in with GitHub to access the dashboard",
       rid,
-      503,
+      401,
     );
   const claims = await verifyConfiguredIdentity(request, env);
   return claims?.email
     ? claims
     : error(
         "DASHBOARD_AUTH_REQUIRED",
-        "Cloudflare Access authentication is required",
+        "Sign in with GitHub to access the customer dashboard",
         rid,
         401,
       );
@@ -1039,10 +1046,104 @@ const identityProviderConfigured = (env: Env): boolean =>
       (String(env.OIDC_ISSUER_URL ?? "") && String(env.OIDC_AUDIENCE ?? "")),
   );
 
+const githubOAuthConfigured = (env: Env): boolean => {
+  const githubEnv = env as CustomDomainEnvironment;
+  return Boolean(githubEnv.GITHUB_CLIENT_ID && githubEnv.GITHUB_CLIENT_SECRET);
+};
+
+const cookieValue = (request: Request, name: string): string | null => {
+  const cookies = request.headers.get("cookie")?.split(";") ?? [];
+  const prefix = `${name}=`;
+  const value = cookies.map((cookie) => cookie.trim()).find((cookie) => cookie.startsWith(prefix));
+  return value ? decodeURIComponent(value.slice(prefix.length)) : null;
+};
+
+const sessionIdentity = async (request: Request, env: Env): Promise<DashboardIdentity | null> => {
+  const token = cookieValue(request, "np_session");
+  if (!token) return null;
+  const now = new Date().toISOString();
+  const session = await env.DB.prepare(
+    `SELECT s.user_id AS userId, u.email
+     FROM auth_sessions s JOIN users u ON u.id = s.user_id
+     WHERE s.token_hash = ? AND s.revoked_at IS NULL AND s.expires_at > ?`,
+  ).bind(await sha256(token), now).first<{ userId: string; email: string }>();
+  return session?.email ? { userId: session.userId, email: session.email, sub: session.userId } : null;
+};
+
+const sessionCookie = (token: string, maxAge: number): string =>
+  `np_session=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
+
+const redirectResponse = (url: string, headers: HeadersInit = {}): Response =>
+  new Response(null, { status: 302, headers: { location: url, ...Object.fromEntries(new Headers(headers)) } });
+
+const githubAuthStart = async (request: Request, env: Env, rid: string): Promise<Response> => {
+  if (!githubOAuthConfigured(env))
+    return error("GITHUB_AUTH_NOT_CONFIGURED", "GitHub login is not configured", rid, 503);
+  const githubEnv = env as CustomDomainEnvironment;
+  const url = new URL(request.url);
+  const returnTo = url.searchParams.get("returnTo");
+  const safeReturnTo = returnTo && (returnTo.startsWith("/dashboard") || returnTo.startsWith("/admin")) ? returnTo : "/dashboard";
+  const state = randomToken("oauth");
+  await env.CACHE.put(`github:state:${state}`, safeReturnTo, { expirationTtl: 600 });
+  const callback = `${String(env.PUBLIC_APP_URL).replace(/\/$/, "")}/auth/github/callback`;
+  const authorize = new URL("https://github.com/login/oauth/authorize");
+  authorize.searchParams.set("client_id", githubEnv.GITHUB_CLIENT_ID!);
+  authorize.searchParams.set("redirect_uri", callback);
+  authorize.searchParams.set("scope", "read:user user:email");
+  authorize.searchParams.set("state", state);
+  return redirectResponse(authorize.toString(), { "x-request-id": rid });
+};
+
+const githubAuthCallback = async (request: Request, env: Env, rid: string): Promise<Response> => {
+  if (!githubOAuthConfigured(env))
+    return error("GITHUB_AUTH_NOT_CONFIGURED", "GitHub login is not configured", rid, 503);
+  const githubEnv = env as CustomDomainEnvironment;
+  const url = new URL(request.url);
+  const state = url.searchParams.get("state");
+  const code = url.searchParams.get("code");
+  const returnTo = state ? await env.CACHE.get(`github:state:${state}`) : null;
+  if (!state || !code || !returnTo) return error("INVALID_OAUTH_STATE", "The GitHub login session is invalid or expired", rid, 400);
+  await env.CACHE.delete(`github:state:${state}`);
+  const callback = `${String(env.PUBLIC_APP_URL).replace(/\/$/, "")}/auth/github/callback`;
+  const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: { accept: "application/json", "content-type": "application/json", "user-agent": "NitroPing" },
+    body: JSON.stringify({ client_id: githubEnv.GITHUB_CLIENT_ID, client_secret: githubEnv.GITHUB_CLIENT_SECRET, code, redirect_uri: callback }),
+  });
+  const tokenBody = await tokenResponse.json() as { access_token?: string };
+  if (!tokenResponse.ok || !tokenBody.access_token) return error("GITHUB_TOKEN_EXCHANGE_FAILED", "GitHub login could not be completed", rid, 502);
+  const githubHeaders = { accept: "application/vnd.github+json", authorization: `Bearer ${tokenBody.access_token}`, "user-agent": "NitroPing" };
+  const profileResponse = await fetch("https://api.github.com/user", { headers: githubHeaders });
+  const profile = await profileResponse.json() as { id?: number; email?: string | null; login?: string };
+  if (!profileResponse.ok || !profile.id) return error("GITHUB_PROFILE_FAILED", "GitHub profile could not be loaded", rid, 502);
+  let email = profile.email?.trim().toLowerCase() ?? "";
+  if (!email) {
+    const emailsResponse = await fetch("https://api.github.com/user/emails", { headers: githubHeaders });
+    const emails = await emailsResponse.json() as Array<{ email?: string; primary?: boolean; verified?: boolean }>;
+    email = emails.find((entry) => entry.primary && entry.verified)?.email?.trim().toLowerCase() ?? "";
+  }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return error("GITHUB_EMAIL_REQUIRED", "A verified GitHub email address is required", rid, 400);
+  const now = new Date().toISOString();
+  const githubId = String(profile.id);
+  let user = await env.DB.prepare("SELECT id, email FROM users WHERE github_id = ?").bind(githubId).first<{ id: string; email: string }>();
+  if (!user) user = await env.DB.prepare("SELECT id, email FROM users WHERE email = ?").bind(email).first<{ id: string; email: string }>();
+  const userId = user?.id ?? id();
+  if (user) {
+    await env.DB.prepare("UPDATE users SET email = ?, github_id = ?, updated_at = ? WHERE id = ?").bind(email, githubId, now, userId).run();
+  } else {
+    await env.DB.prepare("INSERT INTO users (id, email, github_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)").bind(userId, email, githubId, now, now).run();
+  }
+  const sessionToken = randomToken("sess");
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  await env.DB.prepare("INSERT INTO auth_sessions (id, user_id, token_hash, expires_at, last_seen_at, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(id(), userId, await sha256(sessionToken), expiresAt, now, now).run();
+  return redirectResponse(`${String(env.PUBLIC_APP_URL).replace(/\/$/, "")}${returnTo}`, { "set-cookie": sessionCookie(sessionToken, 30 * 24 * 60 * 60), "x-request-id": rid });
+};
+
 const userForIdentity = async (
   env: Env,
-  identity: AccessClaims,
+  identity: DashboardIdentity,
 ): Promise<string> => {
+  if (identity.userId) return identity.userId;
   const userId = await sha256(`access:${identity.sub ?? identity.email}`);
   const now = new Date().toISOString();
   await env.DB.prepare(
@@ -1538,6 +1639,20 @@ export default {
         { ok: true, environment: env.ENVIRONMENT, requestId: rid },
         { headers: cors },
       );
+    if (path === "/auth/github/start" && request.method === "GET")
+      return githubAuthStart(request, env, rid);
+    if (path === "/auth/github/callback" && request.method === "GET")
+      return githubAuthCallback(request, env, rid);
+    if (path === "/auth/logout" && (request.method === "POST" || request.method === "GET")) {
+      const token = cookieValue(request, "np_session");
+      if (token)
+        await env.DB.prepare("UPDATE auth_sessions SET revoked_at = ? WHERE token_hash = ? AND revoked_at IS NULL")
+          .bind(new Date().toISOString(), await sha256(token)).run();
+      const headers = { "set-cookie": sessionCookie("", 0), "x-request-id": rid };
+      return request.method === "GET"
+        ? redirectResponse(`${String(env.PUBLIC_APP_URL).replace(/\/$/, "")}/dashboard`, headers)
+        : jsonResponse({ loggedOut: true }, { headers: { ...cors, ...headers } });
+    }
     // Workers Assets redirects HTML filenames on workers.dev hosts. Rewrite
     // configured portal requests explicitly so staging and preview portals
     // behave the same as the nitroping.dev route.
@@ -6590,6 +6705,10 @@ export default {
       }
       if (env.ASSETS) {
         if (path === "/dashboard" || path === "/dashboard/")
+          return env.ASSETS.fetch(
+            new Request(new URL("/dashboard.html", request.url), request),
+          );
+        if (path === "/admin" || path === "/admin/")
           return env.ASSETS.fetch(
             new Request(new URL("/dashboard.html", request.url), request),
           );
