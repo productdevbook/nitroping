@@ -184,6 +184,12 @@ paths:
       summary: Read the organization billing subscription
       parameters: [{ $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Billing subscription }, '401': { $ref: '#/components/responses/Error' } }
+  /dashboard/billing/checkout:
+    post:
+      summary: Create a Stripe subscription checkout session
+      parameters: [{ name: projectId, in: query, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [plan], properties: { plan: { type: string, enum: [pro, business] } } } } } }
+      responses: { '201': { description: Checkout session }, '503': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/categories:
     get:
       summary: List project categories

@@ -4,6 +4,7 @@ import { changeFeedbackStatus, createFeedback, getFeedback, listFeedback, type F
 import { clientIp, hmacSha256, randomToken, sha256 } from "./security";
 import { type AccessClaims, verifyAccessJwt } from "./access";
 import { ProjectEventStream } from "./events";
+import { StripeBillingProvider, type BillingPlan } from "./billing";
 
 export { ProjectEventStream };
 
@@ -521,6 +522,23 @@ export default {
         if (authError) return authError;
         const subscription = await env.DB.prepare("SELECT plan, status, provider_customer_id AS providerCustomerId, provider_subscription_id AS providerSubscriptionId, current_period_end AS currentPeriodEnd, created_at AS createdAt, updated_at AS updatedAt FROM subscriptions WHERE organization_id = ?").bind(context.organizationId).first();
         return jsonResponse(subscription ?? { plan: "free", status: "active" }, { headers: cors });
+      }
+      if (path === "/api/v1/dashboard/billing/checkout" && request.method === "POST") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const projectId = url.searchParams.get("projectId");
+        if (!projectId) return error("PROJECT_ID_REQUIRED", "projectId is required", rid, 400);
+        const context = await requireDashboardProject(request, env, url, projectId, rid);
+        if (context instanceof Response) return context;
+        const body = await jsonBody(request);
+        const plan = body.plan === "pro" || body.plan === "business" ? body.plan as BillingPlan : null;
+        if (!plan) return error("VALIDATION_ERROR", "A valid billing plan is required", rid, 400);
+        const billingEnv = env as Env & { STRIPE_SECRET_KEY?: string; STRIPE_PRICE_PRO?: string; STRIPE_PRICE_BUSINESS?: string };
+        if (!billingEnv.STRIPE_SECRET_KEY || !billingEnv.STRIPE_PRICE_PRO || !billingEnv.STRIPE_PRICE_BUSINESS) return error("BILLING_NOT_CONFIGURED", "Stripe billing is not configured for this deployment", rid, 503);
+        const subscription = await env.DB.prepare("SELECT provider_customer_id AS providerCustomerId FROM subscriptions WHERE organization_id = ?").bind(context.organizationId).first<{ providerCustomerId: string | null }>();
+        const provider = new StripeBillingProvider(billingEnv.STRIPE_SECRET_KEY, { pro: billingEnv.STRIPE_PRICE_PRO, business: billingEnv.STRIPE_PRICE_BUSINESS });
+        const checkout = await provider.createCheckoutSession({ organizationId: context.organizationId, plan, customerId: subscription?.providerCustomerId ?? undefined, successUrl: `${env.PUBLIC_APP_URL}/dashboard?billing=success`, cancelUrl: `${env.PUBLIC_APP_URL}/dashboard?billing=cancelled` });
+        return jsonResponse(checkout, { status: 201, headers: cors });
       }
       const categoriesDashboardMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/categories$/);
       if (categoriesDashboardMatch && ["GET", "POST"].includes(request.method)) {
