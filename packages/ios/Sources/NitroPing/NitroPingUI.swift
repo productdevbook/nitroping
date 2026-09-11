@@ -55,14 +55,25 @@ public struct NitroPingFeedbackForm: View {
     }
 
     private func submit() {
+        if let requiredField = publicConfig?.theme.customFields?.first(where: { $0.required && customValues[$0.id]?.isEmpty != false }) {
+            status = "Please complete \(requiredField.label)."
+            return
+        }
         sending = true
+        let metadataValues = customValues.compactMap { key, value -> (String, NitroPingMetadataValue)? in
+            guard !value.isEmpty else { return nil }
+            let field = publicConfig?.theme.customFields?.first { $0.id == key }
+            if field?.type == "boolean" { return (key, .boolean(value == "true")) }
+            if field?.type == "number", let number = Double(value) { return (key, .number(number)) }
+            return (key, .string(value))
+        }
         let feedback = NitroPingFeedback(
             type: type,
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
             body: description.trimmingCharacters(in: .whitespacesAndNewlines),
             categoryId: categoryId.isEmpty ? nil : categoryId,
             email: email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : email.trimmingCharacters(in: .whitespacesAndNewlines),
-            metadata: customValues.filter { !$0.value.isEmpty }
+            metadataValues: Dictionary(uniqueKeysWithValues: metadataValues)
         )
         Task {
             do {
@@ -130,6 +141,8 @@ public final class NitroPingFeedbackViewController: UIViewController {
     private let submitButton = UIButton(type: .system)
     private var categories: [NitroPingCategory] = []
     private var customInputs: [String: UITextField] = [:]
+    private var customFieldTypes: [String: String] = [:]
+    private var customFieldRequired: [String: Bool] = [:]
 
     public init(client: NitroPingClient, type: NitroPingFeedbackType = .suggestion) {
         self.client = client; self.type = type
@@ -180,6 +193,8 @@ public final class NitroPingFeedbackViewController: UIViewController {
                     input.accessibilityLabel = field.label
                     if field.type == "number" { input.keyboardType = .decimalPad }
                     self.customInputs[field.id] = input
+                    self.customFieldTypes[field.id] = field.type
+                    self.customFieldRequired[field.id] = field.required
                     stack.insertArrangedSubview(input, before: self.submitButton)
                 }
             }
@@ -190,13 +205,28 @@ public final class NitroPingFeedbackViewController: UIViewController {
         let title = titleField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let body = bodyField.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard title.count >= 3, body.count >= 3 else { statusLabel.text = "Please enter a title and description."; return }
+        if let requiredField = customFieldTypes.keys.first(where: { key in
+            guard customFieldRequired[key] == true else { return false }
+            guard let input = customInputs[key] else { return false }
+            return input.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false
+        }) {
+            statusLabel.text = "Please complete \(customInputs[requiredField]?.placeholder ?? requiredField)."
+            return
+        }
         submitButton.isEnabled = false
         let selectedCategory = categoryField.selectedSegmentIndex > 0 && categoryField.selectedSegmentIndex - 1 < categories.count ? categories[categoryField.selectedSegmentIndex - 1].id : nil
         let metadata = customInputs.compactMap { key, input in
             let value = input.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             return value.isEmpty ? nil : (key, value)
         }
-        let feedback = NitroPingFeedback(type: type, title: title, body: body, categoryId: selectedCategory, email: emailField.text?.isEmpty == true ? nil : emailField.text, metadata: Dictionary(uniqueKeysWithValues: metadata))
+        let metadataValues = customInputs.compactMap { key, input -> (String, NitroPingMetadataValue)? in
+            let value = input.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !value.isEmpty else { return nil }
+            if customFieldTypes[key] == "boolean" { return (key, .boolean(value == "true")) }
+            if customFieldTypes[key] == "number", let number = Double(value) { return (key, .number(number)) }
+            return (key, .string(value))
+        }
+        let feedback = NitroPingFeedback(type: type, title: title, body: body, categoryId: selectedCategory, email: emailField.text?.isEmpty == true ? nil : emailField.text, metadataValues: Dictionary(uniqueKeysWithValues: metadataValues))
         Task {
             do {
                 _ = try await client.submit(feedback)

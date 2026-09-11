@@ -59,6 +59,28 @@ public struct NitroPingPublicConfig: Codable, Sendable {
     public let categories: [NitroPingCategory]
 }
 
+public enum NitroPingMetadataValue: Codable, Sendable {
+    case string(String)
+    case number(Double)
+    case boolean(Bool)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let value = try? container.decode(Bool.self) { self = .boolean(value); return }
+        if let value = try? container.decode(Double.self) { self = .number(value); return }
+        self = .string(try container.decode(String.self))
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .string(let value): try container.encode(value)
+        case .number(let value): try container.encode(value)
+        case .boolean(let value): try container.encode(value)
+        }
+    }
+}
+
 public struct NitroPingFeedback: Codable, Sendable {
     public let type: NitroPingFeedbackType
     public let title: String
@@ -70,12 +92,19 @@ public struct NitroPingFeedback: Codable, Sendable {
     public let appVersion: String?
     public let osVersion: String?
     public let locale: String?
-    public let metadata: [String: String]?
+    public let metadata: [String: NitroPingMetadataValue]?
 
     public init(type: NitroPingFeedbackType, title: String, body: String, priority: String? = nil, categoryId: String? = nil, email: String? = nil, appVersion: String? = nil, metadata: [String: String]? = nil) {
         self.type = type; self.title = title; self.body = body; self.priority = priority; self.categoryId = categoryId; self.email = email
         self.platform = .ios; self.appVersion = appVersion; self.osVersion = ProcessInfo.processInfo.operatingSystemVersionString
-        self.locale = Locale.current.identifier; self.metadata = metadata
+        self.locale = Locale.current.identifier
+        self.metadata = metadata?.mapValues { .string($0) }
+    }
+
+    public init(type: NitroPingFeedbackType, title: String, body: String, priority: String? = nil, categoryId: String? = nil, email: String? = nil, appVersion: String? = nil, metadataValues: [String: NitroPingMetadataValue]? = nil) {
+        self.type = type; self.title = title; self.body = body; self.priority = priority; self.categoryId = categoryId; self.email = email
+        self.platform = .ios; self.appVersion = appVersion; self.osVersion = ProcessInfo.processInfo.operatingSystemVersionString
+        self.locale = Locale.current.identifier; self.metadata = metadataValues
     }
 }
 

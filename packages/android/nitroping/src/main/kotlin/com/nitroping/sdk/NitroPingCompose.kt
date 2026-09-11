@@ -114,6 +114,12 @@ fun NitroPingFeedback(
                     sending = true
                     scope.launch {
                         try {
+                            val definitions = publicConfig?.theme?.customFields.orEmpty().associateBy { it.id }
+                            val missingRequired = definitions.values.firstOrNull { it.required && customValues[it.id].isNullOrBlank() }
+                            if (missingRequired != null) {
+                                status = "Please complete ${missingRequired.label}."
+                                return@launch
+                            }
                             client.submit(
                                 Feedback(
                                     type = type,
@@ -121,7 +127,13 @@ fun NitroPingFeedback(
                                     body = description.trim(),
                                     categoryId = categoryId.ifEmpty { null },
                                     email = email.trim().ifEmpty { null },
-                                    metadata = customValues.filterValues { it.isNotEmpty() },
+                                    metadata = customValues.filterValues { it.isNotEmpty() }.mapValues { (key, value) ->
+                                        when (definitions[key]?.type) {
+                                            "boolean" -> value == "true"
+                                            "number" -> value.toDoubleOrNull() ?: value
+                                            else -> value
+                                        }
+                                    },
                                 ),
                             )
                             title = ""

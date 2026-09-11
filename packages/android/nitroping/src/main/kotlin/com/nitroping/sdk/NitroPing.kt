@@ -21,7 +21,7 @@ data class Feedback(
     val categoryId: String? = null,
     val email: String? = null,
     val appVersion: String? = null,
-    val metadata: Map<String, String> = emptyMap(),
+    val metadata: Map<String, Any> = emptyMap(),
 )
 
 data class FeedbackResponse(val id: String, val status: String, val title: String, val createdAt: String)
@@ -164,7 +164,7 @@ class NitroPingClient(
 
     private fun feedbackJson(feedback: Feedback): String {
         val type = feedback.type.name.lowercase(Locale.ROOT)
-        val metadata = feedback.metadata.entries.joinToString(",") { "${quote(it.key)}:${quote(it.value)}" }
+        val metadata = feedback.metadata.entries.joinToString(",") { "${quote(it.key)}:${jsonValue(it.value)}" }
         return """{"type":${quote(type)},"title":${quote(feedback.title)},"body":${quote(feedback.body)},"priority":${feedback.priority?.let(::quote) ?: "null"},"categoryId":${feedback.categoryId?.let(::quote) ?: "null"},"email":${feedback.email?.let(::quote) ?: "null"},"platform":"android","appVersion":${feedback.appVersion?.let(::quote) ?: "null"},"osVersion":${quote(Build.VERSION.RELEASE)},"locale":${quote(Locale.getDefault().toLanguageTag())},"metadata":{$metadata}}"""
     }
 
@@ -198,6 +198,12 @@ class NitroPingClient(
     }
 
     private fun quote(value: String): String = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+    private fun jsonValue(value: Any): String = when (value) {
+        is String -> quote(value)
+        is Boolean -> value.toString()
+        is Byte, is Short, is Int, is Long, is Float, is Double -> value.toString()
+        else -> quote(value.toString())
+    }
     private fun parseResponse(value: String): FeedbackResponse {
         fun field(name: String) = Regex("\\\"$name\\\":\\\"([^\\\"]*)\\\"").find(value)?.groupValues?.get(1) ?: ""
         return FeedbackResponse(field("id"), field("status"), field("title"), field("createdAt"))

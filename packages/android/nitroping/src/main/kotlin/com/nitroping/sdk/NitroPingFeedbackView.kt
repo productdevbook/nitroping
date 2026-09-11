@@ -28,6 +28,8 @@ class NitroPingFeedbackView(
     private val status = TextView(context).apply { setTextColor(Color.GRAY) }
     private val submit = Button(context).apply { text = "Submit feedback" }
     private val customFields = linkedMapOf<String, EditText>()
+    private val customFieldTypes = linkedMapOf<String, String>()
+    private val customFieldRequired = linkedMapOf<String, Boolean>()
 
     init {
         orientation = VERTICAL; setPadding(24, 24, 24, 24)
@@ -47,6 +49,8 @@ class NitroPingFeedbackView(
             config?.theme?.customFields.orEmpty().forEach { field ->
                 val input = EditText(context).apply { hint = field.label; tag = field.id; if (field.type == "number") inputType = android.text.InputType.TYPE_CLASS_NUMBER }
                 customFields[field.id] = input
+                customFieldTypes[field.id] = field.type
+                customFieldRequired[field.id] = field.required
                 addView(input, indexOfChild(submit), LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 12 })
             }
             if ((config?.theme?.fields.isNullOrEmpty() || config?.theme?.fields?.contains("category") == true) && categories.isNotEmpty()) {
@@ -60,10 +64,19 @@ class NitroPingFeedbackView(
     private fun send() {
         val title = titleField.text.toString().trim(); val body = bodyField.text.toString().trim()
         if (title.length < 3 || body.length < 3) { status.text = "Please enter a title and description."; return }
+        val missingRequired = customFieldRequired.entries.firstOrNull { it.value && customFields[it.key]?.text?.toString()?.trim().isNullOrEmpty() }
+        if (missingRequired != null) { status.text = "Please complete ${customFields[missingRequired.key]?.hint ?: missingRequired.key}."; return }
         submit.isEnabled = false
         scope.launch {
             try {
-                client.submit(Feedback(FeedbackType.SUGGESTION, title, body, categoryId = categoryId.ifEmpty { null }, email = emailField.text.toString().trim().ifEmpty { null }, metadata = customFields.mapValues { it.value.text.toString().trim() }.filterValues { it.isNotEmpty() }))
+                client.submit(Feedback(FeedbackType.SUGGESTION, title, body, categoryId = categoryId.ifEmpty { null }, email = emailField.text.toString().trim().ifEmpty { null }, metadata = customFields.mapValues { (key, field) ->
+                    val value = field.text.toString().trim()
+                    when (customFieldTypes[key]) {
+                        "boolean" -> value.equals("true", ignoreCase = true)
+                        "number" -> value.toDoubleOrNull() ?: value
+                        else -> value
+                    }
+                }.filterValues { it != "" }))
                 status.text = "Thanks — your feedback was sent."; titleField.text.clear(); bodyField.text.clear(); emailField.text.clear(); customFields.values.forEach { it.text.clear() }
             } catch (_: NitroPingQueuedException) { status.text = "Saved locally and will retry when online." }
             catch (_: Exception) { status.text = "Unable to send feedback." }
