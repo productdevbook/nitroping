@@ -1,10 +1,10 @@
 # NitroPing
 
-Kullanıcının sesi, ürünün pusulası.
+Your users' voice, your product's compass.
 
-NitroPing; web, iOS ve Android uygulamalarına gömülebilen, open-core geri bildirim toplama platformudur.
+NitroPing is an open-core feedback platform embeddable in web, iOS, and Android applications.
 
-## Başlangıç
+## Getting started
 
 ```bash
 bun install
@@ -37,10 +37,10 @@ Production Alchemy adoption requires a Cloudflare token with Workers Scripts Edi
 
 - `@nitroping/contracts`: ortak domain tipleri
 - `@nitroping/web`: web widget ve headless client
-- `apps/api`: Effect servis sınırları ve Cloudflare Worker API
-- `migrations`: D1 şeması
-- `openapi.yaml`: public API sözleşmesi
+- `apps/api`: Effect service boundaries and the Cloudflare Worker API
+- `migrations`: D1 schema migrations
+- `openapi.yaml`: public API contract
 
 ## Not
 
-Production kaynakları Cloudflare üzerinde oluşturulmuştur. Dashboard landing asset’i Worker üzerinden, API ise `/api/v1` altında servis edilir. Native SDK’lar aynı OpenAPI sözleşmesini kullanır.
+Production resources are provisioned on Cloudflare. The dashboard landing assets are served by the Worker, the API is available under `/api/v1`, and the native SDKs use the same OpenAPI contract.

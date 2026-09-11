@@ -27,23 +27,23 @@ export const NitroPing = {
     const host = typeof options.target === "string" ? document.querySelector(options.target) : options.target;
     const root = document.createElement("div"); root.className = "np-root";
     const style = document.createElement("style"); style.textContent = css; root.appendChild(style);
-    const button = document.createElement("button"); button.type = "button"; button.className = "np-button"; button.textContent = options.buttonLabel ?? "Geri bildirim";
+    const button = document.createElement("button"); button.type = "button"; button.className = "np-button"; button.textContent = options.buttonLabel ?? "Give feedback";
     const open = () => {
       const backdrop = document.createElement("div"); backdrop.className = "np-backdrop"; backdrop.setAttribute("role", "dialog"); backdrop.setAttribute("aria-modal", "true");
       const card = document.createElement("form"); card.className = "np-card";
       const fields = options.fields ?? defaultFields; const categories = options.categories ?? ["complaint", "bug", "suggestion", "feature_request"];
-      card.innerHTML = `<h2>Geri bildiriminiz</h2><p>Ürünü daha iyi yapmak için düşüncelerinizi paylaşın.</p><div class="np-grid"></div><div class="np-actions"><button type="button" class="np-secondary">Vazgeç</button><button class="np-submit">Gönder</button></div>`;
+      card.innerHTML = `<h2>Your feedback</h2><p>Tell us what would make this product better.</p><div class="np-grid"></div><div class="np-actions"><button type="button" class="np-secondary">Cancel</button><button class="np-submit">Submit</button></div>`;
       const grid = card.querySelector(".np-grid")!;
-      if (fields.includes("type")) grid.insertAdjacentHTML("beforeend", `<label class="np-label">Tür<select class="np-select" name="type">${categories.map((x) => `<option value="${x}">${x === "feature_request" ? "Özellik önerisi" : x === "bug" ? "Hata" : x === "complaint" ? "Şikâyet" : "Öneri"}</option>`).join("")}</select></label>`);
-      if (fields.includes("title")) grid.insertAdjacentHTML("beforeend", `<label class="np-label">Başlık<input class="np-input" name="title" required minlength="3" maxlength="160" /></label>`);
-      if (fields.includes("description")) grid.insertAdjacentHTML("beforeend", `<label class="np-label">Açıklama<textarea class="np-input np-textarea" name="body" required minlength="3" maxlength="20000"></textarea></label>`);
-      if (fields.includes("email")) grid.insertAdjacentHTML("beforeend", `<label class="np-label">E-posta (opsiyonel)<input class="np-input" type="email" name="email" /></label>`);
+      if (fields.includes("type")) grid.insertAdjacentHTML("beforeend", `<label class="np-label">Type<select class="np-select" name="type">${categories.map((x) => `<option value="${x}">${x === "feature_request" ? "Feature request" : x === "bug" ? "Bug" : x === "complaint" ? "Complaint" : "Suggestion"}</option>`).join("")}</select></label>`);
+      if (fields.includes("title")) grid.insertAdjacentHTML("beforeend", `<label class="np-label">Title<input class="np-input" name="title" required minlength="3" maxlength="160" /></label>`);
+      if (fields.includes("description")) grid.insertAdjacentHTML("beforeend", `<label class="np-label">Description<textarea class="np-input np-textarea" name="body" required minlength="3" maxlength="20000"></textarea></label>`);
+      if (fields.includes("email")) grid.insertAdjacentHTML("beforeend", `<label class="np-label">Email (optional)<input class="np-input" type="email" name="email" /></label>`);
       const close = () => backdrop.remove(); card.querySelector(".np-secondary")?.addEventListener("click", close); backdrop.addEventListener("click", (event) => { if (event.target === backdrop) close(); });
       card.addEventListener("submit", async (event) => {
-        event.preventDefault(); const submit = card.querySelector<HTMLButtonElement>(".np-submit")!; submit.disabled = true; submit.textContent = "Gönderiliyor…";
+        event.preventDefault(); const submit = card.querySelector<HTMLButtonElement>(".np-submit")!; submit.disabled = true; submit.textContent = "Submitting…";
         const data = Object.fromEntries(new FormData(card).entries());
-        try { await client.feedback.create({ type: data.type as FeedbackType, title: String(data.title), body: String(data.body), email: data.email ? String(data.email) : undefined, locale: options.locale ?? navigator.language, platform: "web" }); card.innerHTML = `<div class="np-success"><strong>Teşekkürler!</strong><br />Geri bildiriminiz ekibimize iletildi.</div>`; setTimeout(close, 2600); }
-        catch (cause) { card.querySelector(".np-error")?.remove(); const error = document.createElement("div"); error.className = "np-error"; error.textContent = cause instanceof Error ? cause.message : "Gönderim başarısız oldu."; const actions = card.querySelector(".np-actions"); if (actions) card.insertBefore(error, actions); submit.disabled = false; submit.textContent = "Gönder"; }
+        try { await client.feedback.create({ type: data.type as FeedbackType, title: String(data.title), body: String(data.body), email: data.email ? String(data.email) : undefined, locale: options.locale ?? navigator.language, platform: "web" }); card.innerHTML = `<div class="np-success"><strong>Thank you!</strong><br />Your feedback has been sent to the team.</div>`; setTimeout(close, 2600); }
+        catch (cause) { card.querySelector(".np-error")?.remove(); const error = document.createElement("div"); error.className = "np-error"; error.textContent = cause instanceof Error ? cause.message : "Submission failed."; const actions = card.querySelector(".np-actions"); if (actions) card.insertBefore(error, actions); submit.disabled = false; submit.textContent = "Submit"; }
       });
       backdrop.appendChild(card); root.appendChild(backdrop);
     };

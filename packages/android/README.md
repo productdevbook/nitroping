@@ -1,3 +1,3 @@
 # NitroPing Android SDK
 
-Android library modülü Kotlin coroutine tabanlıdır. Compose/View widget katmanı bu çekirdeğin üzerine eklenir; network sözleşmesi web ve iOS SDK ile aynıdır.
+The Android library module is based on Kotlin coroutines. Compose and Views widget layers can be built on top of this core; its network contract matches the web and iOS SDKs.
