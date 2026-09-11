@@ -1244,6 +1244,30 @@ const currentUsage = async (
   };
 };
 
+const releaseAttachmentUsage = async (
+  env: Env,
+  organizationId: string,
+  attachments: Array<{ sizeBytes: number; createdAt: string }>,
+): Promise<void> => {
+  const bytesByPeriod = new Map<string, number>();
+  for (const attachment of attachments) {
+    const period = attachment.createdAt.slice(0, 7);
+    bytesByPeriod.set(
+      period,
+      (bytesByPeriod.get(period) ?? 0) + Number(attachment.sizeBytes),
+    );
+  }
+  if (!bytesByPeriod.size) return;
+  const now = new Date().toISOString();
+  await env.DB.batch(
+    [...bytesByPeriod].map(([period, bytes]) =>
+      env.DB.prepare(
+        "UPDATE usage_counters SET attachment_bytes = MAX(0, attachment_bytes - ?), updated_at = ? WHERE organization_id = ? AND period = ?",
+      ).bind(bytes, now, organizationId, period),
+    ),
+  );
+};
+
 const requirePlanFeature = async (
   env: Env,
   organizationId: string,
@@ -5160,10 +5184,10 @@ export default {
             404,
           );
         const attachments = await env.DB.prepare(
-          "SELECT object_key AS objectKey FROM attachments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+          "SELECT object_key AS objectKey, size_bytes AS sizeBytes, created_at AS createdAt FROM attachments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(raw.feedbackId, raw.organizationId, raw.projectId)
-          .all<{ objectKey: string }>();
+          .all<{ objectKey: string; sizeBytes: number; createdAt: string }>();
         const now = new Date().toISOString();
         await env.DB.batch([
           env.DB.prepare(
@@ -5200,6 +5224,14 @@ export default {
             "INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'delete', 'completed', ?, ?)",
           ).bind(id(), raw.organizationId, raw.projectId, now, now),
         ]);
+        await releaseAttachmentUsage(
+          env,
+          raw.organizationId,
+          (attachments.results ?? []).map(({ sizeBytes, createdAt }) => ({
+            sizeBytes,
+            createdAt,
+          })),
+        );
         for (const attachment of attachments.results ?? [])
           ctx.waitUntil(
             env.EVENTS.send({
@@ -5355,10 +5387,10 @@ export default {
             404,
           );
         const attachments = await env.DB.prepare(
-          "SELECT object_key AS objectKey FROM attachments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+          "SELECT object_key AS objectKey, size_bytes AS sizeBytes, created_at AS createdAt FROM attachments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
           .bind(anonymizeMatch[2], context.organizationId, context.projectId)
-          .all<{ objectKey: string }>();
+          .all<{ objectKey: string; sizeBytes: number; createdAt: string }>();
         await env.DB.batch([
           env.DB.prepare(
             "UPDATE feedback_comments SET body = '[anonymized]', deleted_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
@@ -5401,6 +5433,14 @@ export default {
             "INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'anonymize', 'completed', ?, ?)",
           ).bind(id(), context.organizationId, context.projectId, now, now),
         ]);
+        await releaseAttachmentUsage(
+          env,
+          context.organizationId,
+          (attachments.results ?? []).map(({ sizeBytes, createdAt }) => ({
+            sizeBytes,
+            createdAt,
+          })),
+        );
         if (env.FEEDBACK_SEARCH)
           ctx.waitUntil(
             deleteFeedbackEmbedding(env.FEEDBACK_SEARCH, anonymizeMatch[2]).catch(
@@ -5414,6 +5454,7 @@ export default {
               objectKey: attachment.objectKey,
               projectId: context.projectId,
               eventId: id(),
+              organizationId: context.organizationId,
             }),
           );
         return jsonResponse(
@@ -6701,10 +6742,10 @@ export default {
     ).all<{ id: string; organizationId: string; projectId: string }>();
     for (const feedback of candidates.results ?? []) {
       const attachments = await env.DB.prepare(
-        "SELECT object_key AS objectKey FROM attachments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+        "SELECT object_key AS objectKey, size_bytes AS sizeBytes, created_at AS createdAt FROM attachments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
       )
         .bind(feedback.id, feedback.organizationId, feedback.projectId)
-        .all<{ objectKey: string }>();
+        .all<{ objectKey: string; sizeBytes: number; createdAt: string }>();
       for (const attachment of attachments.results ?? [])
         await env.EVENTS.send({
           type: "attachment.delete",
@@ -6760,6 +6801,14 @@ export default {
           "INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'delete', 'completed', ?, ?)",
         ).bind(id(), feedback.organizationId, feedback.projectId, now, now),
       ]);
+      await releaseAttachmentUsage(
+        env,
+        feedback.organizationId,
+        (attachments.results ?? []).map(({ sizeBytes, createdAt }) => ({
+          sizeBytes,
+          createdAt,
+        })),
+      );
       if (env.FEEDBACK_SEARCH)
         await deleteFeedbackEmbedding(env.FEEDBACK_SEARCH, feedback.id).catch(
           () => undefined,
