@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import type { Feedback, FeedbackStatus } from "@nitroping/contracts";
+import type {
+  Feedback,
+  FeedbackStatus,
+  WidgetCustomField,
+  WidgetCustomFieldType,
+} from "@nitroping/contracts";
 import "./styles.css";
 
 type View =
@@ -1332,7 +1337,12 @@ function Inbox({
                 placeholder="Search feedback"
               />
             </label>
-            <button className="filter-button" type="button" title="Use the status tabs and search to filter feedback" aria-label="Filter feedback">
+            <button
+              className="filter-button"
+              type="button"
+              title="Use the status tabs and search to filter feedback"
+              aria-label="Filter feedback"
+            >
               ☷ <span>Filter</span>
             </button>
           </div>
@@ -2740,6 +2750,16 @@ function WidgetBuilder({
   const fields = Array.isArray(theme.fields)
     ? theme.fields.filter((field): field is string => typeof field === "string")
     : ["type", "title", "description", "email"];
+  const customFields = Array.isArray(theme.customFields)
+    ? theme.customFields.filter(
+        (field): field is WidgetCustomField =>
+          Boolean(field) &&
+          typeof field === "object" &&
+          typeof (field as WidgetCustomField).id === "string" &&
+          typeof (field as WidgetCustomField).label === "string" &&
+          typeof (field as WidgetCustomField).type === "string",
+      )
+    : [];
   const updateTheme = (key: string, next: unknown) =>
     setDraft(
       draft ? { ...draft, theme: { ...draft.theme, [key]: next } } : draft,
@@ -2813,7 +2833,27 @@ function WidgetBuilder({
       });
     }
   };
-  const snippet = `import { NitroPing } from "@nitroping/web";\n\nNitroPing.init({\n  projectKey: "${publicKey}",\n  mode: "${mode}",\n  theme: "system",\n  colors: { primary: "${value("primary", "#7C3AED")}" },\n  fields: ${JSON.stringify(fields)},${categories.length ? `\n  categoryOptions: ${JSON.stringify(categories.map((category) => ({ id: category.id, name: category.name })))},` : ""}\n});`;
+  const addCustomField = () => {
+    if (customFields.length >= 20) return;
+    const id = `field_${customFields.length + 1}`;
+    updateTheme("customFields", [
+      ...customFields,
+      { id, label: "New field", type: "text" as WidgetCustomFieldType },
+    ]);
+  };
+  const updateCustomField = (id: string, next: Partial<WidgetCustomField>) =>
+    updateTheme(
+      "customFields",
+      customFields.map((field) =>
+        field.id === id ? { ...field, ...next } : field,
+      ),
+    );
+  const removeCustomField = (id: string) =>
+    updateTheme(
+      "customFields",
+      customFields.filter((field) => field.id !== id),
+    );
+  const snippet = `import { NitroPing } from "@nitroping/web";\n\nNitroPing.init({\n  projectKey: "${publicKey}",\n  mode: "${mode}",\n  theme: "system",\n  colors: { primary: "${value("primary", "#7C3AED")}" },\n  fields: ${JSON.stringify(fields)},${customFields.length ? `\n  customFields: ${JSON.stringify(customFields)},` : ""}${categories.length ? `\n  categoryOptions: ${JSON.stringify(categories.map((category) => ({ id: category.id, name: category.name })))},` : ""}\n});`;
   const copy = async () => {
     await navigator.clipboard?.writeText(snippet);
     setCopied(true);
@@ -3018,6 +3058,108 @@ function WidgetBuilder({
               ))
             )}
           </div>
+        </section>
+        <section className="panel settings-card">
+          <div className="panel-heading">
+            <div>
+              <h2>Custom fields</h2>
+              <p>
+                Collect structured context and store it in the approved metadata
+                schema.
+              </p>
+            </div>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={addCustomField}
+              disabled={customFields.length >= 20}
+            >
+              Add field
+            </button>
+          </div>
+          {customFields.length === 0 ? (
+            <p className="muted">
+              No custom fields yet. Add one for account, environment, or
+              workflow context.
+            </p>
+          ) : (
+            <div className="custom-field-list">
+              {customFields.map((field) => (
+                <div className="custom-field-row" key={field.id}>
+                  <input
+                    value={field.id}
+                    aria-label="Field ID"
+                    onChange={(event) =>
+                      updateCustomField(field.id, {
+                        id: event.target.value
+                          .replace(/[^a-zA-Z0-9_.-]/g, "_")
+                          .slice(0, 64),
+                      })
+                    }
+                  />
+                  <input
+                    value={field.label}
+                    aria-label="Field label"
+                    onChange={(event) =>
+                      updateCustomField(field.id, {
+                        label: event.target.value.slice(0, 80),
+                      })
+                    }
+                  />
+                  <select
+                    value={field.type}
+                    aria-label="Field type"
+                    onChange={(event) =>
+                      updateCustomField(field.id, {
+                        type: event.target.value as WidgetCustomFieldType,
+                      })
+                    }
+                  >
+                    <option value="text">Text</option>
+                    <option value="textarea">Long text</option>
+                    <option value="select">Select</option>
+                    <option value="number">Number</option>
+                    <option value="boolean">Boolean</option>
+                  </select>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={field.required === true}
+                      onChange={(event) =>
+                        updateCustomField(field.id, {
+                          required: event.target.checked,
+                        })
+                      }
+                    />{" "}
+                    Required
+                  </label>
+                  {field.type === "select" && (
+                    <input
+                      value={(field.options ?? []).join(", ")}
+                      aria-label="Select options"
+                      placeholder="Option A, Option B"
+                      onChange={(event) =>
+                        updateCustomField(field.id, {
+                          options: event.target.value
+                            .split(/,\s*/)
+                            .map((option) => option.trim())
+                            .filter(Boolean)
+                            .slice(0, 20),
+                        })
+                      }
+                    />
+                  )}
+                  <button
+                    className="text-danger"
+                    type="button"
+                    onClick={() => removeCustomField(field.id)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
         <section className="panel settings-card snippet-card">
           <div className="panel-heading">
