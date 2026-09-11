@@ -17,6 +17,7 @@ export type NitroPingClient = {
 const defaultFields: WidgetField[] = ["type", "title", "description", "email"];
 const base = (options: NitroPingOptions) => options.apiBaseUrl ?? "https://nitroping.dev/api/v1";
 const labelFor = (value: string) => value.replaceAll("_", " ").replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+let configured: Partial<NitroPingOptions> = {};
 
 const request = async <T>(options: NitroPingOptions, path: string, init: RequestInit = {}): Promise<T> => {
   const headers = new Headers(init.headers); headers.set("x-nitroping-project-key", options.projectKey);
@@ -76,14 +77,15 @@ const buildForm = (options: NitroPingOptions, client: NitroPingClient, root: HTM
 
 export const NitroPing = {
   init(options: NitroPingOptions): NitroPingClient {
-    const client = createNitroPingClient(options); if (options.mode === "headless" || typeof document === "undefined") return client;
-    const host = typeof options.target === "string" ? document.querySelector(options.target) : options.target; const root = document.createElement("div"); root.className = "np-root";
-    const style = document.createElement("style"); style.textContent = css; root.appendChild(style); if (options.colors) for (const [key, value] of Object.entries(options.colors)) if (value) root.style.setProperty(`--np-${key}`, value);
-    const mode = options.mode ?? "floating";
-    const open = () => { const backdrop = document.createElement("div"); backdrop.className = `np-backdrop ${mode === "side-panel" ? "np-side" : ""}`; backdrop.setAttribute("role", "dialog"); backdrop.setAttribute("aria-modal", "true"); const close = () => backdrop.remove(); buildForm(options, client, backdrop, close); backdrop.addEventListener("click", (event) => { if (event.target === backdrop && mode !== "side-panel") close(); }); root.appendChild(backdrop); };
-    if (mode === "inline" || mode === "portal") { const inlineRoot = document.createElement("div"); inlineRoot.className = "np-inline"; buildForm(options, client, inlineRoot, () => inlineRoot.remove()); root.appendChild(inlineRoot); (host ?? document.body).appendChild(root); }
-    else { const button = document.createElement("button"); button.type = "button"; button.className = "np-button"; button.textContent = options.buttonLabel ?? "Give feedback"; button.addEventListener("click", open); (host ?? document.body).appendChild(root); if (host) host.appendChild(button); else root.appendChild(button); }
+    const merged: NitroPingOptions = { ...configured, ...options, colors: { ...configured.colors, ...options.colors } } as NitroPingOptions;
+    const client = createNitroPingClient(merged); if (merged.mode === "headless" || typeof document === "undefined") return client;
+    const host = typeof merged.target === "string" ? document.querySelector(merged.target) : merged.target; const root = document.createElement("div"); root.className = "np-root";
+    const style = document.createElement("style"); style.textContent = css; root.appendChild(style); if (merged.colors) for (const [key, value] of Object.entries(merged.colors)) if (value) root.style.setProperty(`--np-${key}`, value);
+    const mode = merged.mode ?? "floating";
+    const open = () => { const backdrop = document.createElement("div"); backdrop.className = `np-backdrop ${mode === "side-panel" ? "np-side" : ""}`; backdrop.setAttribute("role", "dialog"); backdrop.setAttribute("aria-modal", "true"); const close = () => backdrop.remove(); buildForm(merged, client, backdrop, close); backdrop.addEventListener("click", (event) => { if (event.target === backdrop && mode !== "side-panel") close(); }); root.appendChild(backdrop); };
+    if (mode === "inline" || mode === "portal") { const inlineRoot = document.createElement("div"); inlineRoot.className = "np-inline"; buildForm(merged, client, inlineRoot, () => inlineRoot.remove()); root.appendChild(inlineRoot); (host ?? document.body).appendChild(root); }
+    else { const button = document.createElement("button"); button.type = "button"; button.className = "np-button"; button.textContent = merged.buttonLabel ?? "Give feedback"; button.addEventListener("click", open); (host ?? document.body).appendChild(root); if (host) host.appendChild(button); else root.appendChild(button); }
     return { ...client, destroy() { root.remove(); } };
   },
-  configure(_options: Partial<NitroPingOptions>) { return this; },
+  configure(options: Partial<NitroPingOptions>) { configured = { ...configured, ...options, colors: { ...configured.colors, ...options.colors } }; return this; },
 };
