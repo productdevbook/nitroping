@@ -87,8 +87,12 @@ function App() {
       setOrganizations(organizationResult.items);
       setProjects(projectResult.items);
       if (organizationResult.items[0]) {
-        const memberResult = await api<{ items: MemberItem[] }>(`/dashboard/organizations/${organizationResult.items[0].id}/members`);
-        setMembers(memberResult.items);
+        try {
+          const memberResult = await api<{ items: MemberItem[] }>(`/dashboard/organizations/${organizationResult.items[0].id}/members`);
+          setMembers(memberResult.items);
+        } catch {
+          setMembers([]);
+        }
       }
       const selectedProject = projectResult.items.find((item) => item.id === projectId) ?? projectResult.items[0];
       if (selectedProject) {
