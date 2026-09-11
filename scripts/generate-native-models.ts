@@ -49,7 +49,7 @@ for (const target of targets) {
     throw new Error(`${target.name} model generation failed (${result.exitCode})\n${stderr.slice(-4000)}`);
   }
   if (!checkOnly && target.support) {
-    await cp(target.support, join(output, "GeneratedSupport.swift"));
+    await cp(target.support, join(output, "OpenAPIClient/Classes/OpenAPIs/Models/GeneratedSupport.swift"));
   }
 }
 

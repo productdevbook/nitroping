@@ -12,6 +12,10 @@ android {
     namespace = "com.nitroping.sdk"
     compileSdk = providers.gradleProperty("nitropingCompileSdk").orElse("37").get().toInt()
 
+    sourceSets {
+        getByName("main").java.srcDir("../.generated-openapi/src/commonMain/kotlin")
+    }
+
     buildFeatures { compose = true }
     publishing {
         singleVariant("release") {
@@ -32,12 +36,6 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.activity:activity-compose:1.13.0")
-}
-
-sourceSets {
-    named("main") {
-        java.srcDir("../.generated-openapi/src/commonMain/kotlin")
-    }
 }
 
 afterEvaluate {

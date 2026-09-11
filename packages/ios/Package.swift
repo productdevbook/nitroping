@@ -9,7 +9,7 @@ let package = Package(
         .library(name: "NitroPingOpenAPIGenerated", targets: ["NitroPingOpenAPIGenerated"]),
     ],
     targets: [
-        .target(name: "NitroPingOpenAPIGenerated", path: ".generated-openapi"),
+        .target(name: "NitroPingOpenAPIGenerated", path: ".generated-openapi/OpenAPIClient/Classes/OpenAPIs/Models"),
         .target(name: "NitroPing", dependencies: ["NitroPingOpenAPIGenerated"]),
     ]
 )
