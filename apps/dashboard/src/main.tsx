@@ -205,6 +205,8 @@ function App() {
   const [billing, setBilling] = useState<Billing | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [filter, setFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<{
@@ -227,11 +229,13 @@ function App() {
       feedback.filter(
         (item) =>
           (filter === "all" || item.status === filter) &&
+          (typeFilter === "all" || item.type === typeFilter) &&
+          (priorityFilter === "all" || item.priority === priorityFilter) &&
           `${item.title} ${item.body} ${item.type}`
             .toLowerCase()
             .includes(query.toLowerCase()),
       ),
-    [feedback, filter, query],
+    [feedback, filter, typeFilter, priorityFilter, query],
   );
 
   const loadInbox = async () => {
@@ -240,6 +244,9 @@ function App() {
       const feedbackQuery = new URLSearchParams({ limit: "50" });
       if (query.trim()) feedbackQuery.set("q", query.trim());
       if (filter !== "all") feedbackQuery.set("status", filter);
+      if (typeFilter !== "all") feedbackQuery.set("type", typeFilter);
+      if (priorityFilter !== "all")
+        feedbackQuery.set("priority", priorityFilter);
       const [list, insight, currentUsage] = await Promise.all([
         api<{ items: Feedback[] }>(
           `/dashboard/projects/${encodeURIComponent(projectId)}/feedback?projectId=${encodeURIComponent(projectId)}&${feedbackQuery}`,
@@ -363,6 +370,8 @@ function App() {
       setSelected(null);
       setView("inbox");
       setFilter("all");
+      setTypeFilter("all");
+      setPriorityFilter("all");
       setQuery("");
       localStorage.setItem("np.project", project.id);
       localStorage.setItem("np.public", project.publicKey);
@@ -404,6 +413,8 @@ function App() {
       setSelected(null);
       setView("inbox");
       setFilter("all");
+      setTypeFilter("all");
+      setPriorityFilter("all");
       setQuery("");
       localStorage.setItem("np.project", project.id);
       localStorage.setItem("np.public", project.publicKey);
@@ -541,7 +552,7 @@ function App() {
   }, []);
   useEffect(() => {
     if (workspaceReady && projectId) void loadInbox();
-  }, [workspaceReady, projectId, query, filter]);
+  }, [workspaceReady, projectId, query, filter, typeFilter, priorityFilter]);
 
   const openFeedback = async (item: Feedback) => {
     try {
@@ -595,6 +606,8 @@ function App() {
     setSelected(null);
     setView("inbox");
     setFilter("all");
+    setTypeFilter("all");
+    setPriorityFilter("all");
     setQuery("");
     localStorage.setItem("np.project", nextProject.id);
     localStorage.setItem("np.public", nextProject.publicKey);
@@ -902,9 +915,13 @@ function App() {
               selected={selected}
               members={members}
               filter={filter}
+              typeFilter={typeFilter}
+              priorityFilter={priorityFilter}
               query={query}
               loading={loading}
               onFilter={setFilter}
+              onTypeFilter={setTypeFilter}
+              onPriorityFilter={setPriorityFilter}
               onQuery={setQuery}
               onOpen={openFeedback}
               onStatus={changeStatus}
@@ -1231,9 +1248,13 @@ function Inbox({
   selected,
   members,
   filter,
+  typeFilter,
+  priorityFilter,
   query,
   loading,
   onFilter,
+  onTypeFilter,
+  onPriorityFilter,
   onQuery,
   onOpen,
   onStatus,
@@ -1249,9 +1270,13 @@ function Inbox({
   selected: FeedbackDetail | null;
   members: MemberItem[];
   filter: string;
+  typeFilter: string;
+  priorityFilter: string;
   query: string;
   loading: boolean;
   onFilter: (value: string) => void;
+  onTypeFilter: (value: string) => void;
+  onPriorityFilter: (value: string) => void;
   onQuery: (value: string) => void;
   onOpen: (item: Feedback) => void;
   onStatus: (item: Feedback, status: FeedbackStatus) => void;
@@ -1337,14 +1362,31 @@ function Inbox({
                 placeholder="Search feedback"
               />
             </label>
-            <button
+            <select
               className="filter-button"
-              type="button"
-              title="Use the status tabs and search to filter feedback"
-              aria-label="Filter feedback"
+              value={typeFilter}
+              aria-label="Filter by type"
+              onChange={(event) => onTypeFilter(event.target.value)}
             >
-              ☷ <span>Filter</span>
-            </button>
+              <option value="all">All types</option>
+              <option value="complaint">Complaints</option>
+              <option value="bug">Bugs</option>
+              <option value="suggestion">Suggestions</option>
+              <option value="feature_request">Feature requests</option>
+            </select>
+            <select
+              className="filter-button"
+              value={priorityFilter}
+              aria-label="Filter by priority"
+              onChange={(event) => onPriorityFilter(event.target.value)}
+            >
+              <option value="all">All priorities</option>
+              {priorities.map((priority) => (
+                <option key={priority} value={priority}>
+                  {statusLabel(priority)}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <div className="inbox-layout">
