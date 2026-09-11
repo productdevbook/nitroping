@@ -1,0 +1,20 @@
+{
+  "name": "nitroping",
+  "private": true,
+  "packageManager": "bun@1.4.0",
+  "workspaces": ["apps/*", "packages/*", "infra"],
+  "scripts": {
+    "build": "bun run --filter '*' build",
+    "check": "bun run --filter '*' typecheck",
+    "test": "bun run --filter '*' test",
+    "dev:api": "bun run --filter @nitroping/api dev",
+    "dev:web": "bun run --filter @nitroping/web dev",
+    "infra:plan": "bun run --cwd infra deploy --dry-run",
+    "infra:deploy": "bun run --cwd infra deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260911.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

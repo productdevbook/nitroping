@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nitroping-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [{ "binding": "DB", "database_name": "nitroping", "database_id": "2252c4c2-fd49-420e-9d0e-272d50eec912", "migrations_dir": "../../migrations" }],
+  "r2_buckets": [{ "binding": "ATTACHMENTS", "bucket_name": "nitroping-attachments", "jurisdiction": "eu" }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "b6d8588e049f4ef0bb79f73e9e186a95" }],
+  "queues": { "producers": [{ "binding": "EVENTS", "queue": "nitroping-events" }] },
+  "vars": { "ENVIRONMENT": "production" }
+}

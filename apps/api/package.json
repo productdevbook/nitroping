@@ -1,0 +1,20 @@
+{
+  "name": "@nitroping/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bunx wrangler dev",
+    "deploy": "bunx wrangler deploy",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
+    "test": "bunx vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@nitroping/contracts": "workspace:*",
+    "effect": "4.0.0-rc.112"
+  },
+  "devDependencies": {
+    "wrangler": "^4.131.0"
+  }
+}

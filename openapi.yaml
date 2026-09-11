@@ -1,0 +1,81 @@
+openapi: 3.1.0
+info:
+  title: NitroPing API
+  version: 0.1.0
+  description: Kullanıcı geri bildirimi toplama ve yönetim API'si.
+servers:
+  - url: https://api.nitroping.com/api/v1
+paths:
+  /projects/{projectId}/feedback:
+    post:
+      operationId: createFeedback
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CreateFeedbackInput' } } }
+      responses:
+        '201': { description: Oluşturuldu, content: { application/json: { schema: { $ref: '#/components/schemas/Feedback' } } } }
+        '400': { $ref: '#/components/responses/ApiError' }
+    get:
+      operationId: listFeedback
+      parameters:
+        - { $ref: '#/components/parameters/ProjectId' }
+        - { in: query, name: cursor, schema: { type: string } }
+      responses:
+        '200': { description: Liste, content: { application/json: { schema: { $ref: '#/components/schemas/FeedbackPage' } } } }
+  /projects/{projectId}/feedback/{feedbackId}:
+    get:
+      operationId: getFeedback
+      parameters:
+        - { $ref: '#/components/parameters/ProjectId' }
+        - { $ref: '#/components/parameters/FeedbackId' }
+      responses:
+        '200': { description: Feedback, content: { application/json: { schema: { $ref: '#/components/schemas/Feedback' } } } }
+        '404': { $ref: '#/components/responses/ApiError' }
+components:
+  parameters:
+    ProjectId: { in: path, name: projectId, required: true, schema: { type: string } }
+    FeedbackId: { in: path, name: feedbackId, required: true, schema: { type: string, format: uuid } }
+  responses:
+    ApiError: { description: API hatası, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+  schemas:
+    CreateFeedbackInput:
+      type: object
+      required: [type, title, body]
+      properties:
+        type: { type: string, enum: [complaint, bug, suggestion, feature_request] }
+        title: { type: string, minLength: 3, maxLength: 160 }
+        body: { type: string, minLength: 3, maxLength: 20000 }
+        priority: { type: string, enum: [low, normal, high, urgent], default: normal }
+        email: { type: string, format: email }
+        platform: { type: string, enum: [web, ios, android, other] }
+        metadata: { type: object, additionalProperties: true }
+    Feedback:
+      allOf:
+        - $ref: '#/components/schemas/CreateFeedbackInput'
+        - type: object
+          required: [id, organizationId, projectId, status, createdAt, updatedAt]
+          properties:
+            id: { type: string, format: uuid }
+            organizationId: { type: string }
+            projectId: { type: string }
+            status: { type: string, enum: [new, triaged, planned, in_progress, resolved, closed, spam] }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    FeedbackPage:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/Feedback' } }
+        nextCursor: { type: string }
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string }

@@ -1,0 +1,9 @@
+{
+  "name": "@nitroping/web",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "bunx tsc -p tsconfig.json", "build": "bunx tsc -p tsconfig.json", "test": "bunx vitest run --passWithNoTests" },
+  "dependencies": { "@nitroping/contracts": "workspace:*" }
+}
