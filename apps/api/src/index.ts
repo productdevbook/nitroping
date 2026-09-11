@@ -213,6 +213,15 @@ const currentUsage = async (env: Env, organizationId: string): Promise<{ plan: s
   return { plan, period, feedbackCount: Number(usage?.feedbackCount ?? 0), attachmentBytes: Number(usage?.attachmentBytes ?? 0), feedbackLimit: planFeedbackLimits[plan] ?? planFeedbackLimits.free };
 };
 
+const sendTransactionalEmail = async (env: Env, event: { email: string; subject: string; text: string; html: string }): Promise<void> => {
+  await env.EMAIL.send({ to: event.email, from: { email: env.EMAIL_FROM, name: "NitroPing" }, subject: event.subject, text: event.text, html: event.html });
+};
+
+const enqueueWatcherEmails = async (env: Env, feedbackId: string, subject: string, text: string, html: string): Promise<void> => {
+  const watchers = await env.DB.prepare("SELECT email FROM feedback_watchers WHERE feedback_id = ?").bind(feedbackId).all<{ email: string }>();
+  for (const watcher of watchers.results ?? []) await env.EVENTS.send({ type: "email.send", email: watcher.email, subject, text, html, eventId: id() });
+};
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const rid = requestId(request);
@@ -667,6 +676,7 @@ export default {
         if (!internal) {
           const eventId = id();
           ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, replyMatch[1], "feedback.replied", eventId));
+          ctx.waitUntil(enqueueWatcherEmails(env, replyMatch[1], "New reply to your NitroPing feedback", "Your feedback received a new reply. Open your NitroPing follow-up link to read it.", "<p>Your feedback received a new reply.</p><p>Open your NitroPing follow-up link to read it.</p>"));
           if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(context.projectId).publish({ type: "feedback.replied", feedbackId: replyMatch[1], projectId: context.projectId, createdAt: comment.createdAt }));
         }
         return jsonResponse(comment, { status: 201, headers: cors });
@@ -685,6 +695,7 @@ export default {
         if (!result) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
         const eventId = id();
         ctx.waitUntil(enqueueWebhookDeliveries(env, context.projectId, result.id, "feedback.updated", eventId));
+        ctx.waitUntil(enqueueWatcherEmails(env, result.id, "Your NitroPing feedback was updated", `The status of your feedback changed to ${result.status}.`, `<p>The status of your feedback changed to <strong>${result.status}</strong>.</p>`));
         if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(context.projectId).publish({ type: "feedback.updated", feedbackId: result.id, projectId: context.projectId, createdAt: result.updatedAt }));
         return jsonResponse(result, { headers: cors });
       }
@@ -699,7 +710,7 @@ export default {
   },
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     for (const message of batch.messages) {
-      const event = message.body as { type?: string; eventId?: string; sourceEventId?: string; feedbackId?: string; webhookId?: string; deliveryId?: string; eventType?: WebhookEventType; projectId?: string };
+      const event = message.body as { type?: string; eventId?: string; sourceEventId?: string; feedbackId?: string; webhookId?: string; deliveryId?: string; eventType?: WebhookEventType; projectId?: string; email?: string; subject?: string; text?: string; html?: string; token?: string };
       if (event.eventId) {
         const seen = await env.DB.prepare("SELECT event_id FROM processed_events WHERE event_id = ?").bind(event.eventId).first();
         if (seen) { message.ack(); continue; }
@@ -707,6 +718,16 @@ export default {
       if (event.type === "webhook.deliver" && event.deliveryId && event.webhookId && event.sourceEventId && event.eventType && event.feedbackId && event.projectId) {
         const delivered = await deliverWebhook(env, { deliveryId: event.deliveryId, webhookId: event.webhookId, sourceEventId: event.sourceEventId, eventType: event.eventType, feedbackId: event.feedbackId, projectId: event.projectId });
         if (!delivered) { message.retry({ delaySeconds: Math.min(900, 10 * 2 ** message.attempts) }); continue; }
+      }
+      if (event.type === "follow-up.requested" && event.email && event.token) {
+        try {
+          const link = `${env.PUBLIC_APP_URL}/api/v1/follow-up/${event.token}`;
+          await sendTransactionalEmail(env, { email: event.email, subject: "Track your NitroPing feedback", text: `Your feedback was received. Follow this link to track updates: ${link}`, html: `<p>Your feedback was received.</p><p><a href="${link}">Track your feedback</a></p>` });
+        } catch { message.retry({ delaySeconds: Math.min(900, 10 * 2 ** message.attempts) }); continue; }
+      }
+      if (event.type === "email.send" && event.email && event.subject && event.text && event.html) {
+        try { await sendTransactionalEmail(env, { email: event.email, subject: event.subject, text: event.text, html: event.html }); }
+        catch { message.retry({ delaySeconds: Math.min(900, 10 * 2 ** message.attempts) }); continue; }
       }
       if (event.type === "attachment.delete" && typeof (event as { objectKey?: unknown }).objectKey === "string") {
         await env.ATTACHMENTS.delete((event as { objectKey: string }).objectKey);

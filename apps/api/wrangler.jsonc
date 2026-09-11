@@ -6,6 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true, "head_sampling_rate": 0.1 },
   "assets": { "directory": "./public", "binding": "ASSETS", "not_found_handling": "single-page-application" },
+  "send_email": [{ "name": "EMAIL" }],
   "d1_databases": [{ "binding": "DB", "database_name": "nitroping", "database_id": "2252c4c2-fd49-420e-9d0e-272d50eec912", "migrations_dir": "../../migrations" }],
   "r2_buckets": [{ "binding": "ATTACHMENTS", "bucket_name": "nitroping-attachments", "jurisdiction": "eu" }],
   "durable_objects": { "bindings": [{ "name": "EVENT_STREAM", "class_name": "ProjectEventStream" }] },
@@ -16,5 +17,5 @@
     "consumers": [{ "queue": "nitroping-events", "max_batch_size": 10, "max_batch_timeout": 5, "max_retries": 5 }]
   },
   "triggers": { "crons": ["0 3 * * *"] },
-  "vars": { "ENVIRONMENT": "production", "ACCESS_TEAM_DOMAIN": "", "ACCESS_AUDIENCE": "" }
+  "vars": { "ENVIRONMENT": "production", "ACCESS_TEAM_DOMAIN": "", "ACCESS_AUDIENCE": "", "EMAIL_FROM": "notifications@nitroping.dev", "PUBLIC_APP_URL": "https://nitroping.dev" }
 }
