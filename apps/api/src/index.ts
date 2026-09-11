@@ -2061,10 +2061,23 @@ export default {
             rid,
             401,
           );
-        const event = JSON.parse(payload) as {
+        let event: {
           type?: string;
           data?: { object?: Record<string, unknown> };
         };
+        try {
+          event = JSON.parse(payload) as {
+            type?: string;
+            data?: { object?: Record<string, unknown> };
+          };
+        } catch {
+          return error(
+            "INVALID_STRIPE_PAYLOAD",
+            "The Stripe webhook payload is not valid JSON",
+            rid,
+            400,
+          );
+        }
         const object = event.data?.object ?? {};
         if (event.type === "checkout.session.completed") {
           const organizationId =
@@ -2084,12 +2097,13 @@ export default {
             typeof object.subscription === "string" ? object.subscription : "";
           const customerId =
             typeof object.customer === "string" ? object.customer : null;
-          const plan =
+          const requestedPlan =
             typeof (object.metadata as Record<string, unknown> | undefined)
               ?.plan === "string"
               ? String((object.metadata as Record<string, unknown>).plan)
               : "pro";
-          if (organizationId && subscriptionId)
+          const plan = requestedPlan === "business" ? "business" : requestedPlan === "pro" ? "pro" : null;
+          if (organizationId && subscriptionId && plan)
             await env.DB.prepare(
               "INSERT INTO subscriptions (organization_id, plan, status, provider_customer_id, provider_subscription_id, created_at, updated_at) VALUES (?, ?, 'active', ?, ?, ?, ?) ON CONFLICT(organization_id) DO UPDATE SET plan = excluded.plan, status = 'active', provider_customer_id = excluded.provider_customer_id, provider_subscription_id = excluded.provider_subscription_id, updated_at = excluded.updated_at",
             )
@@ -2102,6 +2116,13 @@ export default {
                 new Date().toISOString(),
               )
               .run();
+          else if (organizationId && subscriptionId)
+            return error(
+              "INVALID_STRIPE_PLAN",
+              "The Stripe checkout session contains an unsupported plan",
+              rid,
+              400,
+            );
         }
         if (
           event.type === "customer.subscription.updated" ||

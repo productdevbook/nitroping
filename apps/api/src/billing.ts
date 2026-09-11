@@ -1,4 +1,4 @@
-import { hmacSha256 } from "./security";
+import { hmacSha256, timingSafeEqual } from "./security";
 
 export type BillingPlan = "pro" | "business";
 export type CheckoutRequest = { organizationId: string; plan: BillingPlan; customerId?: string; successUrl: string; cancelUrl: string };
@@ -37,6 +37,6 @@ export class StripeBillingProvider implements BillingProvider {
     const timestamp = Number(values.get("t")); const expected = values.get("v1");
     if (!Number.isFinite(timestamp) || !expected || Math.abs(Date.now() / 1000 - timestamp) > toleranceSeconds) return false;
     const actual = await hmacSha256(this.webhookSecret, `${timestamp}.${payload}`);
-    return actual === expected;
+    return timingSafeEqual(actual, expected);
   }
 }
