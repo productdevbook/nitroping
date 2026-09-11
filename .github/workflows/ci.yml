@@ -18,6 +18,7 @@ jobs:
           bun-version: 1.4.2
       - run: bun install --frozen-lockfile
       - run: bun run check
+      - run: bun run --filter @nitroping/contracts build
       - run: bun run test
       - run: bun run build
       - run: bunx wrangler types apps/api/src/worker-configuration.d.ts --check --config apps/api/wrangler.jsonc
