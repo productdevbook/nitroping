@@ -1,0 +1,71 @@
+-- Complete lifecycle metadata for tenant-owned support and relation tables.
+-- This is an expand-only migration: existing rows remain valid and new columns
+-- are nullable until the owning write paths begin populating them everywhere.
+
+ALTER TABLE organization_members ADD COLUMN updated_at TEXT;
+ALTER TABLE organization_members ADD COLUMN deleted_at TEXT;
+ALTER TABLE project_api_keys ADD COLUMN updated_at TEXT;
+ALTER TABLE project_api_keys ADD COLUMN deleted_at TEXT;
+ALTER TABLE feedback_comments ADD COLUMN updated_at TEXT;
+ALTER TABLE feedback_votes ADD COLUMN updated_at TEXT;
+ALTER TABLE feedback_votes ADD COLUMN deleted_at TEXT;
+ALTER TABLE feedback_watchers ADD COLUMN updated_at TEXT;
+ALTER TABLE feedback_watchers ADD COLUMN deleted_at TEXT;
+ALTER TABLE feedback_status_history ADD COLUMN updated_at TEXT;
+ALTER TABLE feedback_status_history ADD COLUMN deleted_at TEXT;
+ALTER TABLE attachments ADD COLUMN updated_at TEXT;
+ALTER TABLE feedback_tags ADD COLUMN updated_at TEXT;
+ALTER TABLE feedback_tags ADD COLUMN deleted_at TEXT;
+ALTER TABLE feedback_tag_links ADD COLUMN updated_at TEXT;
+ALTER TABLE feedback_tag_links ADD COLUMN deleted_at TEXT;
+ALTER TABLE categories ADD COLUMN updated_at TEXT;
+ALTER TABLE categories ADD COLUMN deleted_at TEXT;
+ALTER TABLE webhooks ADD COLUMN updated_at TEXT;
+ALTER TABLE webhooks ADD COLUMN deleted_at TEXT;
+ALTER TABLE webhook_deliveries ADD COLUMN updated_at TEXT;
+ALTER TABLE webhook_deliveries ADD COLUMN deleted_at TEXT;
+ALTER TABLE magic_link_tokens ADD COLUMN updated_at TEXT;
+ALTER TABLE magic_link_tokens ADD COLUMN deleted_at TEXT;
+ALTER TABLE subscriptions ADD COLUMN deleted_at TEXT;
+ALTER TABLE usage_counters ADD COLUMN updated_at TEXT;
+ALTER TABLE usage_counters ADD COLUMN deleted_at TEXT;
+ALTER TABLE moderation_events ADD COLUMN updated_at TEXT;
+ALTER TABLE moderation_events ADD COLUMN deleted_at TEXT;
+ALTER TABLE audit_logs ADD COLUMN updated_at TEXT;
+ALTER TABLE audit_logs ADD COLUMN deleted_at TEXT;
+ALTER TABLE idempotency_keys ADD COLUMN updated_at TEXT;
+ALTER TABLE idempotency_keys ADD COLUMN deleted_at TEXT;
+ALTER TABLE privacy_requests ADD COLUMN updated_at TEXT;
+ALTER TABLE privacy_requests ADD COLUMN deleted_at TEXT;
+ALTER TABLE organization_invites ADD COLUMN updated_at TEXT;
+ALTER TABLE organization_invites ADD COLUMN deleted_at TEXT;
+ALTER TABLE consent_records ADD COLUMN updated_at TEXT;
+ALTER TABLE consent_records ADD COLUMN deleted_at TEXT;
+
+UPDATE organization_members SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE project_api_keys SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE feedback_comments SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE feedback_votes SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE feedback_watchers SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE feedback_status_history SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE attachments SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE feedback_tags SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE feedback_tag_links SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE categories SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE webhooks SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE webhook_deliveries SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE magic_link_tokens SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE usage_counters SET updated_at = period || '-01' WHERE updated_at IS NULL;
+UPDATE moderation_events SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE audit_logs SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE idempotency_keys SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE privacy_requests SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE organization_invites SET updated_at = created_at WHERE updated_at IS NULL;
+UPDATE consent_records SET updated_at = granted_at WHERE updated_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_members_tenant_lifecycle ON organization_members(organization_id, deleted_at, updated_at);
+CREATE INDEX IF NOT EXISTS idx_api_keys_tenant_lifecycle ON project_api_keys(organization_id, project_id, deleted_at, updated_at);
+CREATE INDEX IF NOT EXISTS idx_comments_tenant_lifecycle ON feedback_comments(organization_id, project_id, deleted_at, updated_at);
+CREATE INDEX IF NOT EXISTS idx_categories_tenant_lifecycle ON categories(organization_id, project_id, deleted_at, updated_at);
+CREATE INDEX IF NOT EXISTS idx_webhooks_tenant_lifecycle ON webhooks(organization_id, project_id, deleted_at, updated_at);
+CREATE INDEX IF NOT EXISTS idx_consent_tenant_lifecycle ON consent_records(organization_id, project_id, deleted_at, updated_at);
