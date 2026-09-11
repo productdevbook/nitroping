@@ -20,6 +20,7 @@ import {
 } from "./services";
 import { clientIp, hmacSha256, randomToken, sha256 } from "./security";
 import { type AccessClaims, verifyAccessJwt } from "./access";
+import { verifyOidcJwt } from "./oidc";
 import { ProjectEventStream } from "./events";
 import { StripeBillingProvider, type BillingPlan } from "./billing";
 import {
@@ -919,10 +920,7 @@ const requireDashboardProject = async (
   rid: string,
   capability: DashboardCapability = "feedback:read",
 ): Promise<TenantContext | Response> => {
-  if (
-    !String(env.ACCESS_TEAM_DOMAIN ?? "") ||
-    !String(env.ACCESS_AUDIENCE ?? "")
-  )
+  if (!identityProviderConfigured(env))
     return requireProjectServer(request, env, url, projectId, rid);
   const identity = await requireIdentity(request, env, rid);
   if (identity instanceof Response) return identity;
@@ -961,12 +959,9 @@ const requireDashboardAccess = async (
   env: Env,
   rid: string,
 ): Promise<Response | null> => {
-  if (
-    !String(env.ACCESS_TEAM_DOMAIN ?? "") ||
-    !String(env.ACCESS_AUDIENCE ?? "")
-  )
+  if (!identityProviderConfigured(env))
     return null;
-  return (await verifyAccessJwt(request, env))
+  return (await verifyConfiguredIdentity(request, env))
     ? null
     : error(
         "DASHBOARD_AUTH_REQUIRED",
@@ -981,17 +976,14 @@ const requireIdentity = async (
   env: Env,
   rid: string,
 ): Promise<AccessClaims | Response> => {
-  if (
-    !String(env.ACCESS_TEAM_DOMAIN ?? "") ||
-    !String(env.ACCESS_AUDIENCE ?? "")
-  )
+  if (!identityProviderConfigured(env))
     return error(
       "DASHBOARD_ACCESS_NOT_CONFIGURED",
-      "Cloudflare Access must be configured for organization management",
+      "Cloudflare Access or OIDC must be configured for organization management",
       rid,
       503,
     );
-  const claims = await verifyAccessJwt(request, env);
+  const claims = await verifyConfiguredIdentity(request, env);
   return claims?.email
     ? claims
     : error(
@@ -1001,6 +993,22 @@ const requireIdentity = async (
         401,
       );
 };
+
+const verifyConfiguredIdentity = async (
+  request: Request,
+  env: Env,
+): Promise<AccessClaims | null> => {
+  const accessClaims = await verifyAccessJwt(request, env);
+  if (accessClaims) return accessClaims;
+  return verifyOidcJwt(request, env);
+};
+
+const identityProviderConfigured = (env: Env): boolean =>
+  Boolean(
+    (String(env.ACCESS_TEAM_DOMAIN ?? "") &&
+      String(env.ACCESS_AUDIENCE ?? "")) ||
+      (String(env.OIDC_ISSUER_URL ?? "") && String(env.OIDC_AUDIENCE ?? "")),
+  );
 
 const userForIdentity = async (
   env: Env,
@@ -5397,7 +5405,7 @@ export default {
         const identity =
           String(env.ACCESS_TEAM_DOMAIN ?? "") &&
           String(env.ACCESS_AUDIENCE ?? "")
-            ? await verifyAccessJwt(request, env)
+            ? await verifyConfiguredIdentity(request, env)
             : null;
         const actorUserId = identity?.email
           ? await userForIdentity(env, identity)

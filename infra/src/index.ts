@@ -67,6 +67,8 @@ export default Alchemy.Stack(
         ENVIRONMENT: stage,
         ACCESS_TEAM_DOMAIN: process.env.ACCESS_TEAM_DOMAIN ?? "",
         ACCESS_AUDIENCE: process.env.ACCESS_AUDIENCE ?? "",
+        OIDC_ISSUER_URL: process.env.OIDC_ISSUER_URL ?? "",
+        OIDC_AUDIENCE: process.env.OIDC_AUDIENCE ?? "",
         EMAIL_FROM: "notifications@nitroping.dev",
         PUBLIC_APP_URL: stage === "production" ? "https://nitroping.dev" : `https://nitroping-${stage}.dev`,
         TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY ?? "",

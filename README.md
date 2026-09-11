@@ -66,6 +66,8 @@ bunx wrangler secret put CUSTOM_HOSTNAME_API_TOKEN --config apps/api/wrangler.js
 
 Customers manage one custom hostname per project through `GET`, `POST`, and `DELETE /api/v1/dashboard/projects/:projectId/custom-domain`. Creation returns the Cloudflare SSL validation records that the customer must publish in DNS. The route is tenant-scoped, Business-plan gated, audited, and removed during organization deletion. Cloudflare for SaaS setup and custom-hostname API permissions are external prerequisites; configuring the variables alone does not activate hostname routing.
 
+Self-hosted deployments can use Cloudflare Access or the built-in OIDC adapter. Set `OIDC_ISSUER_URL` and `OIDC_AUDIENCE` when an external identity provider should authenticate dashboard requests; signed bearer tokens are verified against the provider's discovery document and JWKS before tenant membership is checked. See [`deploy/self-host/README.md`](deploy/self-host/README.md).
+
 ## Dashboard architecture
 
 The dashboard is a React 19 application built with Vite 8 and Bun. It uses a small local design system instead of a large UI kit so the panel stays fast, brand-consistent, and easy to embed in the Worker asset pipeline.

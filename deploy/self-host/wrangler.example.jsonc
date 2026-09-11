@@ -64,6 +64,8 @@
     "ENVIRONMENT": "self-hosted",
     "ACCESS_TEAM_DOMAIN": "",
     "ACCESS_AUDIENCE": "",
+    "OIDC_ISSUER_URL": "",
+    "OIDC_AUDIENCE": "",
     "EMAIL_FROM": "notifications@example.com",
     "PUBLIC_APP_URL": "https://feedback.example.com",
     "TURNSTILE_SITE_KEY": "",
