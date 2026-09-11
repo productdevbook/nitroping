@@ -4477,6 +4477,78 @@ export default {
         return jsonResponse({ accepted: true }, { status: 202, headers: cors });
       }
       const followUpReadMatch = path.match(/^\/api\/v1\/follow-up\/([^/]+)$/);
+      if (followUpReadMatch && request.method === "DELETE") {
+        const raw = await env.DB.prepare(
+          `SELECT t.feedback_id AS feedbackId, f.organization_id AS organizationId, f.project_id AS projectId
+          FROM magic_link_tokens t JOIN feedback_items f ON f.id = t.feedback_id
+          WHERE t.token_hash = ? AND t.organization_id = f.organization_id AND t.project_id = f.project_id AND t.used_at IS NULL AND t.expires_at > ? AND f.deleted_at IS NULL`,
+        )
+          .bind(await sha256(followUpReadMatch[1]), new Date().toISOString())
+          .first<{
+            feedbackId: string;
+            organizationId: string;
+            projectId: string;
+          }>();
+        if (!raw)
+          return error(
+            "FOLLOW_UP_EXPIRED",
+            "The follow-up link is invalid or expired",
+            rid,
+            404,
+          );
+        const attachments = await env.DB.prepare(
+          "SELECT object_key AS objectKey FROM attachments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+        )
+          .bind(raw.feedbackId, raw.organizationId, raw.projectId)
+          .all<{ objectKey: string }>();
+        const now = new Date().toISOString();
+        await env.DB.batch([
+          env.DB.prepare(
+            "UPDATE feedback_items SET email = NULL, body = '[deleted by requester]', metadata_json = '{}', deleted_at = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+          ).bind(
+            now,
+            now,
+            raw.feedbackId,
+            raw.organizationId,
+            raw.projectId,
+          ),
+          env.DB.prepare(
+            "UPDATE feedback_comments SET body = '[deleted by requester]', deleted_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+          ).bind(now, raw.feedbackId, raw.organizationId, raw.projectId),
+          env.DB.prepare(
+            "UPDATE attachments SET deleted_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+          ).bind(now, raw.feedbackId, raw.organizationId, raw.projectId),
+          env.DB.prepare(
+            "DELETE FROM feedback_votes WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+          ).bind(raw.feedbackId, raw.organizationId, raw.projectId),
+          env.DB.prepare(
+            "DELETE FROM feedback_watchers WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+          ).bind(raw.feedbackId, raw.organizationId, raw.projectId),
+          env.DB.prepare(
+            "DELETE FROM feedback_status_history WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+          ).bind(raw.feedbackId, raw.organizationId, raw.projectId),
+          env.DB.prepare(
+            "DELETE FROM magic_link_tokens WHERE feedback_id = ? AND organization_id = ? AND project_id = ?",
+          ).bind(raw.feedbackId, raw.organizationId, raw.projectId),
+          env.DB.prepare(
+            "INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'delete', 'completed', ?, ?)",
+          ).bind(id(), raw.organizationId, raw.projectId, now, now),
+        ]);
+        for (const attachment of attachments.results ?? [])
+          ctx.waitUntil(
+            env.EVENTS.send({
+              type: "attachment.delete",
+              objectKey: attachment.objectKey,
+              projectId: raw.projectId,
+              eventId: id(),
+              organizationId: raw.organizationId,
+            }),
+          );
+        return jsonResponse(
+          { deleted: true, feedbackId: raw.feedbackId },
+          { headers: cors },
+        );
+      }
       if (followUpReadMatch && request.method === "GET") {
         const raw = await env.DB.prepare(
           `SELECT t.feedback_id AS feedbackId, f.organization_id AS organizationId, f.project_id AS projectId

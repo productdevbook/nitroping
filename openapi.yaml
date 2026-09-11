@@ -138,6 +138,10 @@ paths:
       summary: Read feedback status through a scoped magic link
       parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
       responses: { '200': { description: Feedback and public comments }, '404': { $ref: '#/components/responses/Error' } }
+    delete:
+      summary: Delete the feedback owned by the scoped magic link
+      parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Feedback deleted }, '404': { $ref: '#/components/responses/Error' } }
   /projects/{projectId}/follow-up/request:
     post:
       summary: Request a private follow-up link by email

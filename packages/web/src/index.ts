@@ -58,6 +58,7 @@ export type NitroPingClient = {
       feedback: Feedback;
       comments: Array<{ id: string; body: string; createdAt: string }>;
     }>;
+    delete(token: string): Promise<{ deleted: boolean; feedbackId: string }>;
   };
   destroy(): void;
 };
@@ -248,6 +249,12 @@ export const createNitroPingClient = (
           feedback: Feedback;
           comments: Array<{ id: string; body: string; createdAt: string }>;
         }>(options, `/follow-up/${encodeURIComponent(token)}`),
+      delete: (token) =>
+        request<{ deleted: boolean; feedbackId: string }>(
+          options,
+          `/follow-up/${encodeURIComponent(token)}`,
+          { method: "DELETE" },
+        ),
     },
   };
 };
