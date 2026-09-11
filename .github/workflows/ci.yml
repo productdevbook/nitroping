@@ -22,7 +22,7 @@ jobs:
       - run: bun run test
       - run: bun run build
       - run: bun run codegen:native:check
-      - run: bunx wrangler types apps/api/src/worker-configuration.d.ts --check --config apps/api/wrangler.jsonc
+      - run: bun run --cwd apps/api wrangler types src/worker-configuration.d.ts --check --config wrangler.jsonc
       - run: bunx @redocly/cli@latest lint openapi.yaml
 
   ios:
