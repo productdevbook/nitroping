@@ -18,6 +18,7 @@ const targets = [
     generatorName: "kotlin",
     output: join(root, "packages/android/.generated-openapi"),
     properties: "packageName=dev.nitroping.openapi.generated,library=multiplatform,serializationLibrary=kotlinx_serialization,dateLibrary=kotlinx-datetime",
+    destination: join(root, "packages/android/nitroping/src/main/kotlin/dev/nitroping/openapi/generated"),
   },
 ];
 
@@ -50,6 +51,12 @@ for (const target of targets) {
   }
   if (!checkOnly && target.support) {
     await cp(target.support, join(output, "OpenAPIClient/Classes/OpenAPIs/Models/GeneratedSupport.swift"));
+  }
+  if (!checkOnly && target.destination) {
+    const source = join(output, "src/commonMain/kotlin/dev/nitroping/openapi/generated");
+    await rm(target.destination, { recursive: true, force: true });
+    await cp(source, target.destination, { recursive: true });
+    await rm(output, { recursive: true, force: true });
   }
 }
 

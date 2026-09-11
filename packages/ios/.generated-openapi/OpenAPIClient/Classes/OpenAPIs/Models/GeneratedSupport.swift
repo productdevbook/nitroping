@@ -17,6 +17,22 @@ public struct StringRule: Hashable, Sendable {
     }
 }
 
+public struct NumericRule<Value: Comparable & Codable & Hashable>: Hashable, Sendable where Value: Sendable {
+    public let minimum: Value?
+    public let exclusiveMinimum: Bool
+    public let maximum: Value?
+    public let exclusiveMaximum: Bool
+    public let multipleOf: Value?
+
+    public init(minimum: Value?, exclusiveMinimum: Bool, maximum: Value?, exclusiveMaximum: Bool, multipleOf: Value?) {
+        self.minimum = minimum
+        self.exclusiveMinimum = exclusiveMinimum
+        self.maximum = maximum
+        self.exclusiveMaximum = exclusiveMaximum
+        self.multipleOf = multipleOf
+    }
+}
+
 public enum AnyCodable: Codable, Hashable, Sendable {
     case null
     case bool(Bool)

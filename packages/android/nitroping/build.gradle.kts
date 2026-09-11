@@ -12,10 +12,6 @@ android {
     namespace = "com.nitroping.sdk"
     compileSdk = providers.gradleProperty("nitropingCompileSdk").orElse("37").get().toInt()
 
-    sourceSets {
-        getByName("main").java.srcDir("../.generated-openapi/src/commonMain/kotlin")
-    }
-
     buildFeatures { compose = true }
     publishing {
         singleVariant("release") {
