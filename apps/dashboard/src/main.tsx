@@ -47,6 +47,8 @@ function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [creatingProject, setCreatingProject] = useState(false);
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [selected, setSelected] = useState<FeedbackDetail | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -131,6 +133,22 @@ function App() {
     finally { setSetupLoading(false); }
   };
 
+  const createProject = async () => {
+    if (!activeOrganization || newProjectName.trim().length < 2) return;
+    setCreatingProject(true);
+    try {
+      const project = await api<Project>(`/dashboard/organizations/${activeOrganization.id}/projects`, { method: "POST", body: JSON.stringify({ name: newProjectName.trim() }) });
+      setProjects((items) => [...items, project]);
+      setNewProjectName("");
+      selectProject(project.id);
+      setNotice({ text: "Project created" });
+    } catch (error) {
+      setNotice({ text: error instanceof Error ? error.message : "Unable to create project", error: true });
+    } finally {
+      setCreatingProject(false);
+    }
+  };
+
   const loadView = async (nextView: View) => {
     setView(nextView);
     try {
@@ -190,6 +208,7 @@ function App() {
     <aside className="sidebar">
       <div className="brand"><span className="brand-mark">N</span><span>Nitro<strong>Ping</strong></span></div>
       <div className="workspace-switcher"><span className="workspace-icon">{(activeOrganization?.name ?? "N")[0]}</span><div className="workspace-switcher-copy"><small>{activeOrganization?.name ?? "Workspace"}</small><select aria-label="Switch project" value={projectId} onChange={(event) => selectProject(event.target.value)}>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></div><span className="chevron">⌄</span></div>
+      {activeOrganization && <div className="project-create"><button className="project-create-trigger" onClick={() => setCreatingProject((value) => !value)}>＋ New project</button>{creatingProject && <form onSubmit={(event) => { event.preventDefault(); void createProject(); }}><input value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="Project name" autoFocus /><button type="submit" disabled={creatingProject || newProjectName.trim().length < 2}>{creatingProject ? "Creating…" : "Create"}</button></form>}</div>}
       <nav className="nav" aria-label="Main navigation">
         <p className="nav-label">Workspace</p>
         <NavItem active={view === "inbox"} icon="◈" label="Inbox" count={feedback.filter((item) => item.status === "new").length} onClick={() => loadView("inbox")} />
