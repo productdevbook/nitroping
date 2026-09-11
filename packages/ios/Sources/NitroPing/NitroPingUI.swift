@@ -41,16 +41,23 @@ public struct NitroPingFeedbackForm: View {
                 }
                 ForEach(publicConfig?.theme.customFields ?? []) { field in
                     if field.type == "textarea" {
-                        TextField(field.label, text: Binding(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 }), axis: .vertical).lineLimit(3...6)
+                        let binding = Binding<String>(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 })
+                        TextField(field.label, text: binding, axis: .vertical).lineLimit(3...6)
                     } else if field.type == "select" {
-                        Picker(field.label, selection: Binding(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 })) {
+                        let binding = Binding<String>(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 })
+                        Picker(field.label, selection: binding) {
                             Text("Select an option").tag("")
-                            ForEach(field.options, id: \.self) { option in Text(option).tag(option) }
+                            ForEach(field.options, id: \.self) { option in
+                                Text(option)
+                                    .tag(option)
+                            }
                         }
                     } else if field.type == "boolean" {
-                        Toggle(field.label, isOn: Binding(get: { customValues[field.id] == "true" }, set: { customValues[field.id] = $0 ? "true" : "false" }))
+                        let binding = Binding<Bool>(get: { customValues[field.id] == "true" }, set: { customValues[field.id] = $0 ? "true" : "false" })
+                        Toggle(field.label, isOn: binding)
                     } else {
-                        TextField(field.label, text: Binding(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 })).keyboardType(field.type == "number" ? .decimalPad : .default)
+                        let binding = Binding<String>(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 })
+                        TextField(field.label, text: binding).keyboardType(field.type == "number" ? .decimalPad : .default)
                     }
                 }
                 Button(sending ? "Sending…" : publicConfig?.theme.buttonLabel ?? "Submit feedback") {
