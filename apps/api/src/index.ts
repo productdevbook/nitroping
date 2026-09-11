@@ -1308,12 +1308,13 @@ export const claimEmailDelivery = async (
 ): Promise<boolean> => {
   if (!event.eventId) return false;
   const result = await env.DB.prepare(
-    "INSERT OR IGNORE INTO email_deliveries (event_id, organization_id, project_id, status, created_at) VALUES (?, ?, ?, 'pending', ?)",
+    "INSERT OR IGNORE INTO email_deliveries (event_id, organization_id, project_id, status, created_at, updated_at) VALUES (?, ?, ?, 'pending', ?, ?)",
   )
     .bind(
       event.eventId,
       event.organizationId ?? null,
       event.projectId ?? null,
+      new Date().toISOString(),
       new Date().toISOString(),
     )
     .run();
@@ -1322,9 +1323,9 @@ export const claimEmailDelivery = async (
 
 const markEmailDelivered = async (env: Env, eventId: string): Promise<void> => {
   await env.DB.prepare(
-    "UPDATE email_deliveries SET status = 'delivered', delivered_at = ? WHERE event_id = ?",
+    "UPDATE email_deliveries SET status = 'delivered', delivered_at = ?, updated_at = ? WHERE event_id = ? AND deleted_at IS NULL",
   )
-    .bind(new Date().toISOString(), eventId)
+    .bind(new Date().toISOString(), new Date().toISOString(), eventId)
     .run();
 };
 
@@ -1424,7 +1425,7 @@ const enqueueTeamNotifications = async (
   const recipients = await env.DB.prepare(
     `SELECT u.email
     FROM organization_members m JOIN users u ON u.id = m.user_id
-    LEFT JOIN notification_preferences p ON p.organization_id = m.organization_id AND p.project_id = ? AND p.email = u.email AND p.event_type = ?
+    LEFT JOIN notification_preferences p ON p.organization_id = m.organization_id AND p.project_id = ? AND p.email = u.email AND p.event_type = ? AND p.deleted_at IS NULL
     WHERE m.organization_id = ? AND m.deleted_at IS NULL AND COALESCE(p.enabled, 1) = 1`,
   )
     .bind(projectId, eventType, organizationId)
@@ -3084,7 +3085,7 @@ export default {
               );
         if (request.method === "GET") {
           const rows = await env.DB.prepare(
-            "SELECT event_type AS eventType, enabled FROM notification_preferences WHERE organization_id = ? AND project_id = ? AND email = ? ORDER BY event_type ASC",
+            "SELECT event_type AS eventType, enabled FROM notification_preferences WHERE organization_id = ? AND project_id = ? AND email = ? AND deleted_at IS NULL ORDER BY event_type ASC",
           )
             .bind(
               context.organizationId,
@@ -3125,9 +3126,9 @@ export default {
           );
         const now = new Date().toISOString();
         await env.DB.prepare(
-          `INSERT INTO notification_preferences (id, organization_id, project_id, email, event_type, enabled, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(project_id, email, event_type) DO UPDATE SET enabled = excluded.enabled`,
+          `INSERT INTO notification_preferences (id, organization_id, project_id, email, event_type, enabled, created_at, updated_at, deleted_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)
+          ON CONFLICT(project_id, email, event_type) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at, deleted_at = NULL`,
         )
           .bind(
             id(),
@@ -3136,6 +3137,7 @@ export default {
             identity.email.toLowerCase(),
             eventType,
             body.enabled ? 1 : 0,
+            now,
             now,
           )
           .run();
