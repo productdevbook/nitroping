@@ -34,6 +34,9 @@ import kotlinx.serialization.encoding.*
  *
  * @param mode 
  * @param buttonLabel 
+ * @param brandName 
+ * @param logoUrl 
+ * @param showPoweredBy 
  * @param fields 
  * @param customFields 
  * @param colors 
@@ -45,6 +48,12 @@ data class PublicTheme (
     @SerialName(value = "mode") val mode: kotlin.String? = null,
 
     @SerialName(value = "buttonLabel") val buttonLabel: kotlin.String? = null,
+
+    @SerialName(value = "brandName") val brandName: kotlin.String? = null,
+
+    @SerialName(value = "logoUrl") val logoUrl: kotlin.String? = null,
+
+    @SerialName(value = "showPoweredBy") val showPoweredBy: kotlin.Boolean? = null,
 
     @SerialName(value = "fields") val fields: kotlin.collections.List<kotlin.String>? = null,
 

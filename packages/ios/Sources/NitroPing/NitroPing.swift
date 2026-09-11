@@ -54,6 +54,9 @@ public struct NitroPingCustomField: Codable, Sendable, Identifiable {
 public struct NitroPingPublicTheme: Codable, Sendable {
     public let mode: String?
     public let buttonLabel: String?
+    public let brandName: String?
+    public let logoUrl: String?
+    public let showPoweredBy: Bool?
     public let fields: [String]?
     public let customFields: [NitroPingCustomField]?
     public let colors: [String: String]?
@@ -237,6 +240,9 @@ public actor NitroPingClient {
         let theme = NitroPingPublicTheme(
             mode: generated.theme.mode,
             buttonLabel: generated.theme.buttonLabel,
+            brandName: generated.theme.brandName,
+            logoUrl: generated.theme.logoUrl,
+            showPoweredBy: generated.theme.showPoweredBy,
             fields: generated.theme.fields,
             customFields: generated.theme.customFields?.map {
                 NitroPingCustomField(id: $0.id, label: $0.label, type: $0.type, required: $0._required, options: $0.options)

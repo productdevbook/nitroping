@@ -14,13 +14,19 @@ public struct PublicTheme: Codable, JSONEncodable, Hashable {
 
     public var mode: String?
     public var buttonLabel: String?
+    public var brandName: String?
+    public var logoUrl: String?
+    public var showPoweredBy: Bool?
     public var fields: [String]?
     public var customFields: [CustomField]?
     public var colors: [String: String]?
 
-    public init(mode: String? = nil, buttonLabel: String? = nil, fields: [String]? = nil, customFields: [CustomField]? = nil, colors: [String: String]? = nil) {
+    public init(mode: String? = nil, buttonLabel: String? = nil, brandName: String? = nil, logoUrl: String? = nil, showPoweredBy: Bool? = nil, fields: [String]? = nil, customFields: [CustomField]? = nil, colors: [String: String]? = nil) {
         self.mode = mode
         self.buttonLabel = buttonLabel
+        self.brandName = brandName
+        self.logoUrl = logoUrl
+        self.showPoweredBy = showPoweredBy
         self.fields = fields
         self.customFields = customFields
         self.colors = colors
@@ -29,6 +35,9 @@ public struct PublicTheme: Codable, JSONEncodable, Hashable {
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case mode
         case buttonLabel
+        case brandName
+        case logoUrl
+        case showPoweredBy
         case fields
         case customFields
         case colors
@@ -40,6 +49,9 @@ public struct PublicTheme: Codable, JSONEncodable, Hashable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(mode, forKey: .mode)
         try container.encodeIfPresent(buttonLabel, forKey: .buttonLabel)
+        try container.encodeIfPresent(brandName, forKey: .brandName)
+        try container.encodeIfPresent(logoUrl, forKey: .logoUrl)
+        try container.encodeIfPresent(showPoweredBy, forKey: .showPoweredBy)
         try container.encodeIfPresent(fields, forKey: .fields)
         try container.encodeIfPresent(customFields, forKey: .customFields)
         try container.encodeIfPresent(colors, forKey: .colors)

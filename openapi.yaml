@@ -499,6 +499,9 @@ components:
       properties:
         mode: { type: [string, 'null'] }
         buttonLabel: { type: [string, 'null'] }
+        brandName: { type: [string, 'null'] }
+        logoUrl: { type: [string, 'null'], format: uri }
+        showPoweredBy: { type: [boolean, 'null'] }
         fields: { type: array, items: { type: string } }
         customFields: { type: array, items: { $ref: '#/components/schemas/CustomField' } }
         colors: { type: object, additionalProperties: { type: string } }

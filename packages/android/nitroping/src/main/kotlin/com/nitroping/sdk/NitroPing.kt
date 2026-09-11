@@ -28,7 +28,7 @@ data class FeedbackResponse(val id: String, val status: String, val title: Strin
 data class NitroPingAttachment(val bytes: ByteArray, val contentType: String)
 data class NitroPingCategory(val id: String, val name: String, val slug: String)
 data class NitroPingCustomField(val id: String, val label: String, val type: String, val required: Boolean = false, val options: List<String> = emptyList())
-data class NitroPingPublicTheme(val mode: String?, val buttonLabel: String?, val fields: List<String>, val customFields: List<NitroPingCustomField>, val colors: Map<String, String>)
+data class NitroPingPublicTheme(val mode: String?, val buttonLabel: String?, val brandName: String?, val logoUrl: String?, val showPoweredBy: Boolean?, val fields: List<String>, val customFields: List<NitroPingCustomField>, val colors: Map<String, String>)
 data class NitroPingPublicConfig(val theme: NitroPingPublicTheme, val categories: List<NitroPingCategory>)
 data class FollowUpComment(val id: String, val body: String, val createdAt: String)
 data class FollowUpSnapshot(val feedbackId: String, val status: String, val title: String, val body: String, val comments: List<FollowUpComment>)
@@ -96,7 +96,7 @@ class NitroPingClient(
                 add(NitroPingCategory(category.optString("id"), category.optString("name"), category.optString("slug")))
             }
         }
-        NitroPingPublicConfig(NitroPingPublicTheme(themeJson.optString("mode").ifEmpty { null }, themeJson.optString("buttonLabel").ifEmpty { null }, fields, customFields, colors), categories)
+        NitroPingPublicConfig(NitroPingPublicTheme(themeJson.optString("mode").ifEmpty { null }, themeJson.optString("buttonLabel").ifEmpty { null }, themeJson.optString("brandName").ifEmpty { null }, themeJson.optString("logoUrl").ifEmpty { null }, if (themeJson.has("showPoweredBy")) themeJson.optBoolean("showPoweredBy") else null, fields, customFields, colors), categories)
     }
 
     suspend fun uploadAttachment(feedbackId: String, attachment: NitroPingAttachment): String = withContext(Dispatchers.IO) {
