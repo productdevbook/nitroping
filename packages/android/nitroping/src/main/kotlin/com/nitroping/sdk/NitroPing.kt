@@ -2,6 +2,7 @@ package com.nitroping.sdk
 
 import android.os.Build
 import android.content.SharedPreferences
+import android.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
@@ -33,17 +34,21 @@ class NitroPingClient(
     private val apiBaseUrl: String = "https://nitroping.dev/api/v1",
     private val storage: SharedPreferences? = null,
 ) {
-    suspend fun submit(feedback: Feedback): FeedbackResponse = withContext(Dispatchers.IO) {
+    suspend fun submit(feedback: Feedback): FeedbackResponse = submit(feedback, emptyList())
+
+    suspend fun submit(feedback: Feedback, attachments: List<NitroPingAttachment>): FeedbackResponse = withContext(Dispatchers.IO) {
         val idempotencyKey = UUID.randomUUID().toString()
         val body = feedbackJson(feedback)
         try {
-            send(body, idempotencyKey)
+            val response = send(body, idempotencyKey)
+            attachments.forEach { uploadAttachment(response.id, it) }
+            response
         } catch (error: NitroPingHttpException) {
             if (error.statusCode < 500) throw error
-            enqueue(body, idempotencyKey)
+            enqueue(body, idempotencyKey, attachments)
             throw NitroPingQueuedException
         } catch (_: Exception) {
-            enqueue(body, idempotencyKey)
+            enqueue(body, idempotencyKey, attachments)
             throw NitroPingQueuedException
         }
     }
@@ -52,19 +57,17 @@ class NitroPingClient(
         val remaining = queue().toMutableList()
         val delivered = mutableListOf<PendingSubmission>()
         for (item in remaining) {
-            try { send(item.body, item.idempotencyKey); delivered += item }
+            try {
+                val response = send(item.body, item.idempotencyKey)
+                item.attachments.forEach { attachment -> uploadAttachment(response.id, NitroPingAttachment(Base64.decode(attachment.bytesBase64, Base64.DEFAULT), attachment.contentType)) }
+                delivered += item
+            }
             catch (_: Exception) { }
         }
         if (delivered.isNotEmpty()) saveQueue(remaining.filterNot { it in delivered })
     }
 
     fun pendingCount(): Int = queue().size
-
-    suspend fun submit(feedback: Feedback, attachments: List<NitroPingAttachment>): FeedbackResponse = withContext(Dispatchers.IO) {
-        val response = submit(feedback)
-        attachments.forEach { uploadAttachment(response.id, it) }
-        response
-    }
 
     suspend fun uploadAttachment(feedbackId: String, attachment: NitroPingAttachment): String = withContext(Dispatchers.IO) {
         if (attachment.bytes.isEmpty() || attachment.bytes.size > 10 * 1024 * 1024) throw NitroPingHttpException(413, "Attachments cannot exceed 10 MB")
@@ -136,16 +139,33 @@ class NitroPingClient(
         return """{"type":${quote(type)},"title":${quote(feedback.title)},"body":${quote(feedback.body)},"priority":${feedback.priority?.let(::quote) ?: "null"},"categoryId":${feedback.categoryId?.let(::quote) ?: "null"},"email":${feedback.email?.let(::quote) ?: "null"},"platform":"android","appVersion":${feedback.appVersion?.let(::quote) ?: "null"},"osVersion":${quote(Build.VERSION.RELEASE)},"locale":${quote(Locale.getDefault().toLanguageTag())},"metadata":{$metadata}}"""
     }
 
-    private data class PendingSubmission(val body: String, val idempotencyKey: String)
+    private data class PendingAttachment(val bytesBase64: String, val contentType: String)
+    private data class PendingSubmission(val body: String, val idempotencyKey: String, val attachments: List<PendingAttachment> = emptyList())
     private fun queue(): List<PendingSubmission> = storage?.getStringSet("nitroping.pending", emptySet()).orEmpty().mapNotNull {
-        val separator = it.indexOf('|')
-        if (separator <= 0) null else PendingSubmission(it.substring(separator + 1), it.substring(0, separator))
+        if (it.startsWith("{")) {
+            runCatching {
+                val root = JSONObject(it)
+                val attachments = root.optJSONArray("attachments") ?: org.json.JSONArray()
+                PendingSubmission(root.getString("body"), root.getString("idempotencyKey"), buildList {
+                    for (index in 0 until attachments.length()) {
+                        val attachment = attachments.getJSONObject(index)
+                        add(PendingAttachment(attachment.getString("bytes"), attachment.getString("contentType")))
+                    }
+                })
+            }.getOrNull()
+        } else {
+            val separator = it.indexOf('|')
+            if (separator <= 0) null else PendingSubmission(it.substring(separator + 1), it.substring(0, separator))
+        }
     }
-    private fun enqueue(body: String, idempotencyKey: String) {
-        val items = queue().toMutableList(); items += PendingSubmission(body, idempotencyKey); saveQueue(items)
+    private fun enqueue(body: String, idempotencyKey: String, attachments: List<NitroPingAttachment> = emptyList()) {
+        val pendingAttachments = attachments.map { PendingAttachment(Base64.encodeToString(it.bytes, Base64.NO_WRAP), it.contentType) }
+        val items = queue().toMutableList(); items += PendingSubmission(body, idempotencyKey, pendingAttachments); saveQueue(items)
     }
     private fun saveQueue(items: List<PendingSubmission>) {
-        storage?.edit()?.putStringSet("nitroping.pending", items.map { "${it.idempotencyKey}|${it.body}" }.toSet())?.apply()
+        storage?.edit()?.putStringSet("nitroping.pending", items.map { item ->
+            JSONObject().put("idempotencyKey", item.idempotencyKey).put("body", item.body).put("attachments", org.json.JSONArray().also { array -> item.attachments.forEach { array.put(JSONObject().put("bytes", it.bytesBase64).put("contentType", it.contentType)) } }).toString()
+        }.toSet())?.apply()
     }
 
     private fun quote(value: String): String = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""

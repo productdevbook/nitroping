@@ -85,6 +85,23 @@ public enum NitroPingError: Error, Sendable {
 private struct NitroPingPendingSubmission: Codable, Sendable {
     let feedback: NitroPingFeedback
     let idempotencyKey: String
+    let attachments: [NitroPingPendingAttachment]
+
+    private enum CodingKeys: String, CodingKey { case feedback, idempotencyKey, attachments }
+    init(feedback: NitroPingFeedback, idempotencyKey: String, attachments: [NitroPingPendingAttachment] = []) {
+        self.feedback = feedback; self.idempotencyKey = idempotencyKey; self.attachments = attachments
+    }
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        feedback = try container.decode(NitroPingFeedback.self, forKey: .feedback)
+        idempotencyKey = try container.decode(String.self, forKey: .idempotencyKey)
+        attachments = try container.decodeIfPresent([NitroPingPendingAttachment].self, forKey: .attachments) ?? []
+    }
+}
+
+private struct NitroPingPendingAttachment: Codable, Sendable {
+    let data: Data
+    let contentType: String
 }
 
 public actor NitroPingClient {
@@ -99,15 +116,21 @@ public actor NitroPingClient {
     }
 
     public func submit(_ feedback: NitroPingFeedback) async throws -> NitroPingFeedbackResponse {
+        try await submit(feedback, attachments: [])
+    }
+
+    public func submit(_ feedback: NitroPingFeedback, attachments: [NitroPingAttachment]) async throws -> NitroPingFeedbackResponse {
         let idempotencyKey = UUID().uuidString
         do {
-            return try await send(feedback, idempotencyKey: idempotencyKey)
+            let response = try await send(feedback, idempotencyKey: idempotencyKey)
+            for attachment in attachments { _ = try await uploadAttachment(feedbackId: response.id, attachment: attachment) }
+            return response
         } catch let error as NitroPingError {
             if case .server(let statusCode, _) = error, statusCode < 500 { throw error }
-            pending.append(NitroPingPendingSubmission(feedback: feedback, idempotencyKey: idempotencyKey)); persist()
+            pending.append(NitroPingPendingSubmission(feedback: feedback, idempotencyKey: idempotencyKey, attachments: attachments.map { NitroPingPendingAttachment(data: $0.data, contentType: $0.contentType) })); persist()
             throw NitroPingError.queued
         } catch {
-            pending.append(NitroPingPendingSubmission(feedback: feedback, idempotencyKey: idempotencyKey)); persist()
+            pending.append(NitroPingPendingSubmission(feedback: feedback, idempotencyKey: idempotencyKey, attachments: attachments.map { NitroPingPendingAttachment(data: $0.data, contentType: $0.contentType) })); persist()
             throw NitroPingError.queued
         }
     }
@@ -115,7 +138,10 @@ public actor NitroPingClient {
     public func flushPending() async {
         var remaining: [NitroPingPendingSubmission] = []
         for item in pending {
-            do { _ = try await send(item.feedback, idempotencyKey: item.idempotencyKey) }
+            do {
+                let response = try await send(item.feedback, idempotencyKey: item.idempotencyKey)
+                for attachment in item.attachments { _ = try await uploadAttachment(feedbackId: response.id, attachment: NitroPingAttachment(data: attachment.data, contentType: attachment.contentType)) }
+            }
             catch { remaining.append(item) }
         }
         pending = remaining
@@ -123,12 +149,6 @@ public actor NitroPingClient {
     }
 
     public var pendingCount: Int { pending.count }
-
-    public func submit(_ feedback: NitroPingFeedback, attachments: [NitroPingAttachment]) async throws -> NitroPingFeedbackResponse {
-        let response = try await submit(feedback)
-        for attachment in attachments { _ = try await uploadAttachment(feedbackId: response.id, attachment: attachment) }
-        return response
-    }
 
     @discardableResult
     public func uploadAttachment(feedbackId: String, attachment: NitroPingAttachment) async throws -> String {
