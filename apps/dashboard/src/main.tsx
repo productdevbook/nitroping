@@ -240,6 +240,7 @@ function App() {
     error?: boolean;
   } | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [realtimeState, setRealtimeState] = useState<"connecting" | "live" | "offline">("offline");
 
   const credentials = {
     projectKey: publicKey || undefined,
@@ -264,7 +265,7 @@ function App() {
     [feedback, filter, typeFilter, priorityFilter, query],
   );
 
-  const loadInbox = async () => {
+  const loadInbox = async (silent = false) => {
     setLoading(true);
     try {
       const feedbackQuery = new URLSearchParams({ limit: "50" });
@@ -290,7 +291,7 @@ function App() {
       setFeedback(list.items);
       setAnalytics(insight);
       setUsage(currentUsage);
-      setNotice({ text: "Workspace refreshed" });
+      if (!silent) setNotice({ text: "Workspace refreshed" });
     } catch (error) {
       setNotice({
         text:
@@ -586,6 +587,53 @@ function App() {
   useEffect(() => {
     if (workspaceReady && projectId) void loadInbox();
   }, [workspaceReady, projectId, query, filter, typeFilter, priorityFilter]);
+
+  useEffect(() => {
+    if (!workspaceReady || !projectId || !publicKey || typeof WebSocket === "undefined") {
+      setRealtimeState("offline");
+      return;
+    }
+
+    let closed = false;
+    let socket: WebSocket | undefined;
+    let retryTimer: number | undefined;
+    let retryDelay = 1000;
+
+    const connect = () => {
+      if (closed) return;
+      setRealtimeState("connecting");
+      const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+      socket = new WebSocket(
+        `${protocol}//${location.host}${apiBase}/projects/${encodeURIComponent(projectId)}/events?projectKey=${encodeURIComponent(publicKey)}`,
+      );
+      socket.addEventListener("open", () => {
+        retryDelay = 1000;
+        setRealtimeState("live");
+      });
+      socket.addEventListener("message", (event) => {
+        try {
+          const message = JSON.parse(String(event.data)) as { type?: string };
+          if (message.type && message.type !== "connected") void loadInbox(true);
+        } catch {
+          // Ignore malformed stream messages; the next event or reconnect will recover.
+        }
+      });
+      socket.addEventListener("close", () => {
+        if (closed) return;
+        setRealtimeState("offline");
+        retryTimer = window.setTimeout(connect, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 10000);
+      });
+      socket.addEventListener("error", () => setRealtimeState("offline"));
+    };
+
+    connect();
+    return () => {
+      closed = true;
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+      socket?.close();
+    };
+  }, [workspaceReady, projectId, publicKey]);
 
   const openFeedback = async (item: Feedback) => {
     try {
@@ -919,6 +967,9 @@ function App() {
                 : view[0].toUpperCase() + view.slice(1)}
             </strong>
           </div>
+          <span className={`realtime-indicator realtime-${realtimeState}`}>
+            <i /> {realtimeState === "live" ? "Live updates" : realtimeState === "connecting" ? "Connecting" : "Reconnecting"}
+          </span>
           <div className="top-actions">
             <button className="icon-button" aria-label="Search">
               ⌕
