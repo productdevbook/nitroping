@@ -3,6 +3,9 @@ info:
   title: NitroPing API
   version: 0.1.0
   description: Tenant-isolated feedback collection API.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
 servers:
   - url: https://nitroping.dev/api/v1
 security: []
@@ -342,7 +345,7 @@ paths:
     post:
       summary: Create a changelog item using a project query parameter
       parameters: [{ $ref: '#/components/parameters/DashboardProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
-      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [title, body], properties: { title: { type: string }, body: { type: string }, publishedAt: { type: string, format: date-time, nullable: true } } } } } }
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [title, body], properties: { title: { type: string }, body: { type: string }, publishedAt: { type: [string, 'null'], format: date-time } } } } } }
       responses: { '201': { description: Created }, '400': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/changelog/{changelogId}/feedback:
     get:
@@ -382,7 +385,7 @@ paths:
     patch:
       summary: Update editable feedback fields
       parameters: [{ $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/DashboardProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
-      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { type: { type: string, enum: [complaint, bug, suggestion, feature_request] }, priority: { type: string, enum: [low, normal, high, urgent] }, categoryId: { type: string, nullable: true }, title: { type: string }, body: { type: string }, email: { type: string, format: email, nullable: true } } } } } }
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { type: { type: string, enum: [complaint, bug, suggestion, feature_request] }, priority: { type: string, enum: [low, normal, high, urgent] }, categoryId: { type: [string, 'null'] }, title: { type: string }, body: { type: string }, email: { type: [string, 'null'], format: email } } } } } }
       responses: { '200': { description: Updated feedback }, '400': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
   /dashboard/feedback/{feedbackId}/assign:
     post:

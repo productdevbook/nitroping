@@ -22,6 +22,7 @@ jobs:
       - run: bun run test
       - run: bun run build
       - run: bunx wrangler types apps/api/src/worker-configuration.d.ts --check --config apps/api/wrangler.jsonc
+      - run: bunx @redocly/cli@latest lint openapi.yaml
 
   ios:
     runs-on: macos-latest
