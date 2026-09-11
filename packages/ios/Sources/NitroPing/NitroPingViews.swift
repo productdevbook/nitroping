@@ -7,6 +7,8 @@ public struct NitroPingFeedbackView: View {
     @State private var title = ""
     @State private var message = ""
     @State private var email = ""
+    @State private var categoryId = ""
+    @State private var publicConfig: NitroPingPublicConfig?
     @State private var status = ""
     @State private var sending = false
 
@@ -17,24 +19,33 @@ public struct NitroPingFeedbackView: View {
             Section("Share feedback") {
                 TextField("Title", text: $title)
                 TextEditor(text: $message).frame(minHeight: 110)
-                TextField("Email (optional)", text: $email)
+                if (publicConfig?.theme.fields?.isEmpty != false || publicConfig?.theme.fields?.contains("category") == true), let categories = publicConfig?.categories, !categories.isEmpty {
+                    Picker("Category", selection: $categoryId) {
+                        Text("No category").tag("")
+                        ForEach(categories, id: \.id) { category in Text(category.name).tag(category.id) }
+                    }
+                }
+                if publicConfig?.theme.fields?.isEmpty != false || publicConfig?.theme.fields?.contains("email") == true {
+                    TextField("Email (optional)", text: $email)
 #if os(iOS)
                     .textInputAutocapitalization(.never)
                     .keyboardType(.emailAddress)
 #endif
-                Button(sending ? "Sending…" : "Submit feedback") { submit() }.disabled(sending || title.trimmingCharacters(in: .whitespacesAndNewlines).count < 3 || message.trimmingCharacters(in: .whitespacesAndNewlines).count < 3)
+                }
+                Button(sending ? "Sending…" : publicConfig?.theme.buttonLabel ?? "Submit feedback") { submit() }.disabled(sending || title.trimmingCharacters(in: .whitespacesAndNewlines).count < 3 || message.trimmingCharacters(in: .whitespacesAndNewlines).count < 3)
             }
             if !status.isEmpty { Section { Text(status).foregroundColor(.secondary) } }
         }
         .navigationTitle("Feedback")
+        .task { publicConfig = try? await client.fetchPublicConfig() }
     }
 
     private func submit() {
         sending = true
         Task {
             do {
-                _ = try await client.submit(NitroPingFeedback(type: .suggestion, title: title, body: message, email: email.isEmpty ? nil : email))
-                await MainActor.run { status = "Thanks — your feedback was sent."; title = ""; message = ""; email = ""; sending = false }
+                _ = try await client.submit(NitroPingFeedback(type: .suggestion, title: title, body: message, categoryId: categoryId.isEmpty ? nil : categoryId, email: email.isEmpty ? nil : email))
+                await MainActor.run { status = "Thanks — your feedback was sent."; title = ""; message = ""; email = ""; categoryId = ""; sending = false }
             } catch NitroPingError.queued {
                 await MainActor.run { status = "Saved locally and will retry when you are online."; sending = false }
             } catch {

@@ -1,7 +1,7 @@
 {
   "name": "nitroping",
   "private": true,
-  "packageManager": "bun@1.4.0",
+  "packageManager": "bun@1.4.2",
   "workspaces": ["apps/*", "packages/*", "infra"],
   "scripts": {
     "build": "bun run --filter '*' build",
@@ -19,6 +19,6 @@
     "vitest": "^5.0.0"
   },
   "overrides": {
-    "@effect/platform-node-shared": "4.0.0-rc.112"
+    "@effect/platform-node-shared": "4.0.0-rc.113"
   }
 }

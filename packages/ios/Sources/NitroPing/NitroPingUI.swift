@@ -27,7 +27,7 @@ public struct NitroPingFeedbackForm: View {
                 TextField("Title", text: $title)
                 TextEditor(text: $description)
                     .frame(minHeight: 100)
-                if let categories = publicConfig?.categories, !categories.isEmpty {
+                if (publicConfig?.theme.fields?.isEmpty != false || publicConfig?.theme.fields?.contains("category") == true), let categories = publicConfig?.categories, !categories.isEmpty {
                     Picker("Category", selection: $categoryId) {
                         Text("No category").tag("")
                         ForEach(categories, id: \.id) { category in
@@ -35,8 +35,10 @@ public struct NitroPingFeedbackForm: View {
                         }
                     }
                 }
-                TextField("Email (optional)", text: $email)
-                Button(sending ? "Sending…" : "Submit feedback") {
+                if publicConfig?.theme.fields?.isEmpty != false || publicConfig?.theme.fields?.contains("email") == true {
+                    TextField("Email (optional)", text: $email)
+                }
+                Button(sending ? "Sending…" : publicConfig?.theme.buttonLabel ?? "Submit feedback") {
                     submit()
                 }
                 .disabled(sending || title.trimmingCharacters(in: .whitespacesAndNewlines).count < 3 || description.trimmingCharacters(in: .whitespacesAndNewlines).count < 3)
@@ -83,9 +85,11 @@ public final class NitroPingFeedbackViewController: UIViewController {
     private let type: NitroPingFeedbackType
     private let titleField = UITextField()
     private let bodyField = UITextView()
+    private let categoryField = UISegmentedControl(items: ["No category"])
     private let emailField = UITextField()
     private let statusLabel = UILabel()
     private let submitButton = UIButton(type: .system)
+    private var categories: [NitroPingCategory] = []
 
     public init(client: NitroPingClient, type: NitroPingFeedbackType = .suggestion) {
         self.client = client; self.type = type
@@ -104,13 +108,14 @@ public final class NitroPingFeedbackViewController: UIViewController {
         bodyField.layer.borderColor = UIColor.separator.cgColor
         bodyField.layer.cornerRadius = 8
         bodyField.heightAnchor.constraint(equalToConstant: 120).isActive = true
+        categoryField.isHidden = true
         emailField.placeholder = "Email (optional)"
         emailField.keyboardType = .emailAddress
         emailField.autocapitalizationType = .none
         submitButton.setTitle("Submit feedback", for: .normal)
         submitButton.addTarget(self, action: #selector(submit), for: .touchUpInside)
         statusLabel.textColor = .secondaryLabel
-        let stack = UIStackView(arrangedSubviews: [titleField, bodyField, emailField, submitButton, statusLabel])
+        let stack = UIStackView(arrangedSubviews: [titleField, bodyField, categoryField, emailField, submitButton, statusLabel])
         stack.axis = .vertical; stack.spacing = 12; stack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stack)
         NSLayoutConstraint.activate([
@@ -118,6 +123,18 @@ public final class NitroPingFeedbackViewController: UIViewController {
             stack.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
             stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
         ])
+        Task {
+            guard let config = try? await client.fetchPublicConfig() else { return }
+            await MainActor.run {
+                self.categories = config.categories
+                self.categoryField.removeAllSegments()
+                self.categoryField.insertSegment(withTitle: "No category", at: 0, animated: false)
+                for (index, category) in config.categories.enumerated() { self.categoryField.insertSegment(withTitle: category.name, at: index + 1, animated: false) }
+                self.categoryField.selectedSegmentIndex = 0
+                self.categoryField.isHidden = config.theme.fields?.isEmpty == false && config.theme.fields?.contains("category") != true || config.categories.isEmpty
+                self.submitButton.setTitle(config.theme.buttonLabel ?? "Submit feedback", for: .normal)
+            }
+        }
     }
 
     @objc private func submit() {
@@ -125,7 +142,8 @@ public final class NitroPingFeedbackViewController: UIViewController {
         let body = bodyField.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard title.count >= 3, body.count >= 3 else { statusLabel.text = "Please enter a title and description."; return }
         submitButton.isEnabled = false
-        let feedback = NitroPingFeedback(type: type, title: title, body: body, email: emailField.text?.isEmpty == true ? nil : emailField.text)
+        let selectedCategory = categoryField.selectedSegmentIndex > 0 && categoryField.selectedSegmentIndex - 1 < categories.count ? categories[categoryField.selectedSegmentIndex - 1].id : nil
+        let feedback = NitroPingFeedback(type: type, title: title, body: body, categoryId: selectedCategory, email: emailField.text?.isEmpty == true ? nil : emailField.text)
         Task {
             do {
                 _ = try await client.submit(feedback)

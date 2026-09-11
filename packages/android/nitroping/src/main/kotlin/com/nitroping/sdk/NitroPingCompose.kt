@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -20,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
@@ -42,6 +44,9 @@ fun NitroPingFeedback(
     var sending by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(client) { publicConfig = runCatching { client.fetchPublicConfig() }.getOrNull() }
+    val primaryButtonColors = publicConfig?.theme?.colors?.get("primary")?.let { value ->
+        runCatching { ButtonDefaults.buttonColors(containerColor = Color(android.graphics.Color.parseColor(value))) }.getOrNull()
+    } ?: ButtonDefaults.buttonColors()
 
     Card(modifier = modifier) {
         Column(
@@ -63,9 +68,9 @@ fun NitroPingFeedback(
                 label = { Text("Description") },
                 minLines = 4,
             )
-            if (!publicConfig?.categories.isNullOrEmpty()) {
+            if ((publicConfig?.theme?.fields.isNullOrEmpty() || publicConfig?.theme?.fields?.contains("category") == true) && !publicConfig?.categories.isNullOrEmpty()) {
                 Box {
-                    Button(onClick = { categoryMenuOpen = true }) {
+                    Button(onClick = { categoryMenuOpen = true }, colors = primaryButtonColors) {
                         val selected = publicConfig?.categories?.firstOrNull { it.id == categoryId }?.name
                         Text(selected ?: "Select category")
                     }
@@ -77,14 +82,16 @@ fun NitroPingFeedback(
                     }
                 }
             }
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Email (optional)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                singleLine = true,
-            )
+            if (publicConfig?.theme?.fields.isNullOrEmpty() || publicConfig?.theme?.fields?.contains("email") == true) {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Email (optional)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    singleLine = true,
+                )
+            }
             Button(
                 onClick = {
                     sending = true
@@ -114,8 +121,9 @@ fun NitroPingFeedback(
                 },
                 enabled = !sending && title.trim().length >= 3 && description.trim().length >= 3,
                 modifier = Modifier.fillMaxWidth(),
+                colors = primaryButtonColors,
             ) {
-                Text(if (sending) "Sending…" else "Submit feedback")
+                Text(if (sending) "Sending…" else publicConfig?.theme?.buttonLabel ?: "Submit feedback")
             }
             if (status.isNotEmpty()) Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

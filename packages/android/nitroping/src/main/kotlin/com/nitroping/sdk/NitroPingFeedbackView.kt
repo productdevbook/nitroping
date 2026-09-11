@@ -40,7 +40,9 @@ class NitroPingFeedbackView(
         submit.setOnClickListener { send() }
         scope.launch {
             val config = runCatching { client.fetchPublicConfig() }.getOrNull()
-            if (!config?.categories.isNullOrEmpty()) {
+            config?.theme?.buttonLabel?.let { submit.text = it }
+            config?.theme?.colors?.get("primary")?.let { color -> runCatching { submit.setBackgroundColor(Color.parseColor(color)) } }
+            if ((config?.theme?.fields.isNullOrEmpty() || config?.theme?.fields?.contains("category") == true) && !config.categories.isNullOrEmpty()) {
                 val options = listOf(CategoryOption("", "No category")) + config!!.categories.map { CategoryOption(it.id, it.name) }
                 categoryField.adapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, options)
                 categoryField.visibility = VISIBLE
