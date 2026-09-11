@@ -31,12 +31,11 @@ bunx wrangler d1 create nitroping-self-host
 bunx wrangler r2 bucket create nitroping-self-host-attachments --jurisdiction eu
 bunx wrangler kv namespace create NITROPING_CACHE_SELF_HOST
 bunx wrangler queues create nitroping-self-host-events
-bunx wrangler analytics-engine dataset create nitroping_self_host_metrics
 bunx wrangler vectorize create nitroping-self-host-search --dimensions=768 --metric=cosine
 bunx wrangler vectorize create-metadata-index nitroping-self-host-search --propertyName=organizationId --type=string
 ```
 
-Create a copy of `wrangler.example.jsonc`, replace every `REPLACE_WITH_*` value with the resource IDs/names returned above, and save it outside the repository as `wrangler.self-host.jsonc`. Do not commit that file if it contains account-specific identifiers or custom domains.
+Create a copy of `wrangler.example.jsonc`, replace every `REPLACE_WITH_*` value with the resource IDs/names returned above, and save it outside the repository as `wrangler.self-host.jsonc`. Set the Analytics Engine dataset name to a unique value; the Worker binding provisions/activates that dataset on deployment in the account. Do not commit that file if it contains account-specific identifiers or custom domains.
 
 ## Initialize and deploy
 
