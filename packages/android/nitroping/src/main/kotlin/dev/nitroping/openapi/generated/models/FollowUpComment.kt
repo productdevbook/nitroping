@@ -35,7 +35,7 @@ import kotlinx.serialization.encoding.*
  * @param body 
  * @param createdAt 
  */
-@Serializable@Serializable
+@Serializable
 
 data class FollowUpComment (
 

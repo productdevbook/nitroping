@@ -33,7 +33,7 @@ import kotlinx.serialization.encoding.*
  *
  * @param assigneeUserId 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardFeedbackFeedbackIdAssignPostRequest (
 

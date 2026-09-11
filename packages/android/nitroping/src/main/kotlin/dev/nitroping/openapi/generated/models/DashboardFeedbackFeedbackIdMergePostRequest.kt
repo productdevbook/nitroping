@@ -33,7 +33,7 @@ import kotlinx.serialization.encoding.*
  *
  * @param targetFeedbackId 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardFeedbackFeedbackIdMergePostRequest (
 

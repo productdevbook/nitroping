@@ -33,7 +33,7 @@ import kotlinx.serialization.encoding.*
  *
  * @param feedbackId 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardProjectsProjectIdRoadmapRoadmapIdFeedbackPostRequest (
 

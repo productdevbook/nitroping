@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.*
  *
  * @param error 
  */
-@Serializable@Serializable
+@Serializable
 
 data class InlineObject (
 

@@ -37,7 +37,7 @@ import kotlinx.serialization.encoding.*
  * @param required 
  * @param options 
  */
-@Serializable@Serializable
+@Serializable
 
 data class CustomField (
 

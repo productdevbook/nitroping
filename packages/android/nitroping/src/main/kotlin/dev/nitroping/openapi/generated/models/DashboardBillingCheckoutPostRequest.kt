@@ -33,7 +33,7 @@ import kotlinx.serialization.encoding.*
  *
  * @param plan 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardBillingCheckoutPostRequest (
 

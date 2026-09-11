@@ -35,7 +35,7 @@ import kotlinx.serialization.encoding.*
  * @param propertySize 
  * @param feedbackId 
  */
-@Serializable@Serializable
+@Serializable
 
 data class ProjectsProjectIdUploadsInitiatePostRequest (
 

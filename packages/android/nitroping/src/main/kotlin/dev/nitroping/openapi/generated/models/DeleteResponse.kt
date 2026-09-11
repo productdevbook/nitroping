@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.*
  * @param deleted 
  * @param feedbackId 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DeleteResponse (
 

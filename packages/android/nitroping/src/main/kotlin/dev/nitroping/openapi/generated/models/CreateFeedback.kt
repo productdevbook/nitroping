@@ -48,7 +48,7 @@ import kotlinx.serialization.encoding.*
  * @param metadata 
  * @param turnstileToken Optional short-lived Cloudflare Turnstile token; never persisted
  */
-@Serializable@Serializable
+@Serializable
 
 data class CreateFeedback (
 

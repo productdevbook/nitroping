@@ -33,7 +33,7 @@ import kotlinx.serialization.encoding.*
  *
  * @param body 
  */
-@Serializable@Serializable
+@Serializable
 
 data class ProjectsProjectIdFeedbackFeedbackIdCommentsPostRequest (
 

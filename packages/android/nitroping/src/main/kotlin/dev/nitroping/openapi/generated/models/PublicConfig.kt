@@ -36,7 +36,7 @@ import kotlinx.serialization.encoding.*
  * @param theme 
  * @param categories 
  */
-@Serializable@Serializable
+@Serializable
 
 data class PublicConfig (
 

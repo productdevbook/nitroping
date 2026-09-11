@@ -43,7 +43,7 @@ import kotlinx.serialization.encoding.*
  * @param createdAt 
  * @param updatedAt 
  */
-@Serializable@Serializable
+@Serializable
 
 data class FollowUpFeedback (
 

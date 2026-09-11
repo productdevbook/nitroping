@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.Encoder
  *
  * Values: complaint,bug,suggestion,feature_request
  */
-@Serializable@Serializable
+@Serializable
 enum class FeedbackType(val value: kotlin.String) {
 
     @SerialName(value = "complaint")

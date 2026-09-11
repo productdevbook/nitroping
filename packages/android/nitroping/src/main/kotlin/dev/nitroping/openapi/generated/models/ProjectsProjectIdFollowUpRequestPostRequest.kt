@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.*
  * @param feedbackId 
  * @param email 
  */
-@Serializable@Serializable
+@Serializable
 
 data class ProjectsProjectIdFollowUpRequestPostRequest (
 

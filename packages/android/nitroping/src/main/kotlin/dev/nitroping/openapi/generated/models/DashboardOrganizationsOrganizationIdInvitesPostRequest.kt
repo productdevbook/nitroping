@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.*
  * @param email 
  * @param role 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardOrganizationsOrganizationIdInvitesPostRequest (
 

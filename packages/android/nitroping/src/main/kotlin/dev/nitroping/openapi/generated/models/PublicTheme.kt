@@ -38,7 +38,7 @@ import kotlinx.serialization.encoding.*
  * @param customFields 
  * @param colors 
  */
-@Serializable@Serializable
+@Serializable
 
 data class PublicTheme (
 

@@ -33,7 +33,7 @@ import kotlinx.serialization.encoding.*
  *
  * @param status 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardFeedbackFeedbackIdStatusPostRequest (
 

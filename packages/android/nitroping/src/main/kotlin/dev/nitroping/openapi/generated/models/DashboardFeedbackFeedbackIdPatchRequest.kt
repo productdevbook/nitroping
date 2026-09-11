@@ -38,7 +38,7 @@ import kotlinx.serialization.encoding.*
  * @param body 
  * @param email 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardFeedbackFeedbackIdPatchRequest (
 

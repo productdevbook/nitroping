@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.*
  * @param attachmentId 
  * @param uploadUrl 
  */
-@Serializable@Serializable
+@Serializable
 
 data class UploadInitiation (
 

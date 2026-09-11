@@ -56,6 +56,16 @@ for (const target of targets) {
     const source = join(output, "src/commonMain/kotlin/dev/nitroping/openapi/generated");
     await rm(target.destination, { recursive: true, force: true });
     await cp(source, target.destination, { recursive: true });
+    for await (const file of new Bun.Glob("**/*.kt").scan({ cwd: target.destination, absolute: true })) {
+      const path = String(file);
+      const normalized = (await Bun.file(path).text())
+        .replaceAll("@Serializable@Serializable", "@Serializable")
+        .replaceAll(
+          "kotlin.collections.Map<kotlin.String, kotlin.Any>",
+          "kotlin.collections.Map<kotlin.String, kotlinx.serialization.json.JsonElement>",
+        );
+      await Bun.write(path, normalized);
+    }
     await rm(output, { recursive: true, force: true });
   }
 }

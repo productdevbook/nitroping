@@ -35,7 +35,7 @@ import kotlinx.serialization.encoding.*
  * @param items 
  * @param nextCursor 
  */
-@Serializable@Serializable
+@Serializable
 
 data class InlineObject1 (
 

@@ -35,7 +35,7 @@ import kotlinx.serialization.encoding.*
  * @param body 
  * @param status 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardRoadmapPostRequest (
 

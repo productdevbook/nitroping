@@ -33,7 +33,7 @@ import kotlinx.serialization.encoding.*
  *
  * @param tagId 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardFeedbackFeedbackIdTagsPostRequest (
 

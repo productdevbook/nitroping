@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.*
  * @param body 
  * @param `internal` 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardFeedbackFeedbackIdReplyPostRequest (
 

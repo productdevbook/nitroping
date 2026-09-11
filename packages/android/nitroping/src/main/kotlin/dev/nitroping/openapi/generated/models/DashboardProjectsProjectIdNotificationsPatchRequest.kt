@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.*
  * @param eventType 
  * @param enabled 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardProjectsProjectIdNotificationsPatchRequest (
 

@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.Encoder
  *
  * Values: web,ios,android,other
  */
-@Serializable@Serializable
+@Serializable
 enum class Platform(val value: kotlin.String) {
 
     @SerialName(value = "web")

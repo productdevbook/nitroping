@@ -36,7 +36,7 @@ import kotlinx.serialization.encoding.*
  * @param requestId 
  * @param details 
  */
-@Serializable@Serializable
+@Serializable
 
 data class Error (
 
@@ -46,7 +46,7 @@ data class Error (
 
     @SerialName(value = "requestId") @Required val requestId: kotlin.String,
 
-    @SerialName(value = "details") val details: kotlin.collections.Map<kotlin.String, kotlin.Any>? = null
+    @SerialName(value = "details") val details: kotlin.collections.Map<kotlin.String, kotlinx.serialization.json.JsonElement>? = null
 
 ) {
 

@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.Encoder
  *
  * Values: new,triaged,planned,in_progress,resolved,closed,spam
  */
-@Serializable@Serializable
+@Serializable
 enum class FeedbackStatus(val value: kotlin.String) {
 
     @SerialName(value = "new")

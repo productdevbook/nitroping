@@ -35,7 +35,7 @@ import kotlinx.serialization.encoding.*
  * @param name 
  * @param slug 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardProjectsPostRequest (
 

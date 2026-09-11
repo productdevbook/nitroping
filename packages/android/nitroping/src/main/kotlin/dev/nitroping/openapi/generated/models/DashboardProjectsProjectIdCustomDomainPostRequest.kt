@@ -33,7 +33,7 @@ import kotlinx.serialization.encoding.*
  *
  * @param hostname 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardProjectsProjectIdCustomDomainPostRequest (
 

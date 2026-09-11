@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.Encoder
  *
  * Values: low,normal,high,urgent
  */
-@Serializable@Serializable
+@Serializable
 enum class FeedbackPriority(val value: kotlin.String) {
 
     @SerialName(value = "low")

@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.*
  * @param url 
  * @param events 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardProjectsProjectIdWebhooksPostRequest (
 

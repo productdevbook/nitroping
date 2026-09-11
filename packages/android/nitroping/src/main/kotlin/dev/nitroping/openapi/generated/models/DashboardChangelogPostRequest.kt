@@ -35,7 +35,7 @@ import kotlinx.serialization.encoding.*
  * @param body 
  * @param publishedAt 
  */
-@Serializable@Serializable
+@Serializable
 
 data class DashboardChangelogPostRequest (
 
