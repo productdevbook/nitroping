@@ -1,7 +1,11 @@
 import { Effect } from "effect";
-import { feedbackStatuses, feedbackTypes, jsonResponse, type CreateFeedbackInput, type Feedback, type FeedbackStatus } from "@nitroping/contracts";
+import { feedbackPriorities, feedbackStatuses, feedbackTypes, jsonResponse, platforms, type CreateFeedbackInput, type Feedback, type FeedbackStatus } from "@nitroping/contracts";
 import { changeFeedbackStatus, createFeedback, getFeedback, listFeedback, type FeedbackRepository, type TenantContext } from "./services";
 import { clientIp, randomToken, sha256 } from "./security";
+import { type AccessClaims, verifyAccessJwt } from "./access";
+import { ProjectEventStream } from "./events";
+
+export { ProjectEventStream };
 
 const id = () => crypto.randomUUID();
 const requestId = (request: Request) => request.headers.get("x-request-id") ?? `req_${id()}`;
@@ -15,6 +19,11 @@ const validateInput = (body: unknown): CreateFeedbackInput | string => {
   if (typeof input.title !== "string" || input.title.trim().length < 3 || input.title.length > 160) return "title 3-160 karakter olmalıdır";
   if (typeof input.body !== "string" || input.body.trim().length < 3 || input.body.length > 20_000) return "body 3-20000 karakter olmalıdır";
   if (input.email !== undefined && (typeof input.email !== "string" || input.email.length > 320)) return "Geçersiz email";
+  if (input.priority !== undefined && !feedbackPriorities.includes(input.priority as never)) return "Geçersiz priority";
+  if (input.platform !== undefined && !platforms.includes(input.platform as never)) return "Geçersiz platform";
+  if (input.metadata !== undefined && (!input.metadata || typeof input.metadata !== "object" || Array.isArray(input.metadata))) return "Geçersiz metadata";
+  if (input.metadata && Object.keys(input.metadata as object).length > 30) return "En fazla 30 metadata alanı gönderilebilir";
+  if (input.metadata && Object.values(input.metadata as Record<string, unknown>).some((value) => !["string", "number", "boolean"].includes(typeof value))) return "Metadata yalnızca primitive değerler içerebilir";
   return {
     type: input.type as CreateFeedbackInput["type"], title: input.title.trim(), body: input.body.trim(),
     priority: (input.priority as CreateFeedbackInput["priority"]) ?? "normal", email: input.email as string | undefined,
@@ -114,6 +123,39 @@ const requestHeaders = (rid: string, origin?: string): Record<string, string> =>
   "x-request-id": rid,
 });
 
+const requireProjectServer = async (request: Request, env: Env, url: URL, projectId: string, rid: string): Promise<TenantContext | Response> => {
+  const context = await projectFromRequest(request, env, url, rid);
+  if (context instanceof Response) return context;
+  const scopeError = projectMatchesPath(context, projectId, rid);
+  if (scopeError) return scopeError;
+  const authError = await requireServerKey(request, env, context, rid);
+  return authError ?? context;
+};
+
+const requireDashboardAccess = async (request: Request, env: Env, rid: string): Promise<Response | null> => {
+  if (!String(env.ACCESS_TEAM_DOMAIN ?? "") || !String(env.ACCESS_AUDIENCE ?? "")) return null;
+  return await verifyAccessJwt(request, env) ? null : error("DASHBOARD_AUTH_REQUIRED", "Cloudflare Access doğrulaması gerekli", rid, 401);
+};
+
+const requireIdentity = async (request: Request, env: Env, rid: string): Promise<AccessClaims | Response> => {
+  if (!String(env.ACCESS_TEAM_DOMAIN ?? "") || !String(env.ACCESS_AUDIENCE ?? "")) return error("DASHBOARD_ACCESS_NOT_CONFIGURED", "Organization yönetimi için Cloudflare Access yapılandırılmalı", rid, 503);
+  const claims = await verifyAccessJwt(request, env);
+  return claims?.email ? claims : error("DASHBOARD_AUTH_REQUIRED", "Cloudflare Access doğrulaması gerekli", rid, 401);
+};
+
+const userForIdentity = async (env: Env, identity: AccessClaims): Promise<string> => {
+  const userId = await sha256(`access:${identity.sub ?? identity.email}`);
+  const now = new Date().toISOString();
+  await env.DB.prepare("INSERT OR IGNORE INTO users (id, email, created_at, updated_at) VALUES (?, ?, ?, ?)").bind(userId, identity.email, now, now).run();
+  return userId;
+};
+
+const requireOrganizationMember = async (env: Env, organizationId: string, userId: string, roles: string[] = ["owner", "admin"]): Promise<boolean> => {
+  const placeholders = roles.map(() => "?").join(",");
+  const member = await env.DB.prepare(`SELECT 1 FROM organization_members WHERE organization_id = ? AND user_id = ? AND role IN (${placeholders})`).bind(organizationId, userId, ...roles).first();
+  return Boolean(member);
+};
+
 const etagged = async (data: unknown, request: Request, headers: Record<string, string>, status = 200): Promise<Response> => {
   const etag = `W/\"${await sha256(JSON.stringify(data))}\"`;
   if (request.headers.get("if-none-match") === etag) return new Response(null, { status: 304, headers: { ...headers, etag } });
@@ -121,7 +163,7 @@ const etagged = async (data: unknown, request: Request, headers: Record<string, 
 };
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const rid = requestId(request);
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, "");
@@ -130,6 +172,57 @@ export default {
     if (path === "/health") return jsonResponse({ ok: true, environment: env.ENVIRONMENT, requestId: rid }, { headers: cors });
     try {
       const repo = repository(env);
+      const organizationsPath = path === "/api/v1/dashboard/organizations";
+      if (organizationsPath && (request.method === "GET" || request.method === "POST")) {
+        const identity = await requireIdentity(request, env, rid);
+        if (identity instanceof Response) return identity;
+        const userId = await userForIdentity(env, identity);
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT o.id, o.name, o.slug, m.role, o.created_at AS createdAt FROM organizations o JOIN organization_members m ON m.organization_id = o.id WHERE m.user_id = ? AND o.deleted_at IS NULL ORDER BY o.created_at ASC").bind(userId).all();
+          return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+        }
+        const body = await jsonBody(request);
+        const name = typeof body.name === "string" ? body.name.trim() : "";
+        const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        if (name.length < 2 || name.length > 120 || !/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) return error("VALIDATION_ERROR", "Organization name/slug geçersiz", rid, 400);
+        const organizationId = id(); const now = new Date().toISOString();
+        try {
+          await env.DB.batch([
+            env.DB.prepare("INSERT INTO organizations (id, name, slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?)").bind(organizationId, name, slug, now, now),
+            env.DB.prepare("INSERT INTO organization_members (organization_id, user_id, role, created_at) VALUES (?, ?, 'owner', ?)").bind(organizationId, userId, now),
+            env.DB.prepare("INSERT INTO subscriptions (organization_id, plan, status, created_at, updated_at) VALUES (?, 'free', 'active', ?, ?)").bind(organizationId, now, now),
+          ]);
+        } catch { return error("ORGANIZATION_SLUG_TAKEN", "Organization slug zaten kullanılıyor", rid, 409); }
+        return jsonResponse({ id: organizationId, name, slug, role: "owner", createdAt: now }, { status: 201, headers: cors });
+      }
+      const projectsPath = path === "/api/v1/dashboard/projects";
+      if (projectsPath && request.method === "GET") {
+        const identity = await requireIdentity(request, env, rid);
+        if (identity instanceof Response) return identity;
+        const userId = await userForIdentity(env, identity);
+        const rows = await env.DB.prepare("SELECT p.id, p.organization_id AS organizationId, p.name, p.slug, p.public_key AS publicKey, p.created_at AS createdAt FROM projects p JOIN organization_members m ON m.organization_id = p.organization_id WHERE m.user_id = ? AND p.deleted_at IS NULL ORDER BY p.created_at ASC").bind(userId).all();
+        return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+      }
+      const projectCreateMatch = path.match(/^\/api\/v1\/dashboard\/organizations\/([^/]+)\/projects$/);
+      if (projectCreateMatch && request.method === "POST") {
+        const identity = await requireIdentity(request, env, rid);
+        if (identity instanceof Response) return identity;
+        const userId = await userForIdentity(env, identity);
+        if (!(await requireOrganizationMember(env, projectCreateMatch[1], userId))) return error("FORBIDDEN", "Organization yönetim yetkisi gerekli", rid, 403);
+        const body = await jsonBody(request);
+        const name = typeof body.name === "string" ? body.name.trim() : "";
+        const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        if (name.length < 2 || name.length > 120 || !/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) return error("VALIDATION_ERROR", "Project name/slug geçersiz", rid, 400);
+        const projectId = id(); const publicKey = randomToken("pk_live"); const serverKey = randomToken("sk_live"); const now = new Date().toISOString();
+        try {
+          await env.DB.batch([
+            env.DB.prepare("INSERT INTO projects (id, organization_id, name, slug, public_key, server_key_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(projectId, projectCreateMatch[1], name, slug, publicKey, await sha256(serverKey), now, now),
+            env.DB.prepare("INSERT INTO project_settings (project_id) VALUES (?)").bind(projectId),
+            env.DB.prepare("INSERT INTO project_api_keys (id, organization_id, project_id, kind, label, key_prefix, key_hash, created_at) VALUES (?, ?, ?, 'public', 'default public key', ?, ?, ?), (?, ?, ?, 'server', 'default server key', ?, ?, ?)").bind(id(), projectCreateMatch[1], projectId, publicKey.slice(0, 12), await sha256(publicKey), now, id(), projectCreateMatch[1], projectId, serverKey.slice(0, 12), await sha256(serverKey), now),
+          ]);
+        } catch { return error("PROJECT_SLUG_TAKEN", "Project slug zaten kullanılıyor", rid, 409); }
+        return jsonResponse({ id: projectId, organizationId: projectCreateMatch[1], name, slug, publicKey, serverKey, createdAt: now }, { status: 201, headers: cors });
+      }
       const match = path.match(/^\/api\/v1\/projects\/([^/]+)\/feedback(?:\/([^/]+))?$/);
       if (match && request.method === "POST" && !match[2]) {
         const input = validateInput(await request.json());
@@ -150,6 +243,7 @@ export default {
         const result = await Effect.runPromise(createFeedback(repo, context, input, rid));
         if (idem) await env.DB.prepare("INSERT OR IGNORE INTO idempotency_keys (organization_id, project_id, key, response_json, status_code, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(context.organizationId, context.projectId, idem, JSON.stringify(result), 201, result.createdAt).run();
         if (env.EVENTS) await env.EVENTS.send({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, eventId: id() });
+        if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(result.projectId).publish({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, createdAt: result.createdAt }));
         return jsonResponse(result, { status: 201, headers: cors });
       }
       if (match && request.method === "GET" && match[2]) {
@@ -194,6 +288,15 @@ export default {
         if (scopeError) return scopeError;
         const rows = await env.DB.prepare("SELECT id, title, body, published_at AS publishedAt, created_at AS createdAt FROM changelog_items WHERE organization_id = ? AND project_id = ? AND published_at IS NOT NULL ORDER BY published_at DESC").bind(context.organizationId, context.projectId).all();
         return await etagged({ items: rows.results ?? [] }, request, cors);
+      }
+      const eventsMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/events$/);
+      if (eventsMatch && request.method === "GET") {
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, eventsMatch[1], rid);
+        if (scopeError) return scopeError;
+        if (!env.EVENT_STREAM) return error("REALTIME_NOT_CONFIGURED", "Realtime event stream yapılandırılmamış", rid, 503);
+        return env.EVENT_STREAM.getByName(context.projectId).fetch(request);
       }
       const commentMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/feedback\/([^/]+)\/comments$/);
       if (commentMatch && request.method === "POST") {
@@ -262,8 +365,46 @@ export default {
         if (env.EVENTS) await env.EVENTS.send({ type: "follow-up.requested", token, email: body.email, feedbackId: body.feedbackId, projectId: context.projectId, eventId: id() });
         return jsonResponse({ accepted: true }, { status: 202, headers: cors });
       }
+      const followUpReadMatch = path.match(/^\/api\/v1\/follow-up\/([^/]+)$/);
+      if (followUpReadMatch && request.method === "GET") {
+        const raw = await env.CACHE.get(`follow:${followUpReadMatch[1]}`, "json") as { feedbackId: string; organizationId: string; projectId: string } | null;
+        if (!raw) return error("FOLLOW_UP_EXPIRED", "Takip bağlantısı geçersiz veya süresi dolmuş", rid, 404);
+        const feedback = await env.DB.prepare("SELECT id, type, status, priority, title, body, platform, app_version AS appVersion, created_at AS createdAt, updated_at AS updatedAt FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(raw.feedbackId, raw.organizationId, raw.projectId).first();
+        if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback bulunamadı", rid, 404);
+        const comments = await env.DB.prepare("SELECT id, body, created_at AS createdAt FROM feedback_comments WHERE feedback_id = ? AND project_id = ? AND is_internal = 0 AND deleted_at IS NULL ORDER BY created_at ASC").bind(raw.feedbackId, raw.projectId).all();
+        return jsonResponse({ feedback, comments: comments.results ?? [] }, { headers: cors });
+      }
+      const exportMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/export$/);
+      if (exportMatch && request.method === "GET") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, exportMatch[1], rid);
+        if (context instanceof Response) return context;
+        const feedback = await env.DB.prepare("SELECT * FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at ASC").bind(context.organizationId, context.projectId).all();
+        const comments = await env.DB.prepare("SELECT * FROM feedback_comments WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at ASC").bind(context.organizationId, context.projectId).all();
+        const attachments = await env.DB.prepare("SELECT id, feedback_id, content_type, size_bytes, created_at FROM attachments WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at ASC").bind(context.organizationId, context.projectId).all();
+        await env.DB.prepare("INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'export', 'completed', ?, ?)").bind(id(), context.organizationId, context.projectId, new Date().toISOString(), new Date().toISOString()).run();
+        return new Response(JSON.stringify({ exportedAt: new Date().toISOString(), feedback: feedback.results ?? [], comments: comments.results ?? [], attachments: attachments.results ?? [] }), { status: 200, headers: { ...cors, "content-type": "application/json; charset=utf-8", "content-disposition": `attachment; filename=nitroping-${context.projectId}-export.json` } });
+      }
+      const anonymizeMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/feedback\/([^/]+)\/anonymize$/);
+      if (anonymizeMatch && request.method === "POST") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, anonymizeMatch[1], rid);
+        if (context instanceof Response) return context;
+        const now = new Date().toISOString();
+        const result = await env.DB.prepare("UPDATE feedback_items SET email = NULL, body = '[anonymized]', metadata_json = '{}', updated_at = ?, deleted_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(now, now, anonymizeMatch[2], context.organizationId, context.projectId).run();
+        if (!result.meta.changes) return error("FEEDBACK_NOT_FOUND", "Feedback bulunamadı", rid, 404);
+        await env.DB.batch([
+          env.DB.prepare("UPDATE feedback_comments SET body = '[anonymized]', deleted_at = ? WHERE feedback_id = ? AND organization_id = ? AND project_id = ?").bind(now, anonymizeMatch[2], context.organizationId, context.projectId),
+          env.DB.prepare("INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'anonymize', 'completed', ?, ?)").bind(id(), context.organizationId, context.projectId, now, now),
+        ]);
+        return jsonResponse({ anonymized: true, feedbackId: anonymizeMatch[2] }, { headers: cors });
+      }
       const dashboardListMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/feedback$/);
       if (dashboardListMatch && request.method === "GET") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
         const context = await projectFromRequest(request, env, url, rid);
         if (context instanceof Response) return context;
         const scopeError = projectMatchesPath(context, dashboardListMatch[1], rid);
@@ -275,6 +416,8 @@ export default {
       }
       const statusMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)\/status$/);
       if (statusMatch && request.method === "POST") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
         const body = await request.json() as { status?: FeedbackStatus };
         if (!body.status || !feedbackStatuses.includes(body.status)) return error("VALIDATION_ERROR", "Geçersiz status", rid, 400);
         const context = await projectFromRequest(request, env, url, rid);
@@ -300,12 +443,28 @@ export default {
         const seen = await env.DB.prepare("SELECT event_id FROM processed_events WHERE event_id = ?").bind(event.eventId).first();
         if (seen) { message.ack(); continue; }
       }
+      if (event.type === "attachment.delete" && typeof (event as { objectKey?: unknown }).objectKey === "string") {
+        await env.ATTACHMENTS.delete((event as { objectKey: string }).objectKey);
+      }
       if (event.type === "feedback.created" && event.feedbackId && event.projectId) {
         await env.DB.prepare("INSERT INTO moderation_events (id, organization_id, project_id, feedback_id, kind, outcome, metadata_json, created_at) SELECT ?, organization_id, project_id, id, 'automated', 'pending', ?, ? FROM feedback_items WHERE id = ? AND project_id = ?")
           .bind(id(), "{}", new Date().toISOString(), event.feedbackId, event.projectId).run();
       }
       if (event.eventId) await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id, event_type, processed_at) VALUES (?, ?, ?)").bind(event.eventId, event.type ?? "unknown", new Date().toISOString()).run();
       message.ack();
+    }
+  },
+  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    const candidates = await env.DB.prepare("SELECT f.id, f.organization_id AS organizationId, f.project_id AS projectId FROM feedback_items f JOIN project_settings s ON s.project_id = f.project_id WHERE f.deleted_at IS NULL AND datetime(f.created_at) < datetime('now', '-' || s.retention_days || ' days') LIMIT 100").all<{ id: string; organizationId: string; projectId: string }>();
+    for (const feedback of candidates.results ?? []) {
+      const attachments = await env.DB.prepare("SELECT object_key AS objectKey FROM attachments WHERE feedback_id = ? AND project_id = ? AND deleted_at IS NULL").bind(feedback.id, feedback.projectId).all<{ objectKey: string }>();
+      for (const attachment of attachments.results ?? []) await env.EVENTS.send({ type: "attachment.delete", objectKey: attachment.objectKey, eventId: id(), projectId: feedback.projectId });
+      const now = new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE feedback_items SET email = NULL, body = '[retained data removed]', metadata_json = '{}', deleted_at = ?, updated_at = ? WHERE id = ? AND project_id = ?").bind(now, now, feedback.id, feedback.projectId),
+        env.DB.prepare("UPDATE attachments SET deleted_at = ? WHERE feedback_id = ? AND project_id = ?").bind(now, feedback.id, feedback.projectId),
+        env.DB.prepare("INSERT INTO privacy_requests (id, organization_id, project_id, kind, status, created_at, completed_at) VALUES (?, ?, ?, 'delete', 'completed', ?, ?)").bind(id(), feedback.organizationId, feedback.projectId, now, now),
+      ]);
     }
   },
 };

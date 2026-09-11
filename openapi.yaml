@@ -7,6 +7,24 @@ servers:
   - url: https://nitroping.dev/api/v1
 security: []
 paths:
+  /dashboard/organizations:
+    get:
+      summary: List organizations for the Access identity
+      responses: { '200': { description: Organizations }, '401': { $ref: '#/components/responses/Error' }, '503': { $ref: '#/components/responses/Error' } }
+    post:
+      summary: Create an organization for the Access identity
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], properties: { name: { type: string }, slug: { type: string } } } } } }
+      responses: { '201': { description: Created }, '409': { $ref: '#/components/responses/Error' } }
+  /dashboard/organizations/{organizationId}/projects:
+    post:
+      summary: Create a project and issue its initial keys
+      parameters: [{ name: organizationId, in: path, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], properties: { name: { type: string }, slug: { type: string } } } } } }
+      responses: { '201': { description: Created with one-time public/server keys }, '403': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects:
+    get:
+      summary: List projects for the Access identity
+      responses: { '200': { description: Projects }, '503': { $ref: '#/components/responses/Error' } }
   /projects/{projectId}/feedback:
     parameters: [{ $ref: '#/components/parameters/ProjectId' }]
     get:
@@ -55,6 +73,31 @@ paths:
       summary: Initiate a private attachment upload
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }]
       responses: { '201': { description: Upload token }, '413': { $ref: '#/components/responses/Error' } }
+  /projects/{projectId}/events:
+    get:
+      summary: Project realtime WebSocket stream
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }]
+      responses: { '101': { description: Switching Protocols }, '503': { $ref: '#/components/responses/Error' } }
+  /follow-up/{token}:
+    get:
+      summary: Read feedback status through a scoped magic link
+      parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Feedback and public comments }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/feedback:
+    get:
+      summary: List feedback for an authenticated dashboard project
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }, { $ref: '#/components/parameters/Cursor' }]
+      responses: { '200': { $ref: '#/components/responses/FeedbackList' }, '401': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/export:
+    get:
+      summary: Export project feedback data
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: JSON export }, '401': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/feedback/{feedbackId}/anonymize:
+    post:
+      summary: Anonymize feedback and public comments
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
+      responses: { '200': { description: Anonymized }, '404': { $ref: '#/components/responses/Error' } }
 components:
   parameters:
     ProjectId: { name: projectId, in: path, required: true, schema: { type: string } }
@@ -62,6 +105,7 @@ components:
     ProjectKey: { name: X-NitroPing-Project-Key, in: header, required: true, schema: { type: string } }
     IdempotencyKey: { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 128 } }
     Cursor: { name: cursor, in: query, required: false, schema: { type: string } }
+    ServerKey: { name: X-NitroPing-Server-Key, in: header, required: true, schema: { type: string } }
   schemas:
     CreateFeedback:
       type: object

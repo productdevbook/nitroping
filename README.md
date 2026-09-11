@@ -24,6 +24,15 @@ Local D1 migration:
 bunx wrangler d1 migrations apply nitroping --local --config apps/api/wrangler.jsonc
 ```
 
+Alchemy infrastructure plan/deploy:
+
+```bash
+NITROPING_STAGE=production ALCHEMY_STAGE=production bun run infra:plan
+NITROPING_STAGE=staging ALCHEMY_STAGE=staging bun run infra:deploy
+```
+
+Production Alchemy adoption requires a Cloudflare token with Workers Scripts Edit and Queues Edit permissions. Wrangler deploy remains the operational production path until that token is available.
+
 ## Paketler
 
 - `@nitroping/contracts`: ortak domain tipleri

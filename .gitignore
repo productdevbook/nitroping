@@ -5,3 +5,5 @@ coverage
 .env
 .dev.vars
 *.log
+**/.alchemy
+*.cpuprofile

@@ -1,10 +1,13 @@
 export const feedbackTypes = ["complaint", "bug", "suggestion", "feature_request"] as const;
 export type FeedbackType = (typeof feedbackTypes)[number];
 
+export const feedbackPriorities = ["low", "normal", "high", "urgent"] as const;
+export const platforms = ["web", "ios", "android", "other"] as const;
+
 export const feedbackStatuses = ["new", "triaged", "planned", "in_progress", "resolved", "closed", "spam"] as const;
 export type FeedbackStatus = (typeof feedbackStatuses)[number];
-export type FeedbackPriority = "low" | "normal" | "high" | "urgent";
-export type Platform = "web" | "ios" | "android" | "other";
+export type FeedbackPriority = (typeof feedbackPriorities)[number];
+export type Platform = (typeof platforms)[number];
 
 export type Feedback = {
   id: string;
