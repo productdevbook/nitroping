@@ -39,6 +39,13 @@ type FeedbackDetail = {
     createdAt: string;
   }>;
   tags?: Array<{ id: string; name: string; slug: string }>;
+  attachments?: Array<{
+    id: string;
+    contentType: string;
+    sizeBytes: number;
+    createdAt: string;
+    downloadUrl: string;
+  }>;
 };
 type Analytics = {
   total: number;
@@ -137,6 +144,10 @@ const formatDate = (value: string) =>
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
+const formatBytes = (value: number) =>
+  value < 1024 * 1024
+    ? `${Math.max(1, Math.round(value / 1024))} KB`
+    : `${(value / (1024 * 1024)).toFixed(1)} MB`;
 const initials = (value: string) =>
   value
     .split(" ")
@@ -1561,6 +1572,28 @@ function FeedbackDetailPanel({
         ))}
       </div>
       <p className="detail-body">{item.body}</p>
+      {detail.attachments && detail.attachments.length > 0 && (
+        <div className="detail-section attachment-section">
+          <div className="section-heading">
+            <strong>Attachments</strong>
+            <span>{detail.attachments.length}</span>
+          </div>
+          <div className="attachment-list">
+            {detail.attachments.map((attachment) => (
+              <a
+                className="attachment-link"
+                href={attachment.downloadUrl}
+                key={attachment.id}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>{attachment.contentType}</span>
+                <small>{formatBytes(attachment.sizeBytes)}</small>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
       {item.email && (
         <div className="user-card">
           <span className="avatar purple-avatar">

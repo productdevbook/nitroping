@@ -37,3 +37,5 @@
 
 @media(max-width:1100px){.widget-builder-grid,.widget-lower-grid{grid-template-columns:1fr}}
 @media(max-width:720px){.color-fields{grid-template-columns:1fr 1fr}.widget-builder-grid,.widget-lower-grid{gap:12px}}
+
+.attachment-list{display:grid;gap:6px}.attachment-link{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:7px;padding:8px 9px;color:#6550c9;background:#faf9ff;text-decoration:none;font-size:10px}.attachment-link:hover{background:#f0edff}.attachment-link small{color:#aaa2b1;font-size:9px}

@@ -5188,7 +5188,7 @@ export default {
             rid,
             404,
           );
-        const [comments, history, tags] = await Promise.all([
+        const [comments, history, tags, attachments] = await Promise.all([
           env.DB.prepare(
             "SELECT id, feedback_id AS feedbackId, body, author_user_id AS authorUserId, is_internal AS isInternal, created_at AS createdAt FROM feedback_comments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at ASC",
           )
@@ -5216,6 +5216,15 @@ export default {
               context.projectId,
             )
             .all(),
+          env.DB.prepare(
+            "SELECT id, content_type AS contentType, size_bytes AS sizeBytes, created_at AS createdAt FROM attachments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at ASC",
+          )
+            .bind(
+              dashboardFeedbackMatch[1],
+              context.organizationId,
+              context.projectId,
+            )
+            .all<{ id: string; contentType: string; sizeBytes: number; createdAt: string }>(),
         ]);
         return jsonResponse(
           {
@@ -5223,6 +5232,10 @@ export default {
             comments: comments.results ?? [],
             statusHistory: history.results ?? [],
             tags: tags.results ?? [],
+            attachments: (attachments.results ?? []).map((attachment) => ({
+              ...attachment,
+              downloadUrl: `/api/v1/dashboard/projects/${encodeURIComponent(context.projectId)}/attachments/${encodeURIComponent(attachment.id)}`,
+            })),
           },
           { headers: cors },
         );
