@@ -9,7 +9,8 @@ export type ModerationFlag =
   | "repeated_content"
   | "spam_language"
   | "empty_content"
-  | "suspicious_email";
+  | "suspicious_email"
+  | "duplicate_feedback";
 
 export type ModerationAnalysis = {
   version: 1;

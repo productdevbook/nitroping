@@ -6240,7 +6240,32 @@ export default {
           .bind(event.feedbackId, event.organizationId, event.projectId)
           .first<{ title: string; body: string; email: string | null }>();
         if (candidate) {
-          const analysis = analyzeModeration(candidate);
+          const duplicate = await env.DB.prepare(
+            `SELECT id FROM feedback_items
+             WHERE organization_id = ? AND project_id = ? AND id <> ?
+               AND deleted_at IS NULL AND status <> 'spam'
+               AND title = ? AND body = ?
+               AND datetime(created_at) >= datetime('now', '-30 days')
+             ORDER BY created_at DESC LIMIT 1`,
+          )
+            .bind(
+              event.organizationId,
+              event.projectId,
+              event.feedbackId,
+              candidate.title,
+              candidate.body,
+            )
+            .first<{ id: string }>();
+          const baseAnalysis = analyzeModeration(candidate);
+          const analysis = duplicate
+            ? {
+                ...baseAnalysis,
+                decision: "review" as const,
+                flags: [...baseAnalysis.flags, "duplicate_feedback" as const],
+                score: Math.min(1, baseAnalysis.score + 0.4),
+                duplicateOf: duplicate.id,
+              }
+            : baseAnalysis;
           await env.DB.prepare(
             "INSERT INTO moderation_events (id, organization_id, project_id, feedback_id, kind, outcome, metadata_json, created_at) VALUES (?, ?, ?, ?, 'rules', 'pending', ?, ?)",
           )
