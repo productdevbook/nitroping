@@ -780,7 +780,12 @@ const requireServerKey = async (
 };
 
 const jsonBody = async (request: Request): Promise<Record<string, unknown>> => {
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return {};
+  }
   return body && typeof body === "object"
     ? (body as Record<string, unknown>)
     : {};
@@ -4323,7 +4328,7 @@ export default {
         /^\/api\/v1\/projects\/([^/]+)\/feedback(?:\/([^/]+))?$/,
       );
       if (match && request.method === "POST" && !match[2]) {
-        const rawBody = await request.json();
+        const rawBody = await jsonBody(request);
         const input = validateInput(rawBody);
         if (typeof input === "string")
           return error("VALIDATION_ERROR", input, rid, 400);
@@ -4932,7 +4937,7 @@ export default {
         }
         await env.CACHE.delete(`upload:${uploadPut[1]}`);
         return jsonResponse(
-          { attachmentId: raw.attachmentId, objectKey: raw.objectKey },
+          { attachmentId: raw.attachmentId },
           { status: 201, headers: cors },
         );
       }
@@ -6315,7 +6320,7 @@ export default {
       if (statusMatch && request.method === "POST") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const body = (await request.json()) as { status?: FeedbackStatus };
+        const body = (await jsonBody(request)) as { status?: FeedbackStatus };
         if (!body.status || !feedbackStatuses.includes(body.status))
           return error("VALIDATION_ERROR", "Invalid status", rid, 400);
         const projectId = url.searchParams.get("projectId");

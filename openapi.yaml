@@ -126,6 +126,29 @@ paths:
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }]
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [contentType, size], properties: { feedbackId: { type: string }, contentType: { type: string }, size: { type: integer, minimum: 1 } } } } } }
       responses: { '201': { description: Upload token, content: { application/json: { schema: { $ref: '#/components/schemas/UploadInitiation' } } } }, '413': { $ref: '#/components/responses/Error' }, '415': { $ref: '#/components/responses/Error' } }
+  /uploads/{uploadToken}:
+    put:
+      summary: Finalize a short-lived private attachment upload
+      parameters:
+        - { name: uploadToken, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/ProjectKey' }
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: { type: string, format: binary }
+      responses:
+        '201':
+          description: Attachment stored
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [attachmentId]
+                properties: { attachmentId: { type: string } }
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '415': { $ref: '#/components/responses/Error' }
   /dashboard/projects/{projectId}/attachments/{attachmentId}:
     get:
       summary: Download a private attachment through authenticated dashboard access
