@@ -910,6 +910,7 @@ export default {
       }
       if (env.ASSETS) {
         if (path === "/dashboard" || path === "/dashboard/") return env.ASSETS.fetch(new Request(new URL("/dashboard.html", request.url), request));
+        if (path === "/portal" || path === "/portal/") return env.ASSETS.fetch(new Request(new URL("/portal.html", request.url), request));
         return env.ASSETS.fetch(request);
       }
       return error("NOT_FOUND", "Endpoint was not found", rid, 404);

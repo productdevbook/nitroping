@@ -43,7 +43,9 @@ The dashboard is a React 19 application built with Vite 8 and Bun. It uses a sma
 - `apps/api/public/dashboard.html`: generated production entry served by the Worker
 - `apps/api/public/assets`: generated JavaScript bundle
 
-The first dashboard surface includes Inbox, Insights, Roadmap, Changelog, and Settings. Each view talks to the versioned API through the same project-scoped server key boundary. The UI is intentionally prepared for a future Access session adapter: authentication is not coupled to the visual components.
+The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Changelog, Audit log, Developer controls, Team, and Settings. Each view talks to the versioned API through the authenticated organization-member boundary, with a project-key/server-key fallback for local development. Authentication is kept outside the visual components.
+
+The hosted public portal is available at `/portal?projectId=<project-id>&projectKey=<public-key>`. It provides feedback submission, community browsing, voting, roadmap, and changelog views without requiring the customer to build a separate public page.
 
 Run the dashboard locally:
 
