@@ -12,6 +12,8 @@ const id = () => crypto.randomUUID();
 const webhookEventTypes = ["feedback.created", "feedback.updated", "feedback.replied"] as const;
 type WebhookEventType = (typeof webhookEventTypes)[number];
 const planFeedbackLimits: Record<string, number> = { free: 100, pro: 5_000, business: 50_000 };
+const planProjectLimits: Record<string, number> = { free: 1, pro: 20, business: 1_000 };
+const planAttachmentLimits: Record<string, number> = { free: 25 * 1024 * 1024, pro: 5 * 1024 * 1024 * 1024, business: 50 * 1024 * 1024 * 1024 };
 const requestId = (request: Request) => request.headers.get("x-request-id") ?? `req_${id()}`;
 const error = (code: string, message: string, requestId: string, status: number, details?: unknown) =>
   jsonResponse({ error: { code, message, requestId, details } }, { status, headers: { "x-request-id": requestId } });
@@ -252,12 +254,12 @@ const deliverWebhook = async (env: Env, event: { deliveryId: string; webhookId: 
   }
 };
 
-const currentUsage = async (env: Env, organizationId: string): Promise<{ plan: string; period: string; feedbackCount: number; attachmentBytes: number; feedbackLimit: number }> => {
+const currentUsage = async (env: Env, organizationId: string): Promise<{ plan: string; period: string; feedbackCount: number; attachmentBytes: number; feedbackLimit: number; attachmentLimit: number }> => {
   const period = new Date().toISOString().slice(0, 7);
   const subscription = await env.DB.prepare("SELECT plan FROM subscriptions WHERE organization_id = ?").bind(organizationId).first<{ plan: string }>();
   const usage = await env.DB.prepare("SELECT feedback_count AS feedbackCount, attachment_bytes AS attachmentBytes FROM usage_counters WHERE organization_id = ? AND period = ?").bind(organizationId, period).first<{ feedbackCount: number; attachmentBytes: number }>();
   const plan = subscription?.plan ?? "free";
-  return { plan, period, feedbackCount: Number(usage?.feedbackCount ?? 0), attachmentBytes: Number(usage?.attachmentBytes ?? 0), feedbackLimit: planFeedbackLimits[plan] ?? planFeedbackLimits.free };
+  return { plan, period, feedbackCount: Number(usage?.feedbackCount ?? 0), attachmentBytes: Number(usage?.attachmentBytes ?? 0), feedbackLimit: planFeedbackLimits[plan] ?? planFeedbackLimits.free, attachmentLimit: planAttachmentLimits[plan] ?? planAttachmentLimits.free };
 };
 
 const sendTransactionalEmail = async (env: Env, event: { email: string; subject: string; text: string; html: string }): Promise<void> => {
@@ -310,10 +312,12 @@ export default {
         const identity = await requireIdentity(request, env, rid);
         if (identity instanceof Response || !identity.email) return identity instanceof Response ? identity : error("DASHBOARD_AUTH_REQUIRED", "An authenticated email is required", rid, 401);
         const userId = await userForIdentity(env, identity);
+        const organizationCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM organization_members m JOIN organizations o ON o.id = m.organization_id WHERE m.user_id = ? AND o.deleted_at IS NULL").bind(userId).first<{ count: number }>();
         if (request.method === "GET") {
           const rows = await env.DB.prepare("SELECT o.id, o.name, o.slug, m.role, o.created_at AS createdAt FROM organizations o JOIN organization_members m ON m.organization_id = o.id WHERE m.user_id = ? AND o.deleted_at IS NULL ORDER BY o.created_at ASC").bind(userId).all();
           return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
         }
+        if (Number(organizationCount?.count ?? 0) >= 1) return error("PLAN_LIMIT_REACHED", "The free plan includes one organization", rid, 402, { limit: 1, resource: "organizations" });
         const body = await jsonBody(request);
         const name = typeof body.name === "string" ? body.name.trim() : "";
         const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -448,6 +452,11 @@ export default {
         const name = typeof body.name === "string" ? body.name.trim() : "";
         const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
         if (name.length < 2 || name.length > 120 || !/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) return error("VALIDATION_ERROR", "Project name or slug is invalid", rid, 400);
+        const subscription = await env.DB.prepare("SELECT plan FROM subscriptions WHERE organization_id = ?").bind(projectCreateMatch[1]).first<{ plan: string }>();
+        const plan = subscription?.plan ?? "free";
+        const projectCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM projects WHERE organization_id = ? AND deleted_at IS NULL").bind(projectCreateMatch[1]).first<{ count: number }>();
+        const projectLimit = planProjectLimits[plan] ?? planProjectLimits.free;
+        if (Number(projectCount?.count ?? 0) >= projectLimit) return error("PLAN_LIMIT_REACHED", `The ${plan} plan has reached its project limit`, rid, 402, { limit: projectLimit, resource: "projects" });
         const projectId = id(); const publicKey = randomToken("pk_live"); const serverKey = randomToken("sk_live"); const now = new Date().toISOString();
         try {
           await env.DB.batch([
@@ -907,6 +916,8 @@ export default {
         if (!Number.isFinite(contentLength) || contentLength !== raw.size || contentLength > 10 * 1024 * 1024) return error("ATTACHMENT_SIZE_MISMATCH", "The uploaded file size does not match the initiated upload", rid, 400);
         const bytes = await request.arrayBuffer();
         if (bytes.byteLength !== raw.size) return error("ATTACHMENT_SIZE_MISMATCH", "The uploaded file size does not match the initiated upload", rid, 400);
+        const usage = await currentUsage(env, raw.organizationId);
+        if (usage.attachmentBytes + raw.size > usage.attachmentLimit) return error("PLAN_LIMIT_REACHED", `The ${usage.plan} plan has reached its attachment limit`, rid, 402, { limit: usage.attachmentLimit, resource: "attachments" });
         await env.ATTACHMENTS.put(raw.objectKey, bytes, { httpMetadata: { contentType: raw.contentType } });
         await env.DB.prepare("INSERT INTO attachments (id, organization_id, project_id, feedback_id, object_key, content_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(raw.attachmentId, raw.organizationId, raw.projectId, raw.feedbackId, raw.objectKey, raw.contentType, raw.size, new Date().toISOString()).run();
         await env.DB.prepare("INSERT INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 0, ?) ON CONFLICT(organization_id, period) DO UPDATE SET attachment_bytes = attachment_bytes + excluded.attachment_bytes").bind(raw.organizationId, new Date().toISOString().slice(0, 7), raw.size).run();
