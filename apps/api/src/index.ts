@@ -79,7 +79,7 @@ const repository = (env: Env): FeedbackRepository => ({
     const now = new Date().toISOString();
     const result = await env.DB.prepare(`UPDATE feedback_items SET status = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL`).bind(status, now, feedbackId, context.organizationId, context.projectId).run();
     if (!result.meta.changes) return null;
-    if (previous.status !== status) await env.DB.prepare("INSERT INTO feedback_status_history (id, organization_id, project_id, feedback_id, from_status, to_status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(id(), context.organizationId, context.projectId, feedbackId, previous.status, status, now).run();
+    if (previous.status !== status) await env.DB.prepare("INSERT INTO feedback_status_history (id, organization_id, project_id, feedback_id, from_status, to_status, actor_user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id(), context.organizationId, context.projectId, feedbackId, previous.status, status, context.actorUserId ?? null, now).run();
     return this.get(context, feedbackId);
   },
 });
@@ -192,7 +192,7 @@ const requireDashboardProject = async (request: Request, env: Env, url: URL, pro
     .bind(projectId, userId).first<{ id: string; organizationId: string; role: string }>();
   if (!project) return error("PROJECT_NOT_FOUND", "The project was not found for this account", rid, 404);
   return roleHasCapability(project.role, capability)
-    ? { organizationId: project.organizationId, projectId: project.id }
+    ? { organizationId: project.organizationId, projectId: project.id, actorUserId: userId }
     : error("FORBIDDEN", `The ${project.role} role cannot perform ${capability}`, rid, 403);
 };
 
@@ -298,8 +298,8 @@ const recordMetric = (env: Env, event: string, organizationId: string, projectId
 };
 
 const writeAudit = async (env: Env, context: TenantContext, action: string, entityType: string, entityId: string, metadata: Record<string, unknown> = {}): Promise<void> => {
-  await env.DB.prepare("INSERT INTO audit_logs (id, organization_id, project_id, action, entity_type, entity_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-    .bind(id(), context.organizationId, context.projectId, action, entityType, entityId, JSON.stringify(metadata), new Date().toISOString()).run();
+  await env.DB.prepare("INSERT INTO audit_logs (id, organization_id, project_id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id(), context.organizationId, context.projectId, context.actorUserId ?? null, action, entityType, entityId, JSON.stringify(metadata), new Date().toISOString()).run();
 };
 
 const writeOrganizationAudit = async (env: Env, organizationId: string, action: string, entityType: string, entityId: string, actorUserId: string | null, metadata: Record<string, unknown> = {}): Promise<void> => {
@@ -1173,7 +1173,7 @@ export default {
         const now = new Date().toISOString();
         await env.DB.batch([
           env.DB.prepare("UPDATE feedback_items SET status = 'closed', merged_into_id = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(targetFeedbackId, now, mergeMatch[1], context.organizationId, context.projectId),
-          env.DB.prepare("INSERT INTO feedback_status_history (id, organization_id, project_id, feedback_id, from_status, to_status, created_at) VALUES (?, ?, ?, ?, ?, 'closed', ?)").bind(id(), context.organizationId, context.projectId, mergeMatch[1], source.status, now),
+          env.DB.prepare("INSERT INTO feedback_status_history (id, organization_id, project_id, feedback_id, from_status, to_status, actor_user_id, created_at) VALUES (?, ?, ?, ?, ?, 'closed', ?, ?)").bind(id(), context.organizationId, context.projectId, mergeMatch[1], source.status, context.actorUserId ?? null, now),
         ]);
         await writeAudit(env, context, "feedback.merged", "feedback", mergeMatch[1], { targetFeedbackId });
         return jsonResponse({ sourceFeedbackId: mergeMatch[1], targetFeedbackId, status: "closed" }, { headers: cors });
