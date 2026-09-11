@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import type { Feedback, FeedbackStatus } from "@nitroping/contracts";
 import "./styles.css";
 
-type View = "inbox" | "insights" | "moderation" | "roadmap" | "changelog" | "audit" | "developer" | "settings";
+type View = "inbox" | "insights" | "moderation" | "roadmap" | "changelog" | "audit" | "developer" | "team" | "settings";
 type ApiOptions = RequestInit & { projectKey?: string; serverKey?: string };
 type FeedbackDetail = { feedback: Feedback; comments: Array<{ id: string; body: string; isInternal: number; createdAt: string }>; statusHistory: Array<{ id: string; fromStatus: string | null; toStatus: string; createdAt: string }> };
 type Analytics = { total: number; statuses: Array<{ status: string; count: number }>; platforms: Array<{ platform: string; count: number }>; types: Array<{ type: string; count: number }> };
@@ -16,6 +16,7 @@ type ModerationItem = Feedback & { feedbackId: string; kind: string; outcome: st
 type AuditItem = { id: string; action: string; entityType: string; entityId: string; actorUserId: string | null; metadata: Record<string, unknown>; createdAt: string };
 type ApiKeyItem = { id: string; kind: string; label: string; keyPrefix: string; createdAt: string; revokedAt: string | null };
 type WebhookItem = { id: string; url: string; events: string[]; active: number; createdAt: string };
+type MemberItem = { userId: string; email: string; role: string; createdAt: string };
 
 const apiBase = "/api/v1";
 const statuses: FeedbackStatus[] = ["new", "triaged", "planned", "in_progress", "resolved", "closed", "spam"];
@@ -55,6 +56,7 @@ function App() {
   const [auditLogs, setAuditLogs] = useState<AuditItem[]>([]);
   const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
   const [webhooks, setWebhooks] = useState<WebhookItem[]>([]);
+  const [members, setMembers] = useState<MemberItem[]>([]);
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -126,6 +128,7 @@ function App() {
         ]);
         setApiKeys(keys.items); setWebhooks(hooks.items);
       }
+      if (nextView === "team") setMembers((await api<{ items: MemberItem[] }>(`/dashboard/organizations/${organizations[0]?.id}/members`, credentials)).items);
       if (nextView === "settings") setSettings(await api<Settings>(`/dashboard/projects/${projectId}/settings?projectId=${projectId}`, credentials));
     } catch (error) { setNotice({ text: error instanceof Error ? error.message : "Unable to load view", error: true }); }
   };
@@ -166,6 +169,7 @@ function App() {
         <NavItem active={view === "changelog"} icon="✦" label="Changelog" onClick={() => loadView("changelog")} />
         <NavItem active={view === "audit"} icon="▤" label="Audit log" onClick={() => loadView("audit")} />
         <NavItem active={view === "developer"} icon="⌘" label="Developer" onClick={() => loadView("developer")} />
+        <NavItem active={view === "team"} icon="◎" label="Team" onClick={() => loadView("team")} />
         <p className="nav-label section-label">Manage</p>
         <NavItem active={view === "settings"} icon="⚙" label="Project settings" onClick={() => loadView("settings")} />
       </nav>
@@ -180,6 +184,7 @@ function App() {
         {view === "moderation" && <Moderation items={moderation} credentials={credentials} projectId={projectId} onChange={() => void loadView("moderation")} />}
         {view === "audit" && <AuditLog items={auditLogs} onRefresh={() => void loadView("audit")} />}
         {view === "developer" && <DeveloperControls projectId={projectId} credentials={credentials} apiKeys={apiKeys} webhooks={webhooks} onRefresh={() => void loadView("developer")} />}
+        {view === "team" && <Team members={members} organizationId={organizations[0]?.id ?? ""} credentials={credentials} onRefresh={() => void loadView("team")} />}
         {view === "roadmap" && <Roadmap items={roadmap} credentials={credentials} projectId={projectId} onChange={() => void loadView("roadmap")} />}
         {view === "changelog" && <Changelog items={changelog} credentials={credentials} projectId={projectId} onChange={() => void loadView("changelog")} />}
         {view === "settings" && <SettingsPanel settings={settings} projectId={projectId} publicKey={publicKey} serverKey={serverKey} onProject={setProjectId} onPublic={setPublicKey} onServer={setServerKey} onSave={saveWorkspace} onSettings={setSettings} />}
@@ -223,6 +228,12 @@ function DeveloperControls({ projectId, credentials, apiKeys, webhooks, onRefres
   const rotate = async () => { const created = await api<ApiKeyItem & { key: string }>(`/dashboard/projects/${projectId}/api-keys`, { ...credentials, method: "POST", body: JSON.stringify({ kind, label: label || `${kind} integration key` }) }); setLabel(""); setSecret(created.key); onRefresh(); };
   const addWebhook = async () => { if (!url.trim()) return; const created = await api<WebhookItem & { secret: string }>(`/dashboard/projects/${projectId}/webhooks`, { ...credentials, method: "POST", body: JSON.stringify({ url, events: ["feedback.created", "feedback.updated", "feedback.replied"] }) }); setUrl(""); setSecret(created.secret); onRefresh(); };
   return <><PageHeader eyebrow="Integrations" title="Developer controls" description="Manage project credentials and signed event delivery." action={<button className="secondary-button" onClick={onRefresh}>↻ Refresh</button>} />{secret && <div className="secret-banner"><strong>Copy this secret now.</strong><code>{secret}</code><button onClick={() => setSecret(null)}>×</button></div>}<div className="developer-grid"><section className="panel settings-card"><div className="panel-heading"><div><h2>API keys</h2><p>Secrets are shown only once when created.</p></div></div><div className="developer-form"><select value={kind} onChange={(event) => setKind(event.target.value as "public" | "server")}><option value="public">Public SDK key</option><option value="server">Server key</option></select><input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Key label" /><button className="primary-button" onClick={rotate}>Create key</button></div><div className="integration-list">{apiKeys.map((key) => <div className="integration-row" key={key.id}><span className={`key-kind ${key.kind}`}>{key.kind}</span><div><strong>{key.label}</strong><small>{key.keyPrefix}•••• · {key.revokedAt ? "Revoked" : "Active"}</small></div><button className="text-danger" disabled={Boolean(key.revokedAt)} onClick={async () => { await api(`/dashboard/projects/${projectId}/api-keys/${key.id}`, { ...credentials, method: "DELETE" }); onRefresh(); }}>Revoke</button></div>)}</div></section><section className="panel settings-card"><div className="panel-heading"><div><h2>Webhooks</h2><p>Signed delivery for feedback events.</p></div></div><div className="developer-form"><input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://your-app.com/nitroping" /><button className="primary-button" onClick={addWebhook}>Add webhook</button></div><div className="integration-list">{webhooks.map((hook) => <div className="integration-row" key={hook.id}><span className="key-kind webhook">hook</span><div><strong>{hook.url}</strong><small>{hook.events.length} events · {hook.active ? "Active" : "Disabled"}</small></div><button className="text-danger" disabled={!hook.active} onClick={async () => { await api(`/dashboard/projects/${projectId}/webhooks/${hook.id}`, { ...credentials, method: "DELETE" }); onRefresh(); }}>Disable</button></div>)}</div></section></div></>;
+}
+
+function Team({ members, organizationId, credentials, onRefresh }: { members: MemberItem[]; organizationId: string; credentials: ApiOptions; onRefresh: () => void }) {
+  const [email, setEmail] = useState(""); const [role, setRole] = useState("member"); const [sending, setSending] = useState(false);
+  const invite = async () => { if (!email.trim()) return; setSending(true); try { await api(`/dashboard/organizations/${organizationId}/invites`, { ...credentials, method: "POST", body: JSON.stringify({ email, role }) }); setEmail(""); onRefresh(); } finally { setSending(false); } };
+  return <><PageHeader eyebrow="People & permissions" title="Team" description="Invite collaborators and keep project access explicit." action={<button className="secondary-button" onClick={onRefresh}>↻ Refresh team</button>} /><section className="panel settings-card team-card"><div className="panel-heading"><div><h2>Invite a teammate</h2><p>Invitations expire after seven days and are restricted to the invited email.</p></div></div><div className="developer-form"><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="teammate@company.com" /><select value={role} onChange={(event) => setRole(event.target.value)}><option value="member">Member</option><option value="admin">Admin</option><option value="moderator">Moderator</option><option value="viewer">Viewer</option><option value="billing_admin">Billing admin</option></select><button className="primary-button" disabled={sending} onClick={invite}>{sending ? "Sending…" : "Send invite"}</button></div><div className="member-list">{members.map((member) => <div className="member-row" key={member.userId}><span className="avatar purple-avatar">{member.email[0].toUpperCase()}</span><div><strong>{member.email}</strong><small>{member.role} · Joined {formatDate(member.createdAt)}</small></div>{member.role === "owner" ? <span className="role-badge">Owner</span> : <button className="text-danger" onClick={async () => { await api(`/dashboard/organizations/${organizationId}/members/${member.userId}`, { ...credentials, method: "DELETE" }); onRefresh(); }}>Remove</button>}</div>)}</div></section></>;
 }
 
 function Insights({ analytics, usage, onRefresh }: { analytics: Analytics | null; usage: Usage | null; onRefresh: () => void }) { return <><PageHeader eyebrow="Product intelligence" title="Insights" description="Understand the themes behind your users' voice." action={<button className="secondary-button" onClick={onRefresh}>↻ Refresh data</button>} /><div className="analytics-grid"><section className="panel chart-panel"><div className="panel-heading"><div><h2>Feedback volume</h2><p>Current workspace overview</p></div><span className="period-pill">This month⌄</span></div><div className="fake-chart"><div className="chart-y"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div><div className="chart-area"><div className="chart-line" /><div className="chart-fill" />{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <span key={day}>{day}</span>)}</div></div></section><section className="panel breakdown-panel"><div className="panel-heading"><div><h2>By type</h2><p>What users are asking for</p></div></div>{(analytics?.types ?? []).length === 0 ? <div className="mini-empty">No type data yet.</div> : analytics?.types.map((item, index) => <div className="breakdown-row" key={item.type}><span className={`breakdown-color c${index}`} /><span>{statusLabel(item.type)}</span><strong>{item.count}</strong><div className="mini-progress"><i style={{ width: `${Math.min(100, (item.count / Math.max(1, analytics.total)) * 100)}%` }} /></div></div>)}</section></div><div className="analytics-bottom"><section className="panel"><div className="panel-heading"><div><h2>Statuses</h2><p>Where feedback sits in the workflow</p></div></div>{(analytics?.statuses ?? []).map((item) => <div className="status-stat" key={item.status}><span className={`status-pill ${item.status}`}>{statusLabel(item.status)}</span><strong>{item.count}</strong><span className="muted">items</span></div>)}</section><section className="panel usage-panel"><div className="panel-heading"><div><h2>Plan usage</h2><p>{usage?.period ?? "Current period"}</p></div></div><div className="usage-number"><strong>{usage?.feedbackCount ?? 0}</strong><span>/ {usage?.feedbackLimit ?? 100} feedbacks</span></div><div className="progress large"><span style={{ width: `${Math.min(100, ((usage?.feedbackCount ?? 0) / (usage?.feedbackLimit || 1)) * 100)}%` }} /></div><p className="muted">{usage?.plan ?? "Free"} plan · {usage?.attachmentBytes ?? 0} attachment bytes</p></section></div></> }

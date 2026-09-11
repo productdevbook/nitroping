@@ -264,7 +264,7 @@ export default {
       const organizationsPath = path === "/api/v1/dashboard/organizations";
       if (organizationsPath && (request.method === "GET" || request.method === "POST")) {
         const identity = await requireIdentity(request, env, rid);
-        if (identity instanceof Response) return identity;
+        if (identity instanceof Response || !identity.email) return identity instanceof Response ? identity : error("DASHBOARD_AUTH_REQUIRED", "An authenticated email is required", rid, 401);
         const userId = await userForIdentity(env, identity);
         if (request.method === "GET") {
           const rows = await env.DB.prepare("SELECT o.id, o.name, o.slug, m.role, o.created_at AS createdAt FROM organizations o JOIN organization_members m ON m.organization_id = o.id WHERE m.user_id = ? AND o.deleted_at IS NULL ORDER BY o.created_at ASC").bind(userId).all();
@@ -308,6 +308,57 @@ export default {
           if (value?.organizationId === organizationDeleteMatch[1]) ctx.waitUntil(env.CACHE.delete(key.name));
         }
         return new Response(null, { status: 204, headers: cors });
+      }
+      const membersMatch = path.match(/^\/api\/v1\/dashboard\/organizations\/([^/]+)\/members(?:\/([^/]+))?$/);
+      if (membersMatch && ["GET", "DELETE"].includes(request.method)) {
+        const identity = await requireIdentity(request, env, rid);
+        if (identity instanceof Response) return identity;
+        const userId = await userForIdentity(env, identity);
+        const canManage = await requireOrganizationMember(env, membersMatch[1], userId, ["owner", "admin"]);
+        if (!canManage) return error("FORBIDDEN", "Organization administrator access is required", rid, 403);
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare(`SELECT m.user_id AS userId, u.email, m.role, m.created_at AS createdAt
+            FROM organization_members m JOIN users u ON u.id = m.user_id WHERE m.organization_id = ? ORDER BY m.created_at ASC`)
+            .bind(membersMatch[1]).all();
+          return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
+        }
+        if (!membersMatch[2]) return error("MEMBER_ID_REQUIRED", "Member ID is required", rid, 400);
+        if (membersMatch[2] === userId) return error("MEMBER_SELF_REMOVE", "You cannot remove yourself from an organization", rid, 400);
+        const removed = await env.DB.prepare("DELETE FROM organization_members WHERE organization_id = ? AND user_id = ?").bind(membersMatch[1], membersMatch[2]).run();
+        if (!removed.meta.changes) return error("MEMBER_NOT_FOUND", "Member was not found", rid, 404);
+        return new Response(null, { status: 204, headers: cors });
+      }
+      const inviteMatch = path.match(/^\/api\/v1\/dashboard\/organizations\/([^/]+)\/invites$/);
+      if (inviteMatch && request.method === "POST") {
+        const identity = await requireIdentity(request, env, rid);
+        if (identity instanceof Response) return identity;
+        const userId = await userForIdentity(env, identity);
+        if (!(await requireOrganizationMember(env, inviteMatch[1], userId, ["owner", "admin"]))) return error("FORBIDDEN", "Organization administrator access is required", rid, 403);
+        const body = await jsonBody(request);
+        const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+        const role = ["admin", "member", "moderator", "viewer", "billing_admin"].includes(String(body.role)) ? String(body.role) : "member";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320) return error("VALIDATION_ERROR", "A valid email is required", rid, 400);
+        const existing = await env.DB.prepare("SELECT 1 FROM users u JOIN organization_members m ON m.user_id = u.id WHERE m.organization_id = ? AND u.email = ?").bind(inviteMatch[1], email).first();
+        if (existing) return error("MEMBER_ALREADY_EXISTS", "This user is already a member", rid, 409);
+        const token = randomToken("invite"); const now = new Date().toISOString(); const expiresAt = new Date(Date.now() + 7 * 86_400_000).toISOString();
+        try { await env.DB.prepare("INSERT INTO organization_invites (id, organization_id, email, role, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(id(), inviteMatch[1], email, role, await sha256(token), expiresAt, now).run(); }
+        catch { return error("INVITE_ALREADY_EXISTS", "An active invite already exists for this email", rid, 409); }
+        const link = `${env.PUBLIC_APP_URL}/api/v1/dashboard/invites/${token}/accept`;
+        await env.EVENTS.send({ type: "email.send", email, subject: "You have been invited to NitroPing", text: `You have been invited to join a NitroPing organization. Accept the invitation: ${link}`, html: `<p>You have been invited to join a NitroPing organization.</p><p><a href="${link}">Accept invitation</a></p>`, eventId: id() });
+        return jsonResponse({ accepted: false, email, role, expiresAt }, { status: 202, headers: cors });
+      }
+      const inviteAcceptMatch = path.match(/^\/api\/v1\/dashboard\/invites\/([^/]+)\/accept$/);
+      if (inviteAcceptMatch && request.method === "POST") {
+        const identity = await requireIdentity(request, env, rid);
+        if (identity instanceof Response || !identity.email) return identity instanceof Response ? identity : error("DASHBOARD_AUTH_REQUIRED", "An authenticated email is required", rid, 401);
+        const invite = await env.DB.prepare("SELECT id, organization_id AS organizationId, email, role, expires_at AS expiresAt, accepted_at AS acceptedAt FROM organization_invites WHERE token_hash = ?").bind(await sha256(inviteAcceptMatch[1])).first<{ id: string; organizationId: string; email: string; role: string; expiresAt: string; acceptedAt: string | null }>();
+        if (!invite || invite.acceptedAt || Date.parse(invite.expiresAt) <= Date.now() || invite.email.toLowerCase() !== identity.email.toLowerCase()) return error("INVITE_INVALID", "This invitation is invalid, expired, or belongs to another email", rid, 400);
+        const userId = await userForIdentity(env, identity); const now = new Date().toISOString();
+        await env.DB.batch([
+          env.DB.prepare("INSERT OR IGNORE INTO organization_members (organization_id, user_id, role, created_at) VALUES (?, ?, ?, ?)").bind(invite.organizationId, userId, invite.role, now),
+          env.DB.prepare("UPDATE organization_invites SET accepted_at = ? WHERE id = ? AND accepted_at IS NULL").bind(now, invite.id),
+        ]);
+        return jsonResponse({ accepted: true, organizationId: invite.organizationId, role: invite.role }, { headers: cors });
       }
       const projectsPath = path === "/api/v1/dashboard/projects";
       if (projectsPath && request.method === "GET") {
