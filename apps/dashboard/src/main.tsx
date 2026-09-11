@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import type { Feedback, FeedbackStatus } from "@nitroping/contracts";
 import "./styles.css";
 
-type View = "inbox" | "insights" | "moderation" | "roadmap" | "changelog" | "settings";
+type View = "inbox" | "insights" | "moderation" | "roadmap" | "changelog" | "audit" | "settings";
 type ApiOptions = RequestInit & { projectKey?: string; serverKey?: string };
 type FeedbackDetail = { feedback: Feedback; comments: Array<{ id: string; body: string; isInternal: number; createdAt: string }>; statusHistory: Array<{ id: string; fromStatus: string | null; toStatus: string; createdAt: string }> };
 type Analytics = { total: number; statuses: Array<{ status: string; count: number }>; platforms: Array<{ platform: string; count: number }>; types: Array<{ type: string; count: number }> };
@@ -13,6 +13,7 @@ type Settings = { theme: Record<string, unknown>; allowedMetadata: string[]; ret
 type Organization = { id: string; name: string; slug: string; role: string };
 type Project = { id: string; organizationId: string; name: string; slug: string; publicKey: string };
 type ModerationItem = Feedback & { feedbackId: string; kind: string; outcome: string; createdAt: string };
+type AuditItem = { id: string; action: string; entityType: string; entityId: string; actorUserId: string | null; metadata: Record<string, unknown>; createdAt: string };
 
 const apiBase = "/api/v1";
 const statuses: FeedbackStatus[] = ["new", "triaged", "planned", "in_progress", "resolved", "closed", "spam"];
@@ -49,6 +50,7 @@ function App() {
   const [roadmap, setRoadmap] = useState<Array<Record<string, string>>>([]);
   const [changelog, setChangelog] = useState<Array<Record<string, string | null>>>([]);
   const [moderation, setModeration] = useState<ModerationItem[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditItem[]>([]);
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -112,6 +114,7 @@ function App() {
       if (nextView === "roadmap") setRoadmap((await api<{ items: Array<Record<string, string>> }>(`/dashboard/projects/${projectId}/roadmap?projectId=${projectId}`, credentials)).items);
       if (nextView === "changelog") setChangelog((await api<{ items: Array<Record<string, string | null>> }>(`/dashboard/projects/${projectId}/changelog?projectId=${projectId}`, credentials)).items);
       if (nextView === "moderation") setModeration((await api<{ items: ModerationItem[] }>(`/dashboard/projects/${projectId}/moderation`, credentials)).items);
+      if (nextView === "audit") setAuditLogs((await api<{ items: AuditItem[] }>(`/dashboard/projects/${projectId}/audit-logs`, credentials)).items);
       if (nextView === "settings") setSettings(await api<Settings>(`/dashboard/projects/${projectId}/settings?projectId=${projectId}`, credentials));
     } catch (error) { setNotice({ text: error instanceof Error ? error.message : "Unable to load view", error: true }); }
   };
@@ -150,6 +153,7 @@ function App() {
         <p className="nav-label section-label">Product</p>
         <NavItem active={view === "roadmap"} icon="↗" label="Roadmap" onClick={() => loadView("roadmap")} />
         <NavItem active={view === "changelog"} icon="✦" label="Changelog" onClick={() => loadView("changelog")} />
+        <NavItem active={view === "audit"} icon="▤" label="Audit log" onClick={() => loadView("audit")} />
         <p className="nav-label section-label">Manage</p>
         <NavItem active={view === "settings"} icon="⚙" label="Project settings" onClick={() => loadView("settings")} />
       </nav>
@@ -162,6 +166,7 @@ function App() {
         {view === "inbox" && <Inbox feedback={filteredFeedback} allFeedback={feedback} selected={selected} filter={filter} query={query} loading={loading} onFilter={setFilter} onQuery={setQuery} onOpen={openFeedback} onStatus={changeStatus} onClose={() => setSelected(null)} onReply={async (id, body, internal) => { await api(`/dashboard/feedback/${id}/reply?projectId=${projectId}`, { ...credentials, method: "POST", body: JSON.stringify({ body, internal }) }); const item = feedback.find((entry) => entry.id === id); if (item) await openFeedback(item); setNotice({ text: internal ? "Internal note added" : "Reply sent" }); }} onRefresh={loadInbox} />}
         {view === "insights" && <Insights analytics={analytics} usage={usage} onRefresh={loadInbox} />}
         {view === "moderation" && <Moderation items={moderation} credentials={credentials} projectId={projectId} onChange={() => void loadView("moderation")} />}
+        {view === "audit" && <AuditLog items={auditLogs} onRefresh={() => void loadView("audit")} />}
         {view === "roadmap" && <Roadmap items={roadmap} credentials={credentials} projectId={projectId} onChange={() => void loadView("roadmap")} />}
         {view === "changelog" && <Changelog items={changelog} credentials={credentials} projectId={projectId} onChange={() => void loadView("changelog")} />}
         {view === "settings" && <SettingsPanel settings={settings} projectId={projectId} publicKey={publicKey} serverKey={serverKey} onProject={setProjectId} onPublic={setPublicKey} onServer={setServerKey} onSave={saveWorkspace} onSettings={setSettings} />}
@@ -194,6 +199,10 @@ function FeedbackDetailPanel({ detail, onClose, onReply, onStatus }: { detail: F
 function Moderation({ items, credentials, projectId, onChange }: { items: ModerationItem[]; credentials: ApiOptions; projectId: string; onChange: () => void }) {
   const decide = async (feedbackId: string, outcome: "approved" | "rejected" | "spam") => { try { await api(`/dashboard/projects/${projectId}/moderation`, { ...credentials, method: "POST", body: JSON.stringify({ feedbackId, outcome }) }); onChange(); } catch { /* parent view will refresh on the next action */ } };
   return <><PageHeader eyebrow="Trust & safety" title="Moderation queue" description="Review automated flags before they affect your public feedback stream." action={<button className="secondary-button" onClick={onChange}>↻ Refresh queue</button>} /><section className="panel moderation-panel">{items.length === 0 ? <div className="empty-state"><div className="empty-icon">✓</div><strong>Queue is clear</strong><p>New automated moderation events will appear here.</p></div> : items.map((item) => <article className="moderation-row" key={item.feedbackId}><div className="moderation-copy"><div className="feedback-meta"><span className={`status-pill ${item.type}`}>{statusLabel(item.type)}</span><span className="type-label">{formatDate(item.createdAt)}</span></div><h2>{item.title}</h2><p>{item.body}</p>{item.email && <small>{item.email}</small>}</div><div className="moderation-actions"><button className="secondary-button" onClick={() => decide(item.feedbackId, "approved")}>Approve</button><button className="secondary-button" onClick={() => decide(item.feedbackId, "rejected")}>Reject</button><button className="danger-button" onClick={() => decide(item.feedbackId, "spam")}>Mark spam</button></div></article>)}</section></>;
+}
+
+function AuditLog({ items, onRefresh }: { items: AuditItem[]; onRefresh: () => void }) {
+  return <><PageHeader eyebrow="Security & accountability" title="Audit log" description="A durable record of changes made across this project." action={<button className="secondary-button" onClick={onRefresh}>↻ Refresh log</button>} /><section className="panel audit-panel">{items.length === 0 ? <div className="empty-state"><div className="empty-icon">▤</div><strong>No audit events yet</strong><p>Project activity will be recorded here.</p></div> : items.map((item) => <article className="audit-row" key={item.id}><span className="audit-icon">{item.action.startsWith("moderation") ? "◇" : "•"}</span><div><strong>{item.action.replaceAll(".", " · ")}</strong><p>{item.entityType} <code>{item.entityId}</code></p></div><time>{formatDate(item.createdAt)}</time></article>)}</section></>;
 }
 
 function Insights({ analytics, usage, onRefresh }: { analytics: Analytics | null; usage: Usage | null; onRefresh: () => void }) { return <><PageHeader eyebrow="Product intelligence" title="Insights" description="Understand the themes behind your users' voice." action={<button className="secondary-button" onClick={onRefresh}>↻ Refresh data</button>} /><div className="analytics-grid"><section className="panel chart-panel"><div className="panel-heading"><div><h2>Feedback volume</h2><p>Current workspace overview</p></div><span className="period-pill">This month⌄</span></div><div className="fake-chart"><div className="chart-y"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div><div className="chart-area"><div className="chart-line" /><div className="chart-fill" />{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <span key={day}>{day}</span>)}</div></div></section><section className="panel breakdown-panel"><div className="panel-heading"><div><h2>By type</h2><p>What users are asking for</p></div></div>{(analytics?.types ?? []).length === 0 ? <div className="mini-empty">No type data yet.</div> : analytics?.types.map((item, index) => <div className="breakdown-row" key={item.type}><span className={`breakdown-color c${index}`} /><span>{statusLabel(item.type)}</span><strong>{item.count}</strong><div className="mini-progress"><i style={{ width: `${Math.min(100, (item.count / Math.max(1, analytics.total)) * 100)}%` }} /></div></div>)}</section></div><div className="analytics-bottom"><section className="panel"><div className="panel-heading"><div><h2>Statuses</h2><p>Where feedback sits in the workflow</p></div></div>{(analytics?.statuses ?? []).map((item) => <div className="status-stat" key={item.status}><span className={`status-pill ${item.status}`}>{statusLabel(item.status)}</span><strong>{item.count}</strong><span className="muted">items</span></div>)}</section><section className="panel usage-panel"><div className="panel-heading"><div><h2>Plan usage</h2><p>{usage?.period ?? "Current period"}</p></div></div><div className="usage-number"><strong>{usage?.feedbackCount ?? 0}</strong><span>/ {usage?.feedbackLimit ?? 100} feedbacks</span></div><div className="progress large"><span style={{ width: `${Math.min(100, ((usage?.feedbackCount ?? 0) / (usage?.feedbackLimit || 1)) * 100)}%` }} /></div><p className="muted">{usage?.plan ?? "Free"} plan · {usage?.attachmentBytes ?? 0} attachment bytes</p></section></div></> }

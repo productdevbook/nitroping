@@ -765,6 +765,18 @@ export default {
         ]);
         return jsonResponse({ feedbackId, outcome }, { headers: cors });
       }
+      const auditMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/audit-logs$/);
+      if (auditMatch && request.method === "GET") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireDashboardProject(request, env, url, auditMatch[1], rid);
+        if (context instanceof Response) return context;
+        const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") ?? 50)));
+        const rows = await env.DB.prepare(`SELECT id, action, entity_type AS entityType, entity_id AS entityId, actor_user_id AS actorUserId, metadata_json AS metadata, created_at AS createdAt
+          FROM audit_logs WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC LIMIT ?`)
+          .bind(context.organizationId, context.projectId, limit).all<Record<string, unknown>>();
+        return jsonResponse({ items: (rows.results ?? []).map((row) => ({ ...row, metadata: JSON.parse(String(row.metadata ?? "{}")) })) }, { headers: cors });
+      }
       const dashboardListMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/feedback$/);
       if (dashboardListMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);

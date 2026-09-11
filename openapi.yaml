@@ -119,6 +119,11 @@ paths:
       parameters: [{ $ref: '#/components/parameters/ProjectId' }]
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [feedbackId, outcome], properties: { feedbackId: { type: string }, outcome: { type: string, enum: [approved, rejected, spam] } } } } } }
       responses: { '200': { description: Moderation decision }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/audit-logs:
+    get:
+      summary: List project audit log entries
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }]
+      responses: { '200': { description: Audit log entries }, '401': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/settings:
     get:
       summary: Read project widget, metadata, origin, and retention settings
