@@ -4891,8 +4891,38 @@ export default {
             rid,
             415,
           );
+        const existingAttachment = await env.DB.prepare(
+          "SELECT id FROM attachments WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
+        )
+          .bind(raw.attachmentId, raw.organizationId, raw.projectId)
+          .first();
+        if (existingAttachment) {
+          await env.CACHE.delete(`upload:${uploadPut[1]}`);
+          return jsonResponse(
+            { attachmentId: raw.attachmentId },
+            { status: 201, headers: cors },
+          );
+        }
         const usage = await currentUsage(env, raw.organizationId);
-        if (usage.attachmentBytes + raw.size > usage.attachmentLimit)
+        const reservationPeriod = usage.period;
+        await env.DB.prepare(
+          "INSERT OR IGNORE INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 0, 0)",
+        )
+          .bind(raw.organizationId, reservationPeriod)
+          .run();
+        const reservation = await env.DB.prepare(
+          "UPDATE usage_counters SET attachment_bytes = attachment_bytes + ?, updated_at = ? WHERE organization_id = ? AND period = ? AND attachment_bytes + ? <= ?",
+        )
+          .bind(
+            raw.size,
+            new Date().toISOString(),
+            raw.organizationId,
+            reservationPeriod,
+            raw.size,
+            usage.attachmentLimit,
+          )
+          .run();
+        if (!reservation.meta.changes)
           return error(
             "PLAN_LIMIT_REACHED",
             `The ${usage.plan} plan has reached its attachment limit`,
@@ -4900,33 +4930,35 @@ export default {
             402,
             { limit: usage.attachmentLimit, resource: "attachments" },
           );
-        await env.ATTACHMENTS.put(raw.objectKey, bytes, {
-          httpMetadata: { contentType: raw.contentType },
-        });
-        const attachmentInsert = await env.DB.prepare(
-          "INSERT OR IGNORE INTO attachments (id, organization_id, project_id, feedback_id, object_key, content_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        )
-          .bind(
-            raw.attachmentId,
-            raw.organizationId,
-            raw.projectId,
-            raw.feedbackId,
-            raw.objectKey,
-            raw.contentType,
-            raw.size,
-            new Date().toISOString(),
-          )
-          .run();
-        if (attachmentInsert.meta.changes > 0) {
-          await env.DB.prepare(
-            "INSERT INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 0, ?) ON CONFLICT(organization_id, period) DO UPDATE SET attachment_bytes = attachment_bytes + excluded.attachment_bytes",
+        let attachmentInsert: D1Result;
+        try {
+          await env.ATTACHMENTS.put(raw.objectKey, bytes, {
+            httpMetadata: { contentType: raw.contentType },
+          });
+          attachmentInsert = await env.DB.prepare(
+            "INSERT OR IGNORE INTO attachments (id, organization_id, project_id, feedback_id, object_key, content_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
           )
             .bind(
+              raw.attachmentId,
               raw.organizationId,
-              new Date().toISOString().slice(0, 7),
+              raw.projectId,
+              raw.feedbackId,
+              raw.objectKey,
+              raw.contentType,
               raw.size,
+              new Date().toISOString(),
             )
             .run();
+        } catch (cause) {
+          await env.ATTACHMENTS.delete(raw.objectKey).catch(() => undefined);
+          await env.DB.prepare(
+            "UPDATE usage_counters SET attachment_bytes = MAX(0, attachment_bytes - ?), updated_at = ? WHERE organization_id = ? AND period = ?",
+          )
+            .bind(raw.size, new Date().toISOString(), raw.organizationId, reservationPeriod)
+            .run();
+          throw cause;
+        }
+        if (attachmentInsert.meta.changes > 0) {
           recordMetric(
             env,
             "attachment.created",
@@ -4934,6 +4966,12 @@ export default {
             raw.projectId,
             [raw.size],
           );
+        } else {
+          await env.DB.prepare(
+            "UPDATE usage_counters SET attachment_bytes = MAX(0, attachment_bytes - ?), updated_at = ? WHERE organization_id = ? AND period = ?",
+          )
+            .bind(raw.size, new Date().toISOString(), raw.organizationId, reservationPeriod)
+            .run();
         }
         await env.CACHE.delete(`upload:${uploadPut[1]}`);
         return jsonResponse(
