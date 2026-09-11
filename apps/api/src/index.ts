@@ -559,6 +559,53 @@ export const validateWidgetTheme = (theme: unknown): string | null => {
     : "Widget theme cannot exceed 16 KB";
 };
 
+export const validateCustomFieldMetadata = (
+  themeJson: string,
+  metadata: Record<string, string | number | boolean>,
+): string | null => {
+  let theme: Record<string, unknown> = {};
+  try {
+    const parsed = JSON.parse(themeJson);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
+      theme = parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(theme.customFields)) return null;
+  for (const field of theme.customFields) {
+    if (!field || typeof field !== "object" || Array.isArray(field)) continue;
+    const definition = field as Record<string, unknown>;
+    const fieldId = typeof definition.id === "string" ? definition.id : "";
+    if (!fieldId) continue;
+    const value = metadata[fieldId];
+    if (value === undefined) {
+      if (definition.required === true)
+        return `Custom field is required: ${fieldId}`;
+      continue;
+    }
+    const fieldType = definition.type;
+    if (["text", "textarea", "select"].includes(String(fieldType))) {
+      if (typeof value !== "string")
+        return `Custom field must be text: ${fieldId}`;
+      if (fieldType === "select") {
+        const options = Array.isArray(definition.options)
+          ? definition.options.filter(
+              (option): option is string => typeof option === "string",
+            )
+          : [];
+        if (!options.includes(value))
+          return `Custom field has an invalid option: ${fieldId}`;
+      }
+    } else if (fieldType === "number") {
+      if (typeof value !== "number" || !Number.isFinite(value))
+        return `Custom field must be a finite number: ${fieldId}`;
+    } else if (fieldType === "boolean" && typeof value !== "boolean") {
+      return `Custom field must be boolean: ${fieldId}`;
+    }
+  }
+  return null;
+};
+
 const contextFrom = (url: URL): TenantContext => ({
   organizationId: url.searchParams.get("organizationId") ?? "demo-org",
   projectId:
@@ -652,22 +699,28 @@ const allowedMetadata = async (
   rid: string,
 ): Promise<Response | null> => {
   const settings = await env.DB.prepare(
-    "SELECT allowed_metadata_json FROM project_settings WHERE project_id = ? AND EXISTS (SELECT 1 FROM projects WHERE projects.id = project_settings.project_id AND projects.organization_id = ?)",
+    "SELECT allowed_metadata_json, theme_json FROM project_settings WHERE project_id = ? AND organization_id = ?",
   )
     .bind(context.projectId, context.organizationId)
-    .first<{ allowed_metadata_json: string }>();
+    .first<{ allowed_metadata_json: string; theme_json: string }>();
   const allowed = new Set<string>(
     JSON.parse(settings?.allowed_metadata_json ?? "[]"),
   );
   const metadata = input.metadata ?? {};
   const invalid = Object.keys(metadata).filter((key) => !allowed.has(key));
-  return invalid.length
-    ? error(
+  if (invalid.length)
+    return error(
         "METADATA_FIELD_NOT_ALLOWED",
         `Metadata fields are not allowed: ${invalid.join(", ")}`,
         rid,
         400,
-      )
+      );
+  const customFieldError = validateCustomFieldMetadata(
+    settings?.theme_json ?? "{}",
+    metadata,
+  );
+  return customFieldError
+    ? error("INVALID_CUSTOM_FIELD", customFieldError, rid, 400)
     : null;
 };
 

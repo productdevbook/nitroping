@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("./events", () => ({
   ProjectEventStream: class ProjectEventStream {},
 }));
-import { publicWidgetConfig, validateWidgetTheme } from "./index";
+import {
+  publicWidgetConfig,
+  validateCustomFieldMetadata,
+  validateWidgetTheme,
+} from "./index";
 
 describe("widget theme contract", () => {
   it("accepts bounded custom field definitions", () => {
@@ -78,5 +82,19 @@ describe("widget theme contract", () => {
       colors: { primary: "#7C3AED" },
     });
     expect(JSON.stringify(result)).not.toContain("internal.secret");
+  });
+
+  it("enforces configured custom field types, options, and required values", () => {
+    const theme = JSON.stringify({
+      customFields: [
+        { id: "plan", label: "Plan", type: "select", required: true, options: ["free", "pro"] },
+        { id: "beta", label: "Beta", type: "boolean" },
+        { id: "seats", label: "Seats", type: "number" },
+      ],
+    });
+    expect(validateCustomFieldMetadata(theme, { beta: true, seats: 3 })).toContain("required");
+    expect(validateCustomFieldMetadata(theme, { plan: "enterprise", beta: true, seats: 3 })).toContain("invalid option");
+    expect(validateCustomFieldMetadata(theme, { plan: "pro", beta: "yes", seats: 3 })).toContain("boolean");
+    expect(validateCustomFieldMetadata(theme, { plan: "pro", beta: true, seats: 3 })).toBeNull();
   });
 });
