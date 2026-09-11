@@ -13,6 +13,7 @@ const webhookEventTypes = ["feedback.created", "feedback.updated", "feedback.rep
 type WebhookEventType = (typeof webhookEventTypes)[number];
 const notificationEventTypes = ["feedback.created", "feedback.updated", "feedback.replied", "moderation.created"] as const;
 const planFeedbackLimits: Record<string, number> = { free: 100, pro: 5_000, business: 50_000 };
+const planOrganizationLimits: Record<string, number> = { free: 1, pro: 20, business: 1_000 };
 const planProjectLimits: Record<string, number> = { free: 1, pro: 20, business: 1_000 };
 const planAttachmentLimits: Record<string, number> = { free: 25 * 1024 * 1024, pro: 5 * 1024 * 1024 * 1024, business: 50 * 1024 * 1024 * 1024 };
 const requestId = (request: Request) => request.headers.get("x-request-id") ?? `req_${id()}`;
@@ -337,7 +338,9 @@ export default {
           const rows = await env.DB.prepare("SELECT o.id, o.name, o.slug, m.role, o.created_at AS createdAt FROM organizations o JOIN organization_members m ON m.organization_id = o.id WHERE m.user_id = ? AND o.deleted_at IS NULL ORDER BY o.created_at ASC").bind(userId).all();
           return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
         }
-        if (Number(organizationCount?.count ?? 0) >= 1) return error("PLAN_LIMIT_REACHED", "The free plan includes one organization", rid, 402, { limit: 1, resource: "organizations" });
+        const currentPlan = await env.DB.prepare("SELECT plan FROM subscriptions WHERE organization_id IN (SELECT organization_id FROM organization_members WHERE user_id = ?) ORDER BY CASE plan WHEN 'business' THEN 3 WHEN 'pro' THEN 2 ELSE 1 END DESC LIMIT 1").bind(userId).first<{ plan: string }>();
+        const organizationLimit = planOrganizationLimits[currentPlan?.plan ?? "free"] ?? planOrganizationLimits.free;
+        if (Number(organizationCount?.count ?? 0) >= organizationLimit) return error("PLAN_LIMIT_REACHED", `Your plan includes up to ${organizationLimit} organization${organizationLimit === 1 ? "" : "s"}`, rid, 402, { limit: organizationLimit, resource: "organizations" });
         const body = await jsonBody(request);
         const name = typeof body.name === "string" ? body.name.trim() : "";
         const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
