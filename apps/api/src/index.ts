@@ -141,7 +141,7 @@ const rateLimit = async (env: Env, request: Request, scope: string): Promise<boo
 const requestHeaders = (rid: string, origin?: string): Record<string, string> => ({
   "access-control-allow-origin": origin ?? "*",
   "access-control-allow-headers": "content-type, x-request-id, x-nitroping-project-key, x-nitroping-server-key, authorization, idempotency-key",
-  "access-control-allow-methods": "GET,POST,PATCH,PUT,OPTIONS",
+  "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
   "access-control-expose-headers": "etag, x-request-id",
   "cache-control": "no-store",
   "x-request-id": rid,
