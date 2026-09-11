@@ -39,9 +39,15 @@ const validateInput = (body: unknown): CreateFeedbackInput | string => {
   if (input.priority !== undefined && !feedbackPriorities.includes(input.priority as never)) return "Invalid priority";
   if (input.categoryId !== undefined && (typeof input.categoryId !== "string" || input.categoryId.length < 1 || input.categoryId.length > 128)) return "Invalid categoryId";
   if (input.platform !== undefined && !platforms.includes(input.platform as never)) return "Invalid platform";
+  if (input.appVersion !== undefined && (typeof input.appVersion !== "string" || input.appVersion.length > 128)) return "Invalid appVersion";
+  if (input.osVersion !== undefined && (typeof input.osVersion !== "string" || input.osVersion.length > 128)) return "Invalid osVersion";
+  if (input.locale !== undefined && (typeof input.locale !== "string" || input.locale.length > 32)) return "Invalid locale";
   if (input.metadata !== undefined && (!input.metadata || typeof input.metadata !== "object" || Array.isArray(input.metadata))) return "Invalid metadata";
   if (input.metadata && Object.keys(input.metadata as object).length > 30) return "A maximum of 30 metadata fields is allowed";
+  if (input.metadata && Object.keys(input.metadata as object).some((key) => !/^[a-zA-Z][a-zA-Z0-9_.-]{0,63}$/.test(key))) return "Metadata field names are invalid";
+  if (input.metadata && Object.values(input.metadata as Record<string, unknown>).some((value) => typeof value === "string" && value.length > 512)) return "Metadata string values cannot exceed 512 characters";
   if (input.metadata && Object.values(input.metadata as Record<string, unknown>).some((value) => !["string", "number", "boolean"].includes(typeof value))) return "Metadata may only contain primitive values";
+  if (input.metadata && JSON.stringify(input.metadata).length > 8_192) return "Metadata cannot exceed 8 KB";
   return {
     type: input.type as CreateFeedbackInput["type"], title: input.title.trim(), body: input.body.trim(), categoryId: input.categoryId as string | undefined,
     priority: (input.priority as CreateFeedbackInput["priority"]) ?? "normal", email: input.email as string | undefined,
@@ -127,6 +133,22 @@ const publicWidgetConfig = (themeJson: string, categories: unknown[]): { theme: 
     if (Object.keys(colors).length) theme.colors = colors;
   }
   return { theme, categories };
+};
+
+const validateWidgetTheme = (theme: unknown): string | null => {
+  if (!theme || typeof theme !== "object" || Array.isArray(theme)) return "Theme must be an object";
+  const raw = theme as Record<string, unknown>;
+  if (raw.mode !== undefined && !["floating", "modal", "side-panel", "inline", "portal", "headless"].includes(String(raw.mode))) return "Widget mode is invalid";
+  if (raw.buttonLabel !== undefined && (typeof raw.buttonLabel !== "string" || raw.buttonLabel.length > 80)) return "Button label must be 80 characters or fewer";
+  if (raw.fields !== undefined && (!Array.isArray(raw.fields) || raw.fields.length > 20 || raw.fields.some((field) => typeof field !== "string" || !["type", "category", "title", "description", "attachment", "email"].includes(field)))) return "Widget fields are invalid";
+  const colors = raw.colors ?? raw;
+  if (colors && typeof colors === "object" && !Array.isArray(colors)) {
+    for (const key of ["primary", "background", "text", "muted"]) {
+      const value = (colors as Record<string, unknown>)[key];
+      if (value !== undefined && (typeof value !== "string" || !/^#[0-9a-f]{3,8}$/i.test(value))) return "Widget colors must be hexadecimal values";
+    }
+  }
+  return JSON.stringify(theme).length <= 16_384 ? null : "Widget theme cannot exceed 16 KB";
 };
 
 const contextFrom = (url: URL): TenantContext => ({ organizationId: url.searchParams.get("organizationId") ?? "demo-org", projectId: url.searchParams.get("projectId") ?? url.pathname.split("/")[3] ?? "demo-project", publicKey: url.searchParams.get("projectKey") ?? undefined });
@@ -625,6 +647,8 @@ export default {
         const allowedMetadata = body.allowedMetadata === undefined ? JSON.parse(current.allowed_metadata_json) : body.allowedMetadata;
         const retentionDays = body.retentionDays === undefined ? current.retention_days : Number(body.retentionDays);
         const origins = body.origins === undefined ? JSON.parse(current.origins_json) : body.origins;
+        const themeError = validateWidgetTheme(theme);
+        if (themeError) return error("VALIDATION_ERROR", themeError, rid, 400);
         if (!Array.isArray(allowedMetadata) || allowedMetadata.length > 100 || allowedMetadata.some((field) => typeof field !== "string" || !/^[a-zA-Z][a-zA-Z0-9_.-]{0,63}$/.test(field))) return error("VALIDATION_ERROR", "Allowed metadata fields are invalid", rid, 400);
         if (!Number.isInteger(retentionDays) || retentionDays < 1 || retentionDays > 3650) return error("VALIDATION_ERROR", "Retention must be between 1 and 3650 days", rid, 400);
         if (!Array.isArray(origins) || origins.length > 50 || origins.some((origin) => typeof origin !== "string" || !/^https:\/\//.test(origin))) return error("VALIDATION_ERROR", "Origins must be HTTPS URLs", rid, 400);

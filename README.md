@@ -53,11 +53,11 @@ The dashboard is a React 19 application built with Vite 8 and Bun. It uses a sma
 - `apps/api/public/dashboard.html`: generated production entry served by the Worker
 - `apps/api/public/assets`: generated JavaScript bundle
 
-The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Changelog, Audit log, Developer controls, Team, Notifications, Billing, Widget Builder, and Settings. It also supports creating organizations and projects from the workspace switcher. Each view talks to the versioned API through the authenticated organization-member boundary, with a project-key/server-key fallback for local development. Authentication is kept outside the visual components.
+The first dashboard surface includes Inbox, Insights, Moderation, Roadmap, Changelog, Audit log, Developer controls, Team, Notifications, Billing, Widget Builder, and Settings. It also supports creating organizations and projects from the workspace switcher, linking feedback to roadmap and changelog items, and unlinking it without leaving the tenant boundary. Each view talks to the versioned API through the authenticated organization-member boundary, with a project-key/server-key fallback for local development. Authentication is kept outside the visual components.
 
 The hosted public portal is available at `/portal?projectId=<project-id>&projectKey=<public-key>`. It provides feedback submission, community browsing, voting, roadmap, and changelog views without requiring the customer to build a separate public page.
 
-Public clients can load the safe project configuration from `/api/v1/projects/:projectId/public/config`. The response contains the published widget theme and categories only; retention settings, allowed origins, API keys, and organization data are never exposed. The Web SDK wraps this endpoint with `loadNitroPingConfig` and `NitroPing.initAsync`.
+Public clients can load the safe project configuration from `/api/v1/projects/:projectId/public/config`. The response contains the published widget theme and categories only; retention settings, allowed origins, API keys, and organization data are never exposed. Theme fields, colors, metadata keys, metadata values, and SDK context lengths are validated server-side. The Web SDK wraps this endpoint with `loadNitroPingConfig` and `NitroPing.initAsync`.
 
 Run the dashboard locally:
 
