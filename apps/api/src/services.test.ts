@@ -20,7 +20,7 @@ describe("feedback service boundaries", () => {
     const context = { organizationId: "org_1", projectId: "project_1" };
     await Effect.runPromise(createFeedback(repository, context, { type: "bug", title: "Title", body: "Body" }, "req_1"));
     await Effect.runPromise(getFeedback(repository, context, sample.id));
-    await Effect.runPromise(listFeedback(repository, context));
+    await Effect.runPromise(listFeedback(repository, context, { query: "payment" }));
     await Effect.runPromise(changeFeedbackStatus(repository, context, sample.id, "triaged"));
     expect(calls).toEqual(["create:org_1:project_1", "get:org_1:project_1", "list:org_1:project_1", "status:org_1:project_1"]);
   });

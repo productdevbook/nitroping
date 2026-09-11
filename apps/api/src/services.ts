@@ -3,10 +3,19 @@ import type { CreateFeedbackInput, Feedback, FeedbackStatus } from "@nitroping/c
 
 export type TenantContext = { organizationId: string; projectId: string; publicKey?: string };
 
+export type FeedbackListOptions = {
+  cursor?: string;
+  limit?: number;
+  query?: string;
+  status?: FeedbackStatus;
+  type?: Feedback["type"];
+  priority?: Feedback["priority"];
+};
+
 export type FeedbackRepository = {
   create: (context: TenantContext, input: CreateFeedbackInput, requestId: string) => Promise<Feedback>;
   get: (context: TenantContext, id: string) => Promise<Feedback | null>;
-  list: (context: TenantContext, cursor?: string, limit?: number) => Promise<{ items: Feedback[]; nextCursor?: string }>;
+  list: (context: TenantContext, options?: FeedbackListOptions) => Promise<{ items: Feedback[]; nextCursor?: string }>;
   updateStatus: (context: TenantContext, id: string, status: FeedbackStatus) => Promise<Feedback | null>;
 };
 
@@ -16,8 +25,8 @@ export const createFeedback = (repo: FeedbackRepository, context: TenantContext,
 export const getFeedback = (repo: FeedbackRepository, context: TenantContext, id: string) =>
   Effect.tryPromise({ try: () => repo.get(context, id), catch: (cause) => new Error(`feedback.get failed: ${String(cause)}`) });
 
-export const listFeedback = (repo: FeedbackRepository, context: TenantContext, cursor?: string) =>
-  Effect.tryPromise({ try: () => repo.list(context, cursor), catch: (cause) => new Error(`feedback.list failed: ${String(cause)}`) });
+export const listFeedback = (repo: FeedbackRepository, context: TenantContext, options: FeedbackListOptions = {}) =>
+  Effect.tryPromise({ try: () => repo.list(context, options), catch: (cause) => new Error(`feedback.list failed: ${String(cause)}`) });
 
 export const changeFeedbackStatus = (repo: FeedbackRepository, context: TenantContext, id: string, status: FeedbackStatus) =>
   Effect.tryPromise({ try: () => repo.updateStatus(context, id, status), catch: (cause) => new Error(`feedback.status failed: ${String(cause)}`) });

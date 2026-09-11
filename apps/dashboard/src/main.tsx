@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import type { Feedback, FeedbackStatus } from "@nitroping/contracts";
 import "./styles.css";
 
-type View = "inbox" | "insights" | "moderation" | "roadmap" | "changelog" | "audit" | "developer" | "team" | "settings";
+type View = "inbox" | "insights" | "moderation" | "roadmap" | "changelog" | "audit" | "developer" | "team" | "notifications" | "settings";
 type ApiOptions = RequestInit & { projectKey?: string; serverKey?: string };
 type FeedbackDetail = { feedback: Feedback; comments: Array<{ id: string; body: string; isInternal: number; createdAt: string }>; statusHistory: Array<{ id: string; fromStatus: string | null; toStatus: string; createdAt: string }>; tags?: Array<{ id: string; name: string; slug: string }> };
 type Analytics = { total: number; statuses: Array<{ status: string; count: number }>; platforms: Array<{ platform: string; count: number }>; types: Array<{ type: string; count: number }>; volume: Array<{ date: string; count: number }>; averageResponseMinutes: number | null; averageResolutionMinutes: number | null };
@@ -17,6 +17,7 @@ type AuditItem = { id: string; action: string; entityType: string; entityId: str
 type ApiKeyItem = { id: string; kind: string; label: string; keyPrefix: string; createdAt: string; revokedAt: string | null };
 type WebhookItem = { id: string; url: string; events: string[]; active: number; createdAt: string };
 type MemberItem = { userId: string; email: string; role: string; createdAt: string };
+type NotificationPreference = { eventType: string; enabled: boolean };
 
 const apiBase = "/api/v1";
 const statuses: FeedbackStatus[] = ["new", "triaged", "planned", "in_progress", "resolved", "closed", "spam"];
@@ -57,6 +58,7 @@ function App() {
   const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
   const [webhooks, setWebhooks] = useState<WebhookItem[]>([]);
   const [members, setMembers] = useState<MemberItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationPreference[]>([]);
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,8 +70,11 @@ function App() {
   const loadInbox = async () => {
     setLoading(true);
     try {
+      const feedbackQuery = new URLSearchParams({ limit: "50" });
+      if (query.trim()) feedbackQuery.set("q", query.trim());
+      if (filter !== "all") feedbackQuery.set("status", filter);
       const [list, insight, currentUsage] = await Promise.all([
-        api<{ items: Feedback[] }>(`/dashboard/projects/${encodeURIComponent(projectId)}/feedback?projectId=${encodeURIComponent(projectId)}`, credentials),
+        api<{ items: Feedback[] }>(`/dashboard/projects/${encodeURIComponent(projectId)}/feedback?projectId=${encodeURIComponent(projectId)}&${feedbackQuery}`, credentials),
         api<Analytics>(`/dashboard/projects/${encodeURIComponent(projectId)}/analytics?projectId=${encodeURIComponent(projectId)}`, credentials),
         api<Usage>(`/dashboard/projects/${encodeURIComponent(projectId)}/usage?projectId=${encodeURIComponent(projectId)}`, credentials),
       ]);
@@ -137,12 +142,13 @@ function App() {
         setApiKeys(keys.items); setWebhooks(hooks.items);
       }
       if (nextView === "team") setMembers((await api<{ items: MemberItem[] }>(`/dashboard/organizations/${organizations[0]?.id}/members`, credentials)).items);
+      if (nextView === "notifications") setNotifications((await api<{ items: NotificationPreference[] }>(`/dashboard/projects/${projectId}/notifications`, credentials)).items);
       if (nextView === "settings") setSettings(await api<Settings>(`/dashboard/projects/${projectId}/settings?projectId=${projectId}`, credentials));
     } catch (error) { setNotice({ text: error instanceof Error ? error.message : "Unable to load view", error: true }); }
   };
 
   useEffect(() => { void loadWorkspace(); }, []);
-  useEffect(() => { if (workspaceReady && projectId) void loadInbox(); }, [workspaceReady, projectId]);
+  useEffect(() => { if (workspaceReady && projectId) void loadInbox(); }, [workspaceReady, projectId, query, filter]);
 
   const openFeedback = async (item: Feedback) => {
     try { setSelected(await api<FeedbackDetail>(`/dashboard/feedback/${item.id}?projectId=${projectId}`, credentials)); }
@@ -178,6 +184,7 @@ function App() {
         <NavItem active={view === "audit"} icon="▤" label="Audit log" onClick={() => loadView("audit")} />
         <NavItem active={view === "developer"} icon="⌘" label="Developer" onClick={() => loadView("developer")} />
         <NavItem active={view === "team"} icon="◎" label="Team" onClick={() => loadView("team")} />
+        <NavItem active={view === "notifications"} icon="♢" label="Notifications" onClick={() => loadView("notifications")} />
         <p className="nav-label section-label">Manage</p>
         <NavItem active={view === "settings"} icon="⚙" label="Project settings" onClick={() => loadView("settings")} />
       </nav>
@@ -193,6 +200,7 @@ function App() {
         {view === "audit" && <AuditLog items={auditLogs} onRefresh={() => void loadView("audit")} />}
         {view === "developer" && <DeveloperControls projectId={projectId} credentials={credentials} apiKeys={apiKeys} webhooks={webhooks} onRefresh={() => void loadView("developer")} />}
         {view === "team" && <Team members={members} organizationId={organizations[0]?.id ?? ""} credentials={credentials} onRefresh={() => void loadView("team")} />}
+        {view === "notifications" && <Notifications items={notifications} credentials={credentials} projectId={projectId} onChange={setNotifications} />}
         {view === "roadmap" && <Roadmap items={roadmap} credentials={credentials} projectId={projectId} onChange={() => void loadView("roadmap")} />}
         {view === "changelog" && <Changelog items={changelog} credentials={credentials} projectId={projectId} onChange={() => void loadView("changelog")} />}
         {view === "settings" && <SettingsPanel settings={settings} projectId={projectId} publicKey={publicKey} serverKey={serverKey} onProject={setProjectId} onPublic={setPublicKey} onServer={setServerKey} onSave={saveWorkspace} onSettings={setSettings} />}
@@ -242,6 +250,16 @@ function Team({ members, organizationId, credentials, onRefresh }: { members: Me
   const [email, setEmail] = useState(""); const [role, setRole] = useState("member"); const [sending, setSending] = useState(false);
   const invite = async () => { if (!email.trim()) return; setSending(true); try { await api(`/dashboard/organizations/${organizationId}/invites`, { ...credentials, method: "POST", body: JSON.stringify({ email, role }) }); setEmail(""); onRefresh(); } finally { setSending(false); } };
   return <><PageHeader eyebrow="People & permissions" title="Team" description="Invite collaborators and keep project access explicit." action={<button className="secondary-button" onClick={onRefresh}>↻ Refresh team</button>} /><section className="panel settings-card team-card"><div className="panel-heading"><div><h2>Invite a teammate</h2><p>Invitations expire after seven days and are restricted to the invited email.</p></div></div><div className="developer-form"><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="teammate@company.com" /><select value={role} onChange={(event) => setRole(event.target.value)}><option value="member">Member</option><option value="admin">Admin</option><option value="moderator">Moderator</option><option value="viewer">Viewer</option><option value="billing_admin">Billing admin</option></select><button className="primary-button" disabled={sending} onClick={invite}>{sending ? "Sending…" : "Send invite"}</button></div><div className="member-list">{members.map((member) => <div className="member-row" key={member.userId}><span className="avatar purple-avatar">{member.email[0].toUpperCase()}</span><div><strong>{member.email}</strong><small>{member.role} · Joined {formatDate(member.createdAt)}</small></div>{member.role === "owner" ? <span className="role-badge">Owner</span> : <button className="text-danger" onClick={async () => { await api(`/dashboard/organizations/${organizationId}/members/${member.userId}`, { ...credentials, method: "DELETE" }); onRefresh(); }}>Remove</button>}</div>)}</div></section></>;
+}
+
+function Notifications({ items, credentials, projectId, onChange }: { items: NotificationPreference[]; credentials: ApiOptions; projectId: string; onChange: (items: NotificationPreference[]) => void }) {
+  const update = async (eventType: string, enabled: boolean) => {
+    try {
+      await api(`/dashboard/projects/${projectId}/notifications`, { ...credentials, method: "PATCH", body: JSON.stringify({ eventType, enabled }) });
+      onChange(items.map((item) => item.eventType === eventType ? { ...item, enabled } : item));
+    } catch { /* the parent toast handles the next navigation refresh */ }
+  };
+  return <><PageHeader eyebrow="Personal workflow" title="Notifications" description="Choose which project events should reach your team inbox." action={<button className="secondary-button" onClick={() => location.reload()}>↻ Refresh</button>} /><section className="panel settings-card notification-card">{items.map((item) => <label className="notification-row" key={item.eventType}><span><strong>{statusLabel(item.eventType)}</strong><small>Project activity notification</small></span><input type="checkbox" checked={item.enabled} onChange={(event) => void update(item.eventType, event.target.checked)} /></label>)}</section></>;
 }
 
 function Insights({ analytics, usage, onRefresh }: { analytics: Analytics | null; usage: Usage | null; onRefresh: () => void }) {

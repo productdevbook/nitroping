@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { feedbackPriorities, feedbackStatuses, feedbackTypes, jsonResponse, platforms, type CreateFeedbackInput, type Feedback, type FeedbackStatus } from "@nitroping/contracts";
-import { changeFeedbackStatus, createFeedback, getFeedback, listFeedback, type FeedbackRepository, type TenantContext } from "./services";
+import { changeFeedbackStatus, createFeedback, getFeedback, listFeedback, type FeedbackListOptions, type FeedbackRepository, type TenantContext } from "./services";
 import { clientIp, hmacSha256, randomToken, sha256 } from "./security";
 import { type AccessClaims, verifyAccessJwt } from "./access";
 import { ProjectEventStream } from "./events";
@@ -11,6 +11,7 @@ export { ProjectEventStream };
 const id = () => crypto.randomUUID();
 const webhookEventTypes = ["feedback.created", "feedback.updated", "feedback.replied"] as const;
 type WebhookEventType = (typeof webhookEventTypes)[number];
+const notificationEventTypes = ["feedback.created", "feedback.updated", "feedback.replied", "moderation.created"] as const;
 const planFeedbackLimits: Record<string, number> = { free: 100, pro: 5_000, business: 50_000 };
 const planProjectLimits: Record<string, number> = { free: 1, pro: 20, business: 1_000 };
 const planAttachmentLimits: Record<string, number> = { free: 25 * 1024 * 1024, pro: 5 * 1024 * 1024 * 1024, business: 50 * 1024 * 1024 * 1024 };
@@ -54,10 +55,17 @@ const repository = (env: Env): FeedbackRepository => ({
     const row = await env.DB.prepare(`SELECT * FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL`).bind(feedbackId, context.organizationId, context.projectId).first<Record<string, unknown>>();
     return row ? fromRow(row) : null;
   },
-  async list(context, cursor, limit = 25) {
-    const statement = cursor
-      ? env.DB.prepare(`SELECT * FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL AND created_at < ? ORDER BY created_at DESC LIMIT ?`).bind(context.organizationId, context.projectId, cursor, limit + 1)
-      : env.DB.prepare(`SELECT * FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT ?`).bind(context.organizationId, context.projectId, limit + 1);
+  async list(context, options: FeedbackListOptions = {}) {
+    const limit = Math.min(100, Math.max(1, Number(options.limit ?? 25)));
+    const conditions = ["organization_id = ?", "project_id = ?", "deleted_at IS NULL"];
+    const bindings: unknown[] = [context.organizationId, context.projectId];
+    if (options.cursor) { conditions.push("created_at < ?"); bindings.push(options.cursor); }
+    if (options.query) { conditions.push("(title LIKE ? OR body LIKE ?)"); const query = `%${options.query.slice(0, 120)}%`; bindings.push(query, query); }
+    if (options.status) { conditions.push("status = ?"); bindings.push(options.status); }
+    if (options.type) { conditions.push("type = ?"); bindings.push(options.type); }
+    if (options.priority) { conditions.push("priority = ?"); bindings.push(options.priority); }
+    bindings.push(limit + 1);
+    const statement = env.DB.prepare(`SELECT * FROM feedback_items WHERE ${conditions.join(" AND ")} ORDER BY created_at DESC LIMIT ?`).bind(...bindings);
     const result = await statement.all<Record<string, unknown>>();
     const rows = result.results ?? [];
     const hasNext = rows.length > limit;
@@ -360,6 +368,7 @@ export default {
           env.DB.prepare("DELETE FROM webhooks WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM organization_invites WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM notification_preferences WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
+          env.DB.prepare("DELETE FROM magic_link_tokens WHERE feedback_id IN (SELECT id FROM feedback_items WHERE organization_id = ?)").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM idempotency_keys WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM usage_counters WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
           env.DB.prepare("DELETE FROM subscriptions WHERE organization_id = ?").bind(organizationDeleteMatch[1]),
@@ -468,6 +477,25 @@ export default {
         await writeOrganizationAudit(env, projectCreateMatch[1], "project.created", "project", projectId, userId);
         return jsonResponse({ id: projectId, organizationId: projectCreateMatch[1], name, slug, publicKey, serverKey, createdAt: now }, { status: 201, headers: cors });
       }
+      const projectUpdateMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)$/);
+      if (projectUpdateMatch && request.method === "PATCH") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireDashboardProject(request, env, url, projectUpdateMatch[1], rid, "project:manage");
+        if (context instanceof Response) return context;
+        const current = await env.DB.prepare("SELECT name, slug, organization_id AS organizationId, public_key AS publicKey, created_at AS createdAt FROM projects WHERE id = ? AND organization_id = ? AND deleted_at IS NULL").bind(context.projectId, context.organizationId).first<{ name: string; slug: string; organizationId: string; publicKey: string; createdAt: string }>();
+        if (!current) return error("PROJECT_NOT_FOUND", "The project was not found", rid, 404);
+        const body = await jsonBody(request);
+        const name = body.name === undefined ? current.name : typeof body.name === "string" ? body.name.trim() : "";
+        const slug = body.slug === undefined ? current.slug : typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
+        if (name.length < 2 || name.length > 120 || !/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) return error("VALIDATION_ERROR", "Project name or slug is invalid", rid, 400);
+        const updatedAt = new Date().toISOString();
+        try {
+          await env.DB.prepare("UPDATE projects SET name = ?, slug = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND deleted_at IS NULL").bind(name, slug, updatedAt, context.projectId, context.organizationId).run();
+        } catch { return error("PROJECT_SLUG_TAKEN", "Project slug is already in use", rid, 409); }
+        await writeAudit(env, context, "project.updated", "project", context.projectId, { name, slug });
+        return jsonResponse({ id: context.projectId, organizationId: context.organizationId, name, slug, publicKey: current.publicKey, createdAt: current.createdAt, updatedAt }, { headers: cors });
+      }
       if (path === "/api/v1/webhooks/stripe" && request.method === "POST") {
         const billingEnv = env as Env & { STRIPE_WEBHOOK_SECRET?: string };
         if (!billingEnv.STRIPE_WEBHOOK_SECRET) return error("BILLING_NOT_CONFIGURED", "Stripe webhooks are not configured for this deployment", rid, 503);
@@ -551,6 +579,30 @@ export default {
         await env.DB.prepare("UPDATE project_settings SET theme_json = ?, allowed_metadata_json = ?, retention_days = ?, origins_json = ? WHERE project_id = ?").bind(JSON.stringify(theme), JSON.stringify(allowedMetadata), retentionDays, JSON.stringify(origins), context.projectId).run();
         await writeAudit(env, context, "project.settings.updated", "project", context.projectId, { retentionDays, originCount: origins.length, metadataFieldCount: allowedMetadata.length });
         return jsonResponse({ theme, allowedMetadata, retentionDays, origins }, { headers: cors });
+      }
+      const notificationMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/notifications$/);
+      if (notificationMatch && ["GET", "PATCH"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireDashboardProject(request, env, url, notificationMatch[1], rid, "project:manage");
+        if (context instanceof Response) return context;
+        const identity = await requireIdentity(request, env, rid);
+        if (identity instanceof Response || !identity.email) return identity instanceof Response ? identity : error("DASHBOARD_AUTH_REQUIRED", "An authenticated email is required", rid, 401);
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare("SELECT event_type AS eventType, enabled FROM notification_preferences WHERE organization_id = ? AND project_id = ? AND email = ? ORDER BY event_type ASC").bind(context.organizationId, context.projectId, identity.email.toLowerCase()).all<{ eventType: string; enabled: number }>();
+          const saved = new Map((rows.results ?? []).map((row) => [row.eventType, Boolean(row.enabled)]));
+          return jsonResponse({ items: notificationEventTypes.map((eventType) => ({ eventType, enabled: saved.get(eventType) ?? true })) }, { headers: cors });
+        }
+        const body = await jsonBody(request);
+        const eventType = typeof body.eventType === "string" ? body.eventType : "";
+        if (!notificationEventTypes.includes(eventType as (typeof notificationEventTypes)[number]) || typeof body.enabled !== "boolean") return error("VALIDATION_ERROR", "eventType and boolean enabled are required", rid, 400);
+        const now = new Date().toISOString();
+        await env.DB.prepare(`INSERT INTO notification_preferences (id, organization_id, project_id, email, event_type, enabled, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(project_id, email, event_type) DO UPDATE SET enabled = excluded.enabled`)
+          .bind(id(), context.organizationId, context.projectId, identity.email.toLowerCase(), eventType, body.enabled ? 1 : 0, now).run();
+        await writeAudit(env, context, "notification.preference.updated", "notification_preference", `${identity.email}:${eventType}`, { eventType, enabled: body.enabled });
+        return jsonResponse({ eventType, enabled: body.enabled }, { headers: cors });
       }
       const usageMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/usage$/);
       if (usageMatch && request.method === "GET") {
@@ -795,14 +847,15 @@ export default {
         const result = await Effect.runPromise(createFeedback(repo, context, input, rid));
         await env.DB.prepare("INSERT INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 1, 0) ON CONFLICT(organization_id, period) DO UPDATE SET feedback_count = feedback_count + 1").bind(context.organizationId, usage.period).run();
         recordMetric(env, "feedback.created", context.organizationId, context.projectId, [1]);
-        if (idem) await env.DB.prepare("INSERT OR IGNORE INTO idempotency_keys (organization_id, project_id, key, response_json, status_code, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(context.organizationId, context.projectId, idem, JSON.stringify(result), 201, result.createdAt).run();
+        const safeResult = publicFeedback(result);
+        if (idem) await env.DB.prepare("INSERT OR IGNORE INTO idempotency_keys (organization_id, project_id, key, response_json, status_code, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(context.organizationId, context.projectId, idem, JSON.stringify(safeResult), 201, result.createdAt).run();
         if (env.EVENTS) {
           const eventId = id();
           await env.EVENTS.send({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, eventId });
           ctx.waitUntil(enqueueWebhookDeliveries(env, result.projectId, result.id, "feedback.created", eventId));
         }
         if (env.EVENT_STREAM) ctx.waitUntil(env.EVENT_STREAM.getByName(result.projectId).publish({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, createdAt: result.createdAt }));
-        return jsonResponse(result, { status: 201, headers: cors });
+        return jsonResponse(safeResult, { status: 201, headers: cors });
       }
       if (match && request.method === "GET" && match[2]) {
         const context = await projectFromRequest(request, env, url, rid);
@@ -817,7 +870,14 @@ export default {
         if (context instanceof Response) return context;
         const scopeError = projectMatchesPath(context, match[1], rid);
         if (scopeError) return scopeError;
-        const result = await Effect.runPromise(listFeedback(repo, context, url.searchParams.get("cursor") ?? undefined));
+        const result = await Effect.runPromise(listFeedback(repo, context, {
+          cursor: url.searchParams.get("cursor") ?? undefined,
+          limit: Number(url.searchParams.get("limit") ?? 25),
+          query: url.searchParams.get("q")?.trim() || undefined,
+          status: feedbackStatuses.includes(url.searchParams.get("status") as FeedbackStatus) ? url.searchParams.get("status") as FeedbackStatus : undefined,
+          type: feedbackTypes.includes(url.searchParams.get("type") as never) ? url.searchParams.get("type") as Feedback["type"] : undefined,
+          priority: feedbackPriorities.includes(url.searchParams.get("priority") as never) ? url.searchParams.get("priority") as Feedback["priority"] : undefined,
+        }));
         return jsonResponse({ ...result, items: result.items.filter((item) => item.status !== "spam").map(publicFeedback) }, { headers: cors });
       }
       const categoriesMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/public\/categories$/);
@@ -949,14 +1009,22 @@ export default {
         const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND status <> 'spam' AND deleted_at IS NULL").bind(body.feedbackId, context.organizationId, context.projectId).first();
         if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
         const token = randomToken("follow");
-        await env.CACHE.put(`follow:${token}`, JSON.stringify({ feedbackId: body.feedbackId, ...context, email: body.email }), { expirationTtl: 86_400 });
-        await env.DB.prepare("INSERT OR IGNORE INTO feedback_watchers (feedback_id, email, created_at) VALUES (?, ?, ?)").bind(body.feedbackId, body.email.toLowerCase(), new Date().toISOString()).run();
+        const now = new Date().toISOString();
+        const expiresAt = new Date(Date.now() + 86_400_000).toISOString();
+        await env.DB.batch([
+          env.DB.prepare("UPDATE magic_link_tokens SET used_at = ? WHERE feedback_id = ? AND used_at IS NULL AND expires_at > ?").bind(now, body.feedbackId, now),
+          env.DB.prepare("INSERT INTO magic_link_tokens (id, feedback_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?)").bind(id(), body.feedbackId, await sha256(token), expiresAt, now),
+          env.DB.prepare("INSERT OR IGNORE INTO feedback_watchers (feedback_id, email, created_at) VALUES (?, ?, ?)").bind(body.feedbackId, body.email.toLowerCase(), now),
+        ]);
         if (env.EVENTS) await env.EVENTS.send({ type: "follow-up.requested", token, email: body.email, feedbackId: body.feedbackId, organizationId: context.organizationId, projectId: context.projectId, eventId: id() });
         return jsonResponse({ accepted: true }, { status: 202, headers: cors });
       }
       const followUpReadMatch = path.match(/^\/api\/v1\/follow-up\/([^/]+)$/);
       if (followUpReadMatch && request.method === "GET") {
-        const raw = await env.CACHE.get(`follow:${followUpReadMatch[1]}`, "json") as { feedbackId: string; organizationId: string; projectId: string } | null;
+        const raw = await env.DB.prepare(`SELECT t.feedback_id AS feedbackId, f.organization_id AS organizationId, f.project_id AS projectId
+          FROM magic_link_tokens t JOIN feedback_items f ON f.id = t.feedback_id
+          WHERE t.token_hash = ? AND t.used_at IS NULL AND t.expires_at > ? AND f.deleted_at IS NULL AND f.status <> 'spam'`)
+          .bind(await sha256(followUpReadMatch[1]), new Date().toISOString()).first<{ feedbackId: string; organizationId: string; projectId: string }>();
         if (!raw) return error("FOLLOW_UP_EXPIRED", "The follow-up link is invalid or expired", rid, 404);
         const feedback = await env.DB.prepare("SELECT id, type, status, priority, title, body, platform, app_version AS appVersion, created_at AS createdAt, updated_at AS updatedAt FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(raw.feedbackId, raw.organizationId, raw.projectId).first();
         if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
@@ -1041,7 +1109,14 @@ export default {
         if (accessError) return accessError;
         const context = await requireDashboardProject(request, env, url, dashboardListMatch[1], rid, "feedback:read");
         if (context instanceof Response) return context;
-        const result = await Effect.runPromise(listFeedback(repo, context, url.searchParams.get("cursor") ?? undefined));
+        const result = await Effect.runPromise(listFeedback(repo, context, {
+          cursor: url.searchParams.get("cursor") ?? undefined,
+          limit: Number(url.searchParams.get("limit") ?? 25),
+          query: url.searchParams.get("q")?.trim() || undefined,
+          status: feedbackStatuses.includes(url.searchParams.get("status") as FeedbackStatus) ? url.searchParams.get("status") as FeedbackStatus : undefined,
+          type: feedbackTypes.includes(url.searchParams.get("type") as never) ? url.searchParams.get("type") as Feedback["type"] : undefined,
+          priority: feedbackPriorities.includes(url.searchParams.get("priority") as never) ? url.searchParams.get("priority") as Feedback["priority"] : undefined,
+        }));
         return jsonResponse(result, { headers: cors });
       }
       const assignMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)\/assign$/);
@@ -1197,6 +1272,7 @@ export default {
     }
   },
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    await env.DB.prepare("DELETE FROM magic_link_tokens WHERE expires_at <= ? OR used_at IS NOT NULL").bind(new Date().toISOString()).run();
     const candidates = await env.DB.prepare("SELECT f.id, f.organization_id AS organizationId, f.project_id AS projectId FROM feedback_items f JOIN project_settings s ON s.project_id = f.project_id WHERE f.deleted_at IS NULL AND datetime(f.created_at) < datetime('now', '-' || s.retention_days || ' days') LIMIT 100").all<{ id: string; organizationId: string; projectId: string }>();
     for (const feedback of candidates.results ?? []) {
       const attachments = await env.DB.prepare("SELECT object_key AS objectKey FROM attachments WHERE feedback_id = ? AND project_id = ? AND deleted_at IS NULL").bind(feedback.id, feedback.projectId).all<{ objectKey: string }>();

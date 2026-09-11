@@ -51,11 +51,17 @@ paths:
     get:
       summary: List projects for the Access identity
       responses: { '200': { description: Projects }, '503': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}:
+    patch:
+      summary: Update a project name or slug
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { name: { type: string }, slug: { type: string } } } } } }
+      responses: { '200': { description: Updated project }, '400': { $ref: '#/components/responses/Error' }, '409': { $ref: '#/components/responses/Error' } }
   /projects/{projectId}/feedback:
     parameters: [{ $ref: '#/components/parameters/ProjectId' }]
     get:
       summary: List feedback
-      parameters: [{ $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/Cursor' }]
+      parameters: [{ $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/Cursor' }, { $ref: '#/components/parameters/FeedbackQuery' }, { $ref: '#/components/parameters/FeedbackStatus' }, { $ref: '#/components/parameters/FeedbackType' }, { $ref: '#/components/parameters/FeedbackPriority' }]
       responses: { '200': { $ref: '#/components/responses/FeedbackList' }, '401': { $ref: '#/components/responses/Error' } }
     post:
       summary: Create feedback anonymously
@@ -118,7 +124,7 @@ paths:
   /dashboard/projects/{projectId}/feedback:
     get:
       summary: List feedback for an authenticated dashboard project
-      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }, { $ref: '#/components/parameters/Cursor' }]
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }, { $ref: '#/components/parameters/Cursor' }, { $ref: '#/components/parameters/FeedbackQuery' }, { $ref: '#/components/parameters/FeedbackStatus' }, { $ref: '#/components/parameters/FeedbackType' }, { $ref: '#/components/parameters/FeedbackPriority' }]
       responses: { '200': { $ref: '#/components/responses/FeedbackList' }, '401': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/export:
     get:
@@ -154,6 +160,16 @@ paths:
       summary: Update project widget, metadata, origin, and retention settings
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Updated settings }, '400': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/notifications:
+    get:
+      summary: Read notification preferences for the authenticated team member
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }]
+      responses: { '200': { description: Notification preferences }, '401': { $ref: '#/components/responses/Error' } }
+    patch:
+      summary: Update a notification preference
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [eventType, enabled], properties: { eventType: { type: string, enum: [feedback.created, feedback.updated, feedback.replied, moderation.created] }, enabled: { type: boolean } } } } } }
+      responses: { '200': { description: Updated preference }, '400': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/usage:
     get:
       summary: Read plan usage and entitlement limits
@@ -305,6 +321,10 @@ components:
     ProjectKey: { name: X-NitroPing-Project-Key, in: header, required: true, schema: { type: string } }
     IdempotencyKey: { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 128 } }
     Cursor: { name: cursor, in: query, required: false, schema: { type: string } }
+    FeedbackQuery: { name: q, in: query, required: false, schema: { type: string, maxLength: 120 }, description: Search title and body }
+    FeedbackStatus: { name: status, in: query, required: false, schema: { type: string, enum: [new, triaged, planned, in_progress, resolved, closed, spam] } }
+    FeedbackType: { name: type, in: query, required: false, schema: { type: string, enum: [complaint, bug, suggestion, feature_request] } }
+    FeedbackPriority: { name: priority, in: query, required: false, schema: { type: string, enum: [low, normal, high, urgent] } }
     ServerKey: { name: X-NitroPing-Server-Key, in: header, required: true, schema: { type: string } }
   schemas:
     CreateFeedback:
