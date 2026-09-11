@@ -47,6 +47,8 @@ describe("public environment authorization policy", () => {
       "203.0.113.10",
       "127.0.0.1",
       "[::1]",
+      "[::ffff:7f00:1]",
+      "[::ffff:a00:1]",
       "fd00::1",
       "2001:db8::1",
     ])

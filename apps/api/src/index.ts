@@ -122,8 +122,9 @@ export const isPrivateWebhookHost = (hostname: string): boolean => {
     host === "::1"
   )
     return true;
-  const ipv4 = host.split(".");
-  if (ipv4.length === 4 && ipv4.every((part) => /^\d+$/.test(part))) {
+  const isPrivateIpv4 = (ipv4: string[]): boolean => {
+    if (ipv4.length !== 4 || !ipv4.every((part) => /^\d+$/.test(part)))
+      return false;
     const [first, second] = ipv4.map(Number);
     if (first === 0 || first === 10 || first === 127 || first >= 224)
       return true;
@@ -135,6 +136,23 @@ export const isPrivateWebhookHost = (hostname: string): boolean => {
     if (first === 198 && (second === 18 || second === 19 || second === 51))
       return true;
     if (first === 203 && second === 0) return true;
+    return false;
+  };
+  if (isPrivateIpv4(host.split("."))) return true;
+  // URL normalizes IPv4-mapped IPv6 literals to hexadecimal, for example
+  // ::ffff:127.0.0.1 becomes ::ffff:7f00:1. Treat the mapped address as
+  // IPv4 before applying the private/reserved range policy.
+  const mapped = host.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i);
+  if (mapped) {
+    const high = Number.parseInt(mapped[1], 16);
+    const low = Number.parseInt(mapped[2], 16);
+    if (isPrivateIpv4([
+      String(high >> 8),
+      String(high & 0xff),
+      String(low >> 8),
+      String(low & 0xff),
+    ]))
+      return true;
   }
   return /^(fc|fd)[0-9a-f]*:/i.test(host) || /^fe80:/i.test(host) || /^ff[0-9a-f]*:/i.test(host) || /^2001:db8:/i.test(host);
 };
