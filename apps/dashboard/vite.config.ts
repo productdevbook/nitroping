@@ -10,8 +10,8 @@ const workerPublicDir = fileURLToPath(new URL("../api/public", import.meta.url))
 const cleanWorkerBuild = () => ({
   name: "nitroping-clean-worker-build",
   buildStart() {
-    // Keep the hand-authored landing page, but never ship stale hashed assets
-    // from an earlier dashboard build.
+    // Never ship stale hashed assets from an earlier dashboard build. The
+    // marketing site lives in apps/site and is deployed separately.
     for (const directory of ["assets", "dashboard-assets"])
       rmSync(`${workerPublicDir}/${directory}`, { recursive: true, force: true });
     for (const filename of ["dashboard.html", "portal.html", "follow-up.html"])

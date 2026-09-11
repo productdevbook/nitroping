@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NitroPing — Feedback, straight from your app</title>
+    <meta name="description" content="NitroPing adds a feedback form to your web, iOS, and Android apps and collects every bug report and idea in one inbox." />
+    <meta property="og:title" content="NitroPing — Feedback, straight from your app" />
+    <meta property="og:description" content="Collect bugs and ideas from your web, iOS, and Android apps in one inbox." />
+    <meta property="og:url" content="https://nitroping.dev/" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <header class="container nav">
+      <a class="logo" href="/"><span class="logo-mark" aria-hidden="true"></span>NitroPing</a>
+      <nav aria-label="Main">
+        <a href="https://github.com/productdevbook/nitroping">GitHub</a>
+        <a class="button button-small" href="/dashboard">Sign in</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="container hero">
+        <h1>Feedback, straight from your app.</h1>
+        <p class="lead">NitroPing adds a feedback form to your web, iOS, and Android apps and collects every bug report and idea in one inbox.</p>
+        <div class="actions">
+          <a class="button" href="/dashboard">Get started</a>
+          <a class="button button-ghost" href="https://github.com/productdevbook/nitroping">View on GitHub</a>
+        </div>
+        <button class="install" type="button" data-copy="npm i @nitroping/web" aria-label="Copy install command">
+          <code><span aria-hidden="true">$</span> npm i @nitroping/web</code>
+          <span class="install-hint" data-copy-label>Copy</span>
+        </button>
+      </section>
+
+      <section class="container section" aria-labelledby="how">
+        <h2 id="how" class="label">How it works</h2>
+        <ol class="steps">
+          <li>
+            <span class="step-num">01</span>
+            <h3>Collect</h3>
+            <p>Users send bugs, ideas, and screenshots from a widget or a native form.</p>
+          </li>
+          <li>
+            <span class="step-num">02</span>
+            <h3>Decide</h3>
+            <p>Your team triages everything in one inbox and lets votes shape the roadmap.</p>
+          </li>
+          <li>
+            <span class="step-num">03</span>
+            <h3>Reply</h3>
+            <p>Ship it, post a changelog, and NitroPing tells the people who asked.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="container section split" aria-labelledby="dev">
+        <div>
+          <h2 id="dev" class="label">One line to start</h2>
+          <p class="copy">Every SDK shares one API contract, so feedback looks the same whether it comes from the web, iOS, or Android.</p>
+          <ul class="platforms" aria-label="Supported platforms">
+            <li>Web</li>
+            <li>iOS</li>
+            <li>Android</li>
+            <li>REST API</li>
+          </ul>
+        </div>
+        <pre class="code"><code><span class="tok-k">import</span> { NitroPing } <span class="tok-k">from</span> <span class="tok-s">"@nitroping/web"</span>;
+
+NitroPing.init({ projectKey: <span class="tok-s">"pk_live_xxx"</span> });</code></pre>
+      </section>
+
+      <section class="container section" aria-labelledby="pricing">
+        <h2 id="pricing" class="label">Pricing</h2>
+        <div class="table-scroll">
+          <table class="plans">
+            <thead>
+              <tr><th scope="col"><span class="visually-hidden">Limit</span></th><th scope="col">Free</th><th scope="col">Pro</th><th scope="col">Business</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Projects</th><td>1</td><td>20</td><td>1,000</td></tr>
+              <tr><th scope="row">Team members</th><td>1</td><td>10</td><td>1,000</td></tr>
+              <tr><th scope="row">Feedback / month</th><td>100</td><td>5,000</td><td>50,000</td></tr>
+              <tr><th scope="row">Attachment storage</th><td>25 MB</td><td>5 GB</td><td>50 GB</td></tr>
+              <tr><th scope="row">Roadmap &amp; webhooks</th><td aria-label="Not included">—</td><td aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
+              <tr><th scope="row">Custom domain</th><td aria-label="Not included">—</td><td aria-label="Not included">—</td><td aria-label="Included">✓</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container footer">
+      <span>© NitroPing · SDKs are Apache-2.0</span>
+      <nav aria-label="Footer">
+        <a href="https://github.com/productdevbook/nitroping">GitHub</a>
+        <a href="https://github.com/productdevbook/nitroping/blob/main/docs/privacy.md">Privacy</a>
+        <a href="https://github.com/productdevbook/nitroping/blob/main/SECURITY.md">Security</a>
+        <a href="/health">Status</a>
+      </nav>
+    </footer>
+  </body>
+</html>

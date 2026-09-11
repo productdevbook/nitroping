@@ -6726,7 +6726,11 @@ export default {
           return env.ASSETS.fetch(
             new Request(new URL("/follow-up.html", request.url), request),
           );
-        return env.ASSETS.fetch(request);
+        const asset = await env.ASSETS.fetch(request);
+        // The marketing site is a separate Worker (apps/site). Anything the
+        // platform does not serve itself is handed to it when it is bound.
+        if (asset.status === 404 && env.SITE) return env.SITE.fetch(request);
+        return asset;
       }
       return error("NOT_FOUND", "Endpoint was not found", rid, 404);
     } catch (cause) {

@@ -10,6 +10,8 @@
     "dev:api": "bun run --filter @nitroping/api dev",
     "dev:web": "bun run --filter @nitroping/web dev",
     "dev:dashboard": "bun run --filter @nitroping/dashboard dev",
+    "dev:site": "bun run --filter @nitroping/site dev",
+    "deploy:site": "bun run --cwd apps/site deploy",
     "preflight": "bun scripts/preflight.ts",
     "db:migrate:check": "bun run --cwd apps/api wrangler d1 migrations apply nitroping --local --config wrangler.jsonc",
     "db:schema:check": "bun scripts/check-schema.ts",

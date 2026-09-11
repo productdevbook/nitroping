@@ -1,0 +1,13 @@
+{
+  "$schema": "../api/node_modules/wrangler/config-schema.json",
+  // Static marketing site. It has no bindings and no knowledge of the API;
+  // the nitroping-api Worker forwards requests it does not own to this Worker
+  // through the SITE service binding.
+  "name": "nitroping-site",
+  "compatibility_date": "2026-09-11",
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

@@ -122,6 +122,7 @@ bun run build
 - `@nitroping/contracts`: shared domain types
 - `@nitroping/web`: web widget and headless client
 - `apps/api`: Effect service boundaries and the Cloudflare Worker API
+- `apps/site`: static marketing site (Vite), deployed as the `nitroping-site` Worker with `bun run deploy:site`
 - `migrations`: D1 schema migrations
 - `openapi.yaml`: public API contract
 
@@ -136,4 +137,4 @@ Public package artifacts are built into `dist/` for `@nitroping/contracts` and `
 
 ## Notes
 
-Production resources are provisioned on Cloudflare. The dashboard landing assets are served by the Worker, the API is available under `/api/v1`, and the native SDKs use the same OpenAPI contract.
+Production resources are provisioned on Cloudflare. The API Worker serves the dashboard, portal, and follow-up assets and the API under `/api/v1`; any other path is forwarded to the `nitroping-site` Worker through the `SITE` service binding, so deploy the site before the API when setting up a new account. The native SDKs use the same OpenAPI contract.
