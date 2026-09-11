@@ -21,7 +21,7 @@ const validateInput = (body: unknown): CreateFeedbackInput | string => {
   if (!feedbackTypes.includes(input.type as never)) return "Invalid feedback type";
   if (typeof input.title !== "string" || input.title.trim().length < 3 || input.title.length > 160) return "Title must be 3-160 characters";
   if (typeof input.body !== "string" || input.body.trim().length < 3 || input.body.length > 20_000) return "Body must be 3-20000 characters";
-  if (input.email !== undefined && (typeof input.email !== "string" || input.email.length > 320)) return "Invalid email";
+  if (input.email !== undefined && (typeof input.email !== "string" || input.email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email))) return "Invalid email";
   if (input.priority !== undefined && !feedbackPriorities.includes(input.priority as never)) return "Invalid priority";
   if (input.platform !== undefined && !platforms.includes(input.platform as never)) return "Invalid platform";
   if (input.metadata !== undefined && (!input.metadata || typeof input.metadata !== "object" || Array.isArray(input.metadata))) return "Invalid metadata";
@@ -77,6 +77,8 @@ const fromRow = (row: Record<string, unknown>): Feedback => ({
   ...(row.app_version ? { appVersion: String(row.app_version) } : {}), ...(row.os_version ? { osVersion: String(row.os_version) } : {}), ...(row.locale ? { locale: String(row.locale) } : {}),
   metadata: JSON.parse(String(row.metadata_json ?? "{}")), createdAt: String(row.created_at), updatedAt: String(row.updated_at),
 });
+
+const publicFeedback = (feedback: Feedback): Feedback => ({ ...feedback, email: undefined, metadata: {} });
 
 const contextFrom = (url: URL): TenantContext => ({ organizationId: url.searchParams.get("organizationId") ?? "demo-org", projectId: url.searchParams.get("projectId") ?? url.pathname.split("/")[3] ?? "demo-project" });
 
@@ -564,7 +566,7 @@ export default {
         const scopeError = projectMatchesPath(context, match[1], rid);
         if (scopeError) return scopeError;
         const result = await Effect.runPromise(getFeedback(repo, context, match[2]));
-        return result ? jsonResponse(result, { headers: cors }) : error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        return result ? jsonResponse(publicFeedback(result), { headers: cors }) : error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
       }
       if (match && request.method === "GET" && !match[2]) {
         const context = await projectFromRequest(request, env, url, rid);
@@ -572,7 +574,7 @@ export default {
         const scopeError = projectMatchesPath(context, match[1], rid);
         if (scopeError) return scopeError;
         const result = await Effect.runPromise(listFeedback(repo, context, url.searchParams.get("cursor") ?? undefined));
-        return jsonResponse(result, { headers: cors });
+        return jsonResponse({ ...result, items: result.items.map(publicFeedback) }, { headers: cors });
       }
       const categoriesMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/public\/categories$/);
       if (categoriesMatch && request.method === "GET") {
@@ -616,6 +618,7 @@ export default {
         if (context instanceof Response) return context;
         const scopeError = projectMatchesPath(context, commentMatch[1], rid);
         if (scopeError) return scopeError;
+        if (!(await rateLimit(env, request, `comment:${context.projectId}`))) return error("RATE_LIMITED", "Too many requests", rid, 429);
         const body = await jsonBody(request);
         if (typeof body.body !== "string" || body.body.trim().length < 1 || body.body.length > 10_000) return error("VALIDATION_ERROR", "Comment must be 1-10000 characters", rid, 400);
         const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(commentMatch[2], context.organizationId, context.projectId).first();
@@ -630,6 +633,7 @@ export default {
         if (context instanceof Response) return context;
         const scopeError = projectMatchesPath(context, voteMatch[1], rid);
         if (scopeError) return scopeError;
+        if (!(await rateLimit(env, request, `vote:${context.projectId}`))) return error("RATE_LIMITED", "Too many requests", rid, 429);
         const voter = await sha256(`${clientIp(request)}:${request.headers.get("user-agent") ?? ""}`);
         await env.DB.prepare("INSERT OR IGNORE INTO feedback_votes (feedback_id, voter_fingerprint, created_at) SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL)").bind(voteMatch[2], voter, new Date().toISOString(), voteMatch[2], context.organizationId, context.projectId).run();
         const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM feedback_votes WHERE feedback_id = ?").bind(voteMatch[2]).first<{ count: number }>();
@@ -641,6 +645,7 @@ export default {
         if (context instanceof Response) return context;
         const scopeError = projectMatchesPath(context, uploadMatch[1], rid);
         if (scopeError) return scopeError;
+        if (!(await rateLimit(env, request, `upload:${context.projectId}`))) return error("RATE_LIMITED", "Too many requests", rid, 429);
         const body = await jsonBody(request);
         const contentType = typeof body.contentType === "string" ? body.contentType : "application/octet-stream";
         const size = Number(body.size ?? 0);
@@ -663,7 +668,11 @@ export default {
         if (!raw) return error("UPLOAD_EXPIRED", "The upload token is invalid or expired", rid, 404);
         const body = request.body;
         if (!body) return error("EMPTY_UPLOAD", "The upload body is empty", rid, 400);
-        await env.ATTACHMENTS.put(raw.objectKey, body, { httpMetadata: { contentType: raw.contentType } });
+        const contentLength = Number(request.headers.get("content-length") ?? raw.size);
+        if (!Number.isFinite(contentLength) || contentLength !== raw.size || contentLength > 10 * 1024 * 1024) return error("ATTACHMENT_SIZE_MISMATCH", "The uploaded file size does not match the initiated upload", rid, 400);
+        const bytes = await request.arrayBuffer();
+        if (bytes.byteLength !== raw.size) return error("ATTACHMENT_SIZE_MISMATCH", "The uploaded file size does not match the initiated upload", rid, 400);
+        await env.ATTACHMENTS.put(raw.objectKey, bytes, { httpMetadata: { contentType: raw.contentType } });
         await env.DB.prepare("INSERT INTO attachments (id, organization_id, project_id, feedback_id, object_key, content_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(raw.attachmentId, raw.organizationId, raw.projectId, raw.feedbackId, raw.objectKey, raw.contentType, raw.size, new Date().toISOString()).run();
         await env.DB.prepare("INSERT INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 0, ?) ON CONFLICT(organization_id, period) DO UPDATE SET attachment_bytes = attachment_bytes + excluded.attachment_bytes").bind(raw.organizationId, new Date().toISOString().slice(0, 7), raw.size).run();
         recordMetric(env, "attachment.created", raw.organizationId, raw.projectId, [raw.size]);
@@ -688,8 +697,11 @@ export default {
         if (context instanceof Response) return context;
         const scopeError = projectMatchesPath(context, followUpMatch[1], rid);
         if (scopeError) return scopeError;
+        if (!(await rateLimit(env, request, `follow-up:${context.projectId}`))) return error("RATE_LIMITED", "Too many requests", rid, 429);
         const body = await jsonBody(request);
-        if (typeof body.feedbackId !== "string" || typeof body.email !== "string") return error("VALIDATION_ERROR", "feedbackId and email are required", rid, 400);
+        if (typeof body.feedbackId !== "string" || typeof body.email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email) || body.email.length > 320) return error("VALIDATION_ERROR", "A valid feedbackId and email are required", rid, 400);
+        const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(body.feedbackId, context.organizationId, context.projectId).first();
+        if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
         const token = randomToken("follow");
         await env.CACHE.put(`follow:${token}`, JSON.stringify({ feedbackId: body.feedbackId, ...context, email: body.email }), { expirationTtl: 86_400 });
         await env.DB.prepare("INSERT OR IGNORE INTO feedback_watchers (feedback_id, email, created_at) VALUES (?, ?, ?)").bind(body.feedbackId, body.email.toLowerCase(), new Date().toISOString()).run();
