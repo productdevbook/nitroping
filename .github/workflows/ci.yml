@@ -41,4 +41,4 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.6.0'
-      - run: gradle -p packages/android :nitroping:assembleRelease -PnitropingCompileSdk=36 --no-daemon
+      - run: gradle -p packages/android :nitroping:assembleRelease -PnitropingCompileSdk=36 -PnitropingComposeBom=2026.06.01 --no-daemon

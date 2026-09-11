@@ -14,7 +14,8 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.08.00")
+    val composeBomVersion = providers.gradleProperty("nitropingComposeBom").orElse("2026.09.00").get()
+    val composeBom = platform("androidx.compose:compose-bom:$composeBomVersion")
     implementation(composeBom)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
