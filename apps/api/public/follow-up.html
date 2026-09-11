@@ -1,23 +1,13 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NitroPing — Feedback follow-up</title>
-  <style>
-    :root{font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#211832;background:#f7f7fb;--purple:#7254e8;--line:#e9e6f0;--muted:#898397}*{box-sizing:border-box}body{margin:0}.shell{max-width:760px;margin:auto;padding:42px 22px 70px}.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.04em}.mark{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#936cff,#5b43d2);color:#fff}.panel{background:#fff;border:1px solid var(--line);border-radius:15px;padding:28px;margin-top:72px}.eyebrow{color:#806be0;text-transform:uppercase;letter-spacing:.14em;font-size:10px;font-weight:800}.panel h1{font-size:30px;line-height:1.1;letter-spacing:-.05em;margin:8px 0 10px}.muted{color:var(--muted);font-size:13px;line-height:1.6}.status{display:inline-flex;padding:5px 8px;border-radius:6px;background:#f0edff;color:#674fd2;font-size:11px;font-weight:700;text-transform:capitalize}.feedback-body{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:20px 0;margin:22px 0}.feedback-body p{white-space:pre-wrap;color:#665d70;font-size:14px;line-height:1.7;margin:0}.comments{display:grid;gap:12px}.comment{border:1px solid #efedf3;border-radius:10px;padding:13px}.comment p{white-space:pre-wrap;color:#756d7d;font-size:13px;line-height:1.6;margin:0}.comment time{display:block;color:#aaa2b1;font-size:10px;margin-top:8px}.empty{padding:18px 0;color:var(--muted);font-size:12px}.error{color:#a43d4b;background:#fff0f0;border-radius:8px;padding:12px;font-size:12px}.delete-feedback{margin-top:24px;border:1px solid #f1c7cc;background:#fff7f7;color:#a43d4b;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer}
-  </style>
-</head>
-<body>
-  <main class="shell">
-    <div class="brand"><span class="mark">N</span><span>Nitro<strong>Ping</strong></span></div>
-    <section class="panel" id="app"><div class="eyebrow">Feedback follow-up</div><h1>Loading your feedback…</h1><p class="muted">We are securely loading the latest status and replies.</p></section>
-  </main>
-  <script>
-    (()=>{const app=document.querySelector('#app'),token=location.pathname.split('/').filter(Boolean).pop();const esc=(value)=>String(value??'').replace(/[&<>'"]/g,(c)=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));const date=(value)=>new Date(value).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});const label=(value)=>String(value??'').replaceAll('_',' ');const load=async()=>{try{const response=await fetch('/api/v1/follow-up/'+encodeURIComponent(token));const data=await response.json();if(!response.ok)throw new Error(data.error?.message||'This follow-up link is invalid or expired.');const feedback=data.feedback;app.innerHTML='<div class="eyebrow">Feedback follow-up</div><h1>'+esc(feedback.title)+'</h1><span class="status">'+esc(label(feedback.status))+'</span><div class="feedback-body"><p>'+esc(feedback.body)+'</p></div><h2>Replies</h2><div class="comments">'+(data.comments?.length?data.comments.map((comment)=>'<article class="comment"><p>'+esc(comment.body)+'</p><time>'+esc(date(comment.createdAt))+'</time></article>').join(''):'<div class="empty">No public replies yet. We will show new replies here.</div>')+'</div><p class="muted">This private link only provides access to this feedback item.</p>'}catch(error){app.innerHTML='<div class="eyebrow">Feedback follow-up</div><h1>Link unavailable</h1><p class="error">'+esc(error.message||'This follow-up link is invalid or expired.')+'</p><p class="muted">Request a new follow-up link from the product where you submitted your feedback.</p>'}};if(token)load();else app.innerHTML='<div class="eyebrow">Feedback follow-up</div><h1>Link unavailable</h1><p class="error">The follow-up token is missing.</p>'})();
-  </script>
-  <script>
-    (()=>{const app=document.querySelector('#app'),token=location.pathname.split('/').filter(Boolean).pop();if(!app||!token)return;const observer=new MutationObserver(()=>{if(app.querySelector('.delete-feedback')||!app.querySelector('.feedback-body'))return;const button=document.createElement('button');button.className='delete-feedback';button.type='button';button.textContent='Delete my feedback';button.addEventListener('click',async()=>{if(!confirm('Delete this feedback and its attachments? This cannot be undone.'))return;button.disabled=true;try{const response=await fetch('/api/v1/follow-up/'+encodeURIComponent(token),{method:'DELETE'});const data=await response.json();if(!response.ok)throw new Error(data.error?.message||'Unable to delete feedback.');app.innerHTML='<div class="eyebrow">Feedback follow-up</div><h1>Feedback deleted</h1><p class="muted">Your feedback, replies, and attachments have been removed.</p>'}catch(error){button.disabled=false;alert(error.message||'Unable to delete feedback.')}});app.appendChild(button)});observer.observe(app,{childList:true,subtree:true})})();
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#171321" />
+    <title>NitroPing — Follow-up</title>
+    <script type="module" crossorigin src="/assets/followUp-k7A9isas.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/jsx-runtime-CXoLses4.js">
+    <link rel="stylesheet" crossorigin href="/dashboard-assets/portal-D1DoPdB7.css">
+  </head>
+  <body><div id="root"></div></body>
 </html>

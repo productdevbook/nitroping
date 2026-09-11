@@ -6067,9 +6067,15 @@ export default {
           return env.ASSETS.fetch(
             new Request(new URL("/portal.html", request.url), request),
           );
-        if (path.match(/^\/follow-up\/[^/]+\/?$/))
+        const followUpPageMatch = path.match(/^\/follow-up\/([^/]+)\/?$/);
+        if (followUpPageMatch) {
+          const followUpUrl = new URL("/follow-up.html", request.url);
+          followUpUrl.searchParams.set("token", followUpPageMatch[1]);
+          return env.ASSETS.fetch(new Request(followUpUrl, request));
+        }
+        if (path === "/follow-up" && url.searchParams.has("token"))
           return env.ASSETS.fetch(
-            new Request(new URL("/follow-up", request.url), request),
+            new Request(new URL("/follow-up.html", request.url), request),
           );
         return env.ASSETS.fetch(request);
       }

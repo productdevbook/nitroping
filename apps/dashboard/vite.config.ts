@@ -11,6 +11,6 @@ export default defineConfig({
   build: {
     outDir: "../api/public",
     emptyOutDir: false,
-    rollupOptions: { input: { dashboard: "dashboard.html", portal: "portal.html" }, output: { assetFileNames: "dashboard-assets/[name]-[hash][extname]" } },
+    rollupOptions: { input: { dashboard: "dashboard.html", portal: "portal.html", followUp: "follow-up.html" }, output: { assetFileNames: "dashboard-assets/[name]-[hash][extname]" } },
   },
 });
