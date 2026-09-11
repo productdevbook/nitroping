@@ -382,6 +382,12 @@ export default {
         }
       }
       const repo = repository(env);
+      if (path === "/api/v1/dashboard/session" && request.method === "GET") {
+        const identity = await requireIdentity(request, env, rid);
+        if (identity instanceof Response || !identity.email) return identity instanceof Response ? identity : error("DASHBOARD_AUTH_REQUIRED", "An authenticated email is required", rid, 401);
+        const userId = await userForIdentity(env, identity);
+        return jsonResponse({ userId, email: identity.email, displayName: identity.email.split("@")[0] }, { headers: cors });
+      }
       const organizationsPath = path === "/api/v1/dashboard/organizations";
       if (organizationsPath && (request.method === "GET" || request.method === "POST")) {
         const identity = await requireIdentity(request, env, rid);

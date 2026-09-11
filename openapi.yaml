@@ -7,6 +7,10 @@ servers:
   - url: https://nitroping.dev/api/v1
 security: []
 paths:
+  /dashboard/session:
+    get:
+      summary: Return the authenticated dashboard identity
+      responses: { '200': { description: Session identity }, '401': { $ref: '#/components/responses/Error' }, '503': { $ref: '#/components/responses/Error' } }
   /dashboard/organizations:
     get:
       summary: List organizations for the Access identity

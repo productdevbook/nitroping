@@ -17,6 +17,7 @@ type AuditItem = { id: string; action: string; entityType: string; entityId: str
 type ApiKeyItem = { id: string; kind: string; label: string; keyPrefix: string; createdAt: string; revokedAt: string | null };
 type WebhookItem = { id: string; url: string; events: string[]; active: number; createdAt: string };
 type MemberItem = { userId: string; email: string; role: string; createdAt: string };
+type Session = { userId: string; email: string; displayName: string };
 type NotificationPreference = { eventType: string; enabled: boolean };
 type Billing = { plan: string; status: string; providerCustomerId?: string | null; providerSubscriptionId?: string | null; currentPeriodEnd?: string | null };
 type Category = { id: string; name: string; slug: string; createdAt: string };
@@ -74,6 +75,7 @@ function App() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
 
   const credentials = { projectKey: publicKey || undefined, serverKey: serverKey || undefined };
   const activeProject = projects.find((project) => project.id === projectId);
@@ -98,10 +100,12 @@ function App() {
 
   const loadWorkspace = async () => {
     try {
-      const [organizationResult, projectResult] = await Promise.all([
+      const [sessionResult, organizationResult, projectResult] = await Promise.all([
+        api<Session>("/dashboard/session"),
         api<{ items: Organization[] }>("/dashboard/organizations"),
         api<{ items: Project[] }>("/dashboard/projects"),
       ]);
+      setSession(sessionResult);
       setOrganizations(organizationResult.items);
       setProjects(projectResult.items);
       if (organizationResult.items[0]) {
@@ -266,7 +270,7 @@ function App() {
         <NavItem active={view === "settings"} icon="⚙" label="Project settings" onClick={() => loadView("settings")} />
         <NavItem active={view === "privacy"} icon="⌁" label="Privacy & data" onClick={() => loadView("privacy")} />
       </nav>
-      <div className="sidebar-bottom"><div className="plan-card"><div className="plan-row"><span>{usage?.plan ?? "Free"} plan</span><span>{usage ? `${usage.feedbackCount}/${usage.feedbackLimit}` : "—"}</span></div><div className="progress"><span style={{ width: `${Math.min(100, ((usage?.feedbackCount ?? 0) / (usage?.feedbackLimit || 1)) * 100)}%` }} /></div><button onClick={async () => { try { const checkout = await api<{ url: string | null }>(`/dashboard/billing/checkout?projectId=${projectId}`, { ...credentials, method: "POST", body: JSON.stringify({ plan: "pro" }) }); if (checkout.url) location.assign(checkout.url); else setNotice({ text: "Billing checkout is unavailable." }); } catch (error) { setNotice({ text: error instanceof Error ? error.message : "Unable to open billing", error: true }); } }}>Upgrade plan <span>→</span></button></div><div className="user-row"><span className="avatar">{initials("Alex Morgan")}</span><div><strong>Alex Morgan</strong><small>Owner</small></div><span className="more">•••</span></div></div>
+      <div className="sidebar-bottom"><div className="plan-card"><div className="plan-row"><span>{usage?.plan ?? "Free"} plan</span><span>{usage ? `${usage.feedbackCount}/${usage.feedbackLimit}` : "—"}</span></div><div className="progress"><span style={{ width: `${Math.min(100, ((usage?.feedbackCount ?? 0) / (usage?.feedbackLimit || 1)) * 100)}%` }} /></div><button onClick={async () => { try { const checkout = await api<{ url: string | null }>(`/dashboard/billing/checkout?projectId=${projectId}`, { ...credentials, method: "POST", body: JSON.stringify({ plan: "pro" }) }); if (checkout.url) location.assign(checkout.url); else setNotice({ text: "Billing checkout is unavailable." }); } catch (error) { setNotice({ text: error instanceof Error ? error.message : "Unable to open billing", error: true }); } }}>Upgrade plan <span>→</span></button></div><div className="user-row"><span className="avatar">{initials(session?.displayName ?? session?.email ?? "User")}</span><div><strong>{session?.displayName ?? "Workspace user"}</strong><small>{session?.email ?? "Authenticated user"}</small></div><span className="more">•••</span></div></div>
     </aside>
     <main className="main-content">
       <header className="topbar"><div className="mobile-brand"><span className="brand-mark">N</span>Nitro<strong>Ping</strong></div><div className="breadcrumbs"><span>{activeOrganization?.name ?? "Workspace"}</span><b>/</b><strong>{activeProject?.name ?? "Project"} / {view === "inbox" ? "Inbox" : view[0].toUpperCase() + view.slice(1)}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search">⌕</button><button className="icon-button" aria-label="Notifications">♢<i /></button><button className="help-button">? <span>Help center</span></button></div></header>
