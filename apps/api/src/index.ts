@@ -58,8 +58,12 @@ const planAttachmentLimits: Record<string, number> = {
   pro: 5 * 1024 * 1024 * 1024,
   business: 50 * 1024 * 1024 * 1024,
 };
-const requestId = (request: Request) =>
-  request.headers.get("x-request-id") ?? `req_${id()}`;
+export const requestId = (request: Request): string => {
+  const supplied = request.headers.get("x-request-id")?.trim();
+  return supplied && /^[A-Za-z0-9._:-]{1,128}$/.test(supplied)
+    ? supplied
+    : `req_${id()}`;
+};
 const error = (
   code: string,
   message: string,
@@ -68,7 +72,7 @@ const error = (
   details?: unknown,
 ) =>
   jsonResponse(
-    { error: { code, message, requestId, details } },
+    { error: { code, message, requestId, details: details ?? {} } },
     { status, headers: { "x-request-id": requestId } },
   );
 const htmlEscape = (value: string) =>
@@ -3759,7 +3763,7 @@ export default {
             .bind(context.organizationId, context.projectId, idem)
             .first<{ response_json: string; status_code: number }>();
           if (previous)
-            return new Response(previous.response_json, {
+            return jsonResponse(JSON.parse(previous.response_json), {
               status: previous.status_code,
               headers: cors,
             });

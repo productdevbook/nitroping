@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("./events", () => ({
   ProjectEventStream: class ProjectEventStream {},
 }));
-import { allowsDevelopmentFallback, contextFrom } from "./index";
+import { allowsDevelopmentFallback, contextFrom, requestId } from "./index";
 
 describe("public environment authorization policy", () => {
   it("does not treat staging as a local fixture environment", () => {
@@ -21,5 +21,14 @@ describe("public environment authorization policy", () => {
       new URL("https://localhost/api/v1/projects/project_123/feedback"),
     );
     expect(context.projectId).toBe("project_123");
+  });
+
+  it("accepts bounded request IDs and replaces unsafe values", () => {
+    expect(
+      requestId(new Request("https://localhost", { headers: { "x-request-id": "client_123" } })),
+    ).toBe("client_123");
+    expect(
+      requestId(new Request("https://localhost", { headers: { "x-request-id": "request id" } })),
+    ).toMatch(/^req_/);
   });
 });
