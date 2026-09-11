@@ -31,6 +31,7 @@ import {
   validateCustomHostname,
 } from "./custom-domains";
 import { analyzeModeration } from "./moderation";
+import { attachmentSignatureMatches } from "./attachments";
 
 export { ProjectEventStream };
 
@@ -4579,6 +4580,13 @@ export default {
             "The uploaded file size does not match the initiated upload",
             rid,
             400,
+          );
+        if (!attachmentSignatureMatches(raw.contentType, bytes))
+          return error(
+            "ATTACHMENT_SIGNATURE_MISMATCH",
+            "The uploaded file does not match its declared content type",
+            rid,
+            415,
           );
         const usage = await currentUsage(env, raw.organizationId);
         if (usage.attachmentBytes + raw.size > usage.attachmentLimit)

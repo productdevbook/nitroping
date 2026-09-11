@@ -125,7 +125,7 @@ paths:
       summary: Initiate a private attachment upload
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }]
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [contentType, size], properties: { feedbackId: { type: string }, contentType: { type: string }, size: { type: integer, minimum: 1 } } } } } }
-      responses: { '201': { description: Upload token }, '413': { $ref: '#/components/responses/Error' } }
+      responses: { '201': { description: Upload token }, '413': { $ref: '#/components/responses/Error' }, '415': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/attachments/{attachmentId}:
     get:
       summary: Download a private attachment through authenticated dashboard access
