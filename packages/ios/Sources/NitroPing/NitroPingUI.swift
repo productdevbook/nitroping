@@ -129,6 +129,7 @@ public final class NitroPingFeedbackViewController: UIViewController {
     private let statusLabel = UILabel()
     private let submitButton = UIButton(type: .system)
     private var categories: [NitroPingCategory] = []
+    private var customInputs: [String: UITextField] = [:]
 
     public init(client: NitroPingClient, type: NitroPingFeedbackType = .suggestion) {
         self.client = client; self.type = type
@@ -172,6 +173,15 @@ public final class NitroPingFeedbackViewController: UIViewController {
                 self.categoryField.selectedSegmentIndex = 0
                 self.categoryField.isHidden = config.theme.fields?.isEmpty == false && config.theme.fields?.contains("category") != true || config.categories.isEmpty
                 self.submitButton.setTitle(config.theme.buttonLabel ?? "Submit feedback", for: .normal)
+                for field in config.theme.customFields ?? [] {
+                    let input = UITextField()
+                    input.placeholder = field.type == "select" && !field.options.isEmpty ? "\(field.label): \(field.options.joined(separator: ", "))" : field.label
+                    input.borderStyle = .roundedRect
+                    input.accessibilityLabel = field.label
+                    if field.type == "number" { input.keyboardType = .decimalPad }
+                    self.customInputs[field.id] = input
+                    stack.insertArrangedSubview(input, before: self.submitButton)
+                }
             }
         }
     }
@@ -182,11 +192,15 @@ public final class NitroPingFeedbackViewController: UIViewController {
         guard title.count >= 3, body.count >= 3 else { statusLabel.text = "Please enter a title and description."; return }
         submitButton.isEnabled = false
         let selectedCategory = categoryField.selectedSegmentIndex > 0 && categoryField.selectedSegmentIndex - 1 < categories.count ? categories[categoryField.selectedSegmentIndex - 1].id : nil
-        let feedback = NitroPingFeedback(type: type, title: title, body: body, categoryId: selectedCategory, email: emailField.text?.isEmpty == true ? nil : emailField.text)
+        let metadata = customInputs.compactMap { key, input in
+            let value = input.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return value.isEmpty ? nil : (key, value)
+        }
+        let feedback = NitroPingFeedback(type: type, title: title, body: body, categoryId: selectedCategory, email: emailField.text?.isEmpty == true ? nil : emailField.text, metadata: Dictionary(uniqueKeysWithValues: metadata))
         Task {
             do {
                 _ = try await client.submit(feedback)
-                await MainActor.run { self.statusLabel.text = "Thanks — your feedback was sent."; self.titleField.text = ""; self.bodyField.text = ""; self.emailField.text = ""; self.submitButton.isEnabled = true }
+                await MainActor.run { self.statusLabel.text = "Thanks — your feedback was sent."; self.titleField.text = ""; self.bodyField.text = ""; self.emailField.text = ""; self.customInputs.values.forEach { $0.text = "" }; self.submitButton.isEnabled = true }
             } catch NitroPingError.queued {
                 await MainActor.run { self.statusLabel.text = "Saved locally and will retry when online."; self.submitButton.isEnabled = true }
             } catch {
