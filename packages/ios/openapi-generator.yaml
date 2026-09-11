@@ -1,0 +1,7 @@
+generatorName: swift5
+inputSpec: openapi.yaml
+outputDir: packages/ios/.generated-openapi
+globalProperty: models,modelDocs=false,modelTests=false
+additionalProperties:
+  packageName: NitroPingOpenAPIGenerated
+  responseAs: AsyncAwait

@@ -109,7 +109,7 @@ paths:
     get:
       summary: Read the safe public widget configuration
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/IfNoneMatch' }]
-      responses: { '200': { description: Public widget configuration }, '304': { description: Configuration unchanged }, '401': { $ref: '#/components/responses/Error' } }
+      responses: { '200': { description: Public widget configuration, content: { application/json: { schema: { $ref: '#/components/schemas/PublicConfig' } } } }, '304': { description: Configuration unchanged }, '401': { $ref: '#/components/responses/Error' } }
   /projects/{projectId}/public/roadmap:
     get:
       summary: List public roadmap items
@@ -125,7 +125,7 @@ paths:
       summary: Initiate a private attachment upload
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }]
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [contentType, size], properties: { feedbackId: { type: string }, contentType: { type: string }, size: { type: integer, minimum: 1 } } } } } }
-      responses: { '201': { description: Upload token }, '413': { $ref: '#/components/responses/Error' }, '415': { $ref: '#/components/responses/Error' } }
+      responses: { '201': { description: Upload token, content: { application/json: { schema: { $ref: '#/components/schemas/UploadInitiation' } } } }, '413': { $ref: '#/components/responses/Error' }, '415': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/attachments/{attachmentId}:
     get:
       summary: Download a private attachment through authenticated dashboard access
@@ -140,11 +140,11 @@ paths:
     get:
       summary: Read feedback status through a scoped magic link
       parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
-      responses: { '200': { description: Feedback and public comments }, '404': { $ref: '#/components/responses/Error' } }
+      responses: { '200': { description: Feedback and public comments, content: { application/json: { schema: { $ref: '#/components/schemas/FollowUp' } } } }, '404': { $ref: '#/components/responses/Error' } }
     delete:
       summary: Delete the feedback owned by the scoped magic link
       parameters: [{ name: token, in: path, required: true, schema: { type: string } }]
-      responses: { '200': { description: Feedback deleted }, '404': { $ref: '#/components/responses/Error' } }
+      responses: { '200': { description: Feedback deleted, content: { application/json: { schema: { $ref: '#/components/schemas/DeleteResponse' } } } }, '404': { $ref: '#/components/responses/Error' } }
   /follow-up/{token}/unsubscribe:
     get:
       summary: Unsubscribe the email address associated with a scoped follow-up token
@@ -451,21 +451,113 @@ components:
     FeedbackPriority: { name: priority, in: query, required: false, schema: { type: string, enum: [low, normal, high, urgent] } }
     ServerKey: { name: X-NitroPing-Server-Key, in: header, required: true, schema: { type: string } }
   schemas:
+    MetadataValue:
+      oneOf:
+        - type: string
+        - type: number
+        - type: boolean
+    FeedbackType:
+      type: string
+      enum: [complaint, bug, suggestion, feature_request]
+    FeedbackStatus:
+      type: string
+      enum: [new, triaged, planned, in_progress, resolved, closed, spam]
+    FeedbackPriority:
+      type: string
+      enum: [low, normal, high, urgent]
+    Platform:
+      type: string
+      enum: [web, ios, android, other]
+    Category:
+      type: object
+      required: [id, name, slug]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+    CustomField:
+      type: object
+      required: [id, label, type, required, options]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        type: { type: string }
+        required: { type: boolean, default: false }
+        options: { type: array, items: { type: string }, default: [] }
+    PublicTheme:
+      type: object
+      properties:
+        mode: { type: [string, 'null'] }
+        buttonLabel: { type: [string, 'null'] }
+        fields: { type: array, items: { type: string } }
+        customFields: { type: array, items: { $ref: '#/components/schemas/CustomField' } }
+        colors: { type: object, additionalProperties: { type: string } }
+    PublicConfig:
+      type: object
+      required: [theme, categories]
+      properties:
+        theme: { $ref: '#/components/schemas/PublicTheme' }
+        categories: { type: array, items: { $ref: '#/components/schemas/Category' } }
+    FollowUpFeedback:
+      type: object
+      required: [id, type, status, priority, title, body, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        type: { $ref: '#/components/schemas/FeedbackType' }
+        status: { $ref: '#/components/schemas/FeedbackStatus' }
+        priority: { $ref: '#/components/schemas/FeedbackPriority' }
+        title: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    FollowUpComment:
+      type: object
+      required: [id, body, createdAt]
+      properties:
+        id: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+    FollowUp:
+      type: object
+      required: [feedback, comments]
+      properties:
+        feedback: { $ref: '#/components/schemas/FollowUpFeedback' }
+        comments: { type: array, items: { $ref: '#/components/schemas/FollowUpComment' } }
+    DeleteResponse:
+      type: object
+      required: [deleted, feedbackId]
+      properties:
+        deleted: { type: boolean }
+        feedbackId: { type: string }
+    UploadInitiation:
+      type: object
+      required: [attachmentId, uploadUrl]
+      properties:
+        attachmentId: { type: string }
+        uploadUrl: { type: string, format: uri }
+    Error:
+      type: object
+      required: [code, message, requestId]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        requestId: { type: string }
+        details: { type: object, additionalProperties: true }
     CreateFeedback:
       type: object
       required: [type, title, body]
       properties:
-        type: { type: string, enum: [complaint, bug, suggestion, feature_request] }
+        type: { $ref: '#/components/schemas/FeedbackType' }
         categoryId: { type: string, description: Optional project category identifier }
         title: { type: string, minLength: 3, maxLength: 160 }
         body: { type: string, minLength: 3, maxLength: 20000 }
-        priority: { type: string, enum: [low, normal, high, urgent] }
+        priority: { $ref: '#/components/schemas/FeedbackPriority' }
         email: { type: string, format: email }
-        platform: { type: string, enum: [web, ios, android, other] }
+        platform: { $ref: '#/components/schemas/Platform' }
         appVersion: { type: string }
         osVersion: { type: string }
         locale: { type: string }
-        metadata: { type: object, additionalProperties: { oneOf: [{ type: string }, { type: number }, { type: boolean }] } }
+        metadata: { type: object, additionalProperties: { $ref: '#/components/schemas/MetadataValue' } }
         turnstileToken: { type: string, maxLength: 2048, description: Optional short-lived Cloudflare Turnstile token; never persisted }
     Feedback:
       allOf:
@@ -475,13 +567,13 @@ components:
           properties:
             id: { type: string, format: uuid }
             projectId: { type: string }
-            status: { type: string, enum: [new, triaged, planned, in_progress, resolved, closed, spam] }
+            status: { $ref: '#/components/schemas/FeedbackStatus' }
             createdAt: { type: string, format: date-time }
             updatedAt: { type: string, format: date-time }
   responses:
     Error:
       description: Standard API error
-      content: { application/json: { schema: { type: object, required: [error], properties: { error: { type: object, required: [code, message, requestId], properties: { code: { type: string }, message: { type: string }, requestId: { type: string }, details: {} } } } } } }
+      content: { application/json: { schema: { type: object, required: [error], properties: { error: { $ref: '#/components/schemas/Error' } } } } }
     FeedbackList:
       description: Paginated feedback
       content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/Feedback' } }, nextCursor: { type: string } } } } }

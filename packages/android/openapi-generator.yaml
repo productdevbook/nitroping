@@ -1,0 +1,9 @@
+generatorName: kotlin
+inputSpec: openapi.yaml
+outputDir: packages/android/.generated-openapi
+globalProperty: models,modelDocs=false,modelTests=false
+additionalProperties:
+  packageName: dev.nitroping.openapi.generated
+  library: multiplatform
+  serializationLibrary: kotlinx_serialization
+  dateLibrary: kotlinx-datetime
