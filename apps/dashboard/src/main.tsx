@@ -1,6 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
+import {
+  ArrowUpRightIcon,
+  BellIcon,
+  ChartColumnIcon,
+  CodeIcon,
+  CreditCardIcon,
+  InboxIcon,
+  LayoutTemplateIcon,
+  LockIcon,
+  MapIcon,
+  MegaphoneIcon,
+  RefreshCwIcon,
+  ScrollTextIcon,
+  SearchIcon,
+  SettingsIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
+  UsersIcon,
+} from "lucide-react";
 import type {
   Feedback,
   FeedbackStatus,
@@ -359,6 +378,11 @@ function App() {
       }
       setWorkspaceReady(true);
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setAuthRequired(true);
+        setWorkspaceReady(true);
+        return;
+      }
       setNotice({
         text:
           error instanceof Error
@@ -860,82 +884,82 @@ function App() {
           <p className="nav-label">Workspace</p>
           <NavItem
             active={view === "inbox"}
-            icon="◈"
+            icon={<InboxIcon size={16} />}
             label="Inbox"
             count={feedback.filter((item) => item.status === "new").length}
             onClick={() => loadView("inbox")}
           />
           <NavItem
             active={view === "insights"}
-            icon="◒"
+            icon={<ChartColumnIcon size={16} />}
             label="Insights"
             onClick={() => loadView("insights")}
           />
           <NavItem
             active={view === "moderation"}
-            icon="◇"
+            icon={<ShieldCheckIcon size={16} />}
             label="Moderation"
             onClick={() => loadView("moderation")}
           />
           <p className="nav-label section-label">Product</p>
           <NavItem
             active={view === "roadmap"}
-            icon="↗"
+            icon={<MapIcon size={16} />}
             label="Roadmap"
             onClick={() => loadView("roadmap")}
           />
           <NavItem
             active={view === "changelog"}
-            icon="✦"
+            icon={<MegaphoneIcon size={16} />}
             label="Changelog"
             onClick={() => loadView("changelog")}
           />
           <NavItem
             active={view === "audit"}
-            icon="▤"
+            icon={<ScrollTextIcon size={16} />}
             label="Audit log"
             onClick={() => loadView("audit")}
           />
           <NavItem
             active={view === "developer"}
-            icon="⌘"
+            icon={<CodeIcon size={16} />}
             label="Developer"
             onClick={() => loadView("developer")}
           />
           <NavItem
             active={view === "team"}
-            icon="◎"
+            icon={<UsersIcon size={16} />}
             label="Team"
             onClick={() => loadView("team")}
           />
           <NavItem
             active={view === "notifications"}
-            icon="♢"
+            icon={<BellIcon size={16} />}
             label="Notifications"
             onClick={() => loadView("notifications")}
           />
           <NavItem
             active={view === "billing"}
-            icon="$"
+            icon={<CreditCardIcon size={16} />}
             label="Billing & usage"
             onClick={() => loadView("billing")}
           />
           <p className="nav-label section-label">Manage</p>
           <NavItem
             active={view === "widget"}
-            icon="▣"
+            icon={<LayoutTemplateIcon size={16} />}
             label="Widget builder"
             onClick={() => loadView("widget")}
           />
           <NavItem
             active={view === "settings"}
-            icon="⚙"
+            icon={<SettingsIcon size={16} />}
             label="Project settings"
             onClick={() => loadView("settings")}
           />
           <NavItem
             active={view === "privacy"}
-            icon="⌁"
+            icon={<LockIcon size={16} />}
             label="Privacy & data"
             onClick={() => loadView("privacy")}
           />
@@ -1014,10 +1038,10 @@ function App() {
           </span>
           <div className="top-actions">
             <button className="icon-button" aria-label="Search">
-              ⌕
+              <SearchIcon size={18} />
             </button>
             <button className="icon-button" aria-label="Notifications">
-              ♢<i />
+              <BellIcon size={18} /><i />
             </button>
             <button className="help-button">
               ? <span>Help center</span>
@@ -1336,7 +1360,7 @@ function NavItem({
   onClick,
 }: {
   active: boolean;
-  icon: string;
+  icon: ReactNode;
   label: string;
   count?: number;
   onClick: () => void;
@@ -1430,7 +1454,7 @@ function Inbox({
         description="Review what your users are saying and keep the product moving."
         action={
           <button className="primary-button" onClick={onRefresh}>
-            ↻ <span>Refresh inbox</span>
+            <RefreshCwIcon size={14} /> <span>Refresh inbox</span>
           </button>
         }
       />
@@ -1490,7 +1514,7 @@ function Inbox({
           </div>
           <div className="toolbar-actions">
             <label className="search">
-              <span>⌕</span>
+              <span><SearchIcon size={15} /></span>
               <input
                 value={query}
                 onChange={(event) => onQuery(event.target.value)}
@@ -1541,7 +1565,7 @@ function Inbox({
               </div>
             ) : feedback.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-icon">✦</div>
+                <div className="empty-icon"><SparklesIcon size={18} /></div>
                 <strong>No feedback here yet</strong>
                 <p>New user feedback will appear in this view.</p>
               </div>
@@ -1572,7 +1596,7 @@ function Inbox({
             <div className="detail-placeholder">
               <div className="placeholder-art">
                 <span>◈</span>
-                <span>✦</span>
+                <span><SparklesIcon size={22} /></span>
                 <span>○</span>
               </div>
               <strong>Select feedback to inspect it</strong>
@@ -1600,13 +1624,13 @@ function Metric({
 }) {
   return (
     <div className="metric-card">
-      <div className={`metric-icon ${accent}`}>✦</div>
+      <div className={`metric-icon ${accent}`}><SparklesIcon size={15} /></div>
       <div>
         <span>{label}</span>
         <strong>{value}</strong>
         <small>{detail}</small>
       </div>
-      <span className="metric-trend">↗</span>
+      <span className="metric-trend"><ArrowUpRightIcon size={14} /></span>
     </div>
   );
 }
@@ -1926,7 +1950,7 @@ function Moderation({
         description="Review automated flags before they affect your public feedback stream."
         action={
           <button className="secondary-button" onClick={onChange}>
-            ↻ Refresh queue
+            <RefreshCwIcon size={14} /> Refresh queue
           </button>
         }
       />
@@ -2002,14 +2026,14 @@ function AuditLog({
         description="A durable record of changes made across this project."
         action={
           <button className="secondary-button" onClick={onRefresh}>
-            ↻ Refresh log
+            <RefreshCwIcon size={14} /> Refresh log
           </button>
         }
       />
       <section className="panel audit-panel">
         {items.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">▤</div>
+            <div className="empty-icon"><ScrollTextIcon size={18} /></div>
             <strong>No audit events yet</strong>
             <p>Project activity will be recorded here.</p>
           </div>
@@ -2092,7 +2116,7 @@ function DeveloperControls({
         description="Manage project credentials and signed event delivery."
         action={
           <button className="secondary-button" onClick={onRefresh}>
-            ↻ Refresh
+            <RefreshCwIcon size={14} /> Refresh
           </button>
         }
       />
@@ -2244,7 +2268,7 @@ function Team({
         description="Invite collaborators and keep project access explicit."
         action={
           <button className="secondary-button" onClick={onRefresh}>
-            ↻ Refresh team
+            <RefreshCwIcon size={14} /> Refresh team
           </button>
         }
       />
@@ -2357,7 +2381,7 @@ function Notifications({
             className="secondary-button"
             onClick={() => location.reload()}
           >
-            ↻ Refresh
+            <RefreshCwIcon size={14} /> Refresh
           </button>
         }
       />
@@ -2420,7 +2444,7 @@ function BillingPanel({
         description="Manage your subscription and understand the limits applied to this workspace."
         action={
           <button className="secondary-button" onClick={onRefresh}>
-            ↻ Refresh
+            <RefreshCwIcon size={14} /> Refresh
           </button>
         }
       />
@@ -2546,7 +2570,7 @@ function Insights({
         description="Understand the themes behind your users' voice."
         action={
           <button className="secondary-button" onClick={onRefresh}>
-            ↻ Refresh data
+            <RefreshCwIcon size={14} /> Refresh data
           </button>
         }
       />
@@ -2910,7 +2934,7 @@ function Changelog({
       <section className="timeline">
         {items.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">✦</div>
+            <div className="empty-icon"><SparklesIcon size={18} /></div>
             <strong>No updates published yet</strong>
             <p>Your changelog will appear here.</p>
           </div>

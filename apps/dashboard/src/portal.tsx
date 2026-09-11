@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { createRoot } from "react-dom/client";
+import { SearchIcon } from "lucide-react";
 import type { Feedback, FeedbackStatus, FeedbackType } from "@nitroping/contracts";
 import "./portal.css";
 
@@ -103,9 +104,9 @@ function App() {
   const vote = async (item: PortalItem) => { const result = await request<{ votes: number }>(`/projects/${encodeURIComponent(projectId)}/feedback/${item.id}/vote`, { method: "POST" }); setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, votes: result.votes } : entry)); };
   const addComment = async () => { if (!selected || !comment.trim()) return; await request(`/projects/${encodeURIComponent(projectId)}/feedback/${selected.id}/comments`, { method: "POST", body: JSON.stringify({ body: comment.trim() }), headers: { "content-type": "application/json" } }); setComment(""); await openItem(selected); };
 
-  return <main className="portal-shell" style={{ "--portal-primary": config.theme?.colors?.primary ?? "#7657e8" } as CSSProperties}>
-    <header className="portal-header"><div className="portal-brand"><span>✦</span>NitroPing</div><nav>{(["feedback", "roadmap", "changelog"] as const).map((value) => <button className={tab === value ? "active" : ""} onClick={() => setTab(value)} key={value}>{titleCase(value)}</button>)}</nav><button className="portal-submit" onClick={() => setShowForm(true)}>Share feedback</button></header>
-    <section className="portal-hero"><p className="portal-eyebrow">Community feedback</p><h1>Help shape what comes next.</h1><p>Vote on ideas, report problems, and follow the progress of work that matters to you.</p><div className="portal-search"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void refresh()} placeholder="Search feedback" /></div></section>
+  return <main className="portal-shell" style={{ "--portal-primary": config.theme?.colors?.primary ?? "#0a0a0a" } as CSSProperties}>
+    <header className="portal-header"><div className="portal-brand"><span aria-hidden="true" />NitroPing</div><nav>{(["feedback", "roadmap", "changelog"] as const).map((value) => <button className={tab === value ? "active" : ""} onClick={() => setTab(value)} key={value}>{titleCase(value)}</button>)}</nav><button className="portal-submit" onClick={() => setShowForm(true)}>Share feedback</button></header>
+    <section className="portal-hero"><p className="portal-eyebrow">Community feedback</p><h1>Help shape what comes next.</h1><p>Vote on ideas, report problems, and follow the progress of work that matters to you.</p><div className="portal-search"><SearchIcon size={18} aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void refresh()} placeholder="Search feedback" /></div></section>
     {error && <div className="portal-error">{error}</div>}
     <section className="portal-content"><div className={`portal-live ${live ? "connected" : ""}`}><i />{live ? "Live updates enabled" : "Updates refresh automatically"}</div>
       {tab === "feedback" && <><div className="portal-section-head"><div><p className="portal-eyebrow">Open conversation</p><h2>Feedback board</h2></div><span>{filtered.length} ideas</span></div><div className="feedback-grid">{filtered.map((item) => <article className="public-card" key={item.id} onClick={() => void openItem(item)}><div className="card-top"><span className={`type-pill ${item.type}`}>{titleCase(item.type)}</span><span className="card-time">{relativeTime(item.createdAt)}</span></div><h3>{item.title}</h3><p>{item.body}</p><div className="card-bottom"><span className={`status-pill ${item.status}`}>{titleCase(item.status)}</span><button onClick={(event) => { event.stopPropagation(); void vote(item); }}>▲ {item.votes ?? 0}</button></div></article>)}</div>{filtered.length === 0 && <div className="portal-empty">No feedback matches your search yet.</div>}</>}
