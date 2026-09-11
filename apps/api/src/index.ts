@@ -269,6 +269,31 @@ export default {
         } catch { return error("ORGANIZATION_SLUG_TAKEN", "Organization slug is already in use", rid, 409); }
         return jsonResponse({ id: organizationId, name, slug, role: "owner", createdAt: now }, { status: 201, headers: cors });
       }
+      const organizationDeleteMatch = path.match(/^\/api\/v1\/dashboard\/organizations\/([^/]+)$/);
+      if (organizationDeleteMatch && request.method === "DELETE") {
+        const identity = await requireIdentity(request, env, rid);
+        if (identity instanceof Response) return identity;
+        const userId = await userForIdentity(env, identity);
+        if (!(await requireOrganizationMember(env, organizationDeleteMatch[1], userId, ["owner"]))) return error("FORBIDDEN", "Organization owner access is required", rid, 403);
+        const projects = await env.DB.prepare("SELECT id FROM projects WHERE organization_id = ? AND deleted_at IS NULL").bind(organizationDeleteMatch[1]).all<{ id: string }>();
+        const attachments = await env.DB.prepare("SELECT object_key AS objectKey, project_id AS projectId FROM attachments WHERE organization_id = ? AND deleted_at IS NULL").bind(organizationDeleteMatch[1]).all<{ objectKey: string; projectId: string }>();
+        const now = new Date().toISOString();
+        await env.DB.batch([
+          env.DB.prepare("UPDATE feedback_items SET email = NULL, body = '[organization deleted]', metadata_json = '{}', deleted_at = ?, updated_at = ? WHERE organization_id = ? AND deleted_at IS NULL").bind(now, now, organizationDeleteMatch[1]),
+          env.DB.prepare("UPDATE feedback_comments SET body = '[organization deleted]', deleted_at = ? WHERE organization_id = ? AND deleted_at IS NULL").bind(now, organizationDeleteMatch[1]),
+          env.DB.prepare("UPDATE attachments SET deleted_at = ? WHERE organization_id = ? AND deleted_at IS NULL").bind(now, organizationDeleteMatch[1]),
+          env.DB.prepare("UPDATE projects SET deleted_at = ?, updated_at = ? WHERE organization_id = ? AND deleted_at IS NULL").bind(now, now, organizationDeleteMatch[1]),
+          env.DB.prepare("UPDATE organizations SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL").bind(now, now, organizationDeleteMatch[1]),
+          env.DB.prepare("INSERT INTO privacy_requests (id, organization_id, kind, status, requested_by, created_at, completed_at) VALUES (?, ?, 'delete', 'completed', ?, ?, ?)").bind(id(), organizationDeleteMatch[1], userId, now, now),
+        ]);
+        for (const attachment of attachments.results ?? []) ctx.waitUntil(env.EVENTS.send({ type: "attachment.delete", objectKey: attachment.objectKey, projectId: attachment.projectId, eventId: id() }));
+        const tokenKeys = await env.CACHE.list({ prefix: "follow:" });
+        for (const key of tokenKeys.keys) {
+          const value = await env.CACHE.get(key.name, "json") as { organizationId?: string } | null;
+          if (value?.organizationId === organizationDeleteMatch[1]) ctx.waitUntil(env.CACHE.delete(key.name));
+        }
+        return new Response(null, { status: 204, headers: cors });
+      }
       const projectsPath = path === "/api/v1/dashboard/projects";
       if (projectsPath && request.method === "GET") {
         const identity = await requireIdentity(request, env, rid);

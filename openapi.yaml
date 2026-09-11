@@ -15,6 +15,11 @@ paths:
       summary: Create an organization for the Access identity
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name], properties: { name: { type: string }, slug: { type: string } } } } } }
       responses: { '201': { description: Created }, '409': { $ref: '#/components/responses/Error' } }
+  /dashboard/organizations/{organizationId}:
+    delete:
+      summary: Delete and anonymize an organization and queue its R2 cleanup
+      parameters: [{ name: organizationId, in: path, required: true, schema: { type: string } }]
+      responses: { '204': { description: Deleted }, '403': { $ref: '#/components/responses/Error' }, '503': { $ref: '#/components/responses/Error' } }
   /dashboard/organizations/{organizationId}/projects:
     post:
       summary: Create a project and issue its initial keys
