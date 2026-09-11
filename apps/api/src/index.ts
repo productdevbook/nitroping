@@ -930,6 +930,16 @@ export default {
         return env.EVENT_STREAM.getByName(context.projectId).fetch(request);
       }
       const commentMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/feedback\/([^/]+)\/comments$/);
+      if (commentMatch && request.method === "GET") {
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, commentMatch[1], rid);
+        if (scopeError) return scopeError;
+        const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND status <> 'spam' AND deleted_at IS NULL").bind(commentMatch[2], context.organizationId, context.projectId).first();
+        if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        const comments = await env.DB.prepare("SELECT id, body, created_at AS createdAt FROM feedback_comments WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND is_internal = 0 AND deleted_at IS NULL ORDER BY created_at ASC").bind(commentMatch[2], context.organizationId, context.projectId).all();
+        return jsonResponse({ items: comments.results ?? [] }, { headers: cors });
+      }
       if (commentMatch && request.method === "POST") {
         const context = await projectFromRequest(request, env, url, rid);
         if (context instanceof Response) return context;

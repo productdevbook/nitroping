@@ -75,6 +75,10 @@ paths:
       parameters: [{ $ref: '#/components/parameters/ProjectKey' }]
       responses: { '200': { description: Feedback, content: { application/json: { schema: { $ref: '#/components/schemas/Feedback' } } } }, '404': { $ref: '#/components/responses/Error' } }
   /projects/{projectId}/feedback/{feedbackId}/comments:
+    get:
+      summary: List public comments
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }]
+      responses: { '200': { description: Public comments }, '404': { $ref: '#/components/responses/Error' } }
     post:
       summary: Add a public comment
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }]
