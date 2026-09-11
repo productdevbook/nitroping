@@ -40,25 +40,7 @@ public struct NitroPingFeedbackForm: View {
                     TextField("Email (optional)", text: $email)
                 }
                 ForEach(publicConfig?.theme.customFields ?? []) { field in
-                    if field.type == "textarea" {
-                        let binding = Binding<String>(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 })
-                        TextField(field.label, text: binding, axis: .vertical).lineLimit(3...6)
-                    } else if field.type == "select" {
-                        let binding = Binding<String>(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 })
-                        Picker(field.label, selection: binding) {
-                            Text("Select an option").tag("")
-                            ForEach(field.options, id: \.self) { option in
-                                Text(option)
-                                    .tag(option)
-                            }
-                        }
-                    } else if field.type == "boolean" {
-                        let binding = Binding<Bool>(get: { customValues[field.id] == "true" }, set: { customValues[field.id] = $0 ? "true" : "false" })
-                        Toggle(field.label, isOn: binding)
-                    } else {
-                        let binding = Binding<String>(get: { customValues[field.id] ?? "" }, set: { customValues[field.id] = $0 })
-                        TextField(field.label, text: binding).keyboardType(field.type == "number" ? .decimalPad : .default)
-                    }
+                    NitroPingCustomFieldView(field: field, values: $customValues)
                 }
                 Button(sending ? "Sending…" : publicConfig?.theme.buttonLabel ?? "Submit feedback") {
                     submit()
@@ -94,6 +76,37 @@ public struct NitroPingFeedbackForm: View {
                 await MainActor.run { status = "Unable to send feedback."; sending = false }
             }
         }
+    }
+}
+
+@available(iOS 15.0, macOS 12.0, *)
+private struct NitroPingCustomFieldView: View {
+    let field: NitroPingCustomField
+    @Binding var values: [String: String]
+
+    var body: some View {
+        Group {
+            if field.type == "textarea" {
+                TextField(field.label, text: textBinding, axis: .vertical).lineLimit(3...6)
+            } else if field.type == "select" {
+                Picker(field.label, selection: textBinding) {
+                    Text("Select an option").tag("")
+                    ForEach(field.options, id: \.self) { option in Text(option).tag(option) }
+                }
+            } else if field.type == "boolean" {
+                Toggle(field.label, isOn: boolBinding)
+            } else {
+                TextField(field.label, text: textBinding).keyboardType(field.type == "number" ? .decimalPad : .default)
+            }
+        }
+    }
+
+    private var textBinding: Binding<String> {
+        Binding(get: { values[field.id] ?? "" }, set: { values[field.id] = $0 })
+    }
+
+    private var boolBinding: Binding<Bool> {
+        Binding(get: { values[field.id] == "true" }, set: { values[field.id] = $0 ? "true" : "false" })
     }
 }
 #endif
