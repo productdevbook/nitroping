@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import type { Feedback, FeedbackStatus } from "@nitroping/contracts";
 import "./styles.css";
 
-type View = "inbox" | "insights" | "moderation" | "roadmap" | "changelog" | "audit" | "developer" | "team" | "notifications" | "settings";
+type View = "inbox" | "insights" | "moderation" | "roadmap" | "changelog" | "audit" | "developer" | "team" | "notifications" | "billing" | "settings";
 type ApiOptions = RequestInit & { projectKey?: string; serverKey?: string };
 type FeedbackDetail = { feedback: Feedback; comments: Array<{ id: string; body: string; isInternal: number; createdAt: string }>; statusHistory: Array<{ id: string; fromStatus: string | null; toStatus: string; createdAt: string }>; tags?: Array<{ id: string; name: string; slug: string }> };
 type Analytics = { total: number; statuses: Array<{ status: string; count: number }>; platforms: Array<{ platform: string; count: number }>; types: Array<{ type: string; count: number }>; volume: Array<{ date: string; count: number }>; averageResponseMinutes: number | null; averageResolutionMinutes: number | null };
@@ -18,6 +18,7 @@ type ApiKeyItem = { id: string; kind: string; label: string; keyPrefix: string; 
 type WebhookItem = { id: string; url: string; events: string[]; active: number; createdAt: string };
 type MemberItem = { userId: string; email: string; role: string; createdAt: string };
 type NotificationPreference = { eventType: string; enabled: boolean };
+type Billing = { plan: string; status: string; providerCustomerId?: string | null; providerSubscriptionId?: string | null; currentPeriodEnd?: string | null };
 
 const apiBase = "/api/v1";
 const statuses: FeedbackStatus[] = ["new", "triaged", "planned", "in_progress", "resolved", "closed", "spam"];
@@ -59,6 +60,7 @@ function App() {
   const [webhooks, setWebhooks] = useState<WebhookItem[]>([]);
   const [members, setMembers] = useState<MemberItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationPreference[]>([]);
+  const [billing, setBilling] = useState<Billing | null>(null);
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -143,6 +145,7 @@ function App() {
       }
       if (nextView === "team") setMembers((await api<{ items: MemberItem[] }>(`/dashboard/organizations/${organizations[0]?.id}/members`, credentials)).items);
       if (nextView === "notifications") setNotifications((await api<{ items: NotificationPreference[] }>(`/dashboard/projects/${projectId}/notifications`, credentials)).items);
+      if (nextView === "billing") setBilling(await api<Billing>(`/dashboard/billing?projectId=${encodeURIComponent(projectId)}`, credentials));
       if (nextView === "settings") setSettings(await api<Settings>(`/dashboard/projects/${projectId}/settings?projectId=${projectId}`, credentials));
     } catch (error) { setNotice({ text: error instanceof Error ? error.message : "Unable to load view", error: true }); }
   };
@@ -185,6 +188,7 @@ function App() {
         <NavItem active={view === "developer"} icon="⌘" label="Developer" onClick={() => loadView("developer")} />
         <NavItem active={view === "team"} icon="◎" label="Team" onClick={() => loadView("team")} />
         <NavItem active={view === "notifications"} icon="♢" label="Notifications" onClick={() => loadView("notifications")} />
+        <NavItem active={view === "billing"} icon="$" label="Billing & usage" onClick={() => loadView("billing")} />
         <p className="nav-label section-label">Manage</p>
         <NavItem active={view === "settings"} icon="⚙" label="Project settings" onClick={() => loadView("settings")} />
       </nav>
@@ -201,6 +205,7 @@ function App() {
         {view === "developer" && <DeveloperControls projectId={projectId} credentials={credentials} apiKeys={apiKeys} webhooks={webhooks} onRefresh={() => void loadView("developer")} />}
         {view === "team" && <Team members={members} organizationId={organizations[0]?.id ?? ""} credentials={credentials} onRefresh={() => void loadView("team")} />}
         {view === "notifications" && <Notifications items={notifications} credentials={credentials} projectId={projectId} onChange={setNotifications} />}
+        {view === "billing" && <BillingPanel billing={billing} credentials={credentials} projectId={projectId} onRefresh={() => void loadView("billing")} />}
         {view === "roadmap" && <Roadmap items={roadmap} credentials={credentials} projectId={projectId} onChange={() => void loadView("roadmap")} />}
         {view === "changelog" && <Changelog items={changelog} credentials={credentials} projectId={projectId} onChange={() => void loadView("changelog")} />}
         {view === "settings" && <SettingsPanel settings={settings} projectId={projectId} publicKey={publicKey} serverKey={serverKey} onProject={setProjectId} onPublic={setPublicKey} onServer={setServerKey} onSave={saveWorkspace} onSettings={setSettings} />}
@@ -260,6 +265,20 @@ function Notifications({ items, credentials, projectId, onChange }: { items: Not
     } catch { /* the parent toast handles the next navigation refresh */ }
   };
   return <><PageHeader eyebrow="Personal workflow" title="Notifications" description="Choose which project events should reach your team inbox." action={<button className="secondary-button" onClick={() => location.reload()}>↻ Refresh</button>} /><section className="panel settings-card notification-card">{items.map((item) => <label className="notification-row" key={item.eventType}><span><strong>{statusLabel(item.eventType)}</strong><small>Project activity notification</small></span><input type="checkbox" checked={item.enabled} onChange={(event) => void update(item.eventType, event.target.checked)} /></label>)}</section></>;
+}
+
+function BillingPanel({ billing, credentials, projectId, onRefresh }: { billing: Billing | null; credentials: ApiOptions; projectId: string; onRefresh: () => void }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const checkout = async (plan: "pro" | "business") => {
+    setBusy(plan);
+    try {
+      const result = await api<{ url: string | null }>(`/dashboard/billing/checkout?projectId=${encodeURIComponent(projectId)}`, { ...credentials, method: "POST", body: JSON.stringify({ plan }) });
+      if (result.url) location.assign(result.url);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Billing checkout is unavailable.");
+    } finally { setBusy(null); }
+  };
+  return <><PageHeader eyebrow="Workspace finance" title="Billing & usage" description="Manage your subscription and understand the limits applied to this workspace." action={<button className="secondary-button" onClick={onRefresh}>↻ Refresh</button>} /><section className="settings-grid"><div className="panel settings-card"><div className="panel-heading"><div><h2>Current subscription</h2><p>Billing state is synchronized from the provider webhook.</p></div><span className="status-pill resolved">{billing?.status ?? "active"}</span></div><div className="usage-number"><strong>{billing?.plan ?? "free"}</strong><span>plan</span></div><p className="muted">{billing?.currentPeriodEnd ? `Current period ends ${formatDate(billing.currentPeriodEnd)}` : "No paid subscription is active."}</p><p className="muted">{billing?.providerSubscriptionId ? "Subscription is linked to Stripe." : "Upgrade to unlock higher limits and team features."}</p></div><div className="panel settings-card"><div className="panel-heading"><div><h2>Usage</h2><p>Current period consumption.</p></div></div><div className="usage-number"><strong>{billing?.plan === "business" ? "Business" : billing?.plan === "pro" ? "Pro" : "Free"}</strong><span>entitlement tier</span></div><p className="muted">Feedback and attachment limits are enforced server-side for every API request.</p></div></section><section className="settings-grid" style={{ marginTop: 16 }}><div className="panel settings-card"><div className="panel-heading"><div><h2>Pro</h2><p>For growing product teams.</p></div><strong>$29/mo</strong></div><p className="muted">Multiple projects, roadmap, changelog, webhooks, custom themes, and longer retention.</p><button className="primary-button full-button" disabled={busy !== null || billing?.plan === "pro"} onClick={() => checkout("pro")}>{busy === "pro" ? "Opening checkout…" : billing?.plan === "pro" ? "Current plan" : "Upgrade to Pro"}</button></div><div className="panel settings-card"><div className="panel-heading"><div><h2>Business</h2><p>For organizations with advanced controls.</p></div><strong>Custom</strong></div><p className="muted">Advanced roles, SSO adapter, audit export, custom domains, retention controls, and SLA support.</p><button className="secondary-button full-button" disabled={busy !== null || billing?.plan === "business"} onClick={() => checkout("business")}>{busy === "business" ? "Opening checkout…" : billing?.plan === "business" ? "Current plan" : "Upgrade to Business"}</button></div></section></>;
 }
 
 function Insights({ analytics, usage, onRefresh }: { analytics: Analytics | null; usage: Usage | null; onRefresh: () => void }) {
