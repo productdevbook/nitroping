@@ -30,6 +30,7 @@ import {
   CloudflareCustomHostnameProvider,
   validateCustomHostname,
 } from "./custom-domains";
+import { analyzeModeration } from "./moderation";
 
 export { ProjectEventStream };
 
@@ -6052,18 +6053,26 @@ export default {
         event.organizationId &&
         event.projectId
       ) {
-        await env.DB.prepare(
-          "INSERT INTO moderation_events (id, organization_id, project_id, feedback_id, kind, outcome, metadata_json, created_at) SELECT ?, organization_id, project_id, id, 'automated', 'pending', ?, ? FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ?",
+        const candidate = await env.DB.prepare(
+          "SELECT title, body, email FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL",
         )
-          .bind(
-            id(),
-            "{}",
-            new Date().toISOString(),
-            event.feedbackId,
-            event.organizationId,
-            event.projectId,
+          .bind(event.feedbackId, event.organizationId, event.projectId)
+          .first<{ title: string; body: string; email: string | null }>();
+        if (candidate) {
+          const analysis = analyzeModeration(candidate);
+          await env.DB.prepare(
+            "INSERT INTO moderation_events (id, organization_id, project_id, feedback_id, kind, outcome, metadata_json, created_at) VALUES (?, ?, ?, ?, 'rules', 'pending', ?, ?)",
           )
-          .run();
+            .bind(
+              id(),
+              event.organizationId,
+              event.projectId,
+              event.feedbackId,
+              JSON.stringify(analysis),
+              new Date().toISOString(),
+            )
+            .run();
+        }
       }
       if (event.eventId)
         await env.DB.prepare(
