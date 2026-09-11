@@ -7,9 +7,9 @@ NitroPing; web, iOS ve Android uygulamalarına gömülebilen, open-core geri bil
 ## Başlangıç
 
 ```bash
-pnpm install
-pnpm check
-pnpm dev:api
+bun install
+bun run check
+bun run dev:api
 ```
 
 API health check:
@@ -21,7 +21,7 @@ curl http://localhost:8787/health
 Local D1 migration:
 
 ```bash
-pnpm --filter @nitroping/api exec wrangler d1 migrations apply nitroping-dev --local
+bunx wrangler d1 migrations apply nitroping --local --config apps/api/wrangler.jsonc
 ```
 
 ## Paketler
@@ -34,4 +34,4 @@ pnpm --filter @nitroping/api exec wrangler d1 migrations apply nitroping-dev --l
 
 ## Not
 
-Production deploy öncesinde `wrangler.jsonc` içindeki gerçek D1/R2/KV/Queue kimlikleri Alchemy stack output’larıyla doldurulmalıdır. Dashboard, iOS ve Android paketleri aynı OpenAPI sözleşmesi üzerinden eklenecektir.
+Production kaynakları Cloudflare üzerinde oluşturulmuştur. Dashboard landing asset’i Worker üzerinden, API ise `/api/v1` altında servis edilir. Native SDK’lar aynı OpenAPI sözleşmesini kullanır.

@@ -12,7 +12,7 @@ public struct NitroPingConfiguration: Sendable {
     public let projectKey: String
     public let apiBaseURL: URL
 
-    public init(projectKey: String, apiBaseURL: URL = URL(string: "https://api.nitroping.com/api/v1")!) {
+    public init(projectKey: String, apiBaseURL: URL = URL(string: "https://nitroping.dev/api/v1")!) {
         self.projectKey = projectKey
         self.apiBaseURL = apiBaseURL
     }

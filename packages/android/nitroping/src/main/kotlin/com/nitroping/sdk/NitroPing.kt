@@ -24,7 +24,7 @@ data class FeedbackResponse(val id: String, val status: String, val title: Strin
 
 class NitroPingClient(
     private val projectKey: String,
-    private val apiBaseUrl: String = "https://api.nitroping.com/api/v1",
+    private val apiBaseUrl: String = "https://nitroping.dev/api/v1",
 ) {
     suspend fun submit(feedback: Feedback): FeedbackResponse = withContext(Dispatchers.IO) {
         val connection = URL("$apiBaseUrl/projects/$projectKey/feedback").openConnection() as HttpURLConnection

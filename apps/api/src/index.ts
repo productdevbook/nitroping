@@ -86,12 +86,46 @@ const jsonBody = async (request: Request): Promise<Record<string, unknown>> => {
   return body && typeof body === "object" ? body as Record<string, unknown> : {};
 };
 
+const projectMatchesPath = (context: TenantContext, projectId: string, rid: string): Response | null =>
+  context.projectId === projectId ? null : error("PROJECT_SCOPE_MISMATCH", "Project key bu projeye ait değil", rid, 403);
+
+const allowedMetadata = async (env: Env, context: TenantContext, input: CreateFeedbackInput, rid: string): Promise<Response | null> => {
+  const settings = await env.DB.prepare("SELECT allowed_metadata_json FROM project_settings WHERE project_id = ?").bind(context.projectId).first<{ allowed_metadata_json: string }>();
+  const allowed = new Set<string>(JSON.parse(settings?.allowed_metadata_json ?? "[]"));
+  const metadata = input.metadata ?? {};
+  const invalid = Object.keys(metadata).filter((key) => !allowed.has(key));
+  return invalid.length ? error("METADATA_FIELD_NOT_ALLOWED", `İzin verilmeyen metadata alanı: ${invalid.join(", ")}`, rid, 400) : null;
+};
+
+const rateLimit = async (env: Env, request: Request, scope: string): Promise<boolean> => {
+  const key = `rate:${scope}:${clientIp(request)}`;
+  const current = Number(await env.CACHE.get(key) ?? "0");
+  if (current >= 60) return false;
+  await env.CACHE.put(key, String(current + 1), { expirationTtl: 60 });
+  return true;
+};
+
+const requestHeaders = (rid: string, origin?: string): Record<string, string> => ({
+  "access-control-allow-origin": origin ?? "*",
+  "access-control-allow-headers": "content-type, x-request-id, x-nitroping-project-key, x-nitroping-server-key, authorization, idempotency-key",
+  "access-control-allow-methods": "GET,POST,PATCH,PUT,OPTIONS",
+  "access-control-expose-headers": "etag, x-request-id",
+  "cache-control": "no-store",
+  "x-request-id": rid,
+});
+
+const etagged = async (data: unknown, request: Request, headers: Record<string, string>, status = 200): Promise<Response> => {
+  const etag = `W/\"${await sha256(JSON.stringify(data))}\"`;
+  if (request.headers.get("if-none-match") === etag) return new Response(null, { status: 304, headers: { ...headers, etag } });
+  return jsonResponse(data, { status, headers: { ...headers, etag } });
+};
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const rid = requestId(request);
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/$/, "");
-    const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "content-type, x-request-id, authorization, idempotency-key", "access-control-allow-methods": "GET,POST,PATCH,OPTIONS", "x-request-id": rid };
+    const cors = requestHeaders(rid, request.headers.get("origin") ?? "*");
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     if (path === "/health") return jsonResponse({ ok: true, environment: env.ENVIRONMENT, requestId: rid }, { headers: cors });
     try {
@@ -102,26 +136,71 @@ export default {
         if (typeof input === "string") return error("VALIDATION_ERROR", input, rid, 400);
         const context = await projectFromRequest(request, env, url, rid);
         if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, match[1], rid);
+        if (scopeError) return scopeError;
+        if (!(await rateLimit(env, request, context.projectId))) return error("RATE_LIMITED", "Çok fazla istek gönderildi", rid, 429);
+        const metadataError = await allowedMetadata(env, context, input, rid);
+        if (metadataError) return metadataError;
+        const idem = request.headers.get("idempotency-key");
+        if (idem) {
+          if (idem.length > 128) return error("INVALID_IDEMPOTENCY_KEY", "Idempotency-Key çok uzun", rid, 400);
+          const previous = await env.DB.prepare("SELECT response_json, status_code FROM idempotency_keys WHERE project_id = ? AND key = ?").bind(context.projectId, idem).first<{ response_json: string; status_code: number }>();
+          if (previous) return new Response(previous.response_json, { status: previous.status_code, headers: cors });
+        }
         const result = await Effect.runPromise(createFeedback(repo, context, input, rid));
+        if (idem) await env.DB.prepare("INSERT OR IGNORE INTO idempotency_keys (organization_id, project_id, key, response_json, status_code, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(context.organizationId, context.projectId, idem, JSON.stringify(result), 201, result.createdAt).run();
         if (env.EVENTS) await env.EVENTS.send({ type: "feedback.created", feedbackId: result.id, projectId: result.projectId, eventId: id() });
         return jsonResponse(result, { status: 201, headers: cors });
       }
       if (match && request.method === "GET" && match[2]) {
         const context = await projectFromRequest(request, env, url, rid);
         if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, match[1], rid);
+        if (scopeError) return scopeError;
         const result = await Effect.runPromise(getFeedback(repo, context, match[2]));
         return result ? jsonResponse(result, { headers: cors }) : error("FEEDBACK_NOT_FOUND", "Feedback bulunamadı", rid, 404);
       }
       if (match && request.method === "GET" && !match[2]) {
         const context = await projectFromRequest(request, env, url, rid);
         if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, match[1], rid);
+        if (scopeError) return scopeError;
         const result = await Effect.runPromise(listFeedback(repo, context, url.searchParams.get("cursor") ?? undefined));
         return jsonResponse(result, { headers: cors });
+      }
+      const categoriesMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/public\/categories$/);
+      if (categoriesMatch && request.method === "GET") {
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, categoriesMatch[1], rid);
+        if (scopeError) return scopeError;
+        const rows = await env.DB.prepare("SELECT id, name, slug FROM categories WHERE organization_id = ? AND project_id = ? ORDER BY name ASC").bind(context.organizationId, context.projectId).all();
+        return await etagged({ items: rows.results ?? [] }, request, cors);
+      }
+      const roadmapMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/public\/roadmap$/);
+      if (roadmapMatch && request.method === "GET") {
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, roadmapMatch[1], rid);
+        if (scopeError) return scopeError;
+        const rows = await env.DB.prepare("SELECT id, title, body, status, created_at AS createdAt, updated_at AS updatedAt FROM roadmap_items WHERE organization_id = ? AND project_id = ? ORDER BY updated_at DESC").bind(context.organizationId, context.projectId).all();
+        return await etagged({ items: rows.results ?? [] }, request, cors);
+      }
+      const changelogMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/public\/changelog$/);
+      if (changelogMatch && request.method === "GET") {
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, changelogMatch[1], rid);
+        if (scopeError) return scopeError;
+        const rows = await env.DB.prepare("SELECT id, title, body, published_at AS publishedAt, created_at AS createdAt FROM changelog_items WHERE organization_id = ? AND project_id = ? AND published_at IS NOT NULL ORDER BY published_at DESC").bind(context.organizationId, context.projectId).all();
+        return await etagged({ items: rows.results ?? [] }, request, cors);
       }
       const commentMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/feedback\/([^/]+)\/comments$/);
       if (commentMatch && request.method === "POST") {
         const context = await projectFromRequest(request, env, url, rid);
         if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, commentMatch[1], rid);
+        if (scopeError) return scopeError;
         const body = await jsonBody(request);
         if (typeof body.body !== "string" || body.body.trim().length < 1 || body.body.length > 10_000) return error("VALIDATION_ERROR", "Yorum 1-10000 karakter olmalıdır", rid, 400);
         const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(commentMatch[2], context.organizationId, context.projectId).first();
@@ -134,6 +213,8 @@ export default {
       if (voteMatch && request.method === "POST") {
         const context = await projectFromRequest(request, env, url, rid);
         if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, voteMatch[1], rid);
+        if (scopeError) return scopeError;
         const voter = await sha256(`${clientIp(request)}:${request.headers.get("user-agent") ?? ""}`);
         await env.DB.prepare("INSERT OR IGNORE INTO feedback_votes (feedback_id, voter_fingerprint, created_at) SELECT ?, ?, ? WHERE EXISTS (SELECT 1 FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL)").bind(voteMatch[2], voter, new Date().toISOString(), voteMatch[2], context.organizationId, context.projectId).run();
         const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM feedback_votes WHERE feedback_id = ?").bind(voteMatch[2]).first<{ count: number }>();
@@ -143,6 +224,8 @@ export default {
       if (uploadMatch && request.method === "POST") {
         const context = await projectFromRequest(request, env, url, rid);
         if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, uploadMatch[1], rid);
+        if (scopeError) return scopeError;
         const body = await jsonBody(request);
         const contentType = typeof body.contentType === "string" ? body.contentType : "application/octet-stream";
         const size = Number(body.size ?? 0);
@@ -169,6 +252,8 @@ export default {
       if (followUpMatch && request.method === "POST") {
         const context = await projectFromRequest(request, env, url, rid);
         if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, followUpMatch[1], rid);
+        if (scopeError) return scopeError;
         const body = await jsonBody(request);
         if (typeof body.feedbackId !== "string" || typeof body.email !== "string") return error("VALIDATION_ERROR", "feedbackId ve email gereklidir", rid, 400);
         const token = randomToken("follow");
@@ -176,6 +261,17 @@ export default {
         await env.DB.prepare("INSERT OR IGNORE INTO feedback_watchers (feedback_id, email, created_at) VALUES (?, ?, ?)").bind(body.feedbackId, body.email.toLowerCase(), new Date().toISOString()).run();
         if (env.EVENTS) await env.EVENTS.send({ type: "follow-up.requested", token, email: body.email, feedbackId: body.feedbackId, projectId: context.projectId, eventId: id() });
         return jsonResponse({ accepted: true }, { status: 202, headers: cors });
+      }
+      const dashboardListMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/feedback$/);
+      if (dashboardListMatch && request.method === "GET") {
+        const context = await projectFromRequest(request, env, url, rid);
+        if (context instanceof Response) return context;
+        const scopeError = projectMatchesPath(context, dashboardListMatch[1], rid);
+        if (scopeError) return scopeError;
+        const authError = await requireServerKey(request, env, context, rid);
+        if (authError) return authError;
+        const result = await Effect.runPromise(listFeedback(repo, context, url.searchParams.get("cursor") ?? undefined));
+        return jsonResponse(result, { headers: cors });
       }
       const statusMatch = path.match(/^\/api\/v1\/dashboard\/feedback\/([^/]+)\/status$/);
       if (statusMatch && request.method === "POST") {
@@ -188,9 +284,28 @@ export default {
         const result = await Effect.runPromise(changeFeedbackStatus(repo, context, statusMatch[1], body.status));
         return result ? jsonResponse(result, { headers: cors }) : error("FEEDBACK_NOT_FOUND", "Feedback bulunamadı", rid, 404);
       }
+      if (env.ASSETS) {
+        if (path === "/dashboard" || path === "/dashboard/") return env.ASSETS.fetch(new Request(new URL("/dashboard.html", request.url), request));
+        return env.ASSETS.fetch(request);
+      }
       return error("NOT_FOUND", "Endpoint bulunamadı", rid, 404);
     } catch (cause) {
       return error("INTERNAL_ERROR", "Beklenmeyen bir hata oluştu", rid, 500, String(env.ENVIRONMENT) === "development" ? String(cause) : undefined);
+    }
+  },
+  async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    for (const message of batch.messages) {
+      const event = message.body as { type?: string; eventId?: string; feedbackId?: string; projectId?: string };
+      if (event.eventId) {
+        const seen = await env.DB.prepare("SELECT event_id FROM processed_events WHERE event_id = ?").bind(event.eventId).first();
+        if (seen) { message.ack(); continue; }
+      }
+      if (event.type === "feedback.created" && event.feedbackId && event.projectId) {
+        await env.DB.prepare("INSERT INTO moderation_events (id, organization_id, project_id, feedback_id, kind, outcome, metadata_json, created_at) SELECT ?, organization_id, project_id, id, 'automated', 'pending', ?, ? FROM feedback_items WHERE id = ? AND project_id = ?")
+          .bind(id(), "{}", new Date().toISOString(), event.feedbackId, event.projectId).run();
+      }
+      if (event.eventId) await env.DB.prepare("INSERT OR IGNORE INTO processed_events (event_id, event_type, processed_at) VALUES (?, ?, ?)").bind(event.eventId, event.type ?? "unknown", new Date().toISOString()).run();
+      message.ack();
     }
   },
 };

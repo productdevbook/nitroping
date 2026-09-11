@@ -2,80 +2,96 @@ openapi: 3.1.0
 info:
   title: NitroPing API
   version: 0.1.0
-  description: Kullanıcı geri bildirimi toplama ve yönetim API'si.
+  description: Tenant-isolated feedback collection API.
 servers:
-  - url: https://api.nitroping.com/api/v1
+  - url: https://nitroping.dev/api/v1
+security: []
 paths:
   /projects/{projectId}/feedback:
+    parameters: [{ $ref: '#/components/parameters/ProjectId' }]
+    get:
+      summary: List feedback
+      parameters: [{ $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/Cursor' }]
+      responses: { '200': { $ref: '#/components/responses/FeedbackList' }, '401': { $ref: '#/components/responses/Error' } }
     post:
-      operationId: createFeedback
-      parameters: [{ $ref: '#/components/parameters/ProjectId' }]
-      requestBody:
-        required: true
-        content: { application/json: { schema: { $ref: '#/components/schemas/CreateFeedbackInput' } } }
-      responses:
-        '201': { description: Oluşturuldu, content: { application/json: { schema: { $ref: '#/components/schemas/Feedback' } } } }
-        '400': { $ref: '#/components/responses/ApiError' }
-    get:
-      operationId: listFeedback
-      parameters:
-        - { $ref: '#/components/parameters/ProjectId' }
-        - { in: query, name: cursor, schema: { type: string } }
-      responses:
-        '200': { description: Liste, content: { application/json: { schema: { $ref: '#/components/schemas/FeedbackPage' } } } }
+      summary: Create feedback anonymously
+      parameters: [{ $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateFeedback' } } } }
+      responses: { '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Feedback' } } } }, '400': { $ref: '#/components/responses/Error' }, '429': { $ref: '#/components/responses/Error' } }
   /projects/{projectId}/feedback/{feedbackId}:
+    parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/FeedbackId' }]
     get:
-      operationId: getFeedback
-      parameters:
-        - { $ref: '#/components/parameters/ProjectId' }
-        - { $ref: '#/components/parameters/FeedbackId' }
-      responses:
-        '200': { description: Feedback, content: { application/json: { schema: { $ref: '#/components/schemas/Feedback' } } } }
-        '404': { $ref: '#/components/responses/ApiError' }
+      summary: Get feedback
+      parameters: [{ $ref: '#/components/parameters/ProjectKey' }]
+      responses: { '200': { description: Feedback, content: { application/json: { schema: { $ref: '#/components/schemas/Feedback' } } } }, '404': { $ref: '#/components/responses/Error' } }
+  /projects/{projectId}/feedback/{feedbackId}/comments:
+    post:
+      summary: Add a public comment
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [body], properties: { body: { type: string, minLength: 1, maxLength: 10000 } } } } } }
+      responses: { '201': { description: Created }, '404': { $ref: '#/components/responses/Error' } }
+  /projects/{projectId}/feedback/{feedbackId}/vote:
+    post:
+      summary: Vote for feedback
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }]
+      responses: { '200': { description: Vote count } }
+  /projects/{projectId}/public/categories:
+    get:
+      summary: List public categories
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }]
+      responses: { '200': { description: Categories } }
+  /projects/{projectId}/public/roadmap:
+    get:
+      summary: List public roadmap items
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }]
+      responses: { '200': { description: Roadmap } }
+  /projects/{projectId}/public/changelog:
+    get:
+      summary: List published changelog items
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }]
+      responses: { '200': { description: Changelog } }
+  /projects/{projectId}/uploads/initiate:
+    post:
+      summary: Initiate a private attachment upload
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/ProjectKey' }]
+      responses: { '201': { description: Upload token }, '413': { $ref: '#/components/responses/Error' } }
 components:
   parameters:
-    ProjectId: { in: path, name: projectId, required: true, schema: { type: string } }
-    FeedbackId: { in: path, name: feedbackId, required: true, schema: { type: string, format: uuid } }
-  responses:
-    ApiError: { description: API hatası, content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+    ProjectId: { name: projectId, in: path, required: true, schema: { type: string } }
+    FeedbackId: { name: feedbackId, in: path, required: true, schema: { type: string, format: uuid } }
+    ProjectKey: { name: X-NitroPing-Project-Key, in: header, required: true, schema: { type: string } }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 128 } }
+    Cursor: { name: cursor, in: query, required: false, schema: { type: string } }
   schemas:
-    CreateFeedbackInput:
+    CreateFeedback:
       type: object
       required: [type, title, body]
       properties:
         type: { type: string, enum: [complaint, bug, suggestion, feature_request] }
         title: { type: string, minLength: 3, maxLength: 160 }
         body: { type: string, minLength: 3, maxLength: 20000 }
-        priority: { type: string, enum: [low, normal, high, urgent], default: normal }
+        priority: { type: string, enum: [low, normal, high, urgent] }
         email: { type: string, format: email }
         platform: { type: string, enum: [web, ios, android, other] }
-        metadata: { type: object, additionalProperties: true }
+        appVersion: { type: string }
+        osVersion: { type: string }
+        locale: { type: string }
+        metadata: { type: object, additionalProperties: { oneOf: [{ type: string }, { type: number }, { type: boolean }] } }
     Feedback:
       allOf:
-        - $ref: '#/components/schemas/CreateFeedbackInput'
+        - $ref: '#/components/schemas/CreateFeedback'
         - type: object
-          required: [id, organizationId, projectId, status, createdAt, updatedAt]
+          required: [id, projectId, status, createdAt, updatedAt]
           properties:
             id: { type: string, format: uuid }
-            organizationId: { type: string }
             projectId: { type: string }
             status: { type: string, enum: [new, triaged, planned, in_progress, resolved, closed, spam] }
             createdAt: { type: string, format: date-time }
             updatedAt: { type: string, format: date-time }
-    FeedbackPage:
-      type: object
-      required: [items]
-      properties:
-        items: { type: array, items: { $ref: '#/components/schemas/Feedback' } }
-        nextCursor: { type: string }
-    ApiError:
-      type: object
-      required: [error]
-      properties:
-        error:
-          type: object
-          required: [code, message, requestId]
-          properties:
-            code: { type: string }
-            message: { type: string }
-            requestId: { type: string }
+  responses:
+    Error:
+      description: Standard API error
+      content: { application/json: { schema: { type: object, required: [error], properties: { error: { type: object, required: [code, message, requestId], properties: { code: { type: string }, message: { type: string }, requestId: { type: string }, details: {} } } } } } }
+    FeedbackList:
+      description: Paginated feedback
+      content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/Feedback' } }, nextCursor: { type: string } } } } }
