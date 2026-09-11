@@ -10,6 +10,8 @@ type FeedbackDetail = { feedback: Feedback; comments: Array<{ id: string; body: 
 type Analytics = { total: number; statuses: Array<{ status: string; count: number }>; platforms: Array<{ platform: string; count: number }>; types: Array<{ type: string; count: number }> };
 type Usage = { plan: string; period: string; feedbackCount: number; feedbackLimit: number; attachmentBytes: number };
 type Settings = { theme: Record<string, unknown>; allowedMetadata: string[]; retentionDays: number; origins: string[] };
+type Organization = { id: string; name: string; slug: string; role: string };
+type Project = { id: string; organizationId: string; name: string; slug: string; publicKey: string };
 
 const apiBase = "/api/v1";
 const statuses: FeedbackStatus[] = ["new", "triaged", "planned", "in_progress", "resolved", "closed", "spam"];
@@ -23,7 +25,7 @@ async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
   if (projectKey) requestHeaders.set("x-nitroping-project-key", projectKey);
   if (serverKey) requestHeaders.set("x-nitroping-server-key", serverKey);
   if (init.body && !requestHeaders.has("content-type")) requestHeaders.set("content-type", "application/json");
-  const response = await fetch(`${apiBase}${path}`, { ...init, headers: requestHeaders });
+  const response = await fetch(`${apiBase}${path}`, { ...init, credentials: "include", headers: requestHeaders });
   const data = await response.json().catch(() => ({})) as T & { error?: { message?: string } };
   if (!response.ok) throw new Error(data.error?.message ?? `Request failed (${response.status})`);
   return data;
@@ -31,9 +33,13 @@ async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
 
 function App() {
   const [view, setView] = useState<View>("inbox");
-  const [projectId, setProjectId] = useState(() => localStorage.getItem("np.project") ?? "demo-project");
-  const [publicKey, setPublicKey] = useState(() => localStorage.getItem("np.public") ?? "pk_demo");
+  const [projectId, setProjectId] = useState(() => localStorage.getItem("np.project") ?? "");
+  const [publicKey, setPublicKey] = useState(() => localStorage.getItem("np.public") ?? "");
   const [serverKey, setServerKey] = useState("");
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [workspaceReady, setWorkspaceReady] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [selected, setSelected] = useState<FeedbackDetail | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -46,7 +52,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null);
 
-  const credentials = { projectKey: publicKey, serverKey };
+  const credentials = { projectKey: publicKey || undefined, serverKey: serverKey || undefined };
   const filteredFeedback = useMemo(() => feedback.filter((item) => (filter === "all" || item.status === filter) && `${item.title} ${item.body} ${item.type}`.toLowerCase().includes(query.toLowerCase())), [feedback, filter, query]);
 
   const loadInbox = async () => {
@@ -62,6 +68,42 @@ function App() {
     finally { setLoading(false); }
   };
 
+  const loadWorkspace = async () => {
+    try {
+      const [organizationResult, projectResult] = await Promise.all([
+        api<{ items: Organization[] }>("/dashboard/organizations"),
+        api<{ items: Project[] }>("/dashboard/projects"),
+      ]);
+      setOrganizations(organizationResult.items);
+      setProjects(projectResult.items);
+      const selectedProject = projectResult.items.find((item) => item.id === projectId) ?? projectResult.items[0];
+      if (selectedProject) {
+        setProjectId(selectedProject.id);
+        setPublicKey(selectedProject.publicKey);
+        localStorage.setItem("np.project", selectedProject.id);
+        localStorage.setItem("np.public", selectedProject.publicKey);
+      }
+      setWorkspaceReady(true);
+    } catch (error) {
+      setNotice({ text: error instanceof Error ? error.message : "Unable to load your workspace", error: true });
+      setWorkspaceReady(true);
+    }
+  };
+
+  const createWorkspace = async (organizationName: string, projectName: string) => {
+    setSetupLoading(true);
+    try {
+      const organization = organizations[0] ?? await api<Organization>("/dashboard/organizations", { method: "POST", body: JSON.stringify({ name: organizationName }) });
+      if (!organizations.length) setOrganizations([organization]);
+      const project = await api<Project & { serverKey?: string }>(`/dashboard/organizations/${organization.id}/projects`, { method: "POST", body: JSON.stringify({ name: projectName }) });
+      setProjects([project]);
+      setProjectId(project.id); setPublicKey(project.publicKey);
+      localStorage.setItem("np.project", project.id); localStorage.setItem("np.public", project.publicKey);
+      setNotice({ text: "Your workspace is ready" });
+    } catch (error) { setNotice({ text: error instanceof Error ? error.message : "Workspace setup failed", error: true }); }
+    finally { setSetupLoading(false); }
+  };
+
   const loadView = async (nextView: View) => {
     setView(nextView);
     try {
@@ -71,7 +113,8 @@ function App() {
     } catch (error) { setNotice({ text: error instanceof Error ? error.message : "Unable to load view", error: true }); }
   };
 
-  useEffect(() => { if (serverKey) void loadInbox(); }, [serverKey, projectId]);
+  useEffect(() => { void loadWorkspace(); }, []);
+  useEffect(() => { if (workspaceReady && projectId) void loadInbox(); }, [workspaceReady, projectId]);
 
   const openFeedback = async (item: Feedback) => {
     try { setSelected(await api<FeedbackDetail>(`/dashboard/feedback/${item.id}?projectId=${projectId}`, credentials)); }
@@ -89,10 +132,13 @@ function App() {
 
   const saveWorkspace = () => { localStorage.setItem("np.project", projectId); localStorage.setItem("np.public", publicKey); void loadInbox(); };
 
+  if (!workspaceReady) return <div className="setup-shell"><div className="setup-card"><span className="brand-mark">N</span><h1>Loading your workspace</h1><p>Connecting to NitroPing securely…</p><div className="loader" /></div></div>;
+  if (!projectId) return <WorkspaceSetup organizations={organizations} loading={setupLoading} onCreate={createWorkspace} />;
+
   return <div className="app-shell">
     <aside className="sidebar">
       <div className="brand"><span className="brand-mark">N</span><span>Nitro<strong>Ping</strong></span></div>
-      <div className="workspace-switcher"><span className="workspace-icon">A</span><div><small>Workspace</small><strong>Acme Studio</strong></div><span className="chevron">⌄</span></div>
+      <div className="workspace-switcher"><span className="workspace-icon">{(organizations[0]?.name ?? "N")[0]}</span><div><small>Workspace</small><strong>{organizations[0]?.name ?? "NitroPing"}</strong></div><span className="chevron">⌄</span></div>
       <nav className="nav" aria-label="Main navigation">
         <p className="nav-label">Workspace</p>
         <NavItem active={view === "inbox"} icon="◈" label="Inbox" count={feedback.filter((item) => item.status === "new").length} onClick={() => loadView("inbox")} />
@@ -106,7 +152,7 @@ function App() {
       <div className="sidebar-bottom"><div className="plan-card"><div className="plan-row"><span>Free plan</span><span>{usage ? `${usage.feedbackCount}/${usage.feedbackLimit}` : "—"}</span></div><div className="progress"><span style={{ width: `${Math.min(100, ((usage?.feedbackCount ?? 0) / (usage?.feedbackLimit || 1)) * 100)}%` }} /></div><button onClick={() => setNotice({ text: "Billing upgrade flow is coming next." })}>Upgrade plan <span>→</span></button></div><div className="user-row"><span className="avatar">{initials("Alex Morgan")}</span><div><strong>Alex Morgan</strong><small>Owner</small></div><span className="more">•••</span></div></div>
     </aside>
     <main className="main-content">
-      <header className="topbar"><div className="mobile-brand"><span className="brand-mark">N</span>Nitro<strong>Ping</strong></div><div className="breadcrumbs"><span>Acme Studio</span><b>/</b><strong>{view === "inbox" ? "Inbox" : view[0].toUpperCase() + view.slice(1)}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search">⌕</button><button className="icon-button" aria-label="Notifications">♢<i /></button><button className="help-button">? <span>Help center</span></button></div></header>
+      <header className="topbar"><div className="mobile-brand"><span className="brand-mark">N</span>Nitro<strong>Ping</strong></div><div className="breadcrumbs"><span>{organizations[0]?.name ?? "Workspace"}</span><b>/</b><strong>{view === "inbox" ? "Inbox" : view[0].toUpperCase() + view.slice(1)}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search">⌕</button><button className="icon-button" aria-label="Notifications">♢<i /></button><button className="help-button">? <span>Help center</span></button></div></header>
       <div className="content-wrap">
         {notice && <div className={`toast ${notice.error ? "toast-error" : ""}`} role="status">{notice.text}<button onClick={() => setNotice(null)}>×</button></div>}
         {view === "inbox" && <Inbox feedback={filteredFeedback} allFeedback={feedback} selected={selected} filter={filter} query={query} loading={loading} onFilter={setFilter} onQuery={setQuery} onOpen={openFeedback} onStatus={changeStatus} onClose={() => setSelected(null)} onReply={async (id, body, internal) => { await api(`/dashboard/feedback/${id}/reply?projectId=${projectId}`, { ...credentials, method: "POST", body: JSON.stringify({ body, internal }) }); const item = feedback.find((entry) => entry.id === id); if (item) await openFeedback(item); setNotice({ text: internal ? "Internal note added" : "Reply sent" }); }} onRefresh={loadInbox} />}
@@ -117,6 +163,13 @@ function App() {
       </div>
     </main>
   </div>;
+}
+
+function WorkspaceSetup({ organizations, loading, onCreate }: { organizations: Organization[]; loading: boolean; onCreate: (organizationName: string, projectName: string) => Promise<void> }) {
+  const [organizationName, setOrganizationName] = useState(organizations[0]?.name ?? "");
+  const [projectName, setProjectName] = useState("");
+  const existingOrganization = organizations[0];
+  return <div className="setup-shell"><div className="setup-card setup-card-wide"><div className="setup-brand"><span className="brand-mark">N</span><span>Nitro<strong>Ping</strong></span></div><p className="eyebrow">First steps</p><h1>{existingOrganization ? "Create your first project" : "Create your workspace"}</h1><p className="setup-copy">Connect your product to NitroPing and start turning user feedback into product momentum.</p><div className="setup-fields">{!existingOrganization && <label className="form-field"><span>Organization name</span><input value={organizationName} onChange={(event) => setOrganizationName(event.target.value)} placeholder="Acme Studio" autoFocus /></label>}<label className="form-field"><span>Project name</span><input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="Web app" autoFocus={Boolean(existingOrganization)} /></label></div><button className="primary-button setup-submit" disabled={loading || !projectName.trim() || (!existingOrganization && !organizationName.trim())} onClick={() => onCreate(organizationName.trim(), projectName.trim())}>{loading ? "Setting up…" : "Create project →"}</button><small className="setup-note">You can add more projects and team members later.</small></div></div>;
 }
 
 function NavItem({ active, icon, label, count, onClick }: { active: boolean; icon: string; label: string; count?: number; onClick: () => void }) { return <button className={`nav-item ${active ? "active" : ""}`} onClick={onClick}><span className="nav-icon">{icon}</span>{label}{count ? <span className="nav-count">{count}</span> : null}</button>; }

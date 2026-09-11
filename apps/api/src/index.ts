@@ -138,6 +138,19 @@ const requireProjectServer = async (request: Request, env: Env, url: URL, projec
   return authError ?? context;
 };
 
+const requireDashboardProject = async (request: Request, env: Env, url: URL, projectId: string, rid: string): Promise<TenantContext | Response> => {
+  if (!String(env.ACCESS_TEAM_DOMAIN ?? "") || !String(env.ACCESS_AUDIENCE ?? "")) return requireProjectServer(request, env, url, projectId, rid);
+  const identity = await requireIdentity(request, env, rid);
+  if (identity instanceof Response) return identity;
+  const userId = await userForIdentity(env, identity);
+  const project = await env.DB.prepare(`SELECT p.id, p.organization_id AS organizationId
+    FROM projects p
+    JOIN organization_members m ON m.organization_id = p.organization_id
+    WHERE p.id = ? AND m.user_id = ? AND p.deleted_at IS NULL`)
+    .bind(projectId, userId).first<{ id: string; organizationId: string }>();
+  return project ? { organizationId: project.organizationId, projectId: project.id } : error("PROJECT_NOT_FOUND", "The project was not found for this account", rid, 404);
+};
+
 const requireDashboardAccess = async (request: Request, env: Env, rid: string): Promise<Response | null> => {
   if (!String(env.ACCESS_TEAM_DOMAIN ?? "") || !String(env.ACCESS_AUDIENCE ?? "")) return null;
   return await verifyAccessJwt(request, env) ? null : error("DASHBOARD_AUTH_REQUIRED", "Cloudflare Access authentication is required", rid, 401);
@@ -326,7 +339,7 @@ export default {
       if (webhookMatch && ["GET", "POST", "DELETE"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, webhookMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, webhookMatch[1], rid);
         if (context instanceof Response) return context;
         if (request.method === "GET") {
           const rows = await env.DB.prepare("SELECT id, url, events_json AS events, active, created_at AS createdAt FROM webhooks WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC").bind(context.organizationId, context.projectId).all<Record<string, unknown>>();
@@ -356,7 +369,7 @@ export default {
       if (settingsMatch && ["GET", "PATCH"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, settingsMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, settingsMatch[1], rid);
         if (context instanceof Response) return context;
         await env.DB.prepare("INSERT OR IGNORE INTO project_settings (project_id) VALUES (?)").bind(context.projectId).run();
         if (request.method === "GET") {
@@ -380,7 +393,7 @@ export default {
       if (usageMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, usageMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, usageMatch[1], rid);
         if (context instanceof Response) return context;
         const usage = await currentUsage(env, context.organizationId);
         return jsonResponse({ ...usage, projectId: context.projectId }, { headers: cors });
@@ -389,7 +402,7 @@ export default {
       if (analyticsMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, analyticsMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, analyticsMatch[1], rid);
         if (context instanceof Response) return context;
         const [total, statuses, platforms, types] = await Promise.all([
           env.DB.prepare("SELECT COUNT(*) AS count FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(context.organizationId, context.projectId).first<{ count: number }>(),
@@ -403,7 +416,7 @@ export default {
       if (apiKeysMatch && ["GET", "POST", "DELETE"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, apiKeysMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, apiKeysMatch[1], rid);
         if (context instanceof Response) return context;
         if (request.method === "GET") {
           const rows = await env.DB.prepare("SELECT id, kind, label, key_prefix AS keyPrefix, created_at AS createdAt, revoked_at AS revokedAt FROM project_api_keys WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC").bind(context.organizationId, context.projectId).all();
@@ -440,7 +453,7 @@ export default {
       if (categoriesDashboardMatch && ["GET", "POST"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, categoriesDashboardMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, categoriesDashboardMatch[1], rid);
         if (context instanceof Response) return context;
         if (request.method === "GET") {
           const rows = await env.DB.prepare("SELECT id, name, slug, created_at AS createdAt FROM categories WHERE organization_id = ? AND project_id = ? ORDER BY name ASC").bind(context.organizationId, context.projectId).all();
@@ -459,7 +472,7 @@ export default {
       if (roadmapDashboardMatch && ["GET", "POST"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, roadmapDashboardMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, roadmapDashboardMatch[1], rid);
         if (context instanceof Response) return context;
         if (request.method === "GET") {
           const rows = await env.DB.prepare("SELECT id, title, body, status, created_at AS createdAt, updated_at AS updatedAt FROM roadmap_items WHERE organization_id = ? AND project_id = ? ORDER BY updated_at DESC").bind(context.organizationId, context.projectId).all();
@@ -479,10 +492,10 @@ export default {
       if (roadmapUpdateMatch && request.method === "PATCH") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await projectFromRequest(request, env, url, rid);
+        const projectId = url.searchParams.get("projectId");
+        if (!projectId) return error("PROJECT_ID_REQUIRED", "projectId is required", rid, 400);
+        const context = await requireDashboardProject(request, env, url, projectId, rid);
         if (context instanceof Response) return context;
-        const authError = await requireServerKey(request, env, context, rid);
-        if (authError) return authError;
         const body = await jsonBody(request);
         const current = await env.DB.prepare("SELECT title, body, status FROM roadmap_items WHERE id = ? AND organization_id = ? AND project_id = ?").bind(roadmapUpdateMatch[1], context.organizationId, context.projectId).first<{ title: string; body: string; status: string }>();
         if (!current) return error("ROADMAP_NOT_FOUND", "Roadmap item was not found", rid, 404);
@@ -498,7 +511,7 @@ export default {
       if (changelogDashboardMatch && ["GET", "POST"].includes(request.method)) {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, changelogDashboardMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, changelogDashboardMatch[1], rid);
         if (context instanceof Response) return context;
         if (request.method === "GET") {
           const rows = await env.DB.prepare("SELECT id, title, body, published_at AS publishedAt, created_at AS createdAt, updated_at AS updatedAt FROM changelog_items WHERE organization_id = ? AND project_id = ? ORDER BY created_at DESC").bind(context.organizationId, context.projectId).all();
@@ -661,7 +674,7 @@ export default {
       if (attachmentDownloadMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, attachmentDownloadMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, attachmentDownloadMatch[1], rid);
         if (context instanceof Response) return context;
         const attachment = await env.DB.prepare("SELECT object_key AS objectKey, content_type AS contentType FROM attachments WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(attachmentDownloadMatch[2], context.organizationId, context.projectId).first<{ objectKey: string; contentType: string }>();
         if (!attachment) return error("ATTACHMENT_NOT_FOUND", "Attachment was not found", rid, 404);
@@ -696,7 +709,7 @@ export default {
       if (exportMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, exportMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, exportMatch[1], rid);
         if (context instanceof Response) return context;
         const feedback = await env.DB.prepare("SELECT * FROM feedback_items WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at ASC").bind(context.organizationId, context.projectId).all();
         const comments = await env.DB.prepare("SELECT * FROM feedback_comments WHERE organization_id = ? AND project_id = ? AND deleted_at IS NULL ORDER BY created_at ASC").bind(context.organizationId, context.projectId).all();
@@ -708,7 +721,7 @@ export default {
       if (anonymizeMatch && request.method === "POST") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await requireProjectServer(request, env, url, anonymizeMatch[1], rid);
+        const context = await requireDashboardProject(request, env, url, anonymizeMatch[1], rid);
         if (context instanceof Response) return context;
         const now = new Date().toISOString();
         const result = await env.DB.prepare("UPDATE feedback_items SET email = NULL, body = '[anonymized]', metadata_json = '{}', updated_at = ?, deleted_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(now, now, anonymizeMatch[2], context.organizationId, context.projectId).run();
@@ -726,12 +739,8 @@ export default {
       if (dashboardListMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await projectFromRequest(request, env, url, rid);
+        const context = await requireDashboardProject(request, env, url, dashboardListMatch[1], rid);
         if (context instanceof Response) return context;
-        const scopeError = projectMatchesPath(context, dashboardListMatch[1], rid);
-        if (scopeError) return scopeError;
-        const authError = await requireServerKey(request, env, context, rid);
-        if (authError) return authError;
         const result = await Effect.runPromise(listFeedback(repo, context, url.searchParams.get("cursor") ?? undefined));
         return jsonResponse(result, { headers: cors });
       }
@@ -739,10 +748,10 @@ export default {
       if (dashboardFeedbackMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await projectFromRequest(request, env, url, rid);
+        const projectId = url.searchParams.get("projectId");
+        if (!projectId) return error("PROJECT_ID_REQUIRED", "projectId is required", rid, 400);
+        const context = await requireDashboardProject(request, env, url, projectId, rid);
         if (context instanceof Response) return context;
-        const authError = await requireServerKey(request, env, context, rid);
-        if (authError) return authError;
         const feedback = await env.DB.prepare("SELECT * FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(dashboardFeedbackMatch[1], context.organizationId, context.projectId).first<Record<string, unknown>>();
         if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
         const [comments, history] = await Promise.all([
@@ -755,10 +764,10 @@ export default {
       if (replyMatch && request.method === "POST") {
         const accessError = await requireDashboardAccess(request, env, rid);
         if (accessError) return accessError;
-        const context = await projectFromRequest(request, env, url, rid);
+        const projectId = url.searchParams.get("projectId");
+        if (!projectId) return error("PROJECT_ID_REQUIRED", "projectId is required", rid, 400);
+        const context = await requireDashboardProject(request, env, url, projectId, rid);
         if (context instanceof Response) return context;
-        const authError = await requireServerKey(request, env, context, rid);
-        if (authError) return authError;
         const body = await jsonBody(request);
         if (typeof body.body !== "string" || body.body.trim().length < 1 || body.body.length > 10_000) return error("VALIDATION_ERROR", "Reply must be 1-10000 characters", rid, 400);
         const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(replyMatch[1], context.organizationId, context.projectId).first();
@@ -781,10 +790,10 @@ export default {
         if (accessError) return accessError;
         const body = await request.json() as { status?: FeedbackStatus };
         if (!body.status || !feedbackStatuses.includes(body.status)) return error("VALIDATION_ERROR", "Invalid status", rid, 400);
-        const context = await projectFromRequest(request, env, url, rid);
+        const projectId = url.searchParams.get("projectId");
+        if (!projectId) return error("PROJECT_ID_REQUIRED", "projectId is required", rid, 400);
+        const context = await requireDashboardProject(request, env, url, projectId, rid);
         if (context instanceof Response) return context;
-        const authError = await requireServerKey(request, env, context, rid);
-        if (authError) return authError;
         const result = await Effect.runPromise(changeFeedbackStatus(repo, context, statusMatch[1], body.status));
         if (!result) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
         recordMetric(env, "feedback.updated", context.organizationId, context.projectId, [1]);

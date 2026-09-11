@@ -18,5 +18,5 @@
     "consumers": [{ "queue": "nitroping-events", "max_batch_size": 10, "max_batch_timeout": 5, "max_retries": 5 }]
   },
   "triggers": { "crons": ["0 3 * * *"] },
-  "vars": { "ENVIRONMENT": "production", "ACCESS_TEAM_DOMAIN": "", "ACCESS_AUDIENCE": "", "EMAIL_FROM": "notifications@nitroping.dev", "PUBLIC_APP_URL": "https://nitroping.dev" }
+  "vars": { "ENVIRONMENT": "production", "ACCESS_TEAM_DOMAIN": "https://anadolu-ekspresi.cloudflareaccess.com", "ACCESS_AUDIENCE": "b269ef7350f4c5fae49034984f7dcca401553077292e0ca118f985a01e32358c", "EMAIL_FROM": "notifications@nitroping.dev", "PUBLIC_APP_URL": "https://nitroping.dev" }
 }
