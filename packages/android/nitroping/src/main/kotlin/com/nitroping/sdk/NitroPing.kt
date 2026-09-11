@@ -17,6 +17,7 @@ data class Feedback(
     val title: String,
     val body: String,
     val priority: String? = null,
+    val categoryId: String? = null,
     val email: String? = null,
     val appVersion: String? = null,
     val metadata: Map<String, String> = emptyMap(),
@@ -132,7 +133,7 @@ class NitroPingClient(
     private fun feedbackJson(feedback: Feedback): String {
         val type = feedback.type.name.lowercase(Locale.ROOT)
         val metadata = feedback.metadata.entries.joinToString(",") { "${quote(it.key)}:${quote(it.value)}" }
-        return """{"type":${quote(type)},"title":${quote(feedback.title)},"body":${quote(feedback.body)},"priority":${feedback.priority?.let(::quote) ?: "null"},"email":${feedback.email?.let(::quote) ?: "null"},"platform":"android","appVersion":${feedback.appVersion?.let(::quote) ?: "null"},"osVersion":${quote(Build.VERSION.RELEASE)},"locale":${quote(Locale.getDefault().toLanguageTag())},"metadata":{$metadata}}"""
+        return """{"type":${quote(type)},"title":${quote(feedback.title)},"body":${quote(feedback.body)},"priority":${feedback.priority?.let(::quote) ?: "null"},"categoryId":${feedback.categoryId?.let(::quote) ?: "null"},"email":${feedback.email?.let(::quote) ?: "null"},"platform":"android","appVersion":${feedback.appVersion?.let(::quote) ?: "null"},"osVersion":${quote(Build.VERSION.RELEASE)},"locale":${quote(Locale.getDefault().toLanguageTag())},"metadata":{$metadata}}"""
     }
 
     private data class PendingSubmission(val body: String, val idempotencyKey: String)

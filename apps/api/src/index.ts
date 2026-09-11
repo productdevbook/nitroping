@@ -20,6 +20,14 @@ const requestId = (request: Request) => request.headers.get("x-request-id") ?? `
 const error = (code: string, message: string, requestId: string, status: number, details?: unknown) =>
   jsonResponse({ error: { code, message, requestId, details } }, { status, headers: { "x-request-id": requestId } });
 const htmlEscape = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
+const isPrivateWebhookHost = (hostname: string): boolean => {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "").replace(/\.$/, "");
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host === "::1") return true;
+  if (/^(127|10)\./.test(host) || /^192\.168\./.test(host) || /^169\.254\./.test(host)) return true;
+  const private172 = host.match(/^172\.(\d{1,3})\./);
+  if (private172 && Number(private172[1]) >= 16 && Number(private172[1]) <= 31) return true;
+  return /^(fc|fd|fe80:)/i.test(host);
+};
 
 const validateInput = (body: unknown): CreateFeedbackInput | string => {
   if (!body || typeof body !== "object") return "Body must be valid JSON";
@@ -561,7 +569,7 @@ export default {
         const body = await jsonBody(request);
         let webhookUrl: URL;
         try { webhookUrl = new URL(typeof body.url === "string" ? body.url : ""); } catch { return error("VALIDATION_ERROR", "Webhook URL is invalid", rid, 400); }
-        if (webhookUrl.protocol !== "https:") return error("VALIDATION_ERROR", "Webhook URL must use HTTPS", rid, 400);
+        if (webhookUrl.protocol !== "https:" || webhookUrl.username || webhookUrl.password || isPrivateWebhookHost(webhookUrl.hostname)) return error("VALIDATION_ERROR", "Webhook URL must use a public HTTPS host", rid, 400);
         const events = Array.isArray(body.events) ? body.events.filter((event): event is WebhookEventType => typeof event === "string" && webhookEventTypes.includes(event as WebhookEventType)) : [...webhookEventTypes];
         if (!events.length) return error("VALIDATION_ERROR", "At least one webhook event is required", rid, 400);
         const webhookId = id();

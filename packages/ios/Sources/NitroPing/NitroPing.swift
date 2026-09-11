@@ -23,6 +23,7 @@ public struct NitroPingFeedback: Codable, Sendable {
     public let title: String
     public let body: String
     public let priority: String?
+    public let categoryId: String?
     public let email: String?
     public let platform: NitroPingPlatform
     public let appVersion: String?
@@ -30,8 +31,8 @@ public struct NitroPingFeedback: Codable, Sendable {
     public let locale: String?
     public let metadata: [String: String]?
 
-    public init(type: NitroPingFeedbackType, title: String, body: String, priority: String? = nil, email: String? = nil, appVersion: String? = nil, metadata: [String: String]? = nil) {
-        self.type = type; self.title = title; self.body = body; self.priority = priority; self.email = email
+    public init(type: NitroPingFeedbackType, title: String, body: String, priority: String? = nil, categoryId: String? = nil, email: String? = nil, appVersion: String? = nil, metadata: [String: String]? = nil) {
+        self.type = type; self.title = title; self.body = body; self.priority = priority; self.categoryId = categoryId; self.email = email
         self.platform = .ios; self.appVersion = appVersion; self.osVersion = ProcessInfo.processInfo.operatingSystemVersionString
         self.locale = Locale.current.identifier; self.metadata = metadata
     }
