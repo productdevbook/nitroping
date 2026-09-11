@@ -562,22 +562,40 @@ export default {
         const size = Number(body.size ?? 0);
         if (!Number.isFinite(size) || size < 1 || size > 10 * 1024 * 1024) return error("ATTACHMENT_TOO_LARGE", "Attachments cannot exceed 10 MB", rid, 413);
         if (!/^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/plain)$/.test(contentType)) return error("UNSUPPORTED_ATTACHMENT", "Unsupported attachment type", rid, 415);
+        const feedbackId = typeof body.feedbackId === "string" ? body.feedbackId : "unlinked";
+        if (feedbackId !== "unlinked") {
+          const feedback = await env.DB.prepare("SELECT id FROM feedback_items WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(feedbackId, context.organizationId, context.projectId).first();
+          if (!feedback) return error("FEEDBACK_NOT_FOUND", "Feedback was not found", rid, 404);
+        }
         const token = randomToken("upl");
         const attachmentId = id();
-        const objectKey = `${context.organizationId}/${context.projectId}/${attachmentId}`;
-        await env.CACHE.put(`upload:${token}`, JSON.stringify({ attachmentId, objectKey, ...context, contentType, size }), { expirationTtl: 900 });
+        const objectKey = `${context.organizationId}/${context.projectId}/${feedbackId}/${attachmentId}`;
+        await env.CACHE.put(`upload:${token}`, JSON.stringify({ attachmentId, objectKey, feedbackId, ...context, contentType, size }), { expirationTtl: 900 });
         return jsonResponse({ uploadToken: token, attachmentId, uploadUrl: `/api/v1/uploads/${token}`, expiresIn: 900 }, { status: 201, headers: cors });
       }
       const uploadPut = path.match(/^\/api\/v1\/uploads\/([^/]+)$/);
       if (uploadPut && request.method === "PUT") {
-        const raw = await env.CACHE.get(`upload:${uploadPut[1]}`, "json") as { attachmentId: string; objectKey: string; organizationId: string; projectId: string; contentType: string; size: number } | null;
+        const raw = await env.CACHE.get(`upload:${uploadPut[1]}`, "json") as { attachmentId: string; objectKey: string; feedbackId: string; organizationId: string; projectId: string; contentType: string; size: number } | null;
         if (!raw) return error("UPLOAD_EXPIRED", "The upload token is invalid or expired", rid, 404);
         const body = request.body;
         if (!body) return error("EMPTY_UPLOAD", "The upload body is empty", rid, 400);
         await env.ATTACHMENTS.put(raw.objectKey, body, { httpMetadata: { contentType: raw.contentType } });
-        await env.DB.prepare("INSERT INTO attachments (id, organization_id, project_id, feedback_id, object_key, content_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(raw.attachmentId, raw.organizationId, raw.projectId, "unlinked", raw.objectKey, raw.contentType, raw.size, new Date().toISOString()).run();
+        await env.DB.prepare("INSERT INTO attachments (id, organization_id, project_id, feedback_id, object_key, content_type, size_bytes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(raw.attachmentId, raw.organizationId, raw.projectId, raw.feedbackId, raw.objectKey, raw.contentType, raw.size, new Date().toISOString()).run();
+        await env.DB.prepare("INSERT INTO usage_counters (organization_id, period, feedback_count, attachment_bytes) VALUES (?, ?, 0, ?) ON CONFLICT(organization_id, period) DO UPDATE SET attachment_bytes = attachment_bytes + excluded.attachment_bytes").bind(raw.organizationId, new Date().toISOString().slice(0, 7), raw.size).run();
         await env.CACHE.delete(`upload:${uploadPut[1]}`);
         return jsonResponse({ attachmentId: raw.attachmentId, objectKey: raw.objectKey }, { status: 201, headers: cors });
+      }
+      const attachmentDownloadMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/attachments\/([^/]+)$/);
+      if (attachmentDownloadMatch && request.method === "GET") {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireProjectServer(request, env, url, attachmentDownloadMatch[1], rid);
+        if (context instanceof Response) return context;
+        const attachment = await env.DB.prepare("SELECT object_key AS objectKey, content_type AS contentType FROM attachments WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(attachmentDownloadMatch[2], context.organizationId, context.projectId).first<{ objectKey: string; contentType: string }>();
+        if (!attachment) return error("ATTACHMENT_NOT_FOUND", "Attachment was not found", rid, 404);
+        const object = await env.ATTACHMENTS.get(attachment.objectKey);
+        if (!object) return error("ATTACHMENT_NOT_FOUND", "Attachment was not found", rid, 404);
+        return new Response(object.body, { headers: { ...cors, "content-type": attachment.contentType, "cache-control": "private, max-age=60" } });
       }
       const followUpMatch = path.match(/^\/api\/v1\/projects\/([^/]+)\/follow-up\/request$/);
       if (followUpMatch && request.method === "POST") {
