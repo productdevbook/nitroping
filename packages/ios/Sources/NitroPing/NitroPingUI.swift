@@ -96,7 +96,7 @@ private struct NitroPingCustomFieldView: View {
             } else if field.type == "boolean" {
                 Toggle(field.label, isOn: boolBinding)
             } else {
-                TextField(field.label, text: textBinding).keyboardType(field.type == "number" ? .decimalPad : .default)
+                TextField(field.label, text: textBinding)
             }
         }
     }
