@@ -500,31 +500,33 @@ export default {
         const rows = await env.DB.prepare("SELECT p.id, p.organization_id AS organizationId, p.name, p.slug, p.public_key AS publicKey, p.created_at AS createdAt FROM projects p JOIN organization_members m ON m.organization_id = p.organization_id WHERE m.user_id = ? AND p.deleted_at IS NULL ORDER BY p.created_at ASC").bind(userId).all();
         return jsonResponse({ items: rows.results ?? [] }, { headers: cors });
       }
-      const projectCreateMatch = path.match(/^\/api\/v1\/dashboard\/organizations\/([^/]+)\/projects$/);
+      const projectCreateMatch = path.match(/^\/api\/v1\/dashboard\/(?:organizations\/([^/]+)\/)?projects$/);
       if (projectCreateMatch && request.method === "POST") {
         const identity = await requireIdentity(request, env, rid);
         if (identity instanceof Response) return identity;
         const userId = await userForIdentity(env, identity);
-        if (!(await requireOrganizationMember(env, projectCreateMatch[1], userId))) return error("FORBIDDEN", "Organization administrator access is required", rid, 403);
         const body = await jsonBody(request);
+        const organizationId = projectCreateMatch[1] ?? (typeof body.organizationId === "string" ? body.organizationId : "");
+        if (!organizationId) return error("ORGANIZATION_ID_REQUIRED", "organizationId is required", rid, 400);
+        if (!(await requireOrganizationMember(env, organizationId, userId))) return error("FORBIDDEN", "Organization administrator access is required", rid, 403);
         const name = typeof body.name === "string" ? body.name.trim() : "";
         const slug = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
         if (name.length < 2 || name.length > 120 || !/^[a-z0-9][a-z0-9-]{1,62}$/.test(slug)) return error("VALIDATION_ERROR", "Project name or slug is invalid", rid, 400);
-        const subscription = await env.DB.prepare("SELECT plan FROM subscriptions WHERE organization_id = ?").bind(projectCreateMatch[1]).first<{ plan: string }>();
+        const subscription = await env.DB.prepare("SELECT plan FROM subscriptions WHERE organization_id = ?").bind(organizationId).first<{ plan: string }>();
         const plan = subscription?.plan ?? "free";
-        const projectCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM projects WHERE organization_id = ? AND deleted_at IS NULL").bind(projectCreateMatch[1]).first<{ count: number }>();
+        const projectCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM projects WHERE organization_id = ? AND deleted_at IS NULL").bind(organizationId).first<{ count: number }>();
         const projectLimit = planProjectLimits[plan] ?? planProjectLimits.free;
         if (Number(projectCount?.count ?? 0) >= projectLimit) return error("PLAN_LIMIT_REACHED", `The ${plan} plan has reached its project limit`, rid, 402, { limit: projectLimit, resource: "projects" });
         const projectId = id(); const publicKey = randomToken("pk_live"); const serverKey = randomToken("sk_live"); const now = new Date().toISOString();
         try {
           await env.DB.batch([
-            env.DB.prepare("INSERT INTO projects (id, organization_id, name, slug, public_key, server_key_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(projectId, projectCreateMatch[1], name, slug, publicKey, await sha256(serverKey), now, now),
-            env.DB.prepare("INSERT INTO project_settings (project_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?)").bind(projectId, projectCreateMatch[1], now, now),
-            env.DB.prepare("INSERT INTO project_api_keys (id, organization_id, project_id, kind, label, key_prefix, key_hash, created_at) VALUES (?, ?, ?, 'public', 'default public key', ?, ?, ?), (?, ?, ?, 'server', 'default server key', ?, ?, ?)").bind(id(), projectCreateMatch[1], projectId, publicKey.slice(0, 12), await sha256(publicKey), now, id(), projectCreateMatch[1], projectId, serverKey.slice(0, 12), await sha256(serverKey), now),
+            env.DB.prepare("INSERT INTO projects (id, organization_id, name, slug, public_key, server_key_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(projectId, organizationId, name, slug, publicKey, await sha256(serverKey), now, now),
+            env.DB.prepare("INSERT INTO project_settings (project_id, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?)").bind(projectId, organizationId, now, now),
+            env.DB.prepare("INSERT INTO project_api_keys (id, organization_id, project_id, kind, label, key_prefix, key_hash, created_at) VALUES (?, ?, ?, 'public', 'default public key', ?, ?, ?), (?, ?, ?, 'server', 'default server key', ?, ?, ?)").bind(id(), organizationId, projectId, publicKey.slice(0, 12), await sha256(publicKey), now, id(), organizationId, projectId, serverKey.slice(0, 12), await sha256(serverKey), now),
           ]);
         } catch { return error("PROJECT_SLUG_TAKEN", "Project slug is already in use", rid, 409); }
-        await writeOrganizationAudit(env, projectCreateMatch[1], "project.created", "project", projectId, userId);
-        return jsonResponse({ id: projectId, organizationId: projectCreateMatch[1], name, slug, publicKey, serverKey, createdAt: now }, { status: 201, headers: cors });
+        await writeOrganizationAudit(env, organizationId, "project.created", "project", projectId, userId);
+        return jsonResponse({ id: projectId, organizationId, name, slug, publicKey, serverKey, createdAt: now }, { status: 201, headers: cors });
       }
       const projectUpdateMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)$/);
       if (projectUpdateMatch && request.method === "PATCH") {

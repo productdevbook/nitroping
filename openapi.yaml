@@ -51,6 +51,10 @@ paths:
     get:
       summary: List projects for the Access identity
       responses: { '200': { description: Projects }, '503': { $ref: '#/components/responses/Error' } }
+    post:
+      summary: Create a project in an organization
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [organizationId, name], properties: { organizationId: { type: string }, name: { type: string }, slug: { type: string } } } } } }
+      responses: { '201': { description: Created with one-time public/server keys }, '403': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}:
     patch:
       summary: Update a project name or slug
