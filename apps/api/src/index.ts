@@ -735,6 +735,36 @@ export default {
         for (const attachment of attachments.results ?? []) ctx.waitUntil(env.EVENTS.send({ type: "attachment.delete", objectKey: attachment.objectKey, projectId: context.projectId, eventId: id() }));
         return jsonResponse({ anonymized: true, feedbackId: anonymizeMatch[2] }, { headers: cors });
       }
+      const moderationMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/moderation$/);
+      if (moderationMatch && ["GET", "POST"].includes(request.method)) {
+        const accessError = await requireDashboardAccess(request, env, rid);
+        if (accessError) return accessError;
+        const context = await requireDashboardProject(request, env, url, moderationMatch[1], rid);
+        if (context instanceof Response) return context;
+        const identity = String(env.ACCESS_TEAM_DOMAIN ?? "") && String(env.ACCESS_AUDIENCE ?? "") ? await verifyAccessJwt(request, env) : null;
+        const actorUserId = identity?.email ? await userForIdentity(env, identity) : null;
+        if (request.method === "GET") {
+          const rows = await env.DB.prepare(`SELECT m.id, m.feedback_id AS feedbackId, m.kind, m.outcome, m.metadata_json AS metadata, m.created_at AS createdAt,
+            f.type, f.status, f.priority, f.title, f.body, f.email, f.platform, f.created_at AS feedbackCreatedAt
+            FROM moderation_events m JOIN feedback_items f ON f.id = m.feedback_id AND f.organization_id = m.organization_id AND f.project_id = m.project_id
+            WHERE m.organization_id = ? AND m.project_id = ? AND m.outcome = 'pending' AND f.deleted_at IS NULL ORDER BY m.created_at ASC LIMIT 100`)
+            .bind(context.organizationId, context.projectId).all<Record<string, unknown>>();
+          return jsonResponse({ items: (rows.results ?? []).map((row) => ({ ...row, metadata: JSON.parse(String(row.metadata ?? "{}")) })) }, { headers: cors });
+        }
+        const body = await jsonBody(request);
+        const feedbackId = typeof body.feedbackId === "string" ? body.feedbackId : "";
+        const outcome = body.outcome === "approved" || body.outcome === "rejected" || body.outcome === "spam" ? body.outcome : "";
+        if (!feedbackId || !outcome) return error("VALIDATION_ERROR", "feedbackId and a valid outcome are required", rid, 400);
+        const event = await env.DB.prepare("SELECT id FROM moderation_events WHERE feedback_id = ? AND organization_id = ? AND project_id = ? AND outcome = 'pending' ORDER BY created_at ASC LIMIT 1").bind(feedbackId, context.organizationId, context.projectId).first<{ id: string }>();
+        if (!event) return error("MODERATION_EVENT_NOT_FOUND", "The moderation event was not found", rid, 404);
+        const now = new Date().toISOString();
+        await env.DB.batch([
+          env.DB.prepare("UPDATE moderation_events SET outcome = ?, metadata_json = ? WHERE id = ? AND organization_id = ? AND project_id = ?").bind(outcome, JSON.stringify({ actorUserId, requestId: rid }), event.id, context.organizationId, context.projectId),
+          ...(outcome === "spam" ? [env.DB.prepare("UPDATE feedback_items SET status = 'spam', updated_at = ? WHERE id = ? AND organization_id = ? AND project_id = ? AND deleted_at IS NULL").bind(now, feedbackId, context.organizationId, context.projectId)] : []),
+          env.DB.prepare("INSERT INTO audit_logs (id, organization_id, project_id, actor_user_id, action, entity_type, entity_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, 'feedback', ?, ?, ?)").bind(id(), context.organizationId, context.projectId, actorUserId, `moderation.${outcome}`, feedbackId, JSON.stringify({ requestId: rid }), now),
+        ]);
+        return jsonResponse({ feedbackId, outcome }, { headers: cors });
+      }
       const dashboardListMatch = path.match(/^\/api\/v1\/dashboard\/projects\/([^/]+)\/feedback$/);
       if (dashboardListMatch && request.method === "GET") {
         const accessError = await requireDashboardAccess(request, env, rid);

@@ -109,6 +109,16 @@ paths:
       summary: Anonymize feedback and public comments
       parameters: [{ $ref: '#/components/parameters/ProjectId' }, { $ref: '#/components/parameters/FeedbackId' }, { $ref: '#/components/parameters/ProjectKey' }, { $ref: '#/components/parameters/ServerKey' }]
       responses: { '200': { description: Anonymized }, '404': { $ref: '#/components/responses/Error' } }
+  /dashboard/projects/{projectId}/moderation:
+    get:
+      summary: List pending moderation events for a project
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }]
+      responses: { '200': { description: Pending moderation events }, '401': { $ref: '#/components/responses/Error' } }
+    post:
+      summary: Decide a pending moderation event
+      parameters: [{ $ref: '#/components/parameters/ProjectId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [feedbackId, outcome], properties: { feedbackId: { type: string }, outcome: { type: string, enum: [approved, rejected, spam] } } } } } }
+      responses: { '200': { description: Moderation decision }, '404': { $ref: '#/components/responses/Error' } }
   /dashboard/projects/{projectId}/settings:
     get:
       summary: Read project widget, metadata, origin, and retention settings
