@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 type CheckStatus = "ready" | "optional" | "missing" | "invalid";
 
 export type PreflightCheck = {
@@ -6,7 +8,15 @@ export type PreflightCheck = {
   message: string;
 };
 
-const configured = (name: string): boolean => Boolean(process.env[name]?.trim());
+const wranglerConfig = readFileSync("apps/api/wrangler.jsonc", "utf8");
+const deploymentVar = (name: string): string | undefined => {
+  const match = wranglerConfig.match(
+    new RegExp(`"${name}"\\s*:\\s*"([^"\\r\\n]*)"`),
+  );
+  return match?.[1]?.trim() || undefined;
+};
+const configured = (name: string): boolean =>
+  Boolean(process.env[name]?.trim() || deploymentVar(name));
 
 const pairCheck = (
   name: string,
