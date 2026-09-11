@@ -19,6 +19,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run preflight
       - run: bun run check
+      - run: bun run db:migrate:check
       - run: bun run --filter @nitroping/contracts build
       - run: bun run test
       - run: bun run build

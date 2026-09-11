@@ -11,6 +11,7 @@
     "dev:web": "bun run --filter @nitroping/web dev",
     "dev:dashboard": "bun run --filter @nitroping/dashboard dev",
     "preflight": "bun scripts/preflight.ts",
+    "db:migrate:check": "bun run --cwd apps/api wrangler d1 migrations apply nitroping --local --config wrangler.jsonc",
     "codegen:native": "bun scripts/generate-native-models.ts",
     "codegen:native:check": "bun scripts/generate-native-models.ts --check",
     "infra:plan": "bun run --cwd infra plan",
