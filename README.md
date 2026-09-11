@@ -81,6 +81,13 @@ bun run build
 - `migrations`: D1 schema migrations
 - `openapi.yaml`: public API contract
 
+## Privacy and security documents
+
+- [`docs/privacy.md`](docs/privacy.md): hosted-service privacy notice
+- [`docs/dpa.md`](docs/dpa.md): deployment-aligned DPA template
+- [`docs/subprocessors.md`](docs/subprocessors.md): default hosted-service subprocessors
+- [`SECURITY.md`](SECURITY.md): vulnerability reporting and security boundaries
+
 Public package artifacts are built into `dist/` for `@nitroping/contracts` and `@nitroping/web`. A `v*` tag (or the manually dispatched `Release SDKs` workflow) publishes the npm packages and, when Maven credentials are configured, the Android artifact to GitHub Packages. Configure `NPM_TOKEN`, `MAVEN_USERNAME`, and `MAVEN_TOKEN` as GitHub Actions secrets before creating a release.
 
 ## Notes
