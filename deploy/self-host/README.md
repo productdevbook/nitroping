@@ -55,7 +55,7 @@ Stripe and Turnstile are optional. Omit those secrets when the corresponding fea
 
 ## Access and DNS
 
-Protect `/dashboard.html` and dashboard API routes with Cloudflare Access, or provide an equivalent verified identity adapter. Access JWT signatures must be verified before organization membership is evaluated. Point your chosen hostname at the Worker route and set `PUBLIC_APP_URL` to the public origin.
+Protect `/dashboard.html` and dashboard API routes with Cloudflare Access, or configure the built-in OIDC adapter by setting `OIDC_ISSUER_URL` and `OIDC_AUDIENCE` in the Worker variables. OIDC clients must send a signed `Authorization: Bearer <JWT>` token. The adapter performs issuer discovery, JWKS signature verification, issuer/audience/expiry checks, and requires an email claim before organization membership is evaluated. Point your chosen hostname at the Worker route and set `PUBLIC_APP_URL` to the public origin.
 
 For a custom domain, configure Cloudflare for SaaS separately and provide the custom-hostname variables and secret described in the main README. A self-hosted installation should use its own zone and fallback origin.
 
