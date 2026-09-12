@@ -1,0 +1,17 @@
+/*
+ * Dashboard entry stylesheet.
+ *
+ * Tailwind's Preflight is deliberately left out while the legacy styles.css is
+ * still driving the screens: its base reset would change every hand-written
+ * rule at once. The full `@import "tailwindcss"` lands in the cleanup commit,
+ * together with the deletion of styles.css.
+ */
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "tw-animate-css";
+@import "./tokens.css";
+
+@source "../**/*.tsx";
+
+@custom-variant dark (&:is(.dark *));

@@ -26,6 +26,7 @@ import type {
   WidgetCustomField,
   WidgetCustomFieldType,
 } from "@nitroping/contracts";
+import "./styles/app.css";
 import "./styles.css";
 
 type View =
