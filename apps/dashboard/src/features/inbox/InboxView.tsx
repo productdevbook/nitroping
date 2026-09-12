@@ -1,7 +1,14 @@
 import { RefreshCwIcon, SearchIcon } from "lucide-react";
 import type { Feedback, FeedbackStatus } from "@nitroping/contracts";
 import { Button } from "@/components/ui/button";
+import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -12,8 +19,8 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import { PageHeader } from "@/components/PageHeader";
-import { FeedbackDetail } from "@/features/inbox/FeedbackDetail";
-import { FeedbackTable } from "@/features/inbox/FeedbackTable";
+import { FeedbackList } from "@/features/inbox/FeedbackList";
+import { FeedbackThread } from "@/features/inbox/FeedbackThread";
 import { statusLabel } from "@/lib/format";
 import { priorities } from "@/lib/status";
 import type { FeedbackController } from "@/hooks/useFeedback";
@@ -70,7 +77,7 @@ export function InboxView({
         <Metric label="Resolved" value={count("resolved")} detail="Closed the loop" />
       </dl>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <Tabs value={feedback.filter} onValueChange={(value) => feedback.setFilter(value)}>
           <TabsList>
             {tabs.map(([value, label]) => (
@@ -144,43 +151,57 @@ export function InboxView({
         </div>
       </div>
 
-      <div className="grid min-h-[480px] grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(340px,38%)]">
-        <div className="min-w-0 lg:border-r lg:border-border">
-          <FeedbackTable
-            items={feedback.filtered}
-            selectedId={feedback.selected?.feedback.id ?? null}
-            loading={feedback.loading}
-            onOpen={(item: Feedback) => void feedback.open(item)}
-            onStatus={(item, status: FeedbackStatus) =>
-              void feedback.changeStatus(item, status)
-            }
-          />
-        </div>
-        {feedback.selected ? (
-          <FeedbackDetail
-            detail={feedback.selected}
-            members={members}
-            onClose={() => feedback.setSelected(null)}
-            onAssign={feedback.assign}
-            onMerge={feedback.merge}
-            onReply={feedback.reply}
-            onStatus={(status) =>
-              feedback.selected && void feedback.changeStatus(feedback.selected.feedback, status)
-            }
-            onPriority={(priority: FeedbackPriority) =>
-              feedback.selected &&
-              void feedback.changePriority(feedback.selected.feedback, priority)
-            }
-          />
-        ) : (
-          <div className="hidden flex-col items-start justify-center gap-1 px-6 lg:flex">
-            <p className="text-sm font-medium">Select feedback to inspect it</p>
-            <p className="text-sm text-muted-foreground">
-              Replies, notes, status history, and context will appear here.
-            </p>
-          </div>
-        )}
-      </div>
+      {/* Two panes the reader can size themselves; the list keeps its own
+          scroll so the thread stays put while triaging. */}
+      <ResizablePanelGroup
+        orientation="horizontal"
+        className="mt-3 h-[calc(100svh-19rem)] min-h-[26rem] overflow-hidden rounded-lg border border-border"
+      >
+        <ResizablePanel defaultSize="55" minSize="30">
+          <ScrollArea className="h-full">
+            <FeedbackList
+              items={feedback.filtered}
+              selectedId={feedback.selected?.feedback.id ?? null}
+              loading={feedback.loading}
+              onOpen={(item: Feedback) => void feedback.open(item)}
+              onStatus={(item, status: FeedbackStatus) =>
+                void feedback.changeStatus(item, status)
+              }
+              onPriority={(item, priority: FeedbackPriority) =>
+                void feedback.changePriority(item, priority)
+              }
+            />
+          </ScrollArea>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel defaultSize="45" minSize="25">
+          {feedback.selected ? (
+            <FeedbackThread
+              detail={feedback.selected}
+              members={members}
+              onClose={() => feedback.setSelected(null)}
+              onAssign={feedback.assign}
+              onMerge={feedback.merge}
+              onReply={feedback.reply}
+              onStatus={(status) =>
+                feedback.selected &&
+                void feedback.changeStatus(feedback.selected.feedback, status)
+              }
+              onPriority={(priority: FeedbackPriority) =>
+                feedback.selected &&
+                void feedback.changePriority(feedback.selected.feedback, priority)
+              }
+            />
+          ) : (
+            <Empty className="h-full">
+              <EmptyTitle>Select feedback to inspect it</EmptyTitle>
+              <EmptyDescription>
+                Replies, notes, status history, and context appear here as a thread.
+              </EmptyDescription>
+            </Empty>
+          )}
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </>
   );
 }
@@ -197,7 +218,7 @@ function Metric({
   return (
     <div className="px-3 py-3 first:pl-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 text-lg font-medium tabular-nums">{value}</dd>
+      <dd className="mt-0.5 text-2xl font-semibold tabular-nums">{value}</dd>
       <p className="text-xs text-muted-foreground">{detail}</p>
     </div>
   );
