@@ -140,69 +140,98 @@ export const loadNitroPingConfig = async (
 };
 
 const css = `
-.np-root{all:initial;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--np-text,#1d1b20);--np-surface:var(--np-background,#fff);--np-line:color-mix(in oklab,var(--np-text,#1d1b20) 12%,transparent);--np-soft:color-mix(in oklab,var(--np-text,#1d1b20) 5%,transparent);--np-ring:color-mix(in oklab,var(--np-primary,#7c3aed) 35%,transparent)}
+.np-root{all:initial;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;color:var(--np-text,#1c1c1e);-webkit-font-smoothing:antialiased;
+--np-surface:var(--np-background,#fff);
+--np-fill:color-mix(in oklab,var(--np-text,#1c1c1e) 6%,transparent);
+--np-fill-strong:color-mix(in oklab,var(--np-text,#1c1c1e) 10%,transparent);
+--np-line:color-mix(in oklab,var(--np-text,#1c1c1e) 10%,transparent);
+--np-ring:color-mix(in oklab,var(--np-primary,#7c3aed) 22%,transparent)}
 .np-root *{box-sizing:border-box}
-.np-button{position:fixed;right:20px;bottom:20px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:12px 18px;background:var(--np-primary,#7c3aed);color:#fff;font:600 14px/1 inherit;cursor:pointer;box-shadow:0 10px 30px color-mix(in oklab,var(--np-primary,#7c3aed) 35%,transparent);transition:transform .18s cubic-bezier(.2,.8,.3,1),box-shadow .18s ease}
-.np-button:hover{transform:translateY(-2px);box-shadow:0 16px 38px color-mix(in oklab,var(--np-primary,#7c3aed) 42%,transparent)}
-.np-button:active{transform:translateY(0)}
-.np-button:focus-visible{outline:3px solid var(--np-ring);outline-offset:3px}
+.np-button{position:fixed;right:20px;bottom:20px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:13px 18px;background:var(--np-primary,#7c3aed);color:#fff;font:590 15px/1 inherit;letter-spacing:-.01em;cursor:pointer;box-shadow:0 8px 24px color-mix(in oklab,var(--np-primary,#7c3aed) 34%,transparent);transition:transform .22s cubic-bezier(.32,.72,0,1),box-shadow .22s ease,opacity .2s ease}
+.np-button:hover{transform:translateY(-2px)}
+.np-button:active{transform:scale(.97)}
+.np-button:focus-visible{outline:4px solid var(--np-ring);outline-offset:2px}
 .np-button svg{width:18px;height:18px}
+.np-root:has(.np-backdrop) .np-button{opacity:0;transform:translateY(10px);pointer-events:none}
 .np-inline{width:100%}
-.np-backdrop{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:20px;background:color-mix(in oklab,#0b0a0f 55%,transparent);backdrop-filter:blur(3px);animation:np-fade .18s ease both}
+.np-backdrop{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:24px;background:color-mix(in oklab,#0a0a0c 45%,transparent);backdrop-filter:saturate(180%) blur(20px);animation:np-fade .24s ease both}
 .np-backdrop.np-side{place-items:stretch;padding:0}
-.np-card{width:min(100%,520px);max-height:calc(100vh - 40px);overflow:auto;background:var(--np-surface);border-radius:20px;padding:22px;box-shadow:0 24px 70px #0000002e,0 2px 8px #0000001a;animation:np-pop .22s cubic-bezier(.2,.9,.3,1) both}
-.np-side .np-card{width:min(100%,460px);height:100%;max-height:none;margin-left:auto;border-radius:24px 0 0 24px;animation:np-slide .24s cubic-bezier(.2,.9,.3,1) both}
+.np-card{position:relative;width:min(100%,440px);max-height:calc(100vh - 48px);overflow:auto;background:var(--np-surface);border-radius:28px;padding:28px 24px 24px;box-shadow:0 32px 80px #00000038,0 1px 0 #ffffff1a inset;animation:np-pop .34s cubic-bezier(.32,.72,0,1) both}
+.np-side .np-card{width:min(100%,420px);height:100%;max-height:none;margin-left:auto;border-radius:28px 0 0 28px;animation:np-slide .34s cubic-bezier(.32,.72,0,1) both}
 .np-inline .np-card{box-shadow:none;border:1px solid var(--np-line);animation:none}
-.np-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+.np-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:22px}
 .np-titles{flex:1;min-width:0}
-.np-logo{display:block;margin-bottom:10px;border-radius:10px;object-fit:contain}
-.np-card h2{margin:0;font:600 18px/1.3 inherit;letter-spacing:-.01em}
-.np-card p{margin:4px 0 0;color:var(--np-muted,#6b6773);font:400 13px/1.5 inherit}
-.np-close{display:grid;place-items:center;width:30px;height:30px;flex:none;border:0;border-radius:999px;background:var(--np-soft);color:var(--np-muted,#6b6773);cursor:pointer;transition:background .15s ease,color .15s ease}
-.np-close:hover{background:color-mix(in oklab,var(--np-text,#1d1b20) 10%,transparent);color:var(--np-text,#1d1b20)}
-.np-close svg{width:14px;height:14px}
-.np-grid{display:grid;gap:14px}
-.np-label{display:grid;gap:6px;font:600 12px/1.2 inherit;color:var(--np-muted,#6b6773)}
-.np-input,.np-select{width:100%;font:400 14px/1.4 inherit;padding:11px 12px;border:1px solid var(--np-line);border-radius:12px;background:var(--np-surface);color:var(--np-text,#1d1b20);transition:border-color .15s ease,box-shadow .15s ease}
-.np-input::placeholder{color:color-mix(in oklab,var(--np-muted,#6b6773) 70%,transparent)}
-.np-input:focus,.np-select:focus{outline:0;border-color:var(--np-primary,#7c3aed);box-shadow:0 0 0 4px var(--np-ring)}
-.np-textarea{min-height:112px;resize:vertical}
-.np-file{padding:9px 12px;font-size:13px;color:var(--np-muted,#6b6773)}
-.np-turnstile{margin-top:14px}
-.np-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
-.np-secondary,.np-submit{border:0;border-radius:12px;padding:11px 16px;font:600 14px/1 inherit;cursor:pointer;transition:transform .15s ease,background .15s ease,opacity .15s ease}
-.np-secondary{background:var(--np-soft);color:var(--np-text,#1d1b20)}
-.np-secondary:hover{background:color-mix(in oklab,var(--np-text,#1d1b20) 10%,transparent)}
-.np-submit{background:var(--np-primary,#7c3aed);color:#fff;box-shadow:0 6px 18px color-mix(in oklab,var(--np-primary,#7c3aed) 30%,transparent)}
-.np-submit:hover{transform:translateY(-1px)}
-.np-submit:disabled{opacity:.6;cursor:progress;transform:none}
-.np-secondary:focus-visible,.np-submit:focus-visible,.np-close:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
-.np-error{margin-top:14px;padding:10px 12px;border-radius:12px;background:color-mix(in oklab,#e5484d 12%,transparent);color:#b42318;font:500 13px/1.4 inherit}
-.np-success{display:grid;justify-items:center;gap:10px;padding:26px 16px;text-align:center;font:400 14px/1.5 inherit;color:var(--np-text,#1d1b20);animation:np-pop .24s cubic-bezier(.2,.9,.3,1) both}
-.np-success-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:999px;background:color-mix(in oklab,var(--np-primary,#7c3aed) 14%,transparent);color:var(--np-primary,#7c3aed)}
-.np-success-icon svg{width:22px;height:22px}
-.np-success strong{font:600 16px/1.3 inherit}
-.np-success small{color:var(--np-muted,#6b6773);font-size:11px}
+.np-logo{display:block;margin-bottom:12px;border-radius:12px;object-fit:contain}
+.np-card h2{margin:0;font:600 21px/1.25 inherit;letter-spacing:-.02em}
+.np-card p{margin:6px 0 0;color:var(--np-muted,#6e6e73);font:400 14px/1.45 inherit;letter-spacing:-.01em}
+.np-close{display:grid;place-items:center;width:30px;height:30px;flex:none;border:0;border-radius:999px;background:var(--np-fill);color:var(--np-muted,#6e6e73);cursor:pointer;transition:background .18s ease,transform .18s ease}
+.np-close:hover{background:var(--np-fill-strong)}
+.np-close:active{transform:scale(.92)}
+.np-close svg{width:13px;height:13px}
+.np-grid{display:grid;gap:18px}
+.np-field{display:grid;gap:8px}
+.np-field-label{font:590 13px/1.2 inherit;letter-spacing:-.01em;color:var(--np-muted,#6e6e73)}
+.np-input,.np-select{width:100%;min-height:46px;font:400 16px/1.4 inherit;letter-spacing:-.01em;padding:12px 14px;border:0;border-radius:14px;background:var(--np-fill);color:var(--np-text,#1c1c1e);appearance:none;transition:box-shadow .18s ease,background .18s ease}
+.np-select{background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 19px) 21px,calc(100% - 14px) 21px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:38px}
+.np-input::placeholder{color:color-mix(in oklab,var(--np-muted,#6e6e73) 65%,transparent)}
+.np-input:focus,.np-select:focus{outline:0;background:var(--np-surface);box-shadow:0 0 0 4px var(--np-ring),0 0 0 1px color-mix(in oklab,var(--np-primary,#7c3aed) 45%,transparent)}
+.np-textarea{min-height:120px;resize:vertical;line-height:1.5}
+.np-segment{display:flex;gap:2px;padding:3px;border-radius:14px;background:var(--np-fill)}
+.np-seg{position:relative;flex:1}
+.np-seg input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.np-seg span{display:grid;place-items:center;padding:9px 6px;border-radius:11px;font:510 13px/1.2 inherit;letter-spacing:-.01em;color:var(--np-muted,#6e6e73);text-align:center;transition:background .2s cubic-bezier(.32,.72,0,1),color .2s ease,box-shadow .2s ease}
+.np-seg input:checked+span{background:var(--np-surface);color:var(--np-text,#1c1c1e);font-weight:590;box-shadow:0 1px 3px #0000001f,0 0 0 .5px #00000014}
+.np-seg input:focus-visible+span{box-shadow:0 0 0 4px var(--np-ring)}
+.np-file-drop{display:flex;align-items:center;gap:10px;position:relative;min-height:46px;padding:12px 14px;border-radius:14px;background:var(--np-fill);color:var(--np-muted,#6e6e73);font:400 15px/1.2 inherit;cursor:pointer;transition:background .18s ease}
+.np-file-drop:hover{background:var(--np-fill-strong)}
+.np-file-drop svg{width:17px;height:17px;flex:none}
+.np-file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.np-file-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-field-inline{grid-template-columns:1fr auto;align-items:center}
+.np-switch{appearance:none;width:46px;height:28px;flex:none;position:relative;border:0;border-radius:999px;background:var(--np-fill-strong);cursor:pointer;transition:background .22s ease}
+.np-switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:999px;background:#fff;box-shadow:0 1px 3px #0000002e;transition:transform .24s cubic-bezier(.32,.72,0,1)}
+.np-switch:checked{background:var(--np-primary,#7c3aed)}
+.np-switch:checked::after{transform:translateX(18px)}
+.np-switch:focus-visible{outline:4px solid var(--np-ring);outline-offset:2px}
+.np-turnstile{margin-top:18px}
+.np-actions{display:grid;gap:8px;margin-top:24px}
+.np-submit{width:100%;min-height:50px;border:0;border-radius:16px;background:var(--np-primary,#7c3aed);color:#fff;font:590 16px/1 inherit;letter-spacing:-.01em;cursor:pointer;box-shadow:0 8px 20px color-mix(in oklab,var(--np-primary,#7c3aed) 28%,transparent);transition:transform .18s cubic-bezier(.32,.72,0,1),opacity .18s ease}
+.np-submit:active{transform:scale(.985)}
+.np-submit:disabled{opacity:.55;cursor:progress;transform:none}
+.np-secondary{width:100%;min-height:44px;border:0;border-radius:16px;background:transparent;color:var(--np-muted,#6e6e73);font:510 15px/1 inherit;cursor:pointer;transition:background .18s ease}
+.np-secondary:hover{background:var(--np-fill)}
+.np-secondary:focus-visible,.np-submit:focus-visible,.np-close:focus-visible{outline:4px solid var(--np-ring);outline-offset:2px}
+.np-error{margin-top:16px;padding:12px 14px;border-radius:14px;background:color-mix(in oklab,#ff3b30 10%,transparent);color:#c9372c;font:500 14px/1.4 inherit}
+.np-success{display:grid;justify-items:center;gap:12px;padding:34px 16px 26px;text-align:center;font:400 15px/1.5 inherit;letter-spacing:-.01em;color:var(--np-muted,#6e6e73)}
+.np-success-icon{display:grid;place-items:center;width:56px;height:56px;border-radius:999px;background:color-mix(in oklab,var(--np-primary,#7c3aed) 12%,transparent);color:var(--np-primary,#7c3aed);animation:np-check .5s cubic-bezier(.32,1.4,.4,1) both}
+.np-success-icon svg{width:27px;height:27px}
+.np-success strong{font:600 19px/1.3 inherit;letter-spacing:-.02em;color:var(--np-text,#1c1c1e)}
+.np-success small{margin-top:4px;font-size:12px;opacity:.75}
 @keyframes np-fade{from{opacity:0}to{opacity:1}}
-@keyframes np-pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
-@keyframes np-slide{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes np-pop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes np-slide{from{transform:translateX(32px);opacity:0}to{transform:none;opacity:1}}
 @keyframes np-sheet{from{transform:translateY(100%)}to{transform:none}}
-@media (max-width:520px){
+@keyframes np-check{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@media (max-width:540px){
 .np-backdrop{place-items:end stretch;padding:0}
-.np-card{width:100%;max-height:88vh;border-radius:22px 22px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));animation:np-sheet .26s cubic-bezier(.2,.9,.3,1) both}
-.np-side .np-card{width:100%;height:auto;margin:0;border-radius:22px 22px 0 0}
+.np-card{width:100%;max-height:90vh;border-radius:28px 28px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom));animation:np-sheet .38s cubic-bezier(.32,.72,0,1) both}
+.np-card::before{content:"";display:block;width:36px;height:5px;margin:-8px auto 16px;border-radius:999px;background:var(--np-fill-strong)}
+.np-side .np-card{width:100%;height:auto;margin:0;border-radius:28px 28px 0 0}
 .np-button{right:16px;bottom:16px}
-.np-actions{flex-direction:column-reverse}
-.np-secondary,.np-submit{width:100%;padding:13px 16px}
 }
 @media (prefers-color-scheme:dark){
-.np-root{color:var(--np-text,#f2f0f5);--np-surface:var(--np-background,#17161b);--np-line:color-mix(in oklab,#fff 14%,transparent);--np-soft:color-mix(in oklab,#fff 8%,transparent)}
-.np-card p,.np-label,.np-close,.np-success small{color:var(--np-muted,#a6a1ae)}
-.np-backdrop{background:color-mix(in oklab,#000 65%,transparent)}
+.np-root{color:var(--np-text,#f5f5f7);
+--np-surface:var(--np-background,#1c1c1e);
+--np-fill:color-mix(in oklab,#fff 10%,transparent);
+--np-fill-strong:color-mix(in oklab,#fff 16%,transparent);
+--np-line:color-mix(in oklab,#fff 14%,transparent)}
+.np-card p,.np-field-label,.np-close,.np-secondary,.np-success,.np-file-drop{color:var(--np-muted,#98989d)}
+.np-backdrop{background:color-mix(in oklab,#000 55%,transparent)}
+.np-seg input:checked+span{background:color-mix(in oklab,#fff 18%,transparent);box-shadow:none}
 }
 @media (prefers-reduced-motion:reduce){
-.np-backdrop,.np-card,.np-success{animation:none}
-.np-button,.np-submit{transition:none}
+.np-backdrop,.np-card,.np-success-icon{animation:none}
+.np-button,.np-submit,.np-seg span{transition:none}
 }
 `;
 
@@ -345,7 +374,7 @@ const buildForm = (
   ];
   const card = document.createElement("form");
   card.className = "np-card";
-  card.innerHTML = `<div class="np-header"><div class="np-titles"><h2></h2><p></p></div><button type="button" class="np-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="np-grid"></div>${options.turnstileSiteKey ? '<div class="np-turnstile" aria-live="polite"></div>' : ""}<div class="np-actions"><button type="button" class="np-secondary">Cancel</button><button class="np-submit">Submit</button></div>`;
+  card.innerHTML = `<div class="np-header"><div class="np-titles"><h2></h2><p></p></div><button type="button" class="np-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="np-grid"></div>${options.turnstileSiteKey ? '<div class="np-turnstile" aria-live="polite"></div>' : ""}<div class="np-actions"><button class="np-submit">Send feedback</button><button type="button" class="np-secondary">Cancel</button></div>`;
   (card.querySelector("h2") as HTMLElement).textContent =
     options.title ?? options.brandName ?? "Your feedback";
   (card.querySelector("p") as HTMLElement).textContent =
@@ -361,49 +390,93 @@ const buildForm = (
   }
   const grid = card.querySelector(".np-grid")!;
   const add = (html: string) => grid.insertAdjacentHTML("beforeend", html);
+  const field = (label: string, control: string) =>
+    `<label class="np-field"><span class="np-field-label">${label}</span>${control}</label>`;
   if (fields.includes("type"))
     add(
-      `<label class="np-label">Type<select class="np-select" name="type">${categories.map((value) => `<option value="${value}">${labelFor(value)}</option>`).join("")}</select></label>`,
+      `<div class="np-field"><span class="np-field-label">Type</span><div class="np-segment" role="radiogroup" aria-label="Type">${categories
+        .map(
+          (value, index) =>
+            `<label class="np-seg"><input type="radio" name="type" value="${escapeHtml(value)}"${index === 0 ? " checked" : ""} /><span>${labelFor(value)}</span></label>`,
+        )
+        .join("")}</div></div>`,
     );
   if (fields.includes("category") && options.categoryOptions?.length)
     add(
-      `<label class="np-label">Category<select class="np-select" name="categoryId"><option value="">Select a category</option>${options.categoryOptions.map((category) => `<option value="${escapeHtml(category.id)}">${labelFor(category.name)}</option>`).join("")}</select></label>`,
+      field(
+        "Category",
+        `<select class="np-select" name="categoryId"><option value="">Select a category</option>${options.categoryOptions
+          .map(
+            (category) =>
+              `<option value="${escapeHtml(category.id)}">${labelFor(category.name)}</option>`,
+          )
+          .join("")}</select>`,
+      ),
     );
   if (fields.includes("title"))
     add(
-      `<label class="np-label">Title<input class="np-input" name="title" required minlength="3" maxlength="160" /></label>`,
+      field(
+        "Title",
+        `<input class="np-input" name="title" required minlength="3" maxlength="160" placeholder="A short summary" />`,
+      ),
     );
   if (fields.includes("description"))
     add(
-      `<label class="np-label">Description<textarea class="np-input np-textarea" name="body" required minlength="3" maxlength="20000"></textarea></label>`,
+      field(
+        "Description",
+        `<textarea class="np-input np-textarea" name="body" required minlength="3" maxlength="20000" placeholder="What happened, and what did you expect?"></textarea>`,
+      ),
     );
   if (fields.includes("email"))
     add(
-      `<label class="np-label">Email (optional)<input class="np-input" type="email" name="email" /></label>`,
+      field(
+        "Email",
+        `<input class="np-input" type="email" name="email" placeholder="you@example.com (optional)" />`,
+      ),
     );
   if (fields.includes("attachment"))
     add(
-      `<label class="np-label">Attachment<input class="np-input np-file" type="file" name="attachment" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" /></label>`,
+      `<label class="np-field"><span class="np-field-label">Attachment</span><span class="np-file-drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.1 12.3 20a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.8 1.8 0 0 1-2.6-2.6l8.5-8.5"/></svg><span class="np-file-name">Choose a file</span><input type="file" name="attachment" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" /></span></label>`,
     );
-  for (const field of options.customFields ?? []) {
-    const required = field.required ? " required" : "";
-    if (field.type === "textarea")
+  for (const custom of options.customFields ?? []) {
+    const required = custom.required ? " required" : "";
+    if (custom.type === "textarea")
       add(
-        `<label class="np-label">${labelFor(field.label)}<textarea class="np-input np-textarea" name="custom_${escapeHtml(field.id)}" maxlength="2000"${required}></textarea></label>`,
+        field(
+          labelFor(custom.label),
+          `<textarea class="np-input np-textarea" name="custom_${escapeHtml(custom.id)}" maxlength="2000"${required}></textarea>`,
+        ),
       );
-    else if (field.type === "select")
+    else if (custom.type === "select")
       add(
-        `<label class="np-label">${labelFor(field.label)}<select class="np-select" name="custom_${escapeHtml(field.id)}"${required}><option value="">Select an option</option>${(field.options ?? []).map((option) => `<option value="${escapeHtml(option)}">${labelFor(option)}</option>`).join("")}</select></label>`,
+        field(
+          labelFor(custom.label),
+          `<select class="np-select" name="custom_${escapeHtml(custom.id)}"${required}><option value="">Select an option</option>${(custom.options ?? [])
+            .map(
+              (option) =>
+                `<option value="${escapeHtml(option)}">${labelFor(option)}</option>`,
+            )
+            .join("")}</select>`,
+        ),
       );
-    else if (field.type === "boolean")
+    else if (custom.type === "boolean")
       add(
-        `<label class="np-label"><span>${labelFor(field.label)}</span><input class="np-input" type="checkbox" name="custom_${escapeHtml(field.id)}" value="true"${required} /></label>`,
+        `<label class="np-field np-field-inline"><span class="np-field-label">${labelFor(custom.label)}</span><input class="np-switch" type="checkbox" name="custom_${escapeHtml(custom.id)}" value="true"${required} /></label>`,
       );
     else
       add(
-        `<label class="np-label">${labelFor(field.label)}<input class="np-input" type="${field.type === "number" ? "number" : "text"}" name="custom_${escapeHtml(field.id)}" maxlength="512"${required} /></label>`,
+        field(
+          labelFor(custom.label),
+          `<input class="np-input" type="${custom.type === "number" ? "number" : "text"}" name="custom_${escapeHtml(custom.id)}" maxlength="512"${required} />`,
+        ),
       );
   }
+  const fileInput = card.querySelector<HTMLInputElement>('input[type="file"]');
+  const fileName = card.querySelector<HTMLElement>(".np-file-name");
+  fileInput?.addEventListener("change", () => {
+    if (fileName)
+      fileName.textContent = fileInput.files?.[0]?.name ?? "Choose a file";
+  });
   let turnstileToken: string | undefined;
   if (options.turnstileSiteKey) {
     const container = card.querySelector<HTMLElement>(".np-turnstile");
