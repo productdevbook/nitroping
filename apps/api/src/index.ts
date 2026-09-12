@@ -6704,7 +6704,13 @@ export default {
         return jsonResponse(result, { headers: cors });
       }
       if (env.ASSETS) {
-        if (path === "/dashboard" || path === "/dashboard/")
+        /*
+         * The dashboard routes client-side, so every path under /dashboard is
+         * the same document. This is deliberately a prefix rather than a
+         * not-found fallback: an unknown path anywhere else still 404s, and
+         * /dashboard-assets keeps being served as assets.
+         */
+        if (path === "/dashboard" || path.startsWith("/dashboard/"))
           return env.ASSETS.fetch(
             new Request(new URL("/dashboard.html", request.url), request),
           );

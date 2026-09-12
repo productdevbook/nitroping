@@ -23,7 +23,7 @@ import { FeedbackList } from "@/features/inbox/FeedbackList";
 import { FeedbackThread } from "@/features/inbox/FeedbackThread";
 import { statusLabel } from "@/lib/format";
 import { priorities } from "@/lib/status";
-import type { FeedbackController } from "@/hooks/useFeedback";
+import type { FeedbackController } from "@/hooks/useFeedbackController";
 import type { FeedbackPriority, MemberItem } from "@/lib/types";
 
 const typeOptions: Array<[string, string]> = [

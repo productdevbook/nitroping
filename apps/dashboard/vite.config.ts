@@ -19,8 +19,30 @@ const cleanWorkerBuild = () => ({
   },
 });
 
+/*
+ * In production the Worker serves dashboard.html for every path under
+ * /dashboard so the router can own them. The dev server has three entry
+ * documents and no such rule, so it gets the same one here — otherwise a deep
+ * link only works once it is deployed.
+ */
+const clientRoutes = () => ({
+  name: "nitroping-client-routes",
+  configureServer(server: {
+    middlewares: {
+      use: (handler: (request: { url?: string }, response: unknown, next: () => void) => void) => void;
+    };
+  }) {
+    server.middlewares.use((request, _response, next) => {
+      const [path] = (request.url ?? "").split("?");
+      if (path === "/dashboard" || path?.startsWith("/dashboard/"))
+        request.url = "/dashboard.html";
+      next();
+    });
+  },
+});
+
 export default defineConfig({
-  plugins: [cleanWorkerBuild(), react(), tailwindcss()],
+  plugins: [cleanWorkerBuild(), clientRoutes(), react(), tailwindcss()],
   resolve: { alias: { "@": srcDir } },
   // Dev only: the dashboard talks to the Worker running under `wrangler dev`,
   // so unminified React errors can be reproduced against real data.

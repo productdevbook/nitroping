@@ -22,11 +22,7 @@ export function SettingsView({
   customDomain,
   projectId,
   publicKey,
-  serverKey,
   credentials,
-  onPublicKey,
-  onServerKey,
-  onSaveConnection,
   onSettings,
   onCustomDomain,
 }: {
@@ -34,11 +30,7 @@ export function SettingsView({
   customDomain: CustomDomain | null;
   projectId: string;
   publicKey: string;
-  serverKey: string;
   credentials: ApiOptions;
-  onPublicKey: (value: string) => void;
-  onServerKey: (value: string) => void;
-  onSaveConnection: () => void;
   onSettings: (value: Settings) => void;
   onCustomDomain: (value: CustomDomain | null) => void;
 }) {
@@ -59,7 +51,6 @@ export function SettingsView({
         { ...credentials, method: "PATCH", body: JSON.stringify(draft) },
       );
       onSettings(updated);
-      onSaveConnection();
       notifySuccess("Settings saved");
     } catch (error) {
       notifyError(errorMessage(error, "Unable to save settings"));
@@ -120,6 +111,7 @@ export function SettingsView({
         }
       />
 
+      {/* The keys belong to the project, so they are shown, not edited. */}
       <section className="max-w-[720px]">
         <SectionHeader title="Connection" description="Keys used by the dashboard and SDKs." />
         <div className="grid gap-4 py-4">
@@ -129,28 +121,11 @@ export function SettingsView({
           </Field>
           <Field>
             <FieldLabel htmlFor="public-key">Public project key</FieldLabel>
-            <Input
-              id="public-key"
-              value={publicKey}
-              onChange={(event) => onPublicKey(event.target.value)}
-            />
+            <Input id="public-key" value={publicKey} readOnly aria-readonly="true" />
+            <FieldDescription>
+              Safe to ship in your app; it identifies the project to the SDKs.
+            </FieldDescription>
           </Field>
-          <Field>
-            <FieldLabel htmlFor="server-key">Server key</FieldLabel>
-            <Input
-              id="server-key"
-              type="password"
-              value={serverKey}
-              onChange={(event) => onServerKey(event.target.value)}
-              placeholder="Required for dashboard API calls"
-            />
-            <FieldDescription>Development only.</FieldDescription>
-          </Field>
-          <div>
-            <Button variant="outline" onClick={onSaveConnection}>
-              Apply connection
-            </Button>
-          </div>
         </div>
       </section>
 

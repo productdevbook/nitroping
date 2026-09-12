@@ -16,6 +16,8 @@
     "@nitroping/contracts": "workspace:*",
     "@nitroping/tokens": "workspace:*",
     "@shadcn/react": "^0.3.1",
+    "@tanstack/react-query": "^5.102.8",
+    "@tanstack/react-router": "^1.170.35",
     "@vitejs/plugin-react": "6.1.1",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   ChevronsUpDownIcon,
   LogOutIcon,
@@ -43,21 +44,18 @@ import { navSections } from "@/lib/nav";
 import type { View } from "@/lib/nav";
 import { initials } from "@/lib/format";
 import type { Usage } from "@/lib/types";
-import type { Workspace } from "@/hooks/useWorkspace";
+import { useWorkspace } from "@/app/workspace";
 
 export function AppSidebar({
-  workspace,
   view,
-  onView,
   newCount,
   usage,
 }: {
-  workspace: Workspace;
   view: View;
-  onView: (view: View) => void;
   newCount: number;
   usage: Usage | null;
 }) {
+  const workspace = useWorkspace();
   const [projectDialog, setProjectDialog] = useState(false);
   const [workspaceDialog, setWorkspaceDialog] = useState(false);
   const [projectName, setProjectName] = useState("");
@@ -65,7 +63,8 @@ export function AppSidebar({
   const [firstProjectName, setFirstProjectName] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const { activeOrganization, activeProject, projects, session } = workspace;
+  const { activeOrganization, activeProject, projects, projectId, session } =
+    workspace;
 
   return (
     <>
@@ -130,7 +129,13 @@ export function AppSidebar({
                       <SidebarMenuButton
                         isActive={view === item.id}
                         tooltip={item.label}
-                        onClick={() => onView(item.id)}
+                        render={
+                          <Link
+                            to={`/$projectId/${item.id}`}
+                            params={{ projectId }}
+                            search={{}}
+                          />
+                        }
                       >
                         <item.icon />
                         <span>{item.label}</span>
@@ -184,7 +189,16 @@ export function AppSidebar({
                     </DropdownMenuLabel>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onView("billing")}>
+                  <DropdownMenuItem
+                    render={
+                      <Link
+                        to="/$projectId/billing"
+                        params={{ projectId }}
+                        search={{}}
+                      />
+                    }
+                    nativeButton={false}
+                  >
                     Billing &amp; usage
                   </DropdownMenuItem>
                   <DropdownMenuItem

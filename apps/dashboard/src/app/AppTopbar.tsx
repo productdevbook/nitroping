@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "cn";
 import type { RealtimeState } from "@/hooks/useRealtime";
 import type { ThemePreference } from "@/hooks/useTheme";
+import { useWorkspace } from "@/app/workspace";
 import { viewLabel } from "@/lib/nav";
 import type { View } from "@/lib/nav";
 
@@ -26,30 +27,27 @@ const realtimeDot: Record<RealtimeState, string> = {
 };
 
 export function AppTopbar({
-  organizationName,
-  projectName,
   view,
   realtime,
   theme,
   onTheme,
 }: {
-  organizationName: string;
-  projectName: string;
   view: View;
   realtime: RealtimeState;
   theme: ThemePreference;
   onTheme: (value: ThemePreference) => void;
 }) {
+  const { activeOrganization, activeProject } = useWorkspace();
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-3">
       <SidebarTrigger />
       <Breadcrumb>
         <BreadcrumbList className="gap-1.5 text-sm sm:gap-1.5">
           <BreadcrumbItem className="hidden sm:inline-flex">
-            {organizationName}
+            {activeOrganization?.name ?? "Workspace"}
           </BreadcrumbItem>
           <BreadcrumbSeparator className="hidden sm:inline-flex" />
-          <BreadcrumbItem>{projectName}</BreadcrumbItem>
+          <BreadcrumbItem>{activeProject?.name ?? "Project"}</BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
             <BreadcrumbPage>{viewLabel(view)}</BreadcrumbPage>
