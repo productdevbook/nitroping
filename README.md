@@ -87,10 +87,14 @@ Self-hosted deployments can use Cloudflare Access or the built-in OIDC adapter. 
 
 ## Dashboard architecture
 
-The dashboard is a React 19 application built with Vite 8 and Bun. It uses a small local design system instead of a large UI kit so the panel stays fast, brand-consistent, and easy to embed in the Worker asset pipeline.
+The dashboard is a React 19 application built with Vite 8 and Bun. Its interface is built from shadcn/ui components generated on Base UI (`style: base-mira`, `baseColor: neutral`, lucide icons) and kept deliberately flat and dense: tables and separator lists instead of cards.
 
-- `apps/dashboard/src/main.tsx`: feature-oriented dashboard shell and API orchestration
-- `apps/dashboard/src/styles.css`: NitroPing visual tokens, responsive layout, panels, tables, status pills, and mobile behavior
+- `apps/dashboard/src/app`: application shell — sidebar, topbar, sign-in and workspace setup screens
+- `apps/dashboard/src/features/<view>`: one folder per dashboard view
+- `apps/dashboard/src/portal`, `src/follow-up`: the public surfaces, sharing the same components
+- `apps/dashboard/src/components/ui`: shadcn components; regenerate with `bunx shadcn@4.21.0 add --overwrite <name>`
+- `apps/dashboard/src/hooks`, `apps/dashboard/src/lib`: workspace and feedback state, API client, status/type class maps
+- `packages/tokens/src/tokens.css`: the only file in the repository that declares design tokens, shared by the dashboard, the portal, and the marketing site
 - `apps/dashboard/dashboard.html`: Vite entry document
 - `apps/api/public/dashboard.html`: generated production entry served by the Worker
 - `apps/api/public/assets`: generated JavaScript bundle

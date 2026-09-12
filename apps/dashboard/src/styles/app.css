@@ -1,0 +1,20 @@
+/*
+ * Dashboard entry stylesheet. The dashboard renders entirely from components
+ * in src/components and src/features, so Preflight and the full utility layer
+ * are safe here. Design tokens come from tokens.css and nowhere else.
+ */
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter";
+@import "@nitroping/tokens/tokens.css";
+
+@source "../**/*.tsx";
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  body {
+    @apply bg-background text-foreground text-xs antialiased;
+  }
+}

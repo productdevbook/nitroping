@@ -14,92 +14,157 @@
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <header class="container nav">
-      <a class="logo" href="/"><span class="logo-mark" aria-hidden="true"></span>NitroPing</a>
-      <nav aria-label="Main">
-        <a href="https://github.com/productdevbook/nitroping">GitHub</a>
-        <a class="button button-small" href="/dashboard">Sign in</a>
+    <header class="container-page flex h-14 items-center justify-between gap-4 border-b border-border">
+      <a class="flex items-center gap-2 text-sm font-medium" href="/">
+        <span class="grid size-5 place-items-center rounded-md bg-foreground" aria-hidden="true">
+          <span class="size-1.5 rounded-full bg-background"></span>
+        </span>
+        NitroPing
+      </a>
+      <nav class="flex items-center gap-4 text-sm" aria-label="Main">
+        <a class="text-muted-foreground transition-colors hover:text-foreground" href="https://github.com/productdevbook/nitroping">GitHub</a>
+        <a class="btn h-8 px-3 text-xs" href="/dashboard">Sign in</a>
       </nav>
     </header>
 
     <main>
-      <section class="container hero">
-        <h1>Feedback, straight from your app.</h1>
-        <p class="lead">NitroPing adds a feedback form to your web, iOS, and Android apps and collects every bug report and idea in one inbox.</p>
-        <div class="actions">
-          <a class="button" href="/dashboard">Get started</a>
-          <a class="button button-ghost" href="https://github.com/productdevbook/nitroping">View on GitHub</a>
+      <section class="container-page py-20">
+        <h1 class="max-w-[14ch] text-4xl leading-[1.05] font-medium tracking-[-0.03em] sm:text-5xl">
+          Feedback, straight from your app.
+        </h1>
+        <p class="mt-5 max-w-[52ch] text-base text-muted-foreground">
+          NitroPing adds a feedback form to your web, iOS, and Android apps and collects
+          every bug report and idea in one inbox.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-2">
+          <a class="btn" href="/dashboard">Get started</a>
+          <a class="btn btn-ghost" href="https://github.com/productdevbook/nitroping">View on GitHub</a>
         </div>
-        <button class="install" type="button" data-copy="npm i @nitroping/web" aria-label="Copy install command">
-          <code><span aria-hidden="true">$</span> npm i @nitroping/web</code>
-          <span class="install-hint" data-copy-label>Copy</span>
+        <button
+          class="mt-7 inline-flex items-center gap-4 rounded-md border border-border bg-muted/50 px-3 py-2 font-mono text-xs transition-colors hover:bg-muted"
+          type="button"
+          data-copy="npm i @nitroping/web"
+          aria-label="Copy install command"
+        >
+          <code><span class="text-muted-foreground" aria-hidden="true">$</span> npm i @nitroping/web</code>
+          <span class="text-[11px] text-muted-foreground" data-copy-label>Copy</span>
         </button>
       </section>
 
-      <section class="container section" aria-labelledby="how">
-        <h2 id="how" class="label">How it works</h2>
-        <ol class="steps">
+      <section class="container-page border-t border-border py-16" aria-labelledby="how">
+        <h2 id="how" class="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+          How it works
+        </h2>
+        <ol class="mt-8 grid gap-8 sm:grid-cols-3">
           <li>
-            <span class="step-num">01</span>
-            <h3>Collect</h3>
-            <p>Users send bugs, ideas, and screenshots from a widget or a native form.</p>
+            <span class="font-mono text-[11px] text-muted-foreground">01</span>
+            <h3 class="mt-3 text-base font-medium">Collect</h3>
+            <p class="mt-1 text-sm text-muted-foreground">
+              Users send bugs, ideas, and screenshots from a widget or a native form.
+            </p>
           </li>
           <li>
-            <span class="step-num">02</span>
-            <h3>Decide</h3>
-            <p>Your team triages everything in one inbox and lets votes shape the roadmap.</p>
+            <span class="font-mono text-[11px] text-muted-foreground">02</span>
+            <h3 class="mt-3 text-base font-medium">Decide</h3>
+            <p class="mt-1 text-sm text-muted-foreground">
+              Your team triages everything in one inbox and lets votes shape the roadmap.
+            </p>
           </li>
           <li>
-            <span class="step-num">03</span>
-            <h3>Reply</h3>
-            <p>Ship it, post a changelog, and NitroPing tells the people who asked.</p>
+            <span class="font-mono text-[11px] text-muted-foreground">03</span>
+            <h3 class="mt-3 text-base font-medium">Reply</h3>
+            <p class="mt-1 text-sm text-muted-foreground">
+              Ship it, post a changelog, and NitroPing tells the people who asked.
+            </p>
           </li>
         </ol>
       </section>
 
-      <section class="container section split" aria-labelledby="dev">
+      <section class="container-page grid gap-10 border-t border-border py-16 md:grid-cols-2" aria-labelledby="dev">
         <div>
-          <h2 id="dev" class="label">One line to start</h2>
-          <p class="copy">Every SDK shares one API contract, so feedback looks the same whether it comes from the web, iOS, or Android.</p>
-          <ul class="platforms" aria-label="Supported platforms">
-            <li>Web</li>
-            <li>iOS</li>
-            <li>Android</li>
-            <li>REST API</li>
+          <h2 id="dev" class="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+            One line to start
+          </h2>
+          <p class="mt-6 max-w-[36ch] text-base">
+            Every SDK shares one API contract, so feedback looks the same whether it comes
+            from the web, iOS, or Android.
+          </p>
+          <ul class="mt-6 flex flex-wrap gap-2" aria-label="Supported platforms">
+            <li class="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">Web</li>
+            <li class="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">iOS</li>
+            <li class="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">Android</li>
+            <li class="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">REST API</li>
           </ul>
         </div>
-        <pre class="code"><code><span class="tok-k">import</span> { NitroPing } <span class="tok-k">from</span> <span class="tok-s">"@nitroping/web"</span>;
+        <pre class="overflow-x-auto rounded-md border border-border bg-muted/50 p-5 font-mono text-xs leading-6"><code><span class="text-muted-foreground">import</span> { NitroPing } <span class="text-muted-foreground">from</span> <span class="font-semibold">"@nitroping/web"</span>;
 
-NitroPing.init({ projectKey: <span class="tok-s">"pk_live_xxx"</span> });</code></pre>
+NitroPing.init({ projectKey: <span class="font-semibold">"pk_live_xxx"</span> });</code></pre>
       </section>
 
-      <section class="container section" aria-labelledby="pricing">
-        <h2 id="pricing" class="label">Pricing</h2>
-        <div class="table-scroll">
-          <table class="plans">
+      <section class="container-page border-t border-border py-16" aria-labelledby="pricing">
+        <h2 id="pricing" class="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+          Pricing
+        </h2>
+        <div class="mt-6 overflow-x-auto">
+          <table class="w-full min-w-[480px] border-collapse text-sm">
             <thead>
-              <tr><th scope="col"><span class="visually-hidden">Limit</span></th><th scope="col">Free</th><th scope="col">Pro</th><th scope="col">Business</th></tr>
+              <tr class="border-b border-border text-left">
+                <th class="py-2 pr-3 font-medium" scope="col"><span class="sr-only">Limit</span></th>
+                <th class="px-3 py-2 font-medium" scope="col">Free</th>
+                <th class="px-3 py-2 font-medium" scope="col">Pro</th>
+                <th class="px-3 py-2 font-medium" scope="col">Business</th>
+              </tr>
             </thead>
-            <tbody>
-              <tr><th scope="row">Projects</th><td>1</td><td>20</td><td>1,000</td></tr>
-              <tr><th scope="row">Team members</th><td>1</td><td>10</td><td>1,000</td></tr>
-              <tr><th scope="row">Feedback / month</th><td>100</td><td>5,000</td><td>50,000</td></tr>
-              <tr><th scope="row">Attachment storage</th><td>25 MB</td><td>5 GB</td><td>50 GB</td></tr>
-              <tr><th scope="row">Roadmap &amp; webhooks</th><td aria-label="Not included">—</td><td aria-label="Included">✓</td><td aria-label="Included">✓</td></tr>
-              <tr><th scope="row">Custom domain</th><td aria-label="Not included">—</td><td aria-label="Not included">—</td><td aria-label="Included">✓</td></tr>
+            <tbody class="divide-y divide-border">
+              <tr>
+                <th class="py-2 pr-3 text-left font-normal text-muted-foreground" scope="row">Projects</th>
+                <td class="px-3 py-2 tabular-nums">1</td>
+                <td class="px-3 py-2 tabular-nums">20</td>
+                <td class="px-3 py-2 tabular-nums">1,000</td>
+              </tr>
+              <tr>
+                <th class="py-2 pr-3 text-left font-normal text-muted-foreground" scope="row">Team members</th>
+                <td class="px-3 py-2 tabular-nums">1</td>
+                <td class="px-3 py-2 tabular-nums">10</td>
+                <td class="px-3 py-2 tabular-nums">1,000</td>
+              </tr>
+              <tr>
+                <th class="py-2 pr-3 text-left font-normal text-muted-foreground" scope="row">Feedback / month</th>
+                <td class="px-3 py-2 tabular-nums">100</td>
+                <td class="px-3 py-2 tabular-nums">5,000</td>
+                <td class="px-3 py-2 tabular-nums">50,000</td>
+              </tr>
+              <tr>
+                <th class="py-2 pr-3 text-left font-normal text-muted-foreground" scope="row">Attachment storage</th>
+                <td class="px-3 py-2">25 MB</td>
+                <td class="px-3 py-2">5 GB</td>
+                <td class="px-3 py-2">50 GB</td>
+              </tr>
+              <tr>
+                <th class="py-2 pr-3 text-left font-normal text-muted-foreground" scope="row">Roadmap &amp; webhooks</th>
+                <td class="px-3 py-2 text-muted-foreground" aria-label="Not included">—</td>
+                <td class="px-3 py-2" aria-label="Included">✓</td>
+                <td class="px-3 py-2" aria-label="Included">✓</td>
+              </tr>
+              <tr>
+                <th class="py-2 pr-3 text-left font-normal text-muted-foreground" scope="row">Custom domain</th>
+                <td class="px-3 py-2 text-muted-foreground" aria-label="Not included">—</td>
+                <td class="px-3 py-2 text-muted-foreground" aria-label="Not included">—</td>
+                <td class="px-3 py-2" aria-label="Included">✓</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </section>
     </main>
 
-    <footer class="container footer">
+    <footer class="container-page flex flex-wrap items-center justify-between gap-4 border-t border-border py-8 text-xs text-muted-foreground">
       <span>© NitroPing · SDKs are Apache-2.0</span>
-      <nav aria-label="Footer">
-        <a href="https://github.com/productdevbook/nitroping">GitHub</a>
-        <a href="https://github.com/productdevbook/nitroping/blob/main/docs/privacy.md">Privacy</a>
-        <a href="https://github.com/productdevbook/nitroping/blob/main/SECURITY.md">Security</a>
-        <a href="/health">Status</a>
+      <nav class="flex flex-wrap gap-4" aria-label="Footer">
+        <a class="transition-colors hover:text-foreground" href="https://github.com/productdevbook/nitroping">GitHub</a>
+        <a class="transition-colors hover:text-foreground" href="https://github.com/productdevbook/nitroping/blob/main/docs/privacy.md">Privacy</a>
+        <a class="transition-colors hover:text-foreground" href="https://github.com/productdevbook/nitroping/blob/main/SECURITY.md">Security</a>
+        <a class="transition-colors hover:text-foreground" href="/health">Status</a>
       </nav>
     </footer>
   </body>

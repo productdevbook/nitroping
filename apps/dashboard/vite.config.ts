@@ -2,7 +2,9 @@ import { defineConfig } from "vite";
 import { rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
+const srcDir = fileURLToPath(new URL("./src", import.meta.url));
 const workerPublicDir = fileURLToPath(new URL("../api/public", import.meta.url));
 
 const cleanWorkerBuild = () => ({
@@ -18,7 +20,8 @@ const cleanWorkerBuild = () => ({
 });
 
 export default defineConfig({
-  plugins: [cleanWorkerBuild(), react()],
+  plugins: [cleanWorkerBuild(), react(), tailwindcss()],
+  resolve: { alias: { "@": srcDir } },
   build: {
     outDir: "../api/public",
     emptyOutDir: false,

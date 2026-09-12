@@ -1,0 +1,21 @@
+/*
+ * Entry stylesheet for the public portal and the follow-up page. It scans only
+ * the public modules so these pages do not ship the dashboard's utility set.
+ */
+
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/inter";
+@import "@nitroping/tokens/tokens.css";
+
+@source "../portal/**/*.tsx";
+@source "../follow-up/**/*.tsx";
+@source "../components/**/*.tsx";
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  body {
+    @apply bg-background text-foreground text-xs antialiased;
+  }
+}

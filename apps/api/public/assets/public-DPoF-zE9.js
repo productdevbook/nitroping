@@ -1,0 +1,1 @@
+function e(){if(typeof matchMedia!=`function`)return;let e=matchMedia(`(prefers-color-scheme: dark)`),t=()=>document.documentElement.classList.toggle(`dark`,e.matches);t(),e.addEventListener(`change`,t)}export{e as t};
