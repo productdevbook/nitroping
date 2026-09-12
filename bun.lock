@@ -28,6 +28,7 @@
         "@base-ui/react": "1.8.0",
         "@fontsource-variable/inter": "^5.3.0",
         "@nitroping/contracts": "workspace:*",
+        "@nitroping/tokens": "workspace:*",
         "@vitejs/plugin-react": "6.1.1",
         "class-variance-authority": "^0.7.1",
         "cmdk": "^1.1.1",
@@ -52,8 +53,11 @@
       "version": "0.1.0",
       "dependencies": {
         "@fontsource-variable/inter": "^5.3.0",
+        "@nitroping/tokens": "workspace:*",
       },
       "devDependencies": {
+        "@tailwindcss/vite": "^4.3.3",
+        "tailwindcss": "^4.3.3",
         "typescript": "^7.0.2",
         "vite": "8.3.0",
         "wrangler": "4.131.1",
@@ -72,6 +76,10 @@
     },
     "packages/contracts": {
       "name": "@nitroping/contracts",
+      "version": "0.1.0",
+    },
+    "packages/tokens": {
+      "name": "@nitroping/tokens",
       "version": "0.1.0",
     },
     "packages/web": {
@@ -381,6 +389,8 @@
     "@nitroping/infra": ["@nitroping/infra@workspace:infra"],
 
     "@nitroping/site": ["@nitroping/site@workspace:apps/site"],
+
+    "@nitroping/tokens": ["@nitroping/tokens@workspace:packages/tokens"],
 
     "@nitroping/web": ["@nitroping/web@workspace:packages/web"],
 

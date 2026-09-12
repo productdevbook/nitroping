@@ -6,7 +6,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource-variable/inter";
-@import "./tokens.css";
+@import "@nitroping/tokens/tokens.css";
 
 @source "../portal/**/*.tsx";
 @source "../follow-up/**/*.tsx";
