@@ -176,10 +176,11 @@ const css = `
 .np-input::placeholder{color:color-mix(in oklab,var(--np-muted,#6e6e73) 65%,transparent)}
 .np-input:focus,.np-select:focus{outline:0;background:var(--np-surface);box-shadow:0 0 0 4px var(--np-ring),0 0 0 1px color-mix(in oklab,var(--np-primary,#7c3aed) 45%,transparent)}
 .np-textarea{min-height:120px;resize:vertical;line-height:1.5}
-.np-segment{display:flex;gap:2px;padding:3px;border-radius:14px;background:var(--np-fill)}
-.np-seg{position:relative;flex:1}
+.np-segment{display:flex;gap:2px;padding:3px;border-radius:14px;background:var(--np-fill);overflow-x:auto;scrollbar-width:none}
+.np-segment::-webkit-scrollbar{display:none}
+.np-seg{position:relative;flex:1 0 auto}
 .np-seg input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
-.np-seg span{display:grid;place-items:center;padding:9px 6px;border-radius:11px;font:510 13px/1.2 inherit;letter-spacing:-.01em;color:var(--np-muted,#6e6e73);text-align:center;transition:background .2s cubic-bezier(.32,.72,0,1),color .2s ease,box-shadow .2s ease}
+.np-seg span{display:grid;place-items:center;padding:9px 12px;border-radius:11px;font:510 13px/1.2 inherit;letter-spacing:-.01em;color:var(--np-muted,#6e6e73);text-align:center;white-space:nowrap;transition:background .2s cubic-bezier(.32,.72,0,1),color .2s ease,box-shadow .2s ease}
 .np-seg input:checked+span{background:var(--np-surface);color:var(--np-text,#1c1c1e);font-weight:590;box-shadow:0 1px 3px #0000001f,0 0 0 .5px #00000014}
 .np-seg input:focus-visible+span{box-shadow:0 0 0 4px var(--np-ring)}
 .np-file-drop{display:flex;align-items:center;gap:10px;position:relative;min-height:46px;padding:12px 14px;border-radius:14px;background:var(--np-fill);color:var(--np-muted,#6e6e73);font:400 15px/1.2 inherit;cursor:pointer;transition:background .18s ease}
