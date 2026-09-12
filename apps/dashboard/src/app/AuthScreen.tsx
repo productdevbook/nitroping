@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
 function Brand() {
@@ -39,14 +39,16 @@ export function AuthScreen() {
             permissions stay scoped to your account.
           </p>
         </div>
-        <Button
-          size="lg"
-          render={
-            <a href={`/auth/github/start?returnTo=${encodeURIComponent(returnTo)}`} />
-          }
+        {/*
+          A link, not a button: Base UI refuses to render button semantics on
+          an anchor, so this uses the variant classes directly.
+        */}
+        <a
+          className={buttonVariants({ size: "lg" })}
+          href={`/auth/github/start?returnTo=${encodeURIComponent(returnTo)}`}
         >
           Continue with GitHub
-        </Button>
+        </a>
         <p className="text-xs text-muted-foreground">
           New here? Your first sign-in starts the workspace setup.
         </p>

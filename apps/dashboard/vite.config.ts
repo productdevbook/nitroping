@@ -22,6 +22,14 @@ const cleanWorkerBuild = () => ({
 export default defineConfig({
   plugins: [cleanWorkerBuild(), react(), tailwindcss()],
   resolve: { alias: { "@": srcDir } },
+  // Dev only: the dashboard talks to the Worker running under `wrangler dev`,
+  // so unminified React errors can be reproduced against real data.
+  server: {
+    proxy: {
+      "/api": "http://127.0.0.1:8787",
+      "/auth": "http://127.0.0.1:8787",
+    },
+  },
   build: {
     outDir: "../api/public",
     emptyOutDir: false,

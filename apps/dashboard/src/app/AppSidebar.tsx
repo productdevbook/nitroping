@@ -17,6 +17,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -90,15 +91,19 @@ export function AppSidebar({
                   <ChevronsUpDownIcon className="ml-auto text-muted-foreground" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>Projects</DropdownMenuLabel>
-                  {projects.map((project) => (
-                    <DropdownMenuItem
-                      key={project.id}
-                      onClick={() => workspace.selectProject(project.id)}
-                    >
-                      {project.name}
-                    </DropdownMenuItem>
-                  ))}
+                  {/* A label must sit inside a group: Base UI reads it from
+                      MenuGroupContext. */}
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Projects</DropdownMenuLabel>
+                    {projects.map((project) => (
+                      <DropdownMenuItem
+                        key={project.id}
+                        onClick={() => workspace.selectProject(project.id)}
+                      >
+                        {project.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setProjectDialog(true)}>
                     <PlusIcon />
@@ -173,13 +178,18 @@ export function AppSidebar({
                   <ChevronsUpDownIcon className="ml-auto text-muted-foreground" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuLabel>{session?.email ?? "Account"}</DropdownMenuLabel>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>
+                      {session?.email ?? "Account"}
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => onView("billing")}>
                     Billing &amp; usage
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     render={<a href="/auth/logout" />}
+                    nativeButton={false}
                     variant="destructive"
                   >
                     <LogOutIcon />
