@@ -22,6 +22,8 @@ jobs:
       - run: bun run db:migrate:check
       - run: bun run db:schema:check
       - run: bun run --filter @nitroping/contracts build
+      # The marketing site imports the Web SDK from its dist output.
+      - run: bun run --filter @nitroping/web build
       - run: bun run test
       - run: bun run build
       - run: bun run codegen:native:check

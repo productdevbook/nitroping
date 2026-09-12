@@ -9,6 +9,19 @@ if (typeof matchMedia === "function") {
   query.addEventListener("change", apply);
 }
 
+/*
+ * NitroPing collects its own feedback with the Web SDK it ships. The widget
+ * only loads when a project key is provided at build time
+ * (VITE_NITROPING_PROJECT_KEY), so a fork or a preview build stays inert.
+ */
+const projectKey = import.meta.env.VITE_NITROPING_PROJECT_KEY;
+if (projectKey)
+  void import("@nitroping/web")
+    .then(({ NitroPing }) => NitroPing.initAsync({ projectKey, mode: "floating" }))
+    .catch(() => {
+      // A missing or misconfigured project must never break the page.
+    });
+
 for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
   const label = button.querySelector<HTMLElement>("[data-copy-label]");
   button.addEventListener("click", async () => {
