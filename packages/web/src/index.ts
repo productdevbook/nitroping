@@ -90,6 +90,15 @@ const labelFor = (value: string) =>
       .replaceAll("_", " ")
       .replace(/(^|\s)\S/g, (letter) => letter.toUpperCase()),
   );
+const segmentLabels: Record<string, string> = {
+  complaint: "Complaint",
+  bug: "Bug",
+  suggestion: "Idea",
+  feature_request: "Feature",
+};
+const segmentLabel = (value: string) =>
+  segmentLabels[value] ? escapeHtml(segmentLabels[value]) : labelFor(value);
+
 let configured: Partial<NitroPingOptions> = {};
 
 const request = async <T>(
@@ -148,11 +157,11 @@ const css = `
 --np-ring:color-mix(in oklab,var(--np-primary,#7c3aed) 20%,transparent);
 --np-spring:cubic-bezier(.32,.72,0,1)}
 .np-root *{box-sizing:border-box}
-.np-button{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:inline-flex;align-items:center;gap:7px;border:0;border-radius:999px;padding:10px 14px;background:var(--np-primary,#7c3aed);color:#fff;font:590 14px/1 inherit;letter-spacing:-.01em;cursor:pointer;box-shadow:0 6px 18px color-mix(in oklab,var(--np-primary,#7c3aed) 30%,transparent);transition:transform .18s var(--np-spring),opacity .18s ease}
-.np-button:hover{transform:translateY(-1px)}
+.np-button{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:inline-flex;align-items:center;gap:7px;border:.5px solid var(--np-line);border-radius:999px;padding:9px 14px;background:color-mix(in oklab,var(--np-surface) 88%,transparent);backdrop-filter:saturate(180%) blur(16px);color:var(--np-text,#1c1c1e);font:510 13px/1 inherit;letter-spacing:-.01em;cursor:pointer;box-shadow:0 4px 14px #00000014,0 1px 2px #0000000f;transition:transform .18s var(--np-spring),box-shadow .18s ease,opacity .18s ease}
+.np-button:hover{transform:translateY(-1px);box-shadow:0 8px 20px #0000001f}
 .np-button:active{transform:scale(.96)}
 .np-button:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
-.np-button svg{width:16px;height:16px}
+.np-button svg{width:15px;height:15px;color:var(--np-primary,#7c3aed)}
 .np-root:has(.np-backdrop) .np-button{opacity:0;transform:translateY(8px);pointer-events:none}
 .np-inline{width:100%}
 /* Anchored panel: no scrim, grows out of the launcher it belongs to. */
@@ -181,12 +190,11 @@ const css = `
 .np-input::placeholder{color:color-mix(in oklab,var(--np-muted,#6e6e73) 60%,transparent)}
 .np-input:focus,.np-select:focus{outline:0;background:var(--np-surface);box-shadow:0 0 0 3px var(--np-ring),0 0 0 1px color-mix(in oklab,var(--np-primary,#7c3aed) 40%,transparent)}
 .np-textarea{min-height:84px;resize:vertical;line-height:1.45}
-.np-segment{display:flex;gap:2px;padding:2px;border-radius:11px;background:var(--np-fill);overflow-x:auto;scrollbar-width:none}
-.np-segment::-webkit-scrollbar{display:none}
-.np-seg{position:relative;flex:1 0 auto}
+.np-segment{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.np-seg{position:relative}
 .np-seg input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
-.np-seg span{display:grid;place-items:center;padding:6px 10px;border-radius:9px;font:510 12px/1.2 inherit;color:var(--np-muted,#6e6e73);white-space:nowrap;transition:background .18s var(--np-spring),color .18s ease}
-.np-seg input:checked+span{background:var(--np-surface);color:var(--np-text,#1c1c1e);font-weight:590;box-shadow:0 1px 2px #00000016}
+.np-seg span{display:grid;place-items:center;min-height:32px;padding:6px 4px;border:.5px solid transparent;border-radius:10px;background:var(--np-fill);font:510 12px/1.2 inherit;color:var(--np-muted,#6e6e73);white-space:nowrap;transition:background .18s var(--np-spring),color .18s ease,border-color .18s ease}
+.np-seg input:checked+span{background:color-mix(in oklab,var(--np-primary,#7c3aed) 10%,transparent);border-color:color-mix(in oklab,var(--np-primary,#7c3aed) 32%,transparent);color:var(--np-primary,#7c3aed);font-weight:590}
 .np-seg input:focus-visible+span{box-shadow:0 0 0 3px var(--np-ring)}
 .np-file-drop{display:flex;align-items:center;gap:8px;position:relative;min-height:38px;padding:9px 11px;border-radius:11px;background:var(--np-fill);color:var(--np-muted,#6e6e73);font:400 13px/1.2 inherit;cursor:pointer;transition:background .16s ease}
 .np-file-drop:hover{background:var(--np-fill-strong)}
@@ -226,6 +234,7 @@ const css = `
 .np-backdrop .np-card{width:100%;max-height:88vh;border-radius:22px 22px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));animation:np-sheet .32s var(--np-spring) both}
 .np-side .np-card{width:100%;height:auto;margin:0;border-radius:22px 22px 0 0}
 .np-button{right:14px;bottom:14px}
+.np-segment{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (prefers-color-scheme:dark){
 .np-root{color:var(--np-text,#f5f5f7);
@@ -235,7 +244,7 @@ const css = `
 --np-line:color-mix(in oklab,#fff 12%,transparent)}
 .np-card p,.np-field-label,.np-close,.np-secondary,.np-success,.np-file-drop{color:var(--np-muted,#98989d)}
 .np-backdrop{background:color-mix(in oklab,#000 50%,transparent)}
-.np-seg input:checked+span{background:color-mix(in oklab,#fff 16%,transparent);box-shadow:none}
+.np-seg input:checked+span{background:color-mix(in oklab,var(--np-primary,#7c3aed) 22%,transparent);color:#fff;border-color:transparent}
 }
 @media (prefers-reduced-transparency:reduce){
 .np-card{background:var(--np-surface);backdrop-filter:none}
@@ -409,7 +418,7 @@ const buildForm = (
       `<div class="np-field"><span class="np-field-label">Type</span><div class="np-segment" role="radiogroup" aria-label="Type">${categories
         .map(
           (value, index) =>
-            `<label class="np-seg"><input type="radio" name="type" value="${escapeHtml(value)}"${index === 0 ? " checked" : ""} /><span>${labelFor(value)}</span></label>`,
+            `<label class="np-seg"><input type="radio" name="type" value="${escapeHtml(value)}"${index === 0 ? " checked" : ""} /><span>${segmentLabel(value)}</span></label>`,
         )
         .join("")}</div></div>`,
     );
