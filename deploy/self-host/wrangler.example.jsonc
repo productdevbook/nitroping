@@ -63,6 +63,7 @@
     "ENVIRONMENT": "self-hosted",
     "ACCESS_TEAM_DOMAIN": "",
     "ACCESS_AUDIENCE": "",
+    "GITHUB_CLIENT_ID": "",
     "OIDC_ISSUER_URL": "",
     "OIDC_AUDIENCE": "",
     "EMAIL_FROM": "notifications@example.com",

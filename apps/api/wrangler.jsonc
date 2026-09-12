@@ -21,5 +21,5 @@
     "consumers": [{ "queue": "nitroping-events", "max_batch_size": 10, "max_batch_timeout": 5, "max_retries": 5 }]
   },
   "triggers": { "crons": ["0 3 * * *"] },
-  "vars": { "ENVIRONMENT": "production", "ACCESS_TEAM_DOMAIN": "https://anadolu-ekspresi.cloudflareaccess.com", "ACCESS_AUDIENCE": "b269ef7350f4c5fae49034984f7dcca401553077292e0ca118f985a01e32358c", "OIDC_ISSUER_URL": "", "OIDC_AUDIENCE": "", "EMAIL_FROM": "notifications@nitroping.dev", "PUBLIC_APP_URL": "https://nitroping.dev", "GITHUB_CLIENT_ID": "", "TURNSTILE_SITE_KEY": "", "CUSTOM_HOSTNAME_ZONE_ID": "", "CUSTOM_HOSTNAME_ZONE_NAME": "nitroping.dev", "CUSTOM_HOSTNAME_FALLBACK_ORIGIN": "" }
+  "vars": { "ENVIRONMENT": "production", "ACCESS_TEAM_DOMAIN": "https://anadolu-ekspresi.cloudflareaccess.com", "ACCESS_AUDIENCE": "b269ef7350f4c5fae49034984f7dcca401553077292e0ca118f985a01e32358c", "OIDC_ISSUER_URL": "", "OIDC_AUDIENCE": "", "EMAIL_FROM": "notifications@nitroping.dev", "PUBLIC_APP_URL": "https://nitroping.dev", "GITHUB_CLIENT_ID": "Ov23li7Zlq0BmTXg0zFF", "TURNSTILE_SITE_KEY": "", "CUSTOM_HOSTNAME_ZONE_ID": "", "CUSTOM_HOSTNAME_ZONE_NAME": "nitroping.dev", "CUSTOM_HOSTNAME_FALLBACK_ORIGIN": "" }
 }
