@@ -70,6 +70,13 @@ export type NitroPingClient = {
 };
 
 const defaultFields: WidgetField[] = ["type", "title", "description", "email"];
+/* What the API accepts: it sniffs magic bytes, so the type has to be honest. */
+const attachmentTypes =
+  /^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/plain)$/;
+const attachmentAccept =
+  "image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain";
+const maxAttachmentBytes = 10 * 1024 * 1024;
+const maxAttachments = 4;
 const base = (options: NitroPingOptions) =>
   options.apiBaseUrl ?? "https://nitroping.dev/api/v1";
 const escapeHtml = (value: unknown): string =>
@@ -289,7 +296,17 @@ const css = `
 .np-switch:checked{background:var(--np-accent)}
 .np-switch:checked::after{transform:translateX(16px)}
 .np-switch:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
-.np-file{display:inline-flex;align-items:center;align-self:flex-start;max-width:100%;padding:4px 10px;border-radius:999px;background:var(--np-fill);color:var(--np-dim);font:400 12px/1.3 inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-tray{display:flex;flex-wrap:wrap;gap:6px}
+.np-thumb{position:relative;display:grid;place-items:center;width:44px;height:44px;flex:none;border-radius:12px;overflow:hidden;background:var(--np-fill);color:var(--np-dim);font:590 10px/1 inherit;letter-spacing:.02em;text-transform:uppercase}
+.np-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.np-thumb-x{position:absolute;top:2px;right:2px;display:grid;place-items:center;width:16px;height:16px;padding:0;border:0;border-radius:999px;background:color-mix(in oklab,#0a0a0c 62%,transparent);color:#fff;cursor:pointer;opacity:0;transition:opacity .16s ease}
+.np-thumb:hover .np-thumb-x,.np-thumb-x:focus-visible{opacity:1}
+.np-thumb-x svg{width:8px;height:8px}
+@media (hover:none){.np-thumb-x{opacity:1}}
+/* Anywhere on the panel is a drop target while a file is over it. */
+.np-drop{position:absolute;inset:6px;z-index:2;display:none;place-items:center;align-content:center;gap:8px;border:1.5px dashed var(--np-edge);border-radius:16px;background:color-mix(in oklab,var(--np-surface) 90%,transparent);color:var(--np-accent);font:590 13px/1.2 inherit;text-align:center}
+.np-drop svg{width:20px;height:20px}
+.np-card[data-dropping] .np-drop{display:grid}
 .np-turnstile{display:flex;justify-content:center}
 .np-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .np-tools{display:flex;align-items:center;gap:2px}
@@ -510,6 +527,7 @@ const buildForm = (
   ];
   const picks =
     fields.includes("type") && categories.length > 1 ? categories : [];
+  const canAttach = fields.includes("attachment");
   const heading = options.title ?? "What's up?";
   const initialType = picks[0] ?? categories[0] ?? "suggestion";
   const logo = options.logoUrl
@@ -594,17 +612,20 @@ const buildForm = (
     (fields.includes("email")
       ? `<label class="np-mail">${drawing(icons.mail, 1.8)}<input type="email" name="email" placeholder="Email for updates (optional)" /></label>`
       : "") +
-    `<span class="np-file" hidden></span>` +
+    (canAttach ? `<div class="np-tray" hidden></div>` : "") +
     (options.turnstileSiteKey
       ? `<div class="np-turnstile" aria-live="polite"></div>`
       : "") +
     `<div class="np-foot"><div class="np-tools">` +
-    (fields.includes("attachment")
-      ? `<label class="np-tool" title="Attach a file" aria-label="Attach a file">${drawing(icons.clip, 1.8)}<input type="file" name="attachment" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" /></label>`
+    (canAttach
+      ? `<label class="np-tool" title="Attach an image — or paste one" aria-label="Attach an image">${drawing(icons.clip, 1.8)}<input type="file" name="attachment" multiple accept="${attachmentAccept}" /></label>`
       : "") +
     `</div><div class="np-actions"><span class="np-kbd" aria-hidden="true">${sendHint()}</span><button class="np-send">Send</button></div></div>` +
     `<input type="hidden" name="type" value="${escapeHtml(initialType)}" />` +
-    `</section>`;
+    `</section>` +
+    (canAttach
+      ? `<div class="np-drop" aria-hidden="true">${drawing(icons.clip, 1.8)}Drop to attach</div>`
+      : "");
 
   const pick = card.querySelector<HTMLElement>(".np-pick")!;
   const compose = card.querySelector<HTMLElement>(".np-compose")!;
@@ -646,14 +667,107 @@ const buildForm = (
   for (const dismiss of card.querySelectorAll(".np-x"))
     dismiss.addEventListener("click", close);
 
+  const showError = (message: string) => {
+    card.querySelector(".np-error")?.remove();
+    const note = document.createElement("div");
+    note.className = "np-error";
+    note.textContent = message;
+    compose.insertBefore(note, compose.querySelector(".np-foot"));
+  };
+
+  /*
+   * A screenshot arrives three ways — the paperclip, a paste, or dropped onto
+   * the panel — and they all land in the same tray.
+   */
   const fileInput = card.querySelector<HTMLInputElement>('input[type="file"]');
-  const fileChip = card.querySelector<HTMLElement>(".np-file");
+  const tray = card.querySelector<HTMLElement>(".np-tray");
+  const attachments: Array<{ file: File; preview?: string }> = [];
+  const renderTray = () => {
+    if (!tray) return;
+    tray.textContent = "";
+    tray.hidden = attachments.length === 0;
+    for (const [index, entry] of attachments.entries()) {
+      const thumb = document.createElement("span");
+      thumb.className = "np-thumb";
+      thumb.title = entry.file.name;
+      thumb.innerHTML = entry.preview
+        ? `<img src="${entry.preview}" alt="" />`
+        : escapeHtml(
+            (entry.file.name.split(".").pop() ?? "file").slice(0, 4),
+          );
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "np-thumb-x";
+      remove.setAttribute("aria-label", `Remove ${entry.file.name}`);
+      remove.innerHTML = drawing(icons.close, 3);
+      remove.addEventListener("click", () => {
+        if (entry.preview) URL.revokeObjectURL(entry.preview);
+        attachments.splice(index, 1);
+        renderTray();
+      });
+      thumb.appendChild(remove);
+      tray.appendChild(thumb);
+    }
+  };
+  const addFiles = (incoming: Iterable<File> | null | undefined) => {
+    if (!canAttach || !incoming) return;
+    for (const file of incoming) {
+      if (attachments.length >= maxAttachments) {
+        showError(`Up to ${maxAttachments} files.`);
+        break;
+      }
+      if (!attachmentTypes.test(file.type)) {
+        showError("PNG, JPEG, WebP, GIF, PDF or plain text only.");
+        continue;
+      }
+      if (file.size < 1 || file.size > maxAttachmentBytes) {
+        showError("Each file has to stay under 10 MB.");
+        continue;
+      }
+      attachments.push({
+        file,
+        ...(file.type.startsWith("image/")
+          ? { preview: URL.createObjectURL(file) }
+          : {}),
+      });
+      card.querySelector(".np-error")?.remove();
+    }
+    renderTray();
+  };
   fileInput?.addEventListener("change", () => {
-    const file = fileInput.files?.[0];
-    if (!fileChip) return;
-    fileChip.textContent = file?.name ?? "";
-    fileChip.hidden = !file;
+    addFiles(fileInput.files);
+    fileInput.value = "";
   });
+  if (canAttach) {
+    card.addEventListener("paste", (event) => {
+      const pasted = (event as ClipboardEvent).clipboardData?.files;
+      if (!pasted?.length) return;
+      event.preventDefault();
+      addFiles(pasted);
+    });
+    const carriesFiles = (event: DragEvent) =>
+      Array.from(event.dataTransfer?.types ?? []).includes("Files");
+    card.addEventListener("dragover", (event) => {
+      if (!carriesFiles(event)) return;
+      event.preventDefault();
+      card.dataset.dropping = "true";
+    });
+    card.addEventListener("dragleave", (event) => {
+      if (!card.contains(event.relatedTarget as Node | null))
+        delete card.dataset.dropping;
+    });
+    card.addEventListener("drop", (event) => {
+      if (!carriesFiles(event)) return;
+      event.preventDefault();
+      delete card.dataset.dropping;
+      addFiles(event.dataTransfer?.files);
+    });
+    /* Object URLs outlive the panel unless the close path clears them. */
+    root.addEventListener("np-close", () => {
+      for (const entry of attachments)
+        if (entry.preview) URL.revokeObjectURL(entry.preview);
+    });
+  }
   box.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();
@@ -693,7 +807,6 @@ const buildForm = (
     send.disabled = true;
     send.textContent = "Sending…";
     const data = Object.fromEntries(new FormData(card).entries());
-    const file = fileInput?.files?.[0];
     try {
       const customMetadata = Object.fromEntries(
         (options.customFields ?? [])
@@ -726,17 +839,14 @@ const buildForm = (
           metadata: customMetadata,
           turnstileToken,
         },
-        file ? [file] : [],
+        attachments.map((entry) => entry.file),
       );
+      for (const entry of attachments)
+        if (entry.preview) URL.revokeObjectURL(entry.preview);
       card.innerHTML = `<div class="np-sent"><span class="np-sent-icon">${drawing(icons.check, 2.4)}</span><strong>Got it — thank you</strong><span>We read every message. If you left an email, we'll reply there.</span>${options.showPoweredBy === false ? "" : "<small>Powered by NitroPing</small>"}</div>`;
       setTimeout(close, 2600);
     } catch (cause) {
-      card.querySelector(".np-error")?.remove();
-      const message = document.createElement("div");
-      message.className = "np-error";
-      message.textContent =
-        cause instanceof Error ? cause.message : "Submission failed.";
-      compose.insertBefore(message, compose.querySelector(".np-foot"));
+      showError(cause instanceof Error ? cause.message : "Submission failed.");
       send.disabled = false;
       send.textContent = "Send";
     }
@@ -783,6 +893,7 @@ export const NitroPing = {
     let detach: (() => void) | null = null;
 
     const close = () => {
+      panel?.dispatchEvent(new CustomEvent("np-close"));
       panel?.remove();
       panel = null;
       detach?.();

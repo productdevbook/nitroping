@@ -167,25 +167,44 @@ export function FeedbackThread({
                 <BubbleContent className="whitespace-pre-wrap">{item.body}</BubbleContent>
               </Bubble>
               {detail.attachments && detail.attachments.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {detail.attachments.map((attachment) => (
-                    <Button
-                      key={attachment.id}
-                      variant="outline"
-                      size="sm"
-                      render={
-                        <a
-                          href={attachment.downloadUrl}
-                          target="_blank"
-                          rel="noreferrer"
+                <div className="flex flex-wrap items-start gap-2">
+                  {detail.attachments.map((attachment) =>
+                    /* A screenshot is the message; show it rather than its MIME type. */
+                    attachment.contentType.startsWith("image/") ? (
+                      <a
+                        key={attachment.id}
+                        href={attachment.downloadUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`${attachment.contentType} · ${formatBytes(attachment.sizeBytes)}`}
+                        className="block overflow-hidden rounded-md border border-border transition-colors hover:border-foreground/30"
+                      >
+                        <img
+                          src={attachment.downloadUrl}
+                          alt=""
+                          loading="lazy"
+                          className="size-20 object-cover"
                         />
-                      }
-                      nativeButton={false}
-                    >
-                      <PaperclipIcon />
-                      {attachment.contentType} · {formatBytes(attachment.sizeBytes)}
-                    </Button>
-                  ))}
+                      </a>
+                    ) : (
+                      <Button
+                        key={attachment.id}
+                        variant="outline"
+                        size="sm"
+                        render={
+                          <a
+                            href={attachment.downloadUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          />
+                        }
+                        nativeButton={false}
+                      >
+                        <PaperclipIcon />
+                        {attachment.contentType} · {formatBytes(attachment.sizeBytes)}
+                      </Button>
+                    ),
+                  )}
                 </div>
               )}
               <MessageFooter>{formatDate(item.createdAt)}</MessageFooter>
