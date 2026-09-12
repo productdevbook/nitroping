@@ -142,97 +142,108 @@ export const loadNitroPingConfig = async (
 const css = `
 .np-root{all:initial;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;color:var(--np-text,#1c1c1e);-webkit-font-smoothing:antialiased;
 --np-surface:var(--np-background,#fff);
---np-fill:color-mix(in oklab,var(--np-text,#1c1c1e) 6%,transparent);
---np-fill-strong:color-mix(in oklab,var(--np-text,#1c1c1e) 10%,transparent);
---np-line:color-mix(in oklab,var(--np-text,#1c1c1e) 10%,transparent);
---np-ring:color-mix(in oklab,var(--np-primary,#7c3aed) 22%,transparent)}
+--np-fill:color-mix(in oklab,var(--np-text,#1c1c1e) 5%,transparent);
+--np-fill-strong:color-mix(in oklab,var(--np-text,#1c1c1e) 9%,transparent);
+--np-line:color-mix(in oklab,var(--np-text,#1c1c1e) 9%,transparent);
+--np-ring:color-mix(in oklab,var(--np-primary,#7c3aed) 20%,transparent);
+--np-spring:cubic-bezier(.32,.72,0,1)}
 .np-root *{box-sizing:border-box}
-.np-button{position:fixed;right:20px;bottom:20px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:13px 18px;background:var(--np-primary,#7c3aed);color:#fff;font:590 15px/1 inherit;letter-spacing:-.01em;cursor:pointer;box-shadow:0 8px 24px color-mix(in oklab,var(--np-primary,#7c3aed) 34%,transparent);transition:transform .22s cubic-bezier(.32,.72,0,1),box-shadow .22s ease,opacity .2s ease}
-.np-button:hover{transform:translateY(-2px)}
-.np-button:active{transform:scale(.97)}
-.np-button:focus-visible{outline:4px solid var(--np-ring);outline-offset:2px}
-.np-button svg{width:18px;height:18px}
-.np-root:has(.np-backdrop) .np-button{opacity:0;transform:translateY(10px);pointer-events:none}
+.np-button{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:inline-flex;align-items:center;gap:7px;border:0;border-radius:999px;padding:10px 14px;background:var(--np-primary,#7c3aed);color:#fff;font:590 14px/1 inherit;letter-spacing:-.01em;cursor:pointer;box-shadow:0 6px 18px color-mix(in oklab,var(--np-primary,#7c3aed) 30%,transparent);transition:transform .18s var(--np-spring),opacity .18s ease}
+.np-button:hover{transform:translateY(-1px)}
+.np-button:active{transform:scale(.96)}
+.np-button:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
+.np-button svg{width:16px;height:16px}
+.np-root:has(.np-backdrop) .np-button{opacity:0;transform:translateY(8px);pointer-events:none}
 .np-inline{width:100%}
-.np-backdrop{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:24px;background:color-mix(in oklab,#0a0a0c 45%,transparent);backdrop-filter:saturate(180%) blur(20px);animation:np-fade .24s ease both}
+/* Anchored panel: no scrim, grows out of the launcher it belongs to. */
+.np-popover{position:fixed;right:18px;bottom:70px;z-index:2147483647;width:min(340px,calc(100vw - 36px));transform-origin:bottom right;animation:np-grow .3s var(--np-spring) both}
+.np-popover .np-card{width:100%;max-height:min(74vh,560px)}
+.np-backdrop{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:24px;background:color-mix(in oklab,#0a0a0c 40%,transparent);backdrop-filter:saturate(180%) blur(16px);animation:np-fade .2s ease both}
 .np-backdrop.np-side{place-items:stretch;padding:0}
-.np-card{position:relative;width:min(100%,440px);max-height:calc(100vh - 48px);overflow:auto;background:var(--np-surface);border-radius:28px;padding:28px 24px 24px;box-shadow:0 32px 80px #00000038,0 1px 0 #ffffff1a inset;animation:np-pop .34s cubic-bezier(.32,.72,0,1) both}
-.np-side .np-card{width:min(100%,420px);height:100%;max-height:none;margin-left:auto;border-radius:28px 0 0 28px;animation:np-slide .34s cubic-bezier(.32,.72,0,1) both}
-.np-inline .np-card{box-shadow:none;border:1px solid var(--np-line);animation:none}
-.np-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:22px}
+.np-card{position:relative;width:min(100%,400px);max-height:calc(100vh - 48px);overflow:auto;background:color-mix(in oklab,var(--np-surface) 92%,transparent);backdrop-filter:saturate(180%) blur(20px);border:.5px solid var(--np-line);border-radius:20px;padding:16px;box-shadow:0 18px 48px #00000024,0 2px 6px #0000000f;animation:np-pop .28s var(--np-spring) both}
+.np-popover .np-card{animation:none}
+.np-side .np-card{width:min(100%,380px);height:100%;max-height:none;margin-left:auto;border-radius:22px 0 0 22px;animation:np-slide .3s var(--np-spring) both}
+.np-inline .np-card{backdrop-filter:none;background:var(--np-surface);box-shadow:none;animation:none}
+.np-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
 .np-titles{flex:1;min-width:0}
-.np-logo{display:block;margin-bottom:12px;border-radius:12px;object-fit:contain}
-.np-card h2{margin:0;font:600 21px/1.25 inherit;letter-spacing:-.02em}
-.np-card p{margin:6px 0 0;color:var(--np-muted,#6e6e73);font:400 14px/1.45 inherit;letter-spacing:-.01em}
-.np-close{display:grid;place-items:center;width:30px;height:30px;flex:none;border:0;border-radius:999px;background:var(--np-fill);color:var(--np-muted,#6e6e73);cursor:pointer;transition:background .18s ease,transform .18s ease}
-.np-close:hover{background:var(--np-fill-strong)}
-.np-close:active{transform:scale(.92)}
-.np-close svg{width:13px;height:13px}
-.np-grid{display:grid;gap:18px}
-.np-field{display:grid;gap:8px}
-.np-field-label{font:590 13px/1.2 inherit;letter-spacing:-.01em;color:var(--np-muted,#6e6e73)}
-.np-input,.np-select{width:100%;min-height:46px;font:400 16px/1.4 inherit;letter-spacing:-.01em;padding:12px 14px;border:0;border-radius:14px;background:var(--np-fill);color:var(--np-text,#1c1c1e);appearance:none;transition:box-shadow .18s ease,background .18s ease}
-.np-select{background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 19px) 21px,calc(100% - 14px) 21px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:38px}
-.np-input::placeholder{color:color-mix(in oklab,var(--np-muted,#6e6e73) 65%,transparent)}
-.np-input:focus,.np-select:focus{outline:0;background:var(--np-surface);box-shadow:0 0 0 4px var(--np-ring),0 0 0 1px color-mix(in oklab,var(--np-primary,#7c3aed) 45%,transparent)}
-.np-textarea{min-height:120px;resize:vertical;line-height:1.5}
-.np-segment{display:flex;gap:2px;padding:3px;border-radius:14px;background:var(--np-fill);overflow-x:auto;scrollbar-width:none}
+.np-logo{display:block;margin-bottom:8px;border-radius:9px;object-fit:contain}
+.np-card h2{margin:0;font:600 15px/1.3 inherit;letter-spacing:-.01em}
+.np-card p{margin:2px 0 0;color:var(--np-muted,#6e6e73);font:400 13px/1.4 inherit}
+.np-close{display:grid;place-items:center;width:24px;height:24px;flex:none;border:0;border-radius:999px;background:transparent;color:var(--np-muted,#6e6e73);cursor:pointer;transition:background .16s ease,transform .16s ease}
+.np-close:hover{background:var(--np-fill)}
+.np-close:active{transform:scale(.9)}
+.np-close svg{width:12px;height:12px}
+.np-grid{display:grid;gap:12px}
+.np-field{display:grid;gap:5px}
+.np-field-label{font:510 12px/1.2 inherit;color:var(--np-muted,#6e6e73)}
+.np-input,.np-select{width:100%;min-height:38px;font:400 15px/1.35 inherit;letter-spacing:-.01em;padding:9px 11px;border:0;border-radius:11px;background:var(--np-fill);color:var(--np-text,#1c1c1e);appearance:none;transition:box-shadow .16s ease,background .16s ease}
+.np-select{background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 16px) 17px,calc(100% - 11px) 17px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:32px}
+.np-input::placeholder{color:color-mix(in oklab,var(--np-muted,#6e6e73) 60%,transparent)}
+.np-input:focus,.np-select:focus{outline:0;background:var(--np-surface);box-shadow:0 0 0 3px var(--np-ring),0 0 0 1px color-mix(in oklab,var(--np-primary,#7c3aed) 40%,transparent)}
+.np-textarea{min-height:84px;resize:vertical;line-height:1.45}
+.np-segment{display:flex;gap:2px;padding:2px;border-radius:11px;background:var(--np-fill);overflow-x:auto;scrollbar-width:none}
 .np-segment::-webkit-scrollbar{display:none}
 .np-seg{position:relative;flex:1 0 auto}
 .np-seg input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
-.np-seg span{display:grid;place-items:center;padding:9px 12px;border-radius:11px;font:510 13px/1.2 inherit;letter-spacing:-.01em;color:var(--np-muted,#6e6e73);text-align:center;white-space:nowrap;transition:background .2s cubic-bezier(.32,.72,0,1),color .2s ease,box-shadow .2s ease}
-.np-seg input:checked+span{background:var(--np-surface);color:var(--np-text,#1c1c1e);font-weight:590;box-shadow:0 1px 3px #0000001f,0 0 0 .5px #00000014}
-.np-seg input:focus-visible+span{box-shadow:0 0 0 4px var(--np-ring)}
-.np-file-drop{display:flex;align-items:center;gap:10px;position:relative;min-height:46px;padding:12px 14px;border-radius:14px;background:var(--np-fill);color:var(--np-muted,#6e6e73);font:400 15px/1.2 inherit;cursor:pointer;transition:background .18s ease}
+.np-seg span{display:grid;place-items:center;padding:6px 10px;border-radius:9px;font:510 12px/1.2 inherit;color:var(--np-muted,#6e6e73);white-space:nowrap;transition:background .18s var(--np-spring),color .18s ease}
+.np-seg input:checked+span{background:var(--np-surface);color:var(--np-text,#1c1c1e);font-weight:590;box-shadow:0 1px 2px #00000016}
+.np-seg input:focus-visible+span{box-shadow:0 0 0 3px var(--np-ring)}
+.np-file-drop{display:flex;align-items:center;gap:8px;position:relative;min-height:38px;padding:9px 11px;border-radius:11px;background:var(--np-fill);color:var(--np-muted,#6e6e73);font:400 13px/1.2 inherit;cursor:pointer;transition:background .16s ease}
 .np-file-drop:hover{background:var(--np-fill-strong)}
-.np-file-drop svg{width:17px;height:17px;flex:none}
+.np-file-drop svg{width:15px;height:15px;flex:none}
 .np-file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .np-file-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .np-field-inline{grid-template-columns:1fr auto;align-items:center}
-.np-switch{appearance:none;width:46px;height:28px;flex:none;position:relative;border:0;border-radius:999px;background:var(--np-fill-strong);cursor:pointer;transition:background .22s ease}
-.np-switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:999px;background:#fff;box-shadow:0 1px 3px #0000002e;transition:transform .24s cubic-bezier(.32,.72,0,1)}
+.np-switch{appearance:none;width:40px;height:24px;flex:none;position:relative;border:0;border-radius:999px;background:var(--np-fill-strong);cursor:pointer;transition:background .2s ease}
+.np-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px #00000026;transition:transform .22s var(--np-spring)}
 .np-switch:checked{background:var(--np-primary,#7c3aed)}
-.np-switch:checked::after{transform:translateX(18px)}
-.np-switch:focus-visible{outline:4px solid var(--np-ring);outline-offset:2px}
-.np-turnstile{margin-top:18px}
-.np-actions{display:grid;gap:8px;margin-top:24px}
-.np-submit{width:100%;min-height:50px;border:0;border-radius:16px;background:var(--np-primary,#7c3aed);color:#fff;font:590 16px/1 inherit;letter-spacing:-.01em;cursor:pointer;box-shadow:0 8px 20px color-mix(in oklab,var(--np-primary,#7c3aed) 28%,transparent);transition:transform .18s cubic-bezier(.32,.72,0,1),opacity .18s ease}
-.np-submit:active{transform:scale(.985)}
-.np-submit:disabled{opacity:.55;cursor:progress;transform:none}
-.np-secondary{width:100%;min-height:44px;border:0;border-radius:16px;background:transparent;color:var(--np-muted,#6e6e73);font:510 15px/1 inherit;cursor:pointer;transition:background .18s ease}
+.np-switch:checked::after{transform:translateX(16px)}
+.np-switch:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
+.np-turnstile{margin-top:12px}
+.np-actions{display:flex;align-items:center;gap:8px;margin-top:16px}
+.np-submit{flex:1;min-height:38px;border:0;border-radius:11px;background:var(--np-primary,#7c3aed);color:#fff;font:590 14px/1 inherit;letter-spacing:-.01em;cursor:pointer;transition:transform .16s var(--np-spring),opacity .16s ease}
+.np-submit:active{transform:scale(.98)}
+.np-submit:disabled{opacity:.5;cursor:progress;transform:none}
+.np-secondary{min-height:38px;padding:0 12px;border:0;border-radius:11px;background:transparent;color:var(--np-muted,#6e6e73);font:510 14px/1 inherit;cursor:pointer;transition:background .16s ease}
 .np-secondary:hover{background:var(--np-fill)}
-.np-secondary:focus-visible,.np-submit:focus-visible,.np-close:focus-visible{outline:4px solid var(--np-ring);outline-offset:2px}
-.np-error{margin-top:16px;padding:12px 14px;border-radius:14px;background:color-mix(in oklab,#ff3b30 10%,transparent);color:#c9372c;font:500 14px/1.4 inherit}
-.np-success{display:grid;justify-items:center;gap:12px;padding:34px 16px 26px;text-align:center;font:400 15px/1.5 inherit;letter-spacing:-.01em;color:var(--np-muted,#6e6e73)}
-.np-success-icon{display:grid;place-items:center;width:56px;height:56px;border-radius:999px;background:color-mix(in oklab,var(--np-primary,#7c3aed) 12%,transparent);color:var(--np-primary,#7c3aed);animation:np-check .5s cubic-bezier(.32,1.4,.4,1) both}
-.np-success-icon svg{width:27px;height:27px}
-.np-success strong{font:600 19px/1.3 inherit;letter-spacing:-.02em;color:var(--np-text,#1c1c1e)}
-.np-success small{margin-top:4px;font-size:12px;opacity:.75}
+.np-secondary:focus-visible,.np-submit:focus-visible,.np-close:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
+.np-error{margin-top:12px;padding:9px 11px;border-radius:11px;background:color-mix(in oklab,#ff3b30 9%,transparent);color:#c9372c;font:500 13px/1.4 inherit}
+.np-success{display:grid;justify-items:center;gap:8px;padding:22px 12px 16px;text-align:center;font:400 13px/1.45 inherit;color:var(--np-muted,#6e6e73)}
+.np-success-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:999px;background:color-mix(in oklab,var(--np-primary,#7c3aed) 12%,transparent);color:var(--np-primary,#7c3aed);animation:np-check .42s cubic-bezier(.32,1.35,.4,1) both}
+.np-success-icon svg{width:20px;height:20px}
+.np-success strong{font:600 15px/1.3 inherit;color:var(--np-text,#1c1c1e)}
+.np-success small{font-size:11px;opacity:.7}
 @keyframes np-fade{from{opacity:0}to{opacity:1}}
-@keyframes np-pop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
-@keyframes np-slide{from{transform:translateX(32px);opacity:0}to{transform:none;opacity:1}}
+@keyframes np-grow{from{opacity:0;transform:scale(.94) translateY(6px)}to{opacity:1;transform:none}}
+@keyframes np-pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes np-slide{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
 @keyframes np-sheet{from{transform:translateY(100%)}to{transform:none}}
-@keyframes np-check{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes np-check{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 @media (max-width:540px){
+.np-popover{right:10px;left:10px;bottom:10px;width:auto;transform-origin:bottom center;animation:np-sheet .3s var(--np-spring) both}
+.np-popover .np-card{max-height:min(78vh,560px);border-radius:20px;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
 .np-backdrop{place-items:end stretch;padding:0}
-.np-card{width:100%;max-height:90vh;border-radius:28px 28px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom));animation:np-sheet .38s cubic-bezier(.32,.72,0,1) both}
-.np-card::before{content:"";display:block;width:36px;height:5px;margin:-8px auto 16px;border-radius:999px;background:var(--np-fill-strong)}
-.np-side .np-card{width:100%;height:auto;margin:0;border-radius:28px 28px 0 0}
-.np-button{right:16px;bottom:16px}
+.np-backdrop .np-card{width:100%;max-height:88vh;border-radius:22px 22px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));animation:np-sheet .32s var(--np-spring) both}
+.np-side .np-card{width:100%;height:auto;margin:0;border-radius:22px 22px 0 0}
+.np-button{right:14px;bottom:14px}
 }
 @media (prefers-color-scheme:dark){
 .np-root{color:var(--np-text,#f5f5f7);
 --np-surface:var(--np-background,#1c1c1e);
---np-fill:color-mix(in oklab,#fff 10%,transparent);
---np-fill-strong:color-mix(in oklab,#fff 16%,transparent);
---np-line:color-mix(in oklab,#fff 14%,transparent)}
+--np-fill:color-mix(in oklab,#fff 9%,transparent);
+--np-fill-strong:color-mix(in oklab,#fff 14%,transparent);
+--np-line:color-mix(in oklab,#fff 12%,transparent)}
 .np-card p,.np-field-label,.np-close,.np-secondary,.np-success,.np-file-drop{color:var(--np-muted,#98989d)}
-.np-backdrop{background:color-mix(in oklab,#000 55%,transparent)}
-.np-seg input:checked+span{background:color-mix(in oklab,#fff 18%,transparent);box-shadow:none}
+.np-backdrop{background:color-mix(in oklab,#000 50%,transparent)}
+.np-seg input:checked+span{background:color-mix(in oklab,#fff 16%,transparent);box-shadow:none}
+}
+@media (prefers-reduced-transparency:reduce){
+.np-card{background:var(--np-surface);backdrop-filter:none}
+.np-backdrop{backdrop-filter:none}
 }
 @media (prefers-reduced-motion:reduce){
-.np-backdrop,.np-card,.np-success-icon{animation:none}
-.np-button,.np-submit,.np-seg span{transition:none}
+.np-popover,.np-backdrop,.np-card,.np-success-icon{animation:none}
+.np-button,.np-submit,.np-seg span,.np-switch::after{transition:none}
 }
 `;
 
@@ -580,18 +591,82 @@ export const NitroPing = {
       for (const [key, value] of Object.entries(merged.colors))
         if (value) root.style.setProperty(`--np-${key}`, value);
     const mode = merged.mode ?? "floating";
-    const open = () => {
+    let launcher: HTMLButtonElement | null = null;
+    let panel: HTMLElement | null = null;
+    let detach: (() => void) | null = null;
+
+    const close = () => {
+      panel?.remove();
+      panel = null;
+      detach?.();
+      detach = null;
+      launcher?.setAttribute("aria-expanded", "false");
+      launcher?.focus();
+    };
+
+    /*
+     * The floating mode opens a panel anchored to its own button instead of a
+     * modal: the page stays readable and usable, and the surface grows out of
+     * the control that summoned it.
+     */
+    const openPanel = () => {
+      const popover = document.createElement("div");
+      popover.className = "np-popover";
+      popover.setAttribute("role", "dialog");
+      popover.setAttribute(
+        "aria-label",
+        merged.title ?? merged.brandName ?? "Feedback",
+      );
+      buildForm(merged, client, popover, close);
+      root.appendChild(popover);
+      panel = popover;
+      const onPointerDown = (event: Event) => {
+        const target = event.target as Node;
+        if (popover.contains(target)) return;
+        if (launcher && (target === launcher || launcher.contains(target))) return;
+        close();
+      };
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") close();
+      };
+      document.addEventListener("pointerdown", onPointerDown, true);
+      document.addEventListener("keydown", onKeyDown);
+      detach = () => {
+        document.removeEventListener("pointerdown", onPointerDown, true);
+        document.removeEventListener("keydown", onKeyDown);
+      };
+      popover
+        .querySelector<HTMLElement>("input, textarea, select")
+        ?.focus({ preventScroll: true });
+    };
+
+    const openOverlay = () => {
       const backdrop = document.createElement("div");
       backdrop.className = `np-backdrop ${mode === "side-panel" ? "np-side" : ""}`;
       backdrop.setAttribute("role", "dialog");
       backdrop.setAttribute("aria-modal", "true");
-      const close = () => backdrop.remove();
       buildForm(merged, client, backdrop, close);
       backdrop.addEventListener("click", (event) => {
         if (event.target === backdrop && mode !== "side-panel") close();
       });
       root.appendChild(backdrop);
+      panel = backdrop;
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") close();
+      };
+      document.addEventListener("keydown", onKeyDown);
+      detach = () => document.removeEventListener("keydown", onKeyDown);
     };
+
+    const toggle = () => {
+      if (panel) {
+        close();
+        return;
+      }
+      if (mode === "floating") openPanel();
+      else openOverlay();
+    };
+
     if (mode === "inline" || mode === "portal") {
       const inlineRoot = document.createElement("div");
       inlineRoot.className = "np-inline";
@@ -600,17 +675,23 @@ export const NitroPing = {
       (host ?? document.body).appendChild(root);
     } else {
       const button = document.createElement("button");
+      launcher = button;
       button.type = "button";
       button.className = "np-button";
       const label = merged.buttonLabel ?? "Give feedback";
       button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span></span>`;
       (button.querySelector("span") as HTMLElement).textContent = label;
       button.setAttribute("aria-label", label);
-      button.addEventListener("click", open);
+      button.setAttribute("aria-expanded", "false");
+      button.addEventListener("click", () => {
+        button.setAttribute("aria-expanded", panel ? "false" : "true");
+        toggle();
+      });
       (host ?? document.body).appendChild(root);
       if (host) host.appendChild(button);
       else root.appendChild(button);
     }
+
     return {
       ...client,
       destroy() {
