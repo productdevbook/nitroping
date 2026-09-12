@@ -229,7 +229,7 @@ export function SettingsView({
         />
         {customDomain ? (
           <div className="py-4">
-            <div className="flex flex-wrap items-center gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-3 text-sm">
               <span className="font-medium">{customDomain.hostname}</span>
               <span className="text-muted-foreground">
                 {customDomain.status.replaceAll("_", " ")}
@@ -253,10 +253,10 @@ export function SettingsView({
                     <TableRow key={`${record.name ?? "record"}-${index}`}>
                       <TableCell>{record.type ?? "DNS"}</TableCell>
                       <TableCell>
-                        <code className="text-[11px]">{record.name ?? "—"}</code>
+                        <code className="text-xs">{record.name ?? "—"}</code>
                       </TableCell>
                       <TableCell>
-                        <code className="text-[11px]">{record.value ?? "—"}</code>
+                        <code className="text-xs">{record.value ?? "—"}</code>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {record.status ?? "pending"}

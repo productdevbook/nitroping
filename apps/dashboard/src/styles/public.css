@@ -5,7 +5,6 @@
 
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource-variable/inter";
 @import "@nitroping/tokens/tokens.css";
 
 @source "../portal/**/*.tsx";
@@ -15,7 +14,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
   body {
-    @apply bg-background text-foreground text-xs antialiased;
+    @apply bg-background text-foreground;
   }
 }

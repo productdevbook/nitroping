@@ -254,8 +254,8 @@ export function WidgetView({
             </Field>
             <div className="flex items-center justify-between gap-4 border-t border-border pt-3">
               <div>
-                <p className="text-xs font-medium">Show “Powered by NitroPing”</p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-sm font-medium">Show “Powered by NitroPing”</p>
+                <p className="text-xs text-muted-foreground">
                   Displayed on the success message.
                 </p>
               </div>
@@ -266,12 +266,12 @@ export function WidgetView({
               />
             </div>
             <div className="border-t border-border pt-3">
-              <p className="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+              <p className="text-sm font-medium">
                 Form fields
               </p>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {formFields.map((field) => (
-                  <label key={field} className="flex items-center gap-2 text-xs">
+                  <label key={field} className="flex items-center gap-2 text-sm">
                     <Checkbox
                       checked={fields.includes(field)}
                       onCheckedChange={(checked) =>
@@ -302,26 +302,26 @@ export function WidgetView({
           >
             <div className="flex items-center gap-2">
               <span
-                className="grid size-7 place-items-center rounded-md text-xs font-semibold text-white"
+                className="grid size-7 place-items-center rounded-md text-sm font-semibold text-white"
                 style={{ background: value("primary", "#7C3AED") }}
               >
                 N
               </span>
               <div>
-                <p className="text-xs font-medium">{value("brandName", "Your feedback")}</p>
-                <p className="text-[11px] opacity-70">
+                <p className="text-sm font-medium">{value("brandName", "Your feedback")}</p>
+                <p className="text-xs opacity-70">
                   Help us make this product better.
                 </p>
               </div>
             </div>
-            <div className="rounded-md border border-black/10 px-2 py-1.5 text-[11px] opacity-70">
+            <div className="rounded-md border border-black/10 px-2 py-1.5 text-xs opacity-70">
               Tell us what happened…
             </div>
-            <div className="rounded-md border border-black/10 px-2 py-4 text-[11px] opacity-70">
+            <div className="rounded-md border border-black/10 px-2 py-4 text-xs opacity-70">
               Describe your feedback…
             </div>
             <div
-              className="rounded-md py-1.5 text-center text-[11px] font-medium text-white"
+              className="rounded-md py-1.5 text-center text-xs font-medium text-white"
               style={{ background: value("primary", "#7C3AED") }}
             >
               {value("buttonLabel", "Give feedback")}
@@ -353,7 +353,7 @@ export function WidgetView({
           </Button>
         </form>
         {categories.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             No custom categories yet. The built-in feedback types remain available.
           </p>
         ) : (
@@ -412,7 +412,7 @@ export function WidgetView({
           }
         />
         {customFields.length === 0 ? (
-          <p className="py-3 text-xs text-muted-foreground">
+          <p className="py-3 text-sm text-muted-foreground">
             No custom fields yet. Add one for account, environment, or workflow context.
           </p>
         ) : (
@@ -432,8 +432,7 @@ export function WidgetView({
                 <TableRow key={field.id}>
                   <TableCell>
                     <Input
-                      className="h-6"
-                      aria-label="Field ID"
+                                            aria-label="Field ID"
                       value={field.id}
                       onChange={(event) =>
                         updateCustomField(field.id, {
@@ -446,8 +445,7 @@ export function WidgetView({
                   </TableCell>
                   <TableCell>
                     <Input
-                      className="h-6"
-                      aria-label="Field label"
+                                            aria-label="Field label"
                       value={field.label}
                       onChange={(event) =>
                         updateCustomField(field.id, {
@@ -485,8 +483,7 @@ export function WidgetView({
                   <TableCell>
                     {field.type === "select" ? (
                       <Input
-                        className="h-6"
-                        aria-label="Select options"
+                                                aria-label="Select options"
                         placeholder="Option A, Option B"
                         value={(field.options ?? []).join(", ")}
                         onChange={(event) =>
@@ -500,7 +497,7 @@ export function WidgetView({
                         }
                       />
                     ) : (
-                      <span className="text-[11px] text-muted-foreground">—</span>
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -532,7 +529,7 @@ export function WidgetView({
           description="Give this to your developer or use it as a starting point."
           action={<CopyButton value={snippet} />}
         />
-        <pre className="mt-3 overflow-x-auto rounded-md bg-muted p-3 text-[11px] leading-5">
+        <pre className="mt-3 overflow-x-auto rounded-md bg-muted p-3 text-xs leading-5">
           <code>{snippet}</code>
         </pre>
       </section>

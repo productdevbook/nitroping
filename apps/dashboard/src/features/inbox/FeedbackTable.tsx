@@ -30,8 +30,8 @@ export function FeedbackTable({
     return (
       <div className="divide-y divide-border">
         {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="flex items-center gap-3 px-3 py-2.5">
-            <Skeleton className="size-1.5 rounded-full" />
+          <div key={index} className="flex items-center gap-3 px-3 py-3">
+            <Skeleton className="size-2 rounded-full" />
             <Skeleton className="h-3 w-48" />
             <Skeleton className="ml-auto h-3 w-16" />
           </div>
@@ -53,7 +53,7 @@ export function FeedbackTable({
         <div
           key={item.id}
           className={cn(
-            "flex items-start gap-3 px-3 py-2.5 transition-colors",
+            "flex items-start gap-3 px-3 py-3 transition-colors",
             selectedId === item.id
               ? "bg-muted shadow-[inset_2px_0_0_0_var(--foreground)]"
               : "hover:bg-muted/60",
@@ -70,21 +70,21 @@ export function FeedbackTable({
             onClick={() => onOpen(item)}
           >
             <span className="flex items-baseline gap-2">
-              <span className="truncate text-[13px] font-medium">{item.title}</span>
-              <span className="ml-auto shrink-0 text-[11px] whitespace-nowrap text-muted-foreground">
+              <span className="truncate text-sm font-medium">{item.title}</span>
+              <span className="ml-auto shrink-0 text-xs whitespace-nowrap text-muted-foreground">
                 {formatDate(item.createdAt)}
               </span>
             </span>
-            <span className="mt-0.5 line-clamp-1 block text-xs text-muted-foreground">
+            <span className="mt-0.5 line-clamp-1 block text-sm text-muted-foreground">
               {item.body}
             </span>
             <span className="mt-1 flex items-center gap-3">
               <StatusBadge status={item.status} />
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {statusLabel(item.type)}
               </span>
               {item.platform && (
-                <span className="text-[11px] text-muted-foreground">{item.platform}</span>
+                <span className="text-xs text-muted-foreground">{item.platform}</span>
               )}
             </span>
           </button>

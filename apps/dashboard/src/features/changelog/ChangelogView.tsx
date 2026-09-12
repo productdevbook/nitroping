@@ -84,12 +84,12 @@ export function ChangelogView({
         <div className="divide-y divide-border border-y border-border">
           {items.map((item) => (
             <article key={item.id} className="flex gap-4 py-3">
-              <time className="w-24 shrink-0 text-[11px] text-muted-foreground">
+              <time className="w-24 shrink-0 text-xs text-muted-foreground">
                 {item.publishedAt ? formatDate(item.publishedAt) : "Draft"}
               </time>
               <div className="min-w-0 flex-1">
-                <h2 className="text-[13px] font-medium">{item.title}</h2>
-                <p className="mt-0.5 max-w-[80ch] text-xs whitespace-pre-wrap text-muted-foreground">
+                <h2 className="text-sm font-medium">{item.title}</h2>
+                <p className="mt-0.5 max-w-[80ch] text-sm whitespace-pre-wrap text-muted-foreground">
                   {item.body}
                 </p>
               </div>

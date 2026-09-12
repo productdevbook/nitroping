@@ -104,7 +104,7 @@ export function PrivacyView({
         />
         <p className="py-3 text-lg font-medium tabular-nums">
           {settings?.retentionDays ?? 365}{" "}
-          <span className="text-xs font-normal text-muted-foreground">days</span>
+          <span className="text-sm font-normal text-muted-foreground">days</span>
         </p>
       </section>
 
@@ -122,11 +122,11 @@ export function PrivacyView({
             {feedback.slice(0, 50).map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-4 py-2.5"
+                className="flex items-center justify-between gap-4 py-3"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-medium">{item.title}</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="truncate text-sm font-medium">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">
                     {item.email ?? "Anonymous"} · {formatDate(item.createdAt)}
                   </p>
                 </div>

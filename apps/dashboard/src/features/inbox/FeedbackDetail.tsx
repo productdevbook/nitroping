@@ -49,7 +49,7 @@ export function FeedbackDetail({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <StatusBadge status={item.status} />
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {formatDate(item.createdAt)}
           </span>
         </div>
@@ -58,19 +58,19 @@ export function FeedbackDetail({
         </Button>
       </div>
 
-      <h2 className="mt-3 text-[15px] font-medium tracking-[-0.01em]">{item.title}</h2>
-      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+      <h2 className="mt-3 text-lg font-semibold tracking-tight">{item.title}</h2>
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span>{statusLabel(item.type)}</span>
         <span>{item.platform ?? "Unknown platform"}</span>
         <span>{item.priority} priority</span>
         {detail.tags?.map((tag) => <span key={tag.id}>{tag.name}</span>)}
         {item.email && <span>{item.email}</span>}
       </div>
-      <p className="mt-3 text-xs leading-5 whitespace-pre-wrap">{item.body}</p>
+      <p className="mt-3 text-sm leading-5 whitespace-pre-wrap">{item.body}</p>
 
       {detail.attachments && detail.attachments.length > 0 && (
         <section className="mt-4 border-t border-border pt-3">
-          <h3 className="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+          <h3 className="text-sm font-medium">
             Attachments · {detail.attachments.length}
           </h3>
           <div className="mt-2 divide-y divide-border">
@@ -80,10 +80,10 @@ export function FeedbackDetail({
                 href={attachment.downloadUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center justify-between gap-3 py-1.5 text-xs hover:underline"
+                className="flex items-center justify-between gap-3 py-1.5 text-sm hover:underline"
               >
                 <span className="truncate">{attachment.contentType}</span>
-                <span className="shrink-0 text-[11px] text-muted-foreground">
+                <span className="shrink-0 text-xs text-muted-foreground">
                   {formatBytes(attachment.sizeBytes)}
                 </span>
               </a>
@@ -176,30 +176,30 @@ export function FeedbackDetail({
       </section>
 
       <section className="mt-4 border-t border-border pt-3">
-        <h3 className="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+        <h3 className="text-sm font-medium">
           Activity · {detail.comments.length + detail.statusHistory.length} events
         </h3>
         <div className="mt-2 divide-y divide-border">
           {detail.statusHistory.map((event) => (
             <div key={event.id} className="py-1.5">
-              <p className="text-xs">
+              <p className="text-sm">
                 Status changed to{" "}
                 <span className="font-medium">{statusLabel(event.toStatus)}</span>
               </p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {formatDate(event.createdAt)}
               </p>
             </div>
           ))}
           {detail.comments.map((comment) => (
             <div key={comment.id} className="py-1.5">
-              <p className="text-xs">
+              <p className="text-sm">
                 <span className="font-medium">
                   {comment.isInternal ? "Internal note" : "Reply"}
                 </span>
                 : {comment.body}
               </p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {formatDate(comment.createdAt)}
               </p>
             </div>

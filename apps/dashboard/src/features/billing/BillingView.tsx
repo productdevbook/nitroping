@@ -74,19 +74,19 @@ export function BillingView({
         />
         <dl className="grid grid-cols-2 divide-x divide-border border-b border-border">
           <div className="py-3 pr-3">
-            <dt className="text-[11px] text-muted-foreground">Plan</dt>
+            <dt className="text-xs text-muted-foreground">Plan</dt>
             <dd className="mt-0.5 text-lg font-medium capitalize">
               {billing?.plan ?? "free"}
             </dd>
           </div>
           <div className="py-3 pl-3">
-            <dt className="text-[11px] text-muted-foreground">Status</dt>
+            <dt className="text-xs text-muted-foreground">Status</dt>
             <dd className="mt-0.5 text-lg font-medium capitalize">
               {billing?.status ?? "active"}
             </dd>
           </div>
         </dl>
-        <p className="mt-3 text-xs text-muted-foreground">
+        <p className="mt-3 text-sm text-muted-foreground">
           {billing?.currentPeriodEnd
             ? `Current period ends ${formatDate(billing.currentPeriodEnd)}`
             : "No paid subscription is active."}{" "}
@@ -105,10 +105,10 @@ export function BillingView({
               className="flex flex-wrap items-start justify-between gap-3 py-3"
             >
               <div className="min-w-0">
-                <p className="text-[13px] font-medium">
+                <p className="text-sm font-medium">
                   {plan.name} <span className="text-muted-foreground">{plan.price}</span>
                 </p>
-                <p className="mt-0.5 max-w-[60ch] text-xs text-muted-foreground">
+                <p className="mt-0.5 max-w-[60ch] text-sm text-muted-foreground">
                   {plan.detail}
                 </p>
               </div>

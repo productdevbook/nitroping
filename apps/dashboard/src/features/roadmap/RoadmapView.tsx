@@ -91,8 +91,8 @@ export function RoadmapView({
             if (group.length === 0) return null;
             return (
               <section key={status}>
-                <h2 className="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-1.5 text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
-                  <span className={cn("size-1.5 rounded-full", roadmapDot[status])} />
+                <h2 className="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-1.5 text-sm font-medium">
+                  <span className={cn("size-2 rounded-full", roadmapDot[status])} />
                   {statusLabel(status)}
                   <span className="tabular-nums">{group.length}</span>
                 </h2>
@@ -100,16 +100,16 @@ export function RoadmapView({
                   {group.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-start justify-between gap-4 px-3 py-2.5"
+                      className="flex items-start justify-between gap-4 px-3 py-3"
                     >
                       <div className="min-w-0">
-                        <p className="text-[13px] font-medium">{item.title}</p>
+                        <p className="text-sm font-medium">{item.title}</p>
                         {item.body && (
-                          <p className="mt-0.5 max-w-[80ch] text-xs text-muted-foreground">
+                          <p className="mt-0.5 max-w-[80ch] text-sm text-muted-foreground">
                             {item.body}
                           </p>
                         )}
-                        <p className="mt-1 text-[11px] text-muted-foreground">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           Updated{" "}
                           {item.updatedAt ? formatDate(item.updatedAt) : "recently"}
                         </p>

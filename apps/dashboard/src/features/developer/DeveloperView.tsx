@@ -139,8 +139,8 @@ export function DeveloperView({
       {secret && (
         <div className="mb-4 flex items-center gap-3 border-l-2 border-tone-warning bg-muted/50 px-3 py-2">
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium">Copy this secret now.</p>
-            <code className="block truncate text-[11px] text-muted-foreground">
+            <p className="text-sm font-medium">Copy this secret now.</p>
+            <code className="block truncate text-xs text-muted-foreground">
               {secret}
             </code>
           </div>
@@ -199,7 +199,7 @@ export function DeveloperView({
               <TableRow key={key.id}>
                 <TableCell className="font-medium">{key.label}</TableCell>
                 <TableCell className="text-muted-foreground">{key.kind}</TableCell>
-                <TableCell className="text-[11px] text-muted-foreground">
+                <TableCell className="text-xs text-muted-foreground">
                   {key.keyPrefix}••••
                 </TableCell>
                 <TableCell className="text-muted-foreground">

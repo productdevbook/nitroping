@@ -36,7 +36,7 @@ export function InsightsView({
       <section>
         <SectionHeader title="Feedback volume" description="Last 30 days" />
         {volume.length === 0 ? (
-          <p className="py-6 text-xs text-muted-foreground">
+          <p className="py-6 text-sm text-muted-foreground">
             No feedback volume recorded yet.
           </p>
         ) : (
@@ -67,12 +67,12 @@ export function InsightsView({
       <section className="mt-8">
         <SectionHeader title="By type" description="What users are asking for" />
         {types.length === 0 ? (
-          <p className="py-6 text-xs text-muted-foreground">No type data yet.</p>
+          <p className="py-6 text-sm text-muted-foreground">No type data yet.</p>
         ) : (
           <div className="divide-y divide-border">
             {types.map((item) => (
-              <div key={item.type} className="grid gap-1 py-2.5">
-                <div className="flex items-center justify-between text-xs">
+              <div key={item.type} className="grid gap-1 py-3">
+                <div className="flex items-center justify-between text-sm">
                   <span>{statusLabel(item.type)}</span>
                   <span className="tabular-nums">{item.count}</span>
                 </div>
@@ -91,9 +91,9 @@ export function InsightsView({
         <SectionHeader title="Statuses" description="Where feedback sits in the workflow" />
         <div className="divide-y divide-border">
           {(analytics?.statuses ?? []).map((item) => (
-            <div key={item.status} className="flex items-center justify-between py-2.5">
+            <div key={item.status} className="flex items-center justify-between py-3">
               <StatusBadge status={item.status} />
-              <span className="text-xs tabular-nums">{item.count}</span>
+              <span className="text-sm tabular-nums">{item.count}</span>
             </div>
           ))}
         </div>
@@ -103,7 +103,7 @@ export function InsightsView({
         <SectionHeader title="Response health" description="Average time from submission" />
         <dl className="grid grid-cols-2 divide-x divide-border border-b border-border">
           <div className="py-3 pr-3">
-            <dt className="text-[11px] text-muted-foreground">First response</dt>
+            <dt className="text-xs text-muted-foreground">First response</dt>
             <dd className="mt-0.5 text-lg font-medium tabular-nums">
               {analytics?.averageResponseMinutes == null
                 ? "—"
@@ -111,7 +111,7 @@ export function InsightsView({
             </dd>
           </div>
           <div className="py-3 pl-3">
-            <dt className="text-[11px] text-muted-foreground">Average resolution</dt>
+            <dt className="text-xs text-muted-foreground">Average resolution</dt>
             <dd className="mt-0.5 text-lg font-medium tabular-nums">
               {analytics?.averageResolutionMinutes == null
                 ? "—"
@@ -120,7 +120,7 @@ export function InsightsView({
           </div>
         </dl>
         <div className="mt-4 grid gap-2">
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
               {usage?.plan ?? "Free"} plan · monthly feedback
             </span>

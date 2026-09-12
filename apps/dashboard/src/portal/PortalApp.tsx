@@ -175,9 +175,9 @@ export function PortalApp() {
       }
     >
       <header className="flex h-12 items-center justify-between gap-3 border-b border-border">
-        <div className="flex items-center gap-2 text-[13px] font-medium">
+        <div className="flex items-center gap-2 text-sm font-medium">
           <span className="grid size-5 place-items-center rounded-md bg-foreground">
-            <span className="size-1.5 rounded-full bg-background" />
+            <span className="size-2 rounded-full bg-background" />
           </span>
           NitroPing
         </div>
@@ -185,10 +185,10 @@ export function PortalApp() {
       </header>
 
       <section className="py-8">
-        <h1 className="text-lg font-medium tracking-[-0.01em]">
+        <h1 className="text-2xl font-semibold tracking-tight">
           Help shape what comes next.
         </h1>
-        <p className="mt-1 max-w-[60ch] text-xs text-muted-foreground">
+        <p className="mt-1 max-w-[60ch] text-sm text-muted-foreground">
           Vote on ideas, report problems, and follow the progress of work that matters to
           you.
         </p>
@@ -204,7 +204,7 @@ export function PortalApp() {
         </div>
       </section>
 
-      {error && <p className="pb-4 text-xs text-destructive">{error}</p>}
+      {error && <p className="pb-4 text-sm text-destructive">{error}</p>}
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
         <Tabs
@@ -219,10 +219,10 @@ export function PortalApp() {
             ))}
           </TabsList>
         </Tabs>
-        <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span
             className={cn(
-              "size-1.5 rounded-full",
+              "size-2 rounded-full",
               live ? "bg-tone-success" : "bg-muted-foreground",
             )}
           />
@@ -246,13 +246,13 @@ export function PortalApp() {
                   className="min-w-0 flex-1 text-left outline-none focus-visible:underline"
                   onClick={() => void openItem(item)}
                 >
-                  <span className="block text-[13px] font-medium">{item.title}</span>
-                  <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">
+                  <span className="block text-sm font-medium">{item.title}</span>
+                  <span className="mt-0.5 line-clamp-2 block text-sm text-muted-foreground">
                     {item.body}
                   </span>
                   <span className="mt-1 flex items-center gap-3">
                     <StatusBadge status={item.status} />
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {relativeTime(item.createdAt)}
                     </span>
                   </span>
@@ -279,8 +279,8 @@ export function PortalApp() {
               <div className="flex items-center gap-3">
                 <StatusBadge status={item.status} />
               </div>
-              <h2 className="mt-1 text-[13px] font-medium">{item.title}</h2>
-              <p className="mt-0.5 max-w-[70ch] text-xs text-muted-foreground">
+              <h2 className="mt-1 text-sm font-medium">{item.title}</h2>
+              <p className="mt-0.5 max-w-[70ch] text-sm text-muted-foreground">
                 {item.body}
               </p>
             </article>
@@ -292,7 +292,7 @@ export function PortalApp() {
         <div className="divide-y divide-border">
           {changelog.map((item) => (
             <article key={item.id} className="flex gap-4 py-3">
-              <time className="w-24 shrink-0 text-[11px] text-muted-foreground">
+              <time className="w-24 shrink-0 text-xs text-muted-foreground">
                 {item.publishedAt
                   ? new Date(item.publishedAt).toLocaleDateString("en", {
                       dateStyle: "medium",
@@ -300,8 +300,8 @@ export function PortalApp() {
                   : "Recently"}
               </time>
               <div className="min-w-0">
-                <h2 className="text-[13px] font-medium">{item.title}</h2>
-                <p className="mt-0.5 max-w-[70ch] text-xs whitespace-pre-wrap text-muted-foreground">
+                <h2 className="text-sm font-medium">{item.title}</h2>
+                <p className="mt-0.5 max-w-[70ch] text-sm whitespace-pre-wrap text-muted-foreground">
                   {item.body}
                 </p>
               </div>
@@ -319,29 +319,29 @@ export function PortalApp() {
               </DialogHeader>
               <div className="flex items-center gap-3">
                 <StatusBadge status={selected.status} />
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {titleCase(selected.type)}
                 </span>
               </div>
-              <p className="text-xs whitespace-pre-wrap">{selected.body}</p>
+              <p className="text-sm whitespace-pre-wrap">{selected.body}</p>
               <div className="flex items-center gap-3 border-y border-border py-2">
                 <Button variant="outline" size="sm" onClick={() => void vote(selected)}>
                   <ChevronUpIcon />
                   Vote
                 </Button>
-                <span className="text-xs tabular-nums">
+                <span className="text-sm tabular-nums">
                   {selected.votes ?? 0} people agree
                 </span>
               </div>
               <div>
-                <h3 className="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+                <h3 className="text-sm font-medium">
                   Comments
                 </h3>
                 <div className="mt-2 divide-y divide-border">
                   {comments.map((entry) => (
                     <div key={entry.id} className="py-2">
-                      <p className="text-xs">{entry.body}</p>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-sm">{entry.body}</p>
+                      <p className="text-xs text-muted-foreground">
                         {relativeTime(entry.createdAt)}
                       </p>
                     </div>

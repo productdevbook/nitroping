@@ -331,7 +331,7 @@ export function FeedbackForm({
           </Field>
 
           {config.turnstileSiteKey && <div ref={turnstileHost} aria-live="polite" />}
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <DialogFooter>
             <Button

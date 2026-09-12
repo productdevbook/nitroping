@@ -32,17 +32,17 @@ export function WorkspaceSetup({
           if (!disabled) void onCreate(organizationName.trim(), projectName.trim());
         }}
       >
-        <div className="flex items-center gap-2 text-[13px] font-medium">
+        <div className="flex items-center gap-2 text-sm font-medium">
           <span className="grid size-5 place-items-center rounded-md bg-foreground">
-            <span className="size-1.5 rounded-full bg-background" />
+            <span className="size-2 rounded-full bg-background" />
           </span>
           NitroPing
         </div>
         <div>
-          <h1 className="text-lg font-medium tracking-[-0.01em]">
+          <h1 className="text-2xl font-semibold tracking-tight">
             {existingOrganization ? "Create your first project" : "Create your workspace"}
           </h1>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Connect your product to NitroPing and start turning user feedback into
             product momentum.
           </p>
@@ -72,7 +72,7 @@ export function WorkspaceSetup({
         <Button type="submit" size="lg" disabled={disabled}>
           {loading ? "Setting up…" : "Create project"}
         </Button>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           You can add more projects and team members later.
         </p>
       </form>

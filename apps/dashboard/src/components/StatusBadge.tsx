@@ -20,7 +20,7 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 text-[11px] whitespace-nowrap",
+        "inline-flex items-center gap-1.5 text-xs whitespace-nowrap",
         known ? statusText[known] : "text-muted-foreground",
         className,
       )}
@@ -28,7 +28,7 @@ export function StatusBadge({
       <span
         aria-hidden="true"
         className={cn(
-          "size-1.5 rounded-full",
+          "size-2 rounded-full",
           known ? statusDot[known] : "bg-muted-foreground",
         )}
       />
@@ -43,7 +43,7 @@ export function TypeDot({ type, className }: { type: string; className?: string 
     <span
       aria-hidden="true"
       className={cn(
-        "size-1.5 shrink-0 rounded-full",
+        "size-2 shrink-0 rounded-full",
         known ? typeDot[known] : "bg-muted-foreground",
         className,
       )}
@@ -59,6 +59,6 @@ export function MetaText({
   className?: string;
 }) {
   return (
-    <span className={cn("text-[11px] text-muted-foreground", className)}>{children}</span>
+    <span className={cn("text-xs text-muted-foreground", className)}>{children}</span>
   );
 }

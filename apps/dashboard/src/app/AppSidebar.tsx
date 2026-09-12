@@ -77,10 +77,10 @@ export function AppSidebar({
                   render={<SidebarMenuButton size="lg" aria-label="Switch project" />}
                 >
                   <span className="grid size-5 shrink-0 place-items-center rounded-md bg-foreground">
-                    <span className="size-1.5 rounded-full bg-background" />
+                    <span className="size-2 rounded-full bg-background" />
                   </span>
                   <span className="grid flex-1 text-left leading-tight">
-                    <span className="truncate text-[11px] text-muted-foreground">
+                    <span className="truncate text-xs text-muted-foreground">
                       {activeOrganization?.name ?? "Workspace"}
                     </span>
                     <span className="truncate font-medium">
@@ -143,7 +143,7 @@ export function AppSidebar({
 
         <SidebarFooter>
           <div className="grid gap-2 px-2 pb-1 group-data-[collapsible=icon]:hidden">
-            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{usage?.plan ?? "Free"} plan</span>
               <span className="tabular-nums">
                 {usage ? `${usage.feedbackCount}/${usage.feedbackLimit}` : "—"}
@@ -159,14 +159,14 @@ export function AppSidebar({
             <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-[10px] font-medium">
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-xs font-medium">
                     {initials(session?.displayName ?? session?.email ?? "User")}
                   </span>
                   <span className="grid flex-1 text-left leading-tight">
                     <span className="truncate font-medium">
                       {session?.displayName ?? "Workspace user"}
                     </span>
-                    <span className="truncate text-[11px] text-muted-foreground">
+                    <span className="truncate text-xs text-muted-foreground">
                       {session?.email ?? "Authenticated user"}
                     </span>
                   </span>

@@ -1,11 +1,10 @@
 /*
- * Marketing site stylesheet. It shares the product's token package so the
- * site, the dashboard, and the portal cannot drift apart, and it stays a
- * static page: Tailwind utilities in the markup, no React, no component kit.
+ * Marketing site stylesheet. Shares the product's token package so the site,
+ * the dashboard, and the portal cannot drift apart, and stays a static page:
+ * Tailwind utilities in the markup, no React and no component kit.
  */
 
 @import "tailwindcss";
-@import "@fontsource-variable/inter";
 @import "@nitroping/tokens/tokens.css";
 
 @source "../index.html";
@@ -20,28 +19,20 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+    @apply bg-background text-foreground;
   }
 }
 
 @layer components {
   .container-page {
-    @apply mx-auto w-full max-w-[900px] px-6;
+    @apply mx-auto w-full max-w-3xl px-6;
   }
 
   .btn {
-    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-85;
+    @apply inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90;
   }
 
   .btn-ghost {
-    @apply border border-border bg-transparent text-foreground hover:bg-muted;
-  }
-}
-
-/* The dashboard toggles `.dark`; here the system preference decides alone. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
+    @apply border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground;
   }
 }

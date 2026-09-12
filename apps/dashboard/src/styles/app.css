@@ -1,12 +1,11 @@
 /*
- * Dashboard entry stylesheet. The dashboard renders entirely from components
- * in src/components and src/features, so Preflight and the full utility layer
- * are safe here. Design tokens come from tokens.css and nowhere else.
+ * Dashboard entry stylesheet. Stock shadcn setup: Tailwind, the animation
+ * helpers the generated components expect, and the shared token package.
+ * Typography is left at the framework defaults.
  */
 
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource-variable/inter";
 @import "@nitroping/tokens/tokens.css";
 
 @source "../**/*.tsx";
@@ -14,7 +13,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
   body {
-    @apply bg-background text-foreground text-xs antialiased;
+    @apply bg-background text-foreground;
   }
 }

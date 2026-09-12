@@ -41,10 +41,10 @@ export function AppTopbar({
   onTheme: (value: ThemePreference) => void;
 }) {
   return (
-    <header className="sticky top-0 z-20 flex h-10 shrink-0 items-center gap-2 border-b border-border bg-background px-3">
+    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-3">
       <SidebarTrigger />
       <Breadcrumb>
-        <BreadcrumbList className="gap-1.5 text-xs sm:gap-1.5">
+        <BreadcrumbList className="gap-1.5 text-sm sm:gap-1.5">
           <BreadcrumbItem className="hidden sm:inline-flex">
             {organizationName}
           </BreadcrumbItem>
@@ -56,8 +56,8 @@ export function AppTopbar({
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <span className="ml-auto flex items-center gap-1.5 text-[11px] whitespace-nowrap text-muted-foreground">
-        <span className={cn("size-1.5 rounded-full", realtimeDot[realtime])} />
+      <span className="ml-auto flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
+        <span className={cn("size-2 rounded-full", realtimeDot[realtime])} />
         <span className="hidden sm:inline">{realtimeLabel[realtime]}</span>
       </span>
       <ThemeToggle preference={theme} onChange={onTheme} />

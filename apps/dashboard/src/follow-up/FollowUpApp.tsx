@@ -79,13 +79,13 @@ export function FollowUpApp() {
   return (
     <main className="mx-auto min-h-svh w-full max-w-[720px] px-4 pb-16 sm:px-6">
       <header className="flex h-12 items-center justify-between gap-3 border-b border-border">
-        <div className="flex items-center gap-2 text-[13px] font-medium">
+        <div className="flex items-center gap-2 text-sm font-medium">
           <span className="grid size-5 place-items-center rounded-md bg-foreground">
-            <span className="size-1.5 rounded-full bg-background" />
+            <span className="size-2 rounded-full bg-background" />
           </span>
           NitroPing
         </div>
-        <a href="/portal" className="text-xs text-muted-foreground hover:text-foreground">
+        <a href="/portal" className="text-sm text-muted-foreground hover:text-foreground">
           Feedback board
         </a>
       </header>
@@ -93,49 +93,49 @@ export function FollowUpApp() {
       <section className="py-8">
         {error ? (
           <>
-            <h1 className="text-lg font-medium tracking-[-0.01em]">
+            <h1 className="text-2xl font-semibold tracking-tight">
               We could not open this link
             </h1>
-            <p className="mt-1 text-xs text-muted-foreground">{error}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{error}</p>
           </>
         ) : done && !snapshot ? (
           <>
-            <h1 className="text-lg font-medium tracking-[-0.01em]">
+            <h1 className="text-2xl font-semibold tracking-tight">
               Your request is complete
             </h1>
-            <p className="mt-1 text-xs text-muted-foreground">{done}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{done}</p>
           </>
         ) : snapshot ? (
           <>
             <div className="flex items-start justify-between gap-4">
-              <h1 className="text-lg font-medium tracking-[-0.01em]">
+              <h1 className="text-2xl font-semibold tracking-tight">
                 {snapshot.feedback.title}
               </h1>
               <StatusBadge status={snapshot.feedback.status} />
             </div>
-            <p className="mt-3 text-xs leading-5 whitespace-pre-wrap">
+            <p className="mt-3 text-sm leading-5 whitespace-pre-wrap">
               {snapshot.feedback.body}
             </p>
-            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-y border-border py-2 text-[11px] text-muted-foreground">
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-y border-border py-2 text-xs text-muted-foreground">
               <span>{titleCase(snapshot.feedback.type)}</span>
               <span>Submitted {formatDate(snapshot.feedback.createdAt)}</span>
               <span>Last updated {formatDate(snapshot.feedback.updatedAt)}</span>
             </div>
 
             <section className="mt-6">
-              <h2 className="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+              <h2 className="text-sm font-medium">
                 Updates from the team
               </h2>
               {snapshot.comments.length === 0 ? (
-                <p className="mt-2 text-xs text-muted-foreground">
+                <p className="mt-2 text-sm text-muted-foreground">
                   There are no replies yet. We will show them here when the team responds.
                 </p>
               ) : (
                 <div className="mt-2 divide-y divide-border">
                   {snapshot.comments.map((comment) => (
                     <article key={comment.id} className="py-2">
-                      <p className="text-xs">{comment.body}</p>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-sm">{comment.body}</p>
+                      <p className="text-xs text-muted-foreground">
                         {formatDate(comment.createdAt)}
                       </p>
                     </article>
@@ -158,7 +158,7 @@ export function FollowUpApp() {
             </div>
           </>
         ) : (
-          <div className="flex items-center gap-2 py-10 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
             <Spinner />
             Loading your feedback…
           </div>

@@ -44,11 +44,11 @@ export function NotificationsView({
         {items.map((item) => (
           <div
             key={item.eventType}
-            className="flex items-center justify-between gap-4 py-2.5"
+            className="flex items-center justify-between gap-4 py-3"
           >
             <div className="min-w-0">
-              <p className="text-[13px] font-medium">{statusLabel(item.eventType)}</p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-sm font-medium">{statusLabel(item.eventType)}</p>
+              <p className="text-xs text-muted-foreground">
                 Project activity notification
               </p>
             </div>

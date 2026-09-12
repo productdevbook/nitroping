@@ -54,9 +54,9 @@ export function AuditView({
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {item.entityType}{" "}
-                  <code className="text-[11px]">{item.entityId}</code>
+                  <code className="text-xs">{item.entityId}</code>
                 </TableCell>
-                <TableCell className="text-right text-[11px] whitespace-nowrap text-muted-foreground">
+                <TableCell className="text-right text-xs whitespace-nowrap text-muted-foreground">
                   {formatDate(item.createdAt)}
                 </TableCell>
               </TableRow>

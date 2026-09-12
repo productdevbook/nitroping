@@ -95,7 +95,7 @@ export function FeedbackLinks({
           {linked.map((item) => (
             <div key={item.id} className="flex items-center gap-2 py-1.5">
               <TypeDot type={item.type} />
-              <span className="min-w-0 flex-1 truncate text-xs">{item.title}</span>
+              <span className="min-w-0 flex-1 truncate text-sm">{item.title}</span>
               <Button
                 variant="ghost"
                 size="icon-sm"

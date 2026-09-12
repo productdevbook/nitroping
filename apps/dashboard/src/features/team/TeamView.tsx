@@ -146,12 +146,12 @@ export function TeamView({
                 <TableCell className="text-muted-foreground">
                   {member.role.replaceAll("_", " ")}
                 </TableCell>
-                <TableCell className="text-[11px] text-muted-foreground">
+                <TableCell className="text-xs text-muted-foreground">
                   {formatDate(member.createdAt)}
                 </TableCell>
                 <TableCell className="text-right">
                   {member.role === "owner" ? (
-                    <span className="text-[11px] text-muted-foreground">Owner</span>
+                    <span className="text-xs text-muted-foreground">Owner</span>
                   ) : (
                     <Button
                       variant="ghost"

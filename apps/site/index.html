@@ -17,7 +17,7 @@
     <header class="container-page flex h-14 items-center justify-between gap-4 border-b border-border">
       <a class="flex items-center gap-2 text-sm font-medium" href="/">
         <span class="grid size-5 place-items-center rounded-md bg-foreground" aria-hidden="true">
-          <span class="size-1.5 rounded-full bg-background"></span>
+          <span class="size-2 rounded-full bg-background"></span>
         </span>
         NitroPing
       </a>
@@ -29,7 +29,7 @@
 
     <main>
       <section class="container-page py-20">
-        <h1 class="max-w-[14ch] text-4xl leading-[1.05] font-medium tracking-[-0.03em] sm:text-5xl">
+        <h1 class="max-w-[14ch] text-4xl leading-[1.05] font-medium tracking-tight sm:text-5xl">
           Feedback, straight from your app.
         </h1>
         <p class="mt-5 max-w-[52ch] text-base text-muted-foreground">
@@ -47,31 +47,31 @@
           aria-label="Copy install command"
         >
           <code><span class="text-muted-foreground" aria-hidden="true">$</span> npm i @nitroping/web</code>
-          <span class="text-[11px] text-muted-foreground" data-copy-label>Copy</span>
+          <span class="text-xs text-muted-foreground" data-copy-label>Copy</span>
         </button>
       </section>
 
       <section class="container-page border-t border-border py-16" aria-labelledby="how">
-        <h2 id="how" class="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+        <h2 id="how" class="text-sm font-medium text-muted-foreground">
           How it works
         </h2>
         <ol class="mt-8 grid gap-8 sm:grid-cols-3">
           <li>
-            <span class="font-mono text-[11px] text-muted-foreground">01</span>
+            <span class="font-mono text-xs text-muted-foreground">01</span>
             <h3 class="mt-3 text-base font-medium">Collect</h3>
             <p class="mt-1 text-sm text-muted-foreground">
               Users send bugs, ideas, and screenshots from a widget or a native form.
             </p>
           </li>
           <li>
-            <span class="font-mono text-[11px] text-muted-foreground">02</span>
+            <span class="font-mono text-xs text-muted-foreground">02</span>
             <h3 class="mt-3 text-base font-medium">Decide</h3>
             <p class="mt-1 text-sm text-muted-foreground">
               Your team triages everything in one inbox and lets votes shape the roadmap.
             </p>
           </li>
           <li>
-            <span class="font-mono text-[11px] text-muted-foreground">03</span>
+            <span class="font-mono text-xs text-muted-foreground">03</span>
             <h3 class="mt-3 text-base font-medium">Reply</h3>
             <p class="mt-1 text-sm text-muted-foreground">
               Ship it, post a changelog, and NitroPing tells the people who asked.
@@ -82,7 +82,7 @@
 
       <section class="container-page grid gap-10 border-t border-border py-16 md:grid-cols-2" aria-labelledby="dev">
         <div>
-          <h2 id="dev" class="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+          <h2 id="dev" class="text-sm font-medium text-muted-foreground">
             One line to start
           </h2>
           <p class="mt-6 max-w-[36ch] text-base">
@@ -102,7 +102,7 @@ NitroPing.init({ projectKey: <span class="font-semibold">"pk_live_xxx"</span> })
       </section>
 
       <section class="container-page border-t border-border py-16" aria-labelledby="pricing">
-        <h2 id="pricing" class="text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+        <h2 id="pricing" class="text-sm font-medium text-muted-foreground">
           Pricing
         </h2>
         <div class="mt-6 overflow-x-auto">

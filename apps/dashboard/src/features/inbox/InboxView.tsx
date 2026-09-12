@@ -87,7 +87,7 @@ export function InboxView({
           <div className="relative">
             <SearchIcon className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
-              className="h-7 w-44 pl-7"
+              className="w-56 pl-8"
               value={feedback.query}
               onChange={(event) => feedback.setQuery(event.target.value)}
               placeholder="Search feedback"
@@ -174,8 +174,8 @@ export function InboxView({
           />
         ) : (
           <div className="hidden flex-col items-start justify-center gap-1 px-6 lg:flex">
-            <p className="text-[13px] font-medium">Select feedback to inspect it</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm font-medium">Select feedback to inspect it</p>
+            <p className="text-sm text-muted-foreground">
               Replies, notes, status history, and context will appear here.
             </p>
           </div>
@@ -195,10 +195,10 @@ function Metric({
   detail: string;
 }) {
   return (
-    <div className="px-3 py-2.5 first:pl-0">
-      <dt className="text-[11px] text-muted-foreground">{label}</dt>
+    <div className="px-3 py-3 first:pl-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="mt-0.5 text-lg font-medium tabular-nums">{value}</dd>
-      <p className="text-[11px] text-muted-foreground">{detail}</p>
+      <p className="text-xs text-muted-foreground">{detail}</p>
     </div>
   );
 }

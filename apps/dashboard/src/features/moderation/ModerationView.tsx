@@ -90,20 +90,20 @@ export function ModerationView({
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-3">
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {statusLabel(item.type)}
                   </span>
                   <StatusBadge status={item.status} />
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {formatDate(item.createdAt)}
                   </span>
                 </div>
-                <h2 className="mt-1 text-[13px] font-medium">{item.title}</h2>
-                <p className="mt-0.5 max-w-[80ch] text-xs text-muted-foreground">
+                <h2 className="mt-1 text-sm font-medium">{item.title}</h2>
+                <p className="mt-0.5 max-w-[80ch] text-sm text-muted-foreground">
                   {item.body}
                 </p>
                 {item.email && (
-                  <p className="mt-1 text-[11px] text-muted-foreground">{item.email}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{item.email}</p>
                 )}
               </div>
               <div className="flex shrink-0 flex-wrap gap-1.5">
