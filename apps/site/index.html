@@ -22,6 +22,7 @@
         NitroPing
       </a>
       <nav class="flex items-center gap-4 text-sm" aria-label="Main">
+        <a class="text-muted-foreground transition-colors hover:text-foreground" href="#roadmap">Roadmap</a>
         <a class="text-muted-foreground transition-colors hover:text-foreground" href="https://github.com/productdevbook/nitroping">GitHub</a>
         <a class="btn h-8 px-3 text-xs" href="/dashboard">Sign in</a>
       </nav>
@@ -99,6 +100,23 @@
         <pre class="overflow-x-auto rounded-md border border-border bg-muted/50 p-5 font-mono text-xs leading-6"><code><span class="text-muted-foreground">import</span> { NitroPing } <span class="text-muted-foreground">from</span> <span class="font-semibold">"@nitroping/web"</span>;
 
 NitroPing.init({ projectKey: <span class="font-semibold">"pk_live_xxx"</span> });</code></pre>
+      </section>
+
+      <!--
+        NitroPing's own roadmap, served by NitroPing: the list is the public
+        roadmap of this project, so the site shows the feature working on
+        itself. It stays hidden until the fetch returns something.
+      -->
+      <section class="container-page border-t border-border py-16" id="roadmap" aria-labelledby="roadmap-title" data-roadmap hidden>
+        <div class="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="roadmap-title" class="text-sm font-medium text-muted-foreground">
+            Roadmap
+          </h2>
+          <p class="text-xs text-muted-foreground">
+            Built from NitroPing's own public roadmap.
+          </p>
+        </div>
+        <div class="mt-8 grid gap-8 sm:grid-cols-3" data-roadmap-columns></div>
       </section>
 
       <section class="container-page border-t border-border py-16" aria-labelledby="pricing">
