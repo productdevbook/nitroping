@@ -1,11 +1,15 @@
 /*
- * Dashboard entry stylesheet. Stock shadcn setup: Tailwind, the animation
- * helpers the generated components expect, and the shared token package.
- * Typography is left at the framework defaults.
+ * Dashboard entry stylesheet for the shadcn preset (base-nova, neutral).
+ *
+ * `shadcn apply --preset` writes its token block into this file; keep the
+ * tokens in @nitroping/tokens instead so the portal and the marketing site
+ * receive the same values.
  */
 
 @import "tailwindcss";
+@import "shadcn/tailwind.css";
 @import "tw-animate-css";
+@import "@fontsource-variable/inter";
 @import "@nitroping/tokens/tokens.css";
 
 @source "../**/*.tsx";
@@ -15,6 +19,10 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
   }
 
   body {

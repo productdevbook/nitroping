@@ -1,9 +1,11 @@
 /*
  * The only file in this repository that declares design tokens.
  *
- * Base values are the stock shadcn/ui neutral palette, unchanged. The single
- * addition is the feedback status/tone family, which shadcn does not ship and
- * the product needs; nothing else is customized, including typography.
+ * Values come from the shadcn preset applied with
+ * `bunx shadcn@latest apply --preset bH32` (style base-nova, neutral). The one
+ * addition is the feedback status/tone family, which shadcn does not ship.
+ * Re-running the preset rewrites apps/dashboard/src/styles/app.css; move the
+ * regenerated block back into this file so every surface stays in sync.
  */
 
 :root {
@@ -22,17 +24,16 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
   --radius: 0.625rem;
 
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
 
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -43,19 +44,19 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* Feedback lifecycle, mapped onto the shadcn chart palette. */
-  --status-new: var(--chart-1);
-  --status-triaged: var(--muted-foreground);
-  --status-planned: var(--chart-3);
-  --status-progress: var(--chart-4);
-  --status-resolved: var(--chart-2);
-  --status-closed: var(--muted-foreground);
+  /* Feedback lifecycle. Not part of shadcn; kept close to its chart hues. */
+  --status-new: oklch(0.646 0.222 41.116);
+  --status-triaged: oklch(0.556 0 0);
+  --status-planned: oklch(0.488 0.243 264.376);
+  --status-progress: oklch(0.769 0.188 70.08);
+  --status-resolved: oklch(0.696 0.17 162.48);
+  --status-closed: oklch(0.708 0 0);
   --status-spam: var(--destructive);
 
-  --tone-success: var(--chart-2);
-  --tone-warning: var(--chart-4);
+  --tone-success: oklch(0.696 0.17 162.48);
+  --tone-warning: oklch(0.769 0.188 70.08);
   --tone-danger: var(--destructive);
-  --tone-info: var(--chart-3);
+  --tone-info: oklch(0.488 0.243 264.376);
 }
 
 .dark {
@@ -63,7 +64,7 @@
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.269 0 0);
+  --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
@@ -71,19 +72,18 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.371 0 0);
+  --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
 
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
 
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
@@ -93,9 +93,25 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  --status-new: oklch(0.75 0.18 55);
+  --status-triaged: oklch(0.708 0 0);
+  --status-planned: oklch(0.62 0.2 264);
+  --status-progress: oklch(0.82 0.16 75);
+  --status-resolved: oklch(0.75 0.15 162);
+  --status-closed: oklch(0.556 0 0);
+  --status-spam: var(--destructive);
+
+  --tone-success: oklch(0.75 0.15 162);
+  --tone-warning: oklch(0.82 0.16 75);
+  --tone-danger: var(--destructive);
+  --tone-info: oklch(0.62 0.2 264);
 }
 
 @theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: "Inter Variable", sans-serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -111,7 +127,6 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -144,8 +159,11 @@
   --color-tone-danger: var(--tone-danger);
   --color-tone-info: var(--tone-info);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
