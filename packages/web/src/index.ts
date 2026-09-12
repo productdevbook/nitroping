@@ -196,21 +196,36 @@ export const loadNitroPingConfig = async (
 };
 
 const css = `
-.np-root{all:initial;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;color:var(--np-text,#1c1c1e);-webkit-font-smoothing:antialiased;
+/*
+ * Light is the base palette; dark restates the same tokens and nothing else,
+ * so a surface only has to be described once. The scheme follows the operating
+ * system unless the host pins one with theme: "light" | "dark", which lands on
+ * the root as data-np-theme.
+ */
+.np-root{all:initial;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;color:var(--np-fg);-webkit-font-smoothing:antialiased;
+--np-fg:var(--np-text,#1c1c1e);
+--np-dim:var(--np-muted,#6e6e73);
+--np-soft:var(--np-muted,#48484a);
+--np-faint:var(--np-muted,#a1a1a6);
 --np-accent:var(--np-primary,#1c1c1e);
 --np-on-accent:#fff;
 --np-surface:var(--np-background,#fff);
---np-fill:color-mix(in oklab,var(--np-text,#1c1c1e) 5%,transparent);
---np-fill-strong:color-mix(in oklab,var(--np-text,#1c1c1e) 9%,transparent);
---np-line:color-mix(in oklab,var(--np-text,#1c1c1e) 9%,transparent);
+--np-fill:color-mix(in oklab,var(--np-fg) 5%,transparent);
+--np-fill-strong:color-mix(in oklab,var(--np-fg) 9%,transparent);
+--np-line:color-mix(in oklab,var(--np-fg) 9%,transparent);
 --np-tint:color-mix(in oklab,var(--np-accent) 10%,transparent);
 --np-edge:color-mix(in oklab,var(--np-accent) 34%,transparent);
 --np-ring:color-mix(in oklab,var(--np-accent) 20%,transparent);
+--np-scrim:color-mix(in oklab,#0a0a0c 40%,transparent);
+--np-danger:color-mix(in oklab,#ff3b30 9%,transparent);
+--np-on-danger:#c9372c;
+--np-shadow:0 18px 48px #0000001a,0 2px 6px #0000000d;
+--np-lift:0 4px 14px #00000014,0 1px 2px #0000000f;
 --np-spring:cubic-bezier(.32,.72,0,1)}
 .np-root *{box-sizing:border-box}
 .np-root [hidden]{display:none!important}
 /* Launcher: a quiet circle. The accent only reaches the glyph inside it. */
-.np-button{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:grid;place-items:center;width:40px;height:40px;padding:0;border:.5px solid var(--np-line);border-radius:999px;background:var(--np-surface);color:var(--np-accent);cursor:pointer;box-shadow:0 4px 14px #00000014,0 1px 2px #0000000f;transition:transform .18s var(--np-spring),box-shadow .18s ease,opacity .18s ease}
+.np-button{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:grid;place-items:center;width:40px;height:40px;padding:0;border:.5px solid var(--np-line);border-radius:999px;background:var(--np-surface);color:var(--np-accent);cursor:pointer;box-shadow:var(--np-lift);transition:transform .18s var(--np-spring),box-shadow .18s ease,opacity .18s ease}
 .np-button:hover{transform:translateY(-1px);box-shadow:0 8px 20px #0000001f}
 .np-button:active{transform:scale(.94)}
 .np-button:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
@@ -220,9 +235,9 @@ const css = `
 /* Anchored panel: no scrim, grows out of the launcher it belongs to. */
 .np-popover{position:fixed;right:18px;bottom:70px;z-index:2147483647;width:min(340px,calc(100vw - 36px));transform-origin:bottom right;animation:np-grow .3s var(--np-spring) both}
 .np-popover .np-card{width:100%}
-.np-backdrop{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:24px;background:color-mix(in oklab,#0a0a0c 40%,transparent);backdrop-filter:saturate(180%) blur(16px);animation:np-fade .2s ease both}
+.np-backdrop{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:24px;background:var(--np-scrim);backdrop-filter:saturate(180%) blur(16px);animation:np-fade .2s ease both}
 .np-backdrop.np-side{place-items:stretch;padding:0}
-.np-card{position:relative;width:min(100%,340px);max-height:min(78vh,620px);overflow:auto;background:var(--np-surface);border:.5px solid var(--np-line);border-radius:20px;padding:14px;box-shadow:0 18px 48px #0000001a,0 2px 6px #0000000d}
+.np-card{position:relative;width:min(100%,340px);max-height:min(78vh,620px);overflow:auto;background:var(--np-surface);border:.5px solid var(--np-line);border-radius:20px;padding:14px;box-shadow:var(--np-shadow)}
 .np-backdrop .np-card{animation:np-pop .28s var(--np-spring) both}
 .np-side .np-card{width:min(100%,360px);height:100%;max-height:none;margin-left:auto;border-radius:22px 0 0 22px;animation:np-slide .3s var(--np-spring) both}
 .np-inline .np-card{box-shadow:none}
@@ -233,38 +248,38 @@ const css = `
 .np-dots{display:flex;align-items:center;gap:5px}
 .np-dot{display:block;width:6px;height:3px;border-radius:999px;background:var(--np-fill-strong)}
 .np-dot-on{width:14px;background:var(--np-accent)}
-.np-x,.np-back{display:grid;place-items:center;width:22px;height:22px;flex:none;padding:0;border:0;border-radius:999px;background:transparent;color:var(--np-muted,#8e8e93);cursor:pointer;transition:background .16s ease,transform .16s ease}
+.np-x,.np-back{display:grid;place-items:center;width:22px;height:22px;flex:none;padding:0;border:0;border-radius:999px;background:transparent;color:var(--np-dim);cursor:pointer;transition:background .16s ease,transform .16s ease}
 .np-x:hover,.np-back:hover{background:var(--np-fill)}
 .np-x:active,.np-back:active{transform:scale(.9)}
 .np-x svg{width:11px;height:11px}
 .np-back svg{width:12px;height:12px}
 .np-logo{display:block;width:20px;height:20px;flex:none;border-radius:6px;object-fit:contain}
-.np-ask{margin:0;font:600 17px/1.25 inherit;letter-spacing:-.02em;color:var(--np-text,#1c1c1e)}
+.np-ask{margin:0;font:600 17px/1.25 inherit;letter-spacing:-.02em;color:var(--np-fg)}
 .np-ask-sm{font-size:15px;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .np-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.np-tile{display:flex;flex-direction:column;justify-content:space-between;gap:14px;min-height:84px;padding:12px;border:1.5px solid transparent;border-radius:16px;background:var(--np-fill);color:var(--np-muted,#48484a);font:510 14px/1.2 inherit;letter-spacing:-.01em;text-align:left;cursor:pointer;transition:background .18s var(--np-spring),color .18s ease,border-color .18s ease,transform .18s var(--np-spring)}
+.np-tile{display:flex;flex-direction:column;justify-content:space-between;gap:14px;min-height:84px;padding:12px;border:1.5px solid transparent;border-radius:16px;background:var(--np-fill);color:var(--np-soft);font:510 14px/1.2 inherit;letter-spacing:-.01em;text-align:left;cursor:pointer;transition:background .18s var(--np-spring),color .18s ease,border-color .18s ease,transform .18s var(--np-spring)}
 .np-tile svg{width:20px;height:20px}
 .np-tile:hover{background:var(--np-fill-strong)}
 .np-tile:active{transform:scale(.98)}
 .np-tile[aria-checked="true"]{background:var(--np-tint);border-color:var(--np-edge);color:var(--np-accent);font-weight:590}
 .np-tile:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
-.np-hint{margin:0;font:400 11px/1.4 inherit;color:var(--np-muted,#a1a1a6)}
+.np-hint{margin:0;font:400 11px/1.4 inherit;color:var(--np-faint)}
 .np-chip{display:inline-flex;align-items:center;gap:6px;min-width:0;padding:4px 9px 4px 7px;border-radius:999px;background:var(--np-tint);color:var(--np-accent);font:590 12px/1.2 inherit}
 .np-chip svg{width:13px;height:13px;flex:none}
 .np-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.np-box{width:100%;min-height:132px;resize:none;border:0;border-radius:14px;padding:11px 12px;background:var(--np-fill);color:var(--np-text,#1c1c1e);font:400 15px/1.5 inherit;letter-spacing:-.01em;transition:box-shadow .16s ease,background .16s ease}
-.np-box::placeholder{color:color-mix(in oklab,var(--np-muted,#8e8e93) 80%,transparent)}
+.np-box{width:100%;min-height:132px;resize:none;border:0;border-radius:14px;padding:11px 12px;background:var(--np-fill);color:var(--np-fg);font:400 15px/1.5 inherit;letter-spacing:-.01em;transition:box-shadow .16s ease,background .16s ease}
+.np-box::placeholder{color:color-mix(in oklab,var(--np-dim) 80%,transparent)}
 .np-box:focus{outline:0;box-shadow:0 0 0 3px var(--np-ring)}
-.np-mail{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:14px;background:var(--np-fill);color:var(--np-muted,#a1a1a6);transition:box-shadow .16s ease}
+.np-mail{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:14px;background:var(--np-fill);color:var(--np-faint);transition:box-shadow .16s ease}
 .np-mail:focus-within{box-shadow:0 0 0 3px var(--np-ring)}
 .np-mail svg{width:14px;height:14px;flex:none}
-.np-mail input{flex:1;min-width:0;padding:8px 0;border:0;background:transparent;color:var(--np-text,#1c1c1e);font:400 14px/1.2 inherit;letter-spacing:-.01em}
+.np-mail input{flex:1;min-width:0;padding:8px 0;border:0;background:transparent;color:var(--np-fg);font:400 14px/1.2 inherit;letter-spacing:-.01em}
 .np-mail input:focus{outline:0}
 .np-mail input::placeholder{color:currentColor}
 .np-extra{display:grid;gap:8px}
 .np-field{display:grid;gap:5px}
-.np-field-label{font:510 12px/1.2 inherit;color:var(--np-muted,#8e8e93)}
-.np-input,.np-select{width:100%;min-height:36px;padding:8px 11px;border:0;border-radius:12px;background:var(--np-fill);color:var(--np-text,#1c1c1e);font:400 14px/1.35 inherit;letter-spacing:-.01em;appearance:none;transition:box-shadow .16s ease}
+.np-field-label{font:510 12px/1.2 inherit;color:var(--np-dim)}
+.np-input,.np-select{width:100%;min-height:36px;padding:8px 11px;border:0;border-radius:12px;background:var(--np-fill);color:var(--np-fg);font:400 14px/1.35 inherit;letter-spacing:-.01em;appearance:none;transition:box-shadow .16s ease}
 .np-select{background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 16px) 16px,calc(100% - 11px) 16px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:32px}
 .np-input:focus,.np-select:focus{outline:0;box-shadow:0 0 0 3px var(--np-ring)}
 .np-textarea{min-height:72px;resize:vertical;line-height:1.45}
@@ -274,27 +289,27 @@ const css = `
 .np-switch:checked{background:var(--np-accent)}
 .np-switch:checked::after{transform:translateX(16px)}
 .np-switch:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
-.np-file{display:inline-flex;align-items:center;align-self:flex-start;max-width:100%;padding:4px 10px;border-radius:999px;background:var(--np-fill);color:var(--np-muted,#8e8e93);font:400 12px/1.3 inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-file{display:inline-flex;align-items:center;align-self:flex-start;max-width:100%;padding:4px 10px;border-radius:999px;background:var(--np-fill);color:var(--np-dim);font:400 12px/1.3 inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .np-turnstile{display:flex;justify-content:center}
 .np-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .np-tools{display:flex;align-items:center;gap:2px}
-.np-tool{position:relative;display:grid;place-items:center;width:30px;height:30px;border-radius:10px;color:var(--np-muted,#8e8e93);cursor:pointer;transition:background .16s ease,color .16s ease}
-.np-tool:hover{background:var(--np-fill);color:var(--np-text,#1c1c1e)}
+.np-tool{position:relative;display:grid;place-items:center;width:30px;height:30px;border-radius:10px;color:var(--np-dim);cursor:pointer;transition:background .16s ease,color .16s ease}
+.np-tool:hover{background:var(--np-fill);color:var(--np-fg)}
 .np-tool:focus-within{outline:3px solid var(--np-ring);outline-offset:2px}
 .np-tool svg{width:15px;height:15px}
 .np-tool input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .np-actions{display:flex;align-items:center;gap:10px}
-.np-kbd{font:400 11px/1 inherit;color:var(--np-muted,#b7b7bb)}
+.np-kbd{font:400 11px/1 inherit;color:var(--np-faint)}
 .np-send{min-height:34px;padding:0 16px;border:0;border-radius:12px;background:var(--np-accent);color:var(--np-on-accent);font:590 14px/1 inherit;letter-spacing:-.01em;cursor:pointer;transition:transform .16s var(--np-spring),opacity .16s ease}
 .np-send:active{transform:scale(.97)}
 .np-send:disabled{opacity:.5;cursor:progress;transform:none}
 .np-send:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
-.np-error{padding:9px 11px;border-radius:12px;background:color-mix(in oklab,#ff3b30 9%,transparent);color:#c9372c;font:500 13px/1.4 inherit}
-.np-sent{display:grid;justify-items:center;gap:8px;padding:12px 2px 6px;text-align:center;font:400 13px/1.45 inherit;color:var(--np-muted,#6e6e73);animation:np-step .26s var(--np-spring) both}
+.np-error{padding:9px 11px;border-radius:12px;background:var(--np-danger);color:var(--np-on-danger);font:500 13px/1.4 inherit}
+.np-sent{display:grid;justify-items:center;gap:8px;padding:12px 2px 6px;text-align:center;font:400 13px/1.45 inherit;color:var(--np-dim);animation:np-step .26s var(--np-spring) both}
 .np-sent-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:999px;background:var(--np-tint);color:var(--np-accent);animation:np-check .42s cubic-bezier(.32,1.35,.4,1) both}
 .np-sent-icon svg{width:20px;height:20px}
-.np-sent strong{font:600 15px/1.3 inherit;letter-spacing:-.01em;color:var(--np-text,#1c1c1e)}
-.np-sent small{margin-top:4px;font-size:11px;color:var(--np-muted,#b7b7bb)}
+.np-sent strong{font:600 15px/1.3 inherit;letter-spacing:-.01em;color:var(--np-fg)}
+.np-sent small{margin-top:4px;font-size:11px;color:var(--np-faint)}
 @keyframes np-fade{from{opacity:0}to{opacity:1}}
 @keyframes np-grow{from{opacity:0;transform:scale(.94) translateY(6px)}to{opacity:1;transform:none}}
 @keyframes np-pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
@@ -310,17 +325,41 @@ const css = `
 .np-side .np-card{width:100%;height:auto;margin:0;border-radius:22px 22px 0 0}
 .np-button{right:14px;bottom:14px}
 }
+/* The scheme follows the system unless the host pinned one. */
 @media (prefers-color-scheme:dark){
-.np-root{color:var(--np-text,#f5f5f7);
+.np-root:not([data-np-theme="light"]){
+--np-fg:var(--np-text,#f5f5f7);
+--np-dim:var(--np-muted,#98989d);
+--np-soft:var(--np-muted,#c7c7cc);
+--np-faint:var(--np-muted,#8e8e93);
 --np-accent:var(--np-primary,#f5f5f7);
 --np-on-accent:#1c1c1e;
 --np-surface:var(--np-background,#1c1c1e);
 --np-fill:color-mix(in oklab,#fff 9%,transparent);
 --np-fill-strong:color-mix(in oklab,#fff 14%,transparent);
---np-line:color-mix(in oklab,#fff 12%,transparent)}
-.np-tile{color:var(--np-muted,#c7c7cc)}
-.np-backdrop{background:color-mix(in oklab,#000 50%,transparent)}
+--np-line:color-mix(in oklab,#fff 12%,transparent);
+--np-scrim:color-mix(in oklab,#000 55%,transparent);
+--np-danger:color-mix(in oklab,#ff453a 16%,transparent);
+--np-on-danger:#ff9f98;
+--np-shadow:0 18px 48px #00000073,0 0 0 .5px #ffffff14;
+--np-lift:0 4px 14px #0000004d,0 0 0 .5px #ffffff14}
 }
+.np-root[data-np-theme="dark"]{
+--np-fg:var(--np-text,#f5f5f7);
+--np-dim:var(--np-muted,#98989d);
+--np-soft:var(--np-muted,#c7c7cc);
+--np-faint:var(--np-muted,#8e8e93);
+--np-accent:var(--np-primary,#f5f5f7);
+--np-on-accent:#1c1c1e;
+--np-surface:var(--np-background,#1c1c1e);
+--np-fill:color-mix(in oklab,#fff 9%,transparent);
+--np-fill-strong:color-mix(in oklab,#fff 14%,transparent);
+--np-line:color-mix(in oklab,#fff 12%,transparent);
+--np-scrim:color-mix(in oklab,#000 55%,transparent);
+--np-danger:color-mix(in oklab,#ff453a 16%,transparent);
+--np-on-danger:#ff9f98;
+--np-shadow:0 18px 48px #00000073,0 0 0 .5px #ffffff14;
+--np-lift:0 4px 14px #0000004d,0 0 0 .5px #ffffff14}
 @media (prefers-reduced-motion:reduce){
 .np-popover,.np-backdrop,.np-card,.np-step,.np-sent,.np-sent-icon{animation:none}
 .np-button,.np-send,.np-tile,.np-switch::after{transition:none}
@@ -732,6 +771,12 @@ export const NitroPing = {
      * colour keeps white text in both.
      */
     if (merged.colors?.primary) root.style.setProperty("--np-on-accent", "#fff");
+    /*
+     * Hosts that run their own light/dark switch pin the scheme; the default
+     * follows the operating system.
+     */
+    if (merged.theme === "light" || merged.theme === "dark")
+      root.dataset.npTheme = merged.theme;
     const mode = merged.mode ?? "floating";
     let launcher: HTMLButtonElement | null = null;
     let panel: HTMLElement | null = null;

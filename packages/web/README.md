@@ -4,6 +4,8 @@ The Web SDK supports the floating, modal, side-panel, inline, portal, and headle
 
 The widget asks two things: which of the `type` tiles the message is about, then the message itself in a single box. The first line of that box becomes the feedback title. The accent defaults to ink (`#1c1c1e`, a light ink in dark mode) so the widget borrows no brand colour until `colors.primary` sets one.
 
+Light and dark are the same surfaces with one set of tokens swapped. `theme` decides which: the default `"system"` follows `prefers-color-scheme`, while `"light"` or `"dark"` pins the widget to the scheme a host with its own switch is already showing. `colors` overrides either scheme — pass `background`, `text` and `muted` together with `primary` when a brand palette should replace the stock one.
+
 ```ts
 import { NitroPing } from "@nitroping/web";
 
