@@ -18,6 +18,26 @@ const deploymentVar = (name: string): string | undefined => {
 const configured = (name: string): boolean =>
   Boolean(process.env[name]?.trim() || deploymentVar(name));
 
+const strict = Bun.argv.includes("--strict");
+
+// Cloudflare Worker secrets and CI secrets are deliberately unreadable here.
+// When only such a value is missing, the integration is reported as configured
+// so that publishing the public half of a pair does not fail the default run.
+// --strict still requires every value to be present in the environment.
+const externalSecrets = new Set([
+  "GITHUB_CLIENT_SECRET",
+  "TURNSTILE_SECRET_KEY",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "CUSTOM_HOSTNAME_API_TOKEN",
+  "NPM_TOKEN",
+  "MAVEN_USERNAME",
+  "MAVEN_TOKEN",
+]);
+
+const storedOutsideRepository = (missing: string[]): boolean =>
+  !strict && missing.every((variable) => externalSecrets.has(variable));
+
 const pairCheck = (
   name: string,
   first: string,
@@ -36,6 +56,13 @@ const pairCheck = (
         ? `${first} and ${second} are required`
         : `${first} and ${second} are not configured`,
     };
+  const missing = [first, second].filter((variable) => !configured(variable));
+  if (storedOutsideRepository(missing))
+    return {
+      name,
+      status: "ready",
+      message: `${missing.join(" and ")} is stored as a secret outside this repository`,
+    };
   return { name, status: "invalid", message: `${first} and ${second} must be configured together` };
 };
 
@@ -53,10 +80,17 @@ const groupCheck = (
       status: required ? "missing" : "optional",
       message: required ? `${variables.join(", ")} are required` : "not configured",
     };
+  const missing = variables.filter((variable) => !configured(variable));
+  if (storedOutsideRepository(missing))
+    return {
+      name,
+      status: "ready",
+      message: `${missing.join(", ")} are stored as secrets outside this repository`,
+    };
   return {
     name,
     status: "invalid",
-    message: `Incomplete configuration; missing ${variables.filter((variable) => !configured(variable)).join(", ")}`,
+    message: `Incomplete configuration; missing ${missing.join(", ")}`,
   };
 };
 
@@ -104,7 +138,6 @@ export const evaluatePreflight = (): PreflightCheck[] => [
   groupCheck("Transactional email", ["EMAIL_FROM"], false),
 ];
 
-const strict = Bun.argv.includes("--strict");
 const checks = evaluatePreflight();
 const symbols: Record<CheckStatus, string> = {
   ready: "✓",

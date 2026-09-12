@@ -19,7 +19,7 @@ bun run preflight
 bun run preflight -- --strict
 ```
 
-The default mode reports optional integrations that are intentionally disabled. Strict mode fails on incomplete configuration and is intended for production deployment gates.
+The default mode reports optional integrations that are intentionally disabled. Values kept outside the repository, such as Worker secrets stored with `wrangler secret put`, cannot be read by the script; when only those are missing, the integration is reported as configured. Strict mode requires every value to be present in the environment, fails on incomplete configuration, and is intended for production deployment gates.
 
 API health check:
 
