@@ -139,7 +139,72 @@ export const loadNitroPingConfig = async (
   };
 };
 
-const css = `.np-root{all:initial;font-family:system-ui,sans-serif;color:var(--np-text,#181221)}.np-root *{box-sizing:border-box}.np-button{position:fixed;right:20px;bottom:20px;z-index:2147483647;border:0;border-radius:999px;padding:12px 16px;background:var(--np-primary,#7c3aed);color:#fff;font:600 14px system-ui;cursor:pointer;box-shadow:0 8px 30px #0003}.np-inline{width:100%}.np-backdrop{position:fixed;inset:0;z-index:2147483646;background:#120b1b99;display:grid;place-items:center;padding:20px}.np-backdrop.np-side{place-items:stretch;padding:0;background:#120b1b66}.np-card{width:min(100%,520px);max-height:calc(100vh - 40px);overflow:auto;background:var(--np-background,#fff);border-radius:18px;padding:24px;box-shadow:0 20px 80px #0005}.np-side .np-card{width:min(100%,520px);height:100%;max-height:none;margin-left:auto;border-radius:22px 0 0 22px}.np-card h2{margin:0 0 6px;font-size:22px}.np-card p{color:var(--np-muted,#665d70);margin:0 0 18px}.np-grid{display:grid;gap:12px}.np-label{display:grid;gap:6px;font:600 13px system-ui}.np-input,.np-select{font:400 15px system-ui;padding:11px 12px;border:1px solid #ddd5e8;border-radius:10px;background:var(--np-background,#fff);color:var(--np-text,#181221)}.np-textarea{min-height:120px;resize:vertical}.np-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.np-secondary,.np-submit{border:0;border-radius:10px;padding:11px 16px;font:700 14px system-ui;cursor:pointer}.np-secondary{background:#f0ebf6;color:#39284d}.np-submit{background:var(--np-primary,#7c3aed);color:#fff}.np-error{color:#b42318;font-size:13px}.np-success{padding:16px;border-radius:12px;background:#f1ebff;color:#4c1d95;line-height:1.5}.np-close{float:right;border:0;background:transparent;font-size:22px;color:var(--np-muted,#665d70);cursor:pointer}.np-file{font-size:13px}`;
+const css = `
+.np-root{all:initial;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--np-text,#1d1b20);--np-surface:var(--np-background,#fff);--np-line:color-mix(in oklab,var(--np-text,#1d1b20) 12%,transparent);--np-soft:color-mix(in oklab,var(--np-text,#1d1b20) 5%,transparent);--np-ring:color-mix(in oklab,var(--np-primary,#7c3aed) 35%,transparent)}
+.np-root *{box-sizing:border-box}
+.np-button{position:fixed;right:20px;bottom:20px;z-index:2147483647;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:12px 18px;background:var(--np-primary,#7c3aed);color:#fff;font:600 14px/1 inherit;cursor:pointer;box-shadow:0 10px 30px color-mix(in oklab,var(--np-primary,#7c3aed) 35%,transparent);transition:transform .18s cubic-bezier(.2,.8,.3,1),box-shadow .18s ease}
+.np-button:hover{transform:translateY(-2px);box-shadow:0 16px 38px color-mix(in oklab,var(--np-primary,#7c3aed) 42%,transparent)}
+.np-button:active{transform:translateY(0)}
+.np-button:focus-visible{outline:3px solid var(--np-ring);outline-offset:3px}
+.np-button svg{width:18px;height:18px}
+.np-inline{width:100%}
+.np-backdrop{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:20px;background:color-mix(in oklab,#0b0a0f 55%,transparent);backdrop-filter:blur(3px);animation:np-fade .18s ease both}
+.np-backdrop.np-side{place-items:stretch;padding:0}
+.np-card{width:min(100%,520px);max-height:calc(100vh - 40px);overflow:auto;background:var(--np-surface);border-radius:20px;padding:22px;box-shadow:0 24px 70px #0000002e,0 2px 8px #0000001a;animation:np-pop .22s cubic-bezier(.2,.9,.3,1) both}
+.np-side .np-card{width:min(100%,460px);height:100%;max-height:none;margin-left:auto;border-radius:24px 0 0 24px;animation:np-slide .24s cubic-bezier(.2,.9,.3,1) both}
+.np-inline .np-card{box-shadow:none;border:1px solid var(--np-line);animation:none}
+.np-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px}
+.np-titles{flex:1;min-width:0}
+.np-logo{display:block;margin-bottom:10px;border-radius:10px;object-fit:contain}
+.np-card h2{margin:0;font:600 18px/1.3 inherit;letter-spacing:-.01em}
+.np-card p{margin:4px 0 0;color:var(--np-muted,#6b6773);font:400 13px/1.5 inherit}
+.np-close{display:grid;place-items:center;width:30px;height:30px;flex:none;border:0;border-radius:999px;background:var(--np-soft);color:var(--np-muted,#6b6773);cursor:pointer;transition:background .15s ease,color .15s ease}
+.np-close:hover{background:color-mix(in oklab,var(--np-text,#1d1b20) 10%,transparent);color:var(--np-text,#1d1b20)}
+.np-close svg{width:14px;height:14px}
+.np-grid{display:grid;gap:14px}
+.np-label{display:grid;gap:6px;font:600 12px/1.2 inherit;color:var(--np-muted,#6b6773)}
+.np-input,.np-select{width:100%;font:400 14px/1.4 inherit;padding:11px 12px;border:1px solid var(--np-line);border-radius:12px;background:var(--np-surface);color:var(--np-text,#1d1b20);transition:border-color .15s ease,box-shadow .15s ease}
+.np-input::placeholder{color:color-mix(in oklab,var(--np-muted,#6b6773) 70%,transparent)}
+.np-input:focus,.np-select:focus{outline:0;border-color:var(--np-primary,#7c3aed);box-shadow:0 0 0 4px var(--np-ring)}
+.np-textarea{min-height:112px;resize:vertical}
+.np-file{padding:9px 12px;font-size:13px;color:var(--np-muted,#6b6773)}
+.np-turnstile{margin-top:14px}
+.np-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.np-secondary,.np-submit{border:0;border-radius:12px;padding:11px 16px;font:600 14px/1 inherit;cursor:pointer;transition:transform .15s ease,background .15s ease,opacity .15s ease}
+.np-secondary{background:var(--np-soft);color:var(--np-text,#1d1b20)}
+.np-secondary:hover{background:color-mix(in oklab,var(--np-text,#1d1b20) 10%,transparent)}
+.np-submit{background:var(--np-primary,#7c3aed);color:#fff;box-shadow:0 6px 18px color-mix(in oklab,var(--np-primary,#7c3aed) 30%,transparent)}
+.np-submit:hover{transform:translateY(-1px)}
+.np-submit:disabled{opacity:.6;cursor:progress;transform:none}
+.np-secondary:focus-visible,.np-submit:focus-visible,.np-close:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
+.np-error{margin-top:14px;padding:10px 12px;border-radius:12px;background:color-mix(in oklab,#e5484d 12%,transparent);color:#b42318;font:500 13px/1.4 inherit}
+.np-success{display:grid;justify-items:center;gap:10px;padding:26px 16px;text-align:center;font:400 14px/1.5 inherit;color:var(--np-text,#1d1b20);animation:np-pop .24s cubic-bezier(.2,.9,.3,1) both}
+.np-success-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:999px;background:color-mix(in oklab,var(--np-primary,#7c3aed) 14%,transparent);color:var(--np-primary,#7c3aed)}
+.np-success-icon svg{width:22px;height:22px}
+.np-success strong{font:600 16px/1.3 inherit}
+.np-success small{color:var(--np-muted,#6b6773);font-size:11px}
+@keyframes np-fade{from{opacity:0}to{opacity:1}}
+@keyframes np-pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes np-slide{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes np-sheet{from{transform:translateY(100%)}to{transform:none}}
+@media (max-width:520px){
+.np-backdrop{place-items:end stretch;padding:0}
+.np-card{width:100%;max-height:88vh;border-radius:22px 22px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom));animation:np-sheet .26s cubic-bezier(.2,.9,.3,1) both}
+.np-side .np-card{width:100%;height:auto;margin:0;border-radius:22px 22px 0 0}
+.np-button{right:16px;bottom:16px}
+.np-actions{flex-direction:column-reverse}
+.np-secondary,.np-submit{width:100%;padding:13px 16px}
+}
+@media (prefers-color-scheme:dark){
+.np-root{color:var(--np-text,#f2f0f5);--np-surface:var(--np-background,#17161b);--np-line:color-mix(in oklab,#fff 14%,transparent);--np-soft:color-mix(in oklab,#fff 8%,transparent)}
+.np-card p,.np-label,.np-close,.np-success small{color:var(--np-muted,#a6a1ae)}
+.np-backdrop{background:color-mix(in oklab,#000 65%,transparent)}
+}
+@media (prefers-reduced-motion:reduce){
+.np-backdrop,.np-card,.np-success{animation:none}
+.np-button,.np-submit{transition:none}
+}
+`;
 
 type TurnstileWidget = {
   render(
@@ -280,7 +345,7 @@ const buildForm = (
   ];
   const card = document.createElement("form");
   card.className = "np-card";
-  card.innerHTML = `<button type="button" class="np-close" aria-label="Close">×</button><h2></h2><p></p><div class="np-grid"></div>${options.turnstileSiteKey ? '<div class="np-turnstile" aria-live="polite"></div>' : ""}<div class="np-actions"><button type="button" class="np-secondary">Cancel</button><button class="np-submit">Submit</button></div>`;
+  card.innerHTML = `<div class="np-header"><div class="np-titles"><h2></h2><p></p></div><button type="button" class="np-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="np-grid"></div>${options.turnstileSiteKey ? '<div class="np-turnstile" aria-live="polite"></div>' : ""}<div class="np-actions"><button type="button" class="np-secondary">Cancel</button><button class="np-submit">Submit</button></div>`;
   (card.querySelector("h2") as HTMLElement).textContent =
     options.title ?? options.brandName ?? "Your feedback";
   (card.querySelector("p") as HTMLElement).textContent =
@@ -291,8 +356,8 @@ const buildForm = (
     logo.alt = options.brandName ?? "";
     logo.width = 32;
     logo.height = 32;
-    logo.style.cssText = "display:block;object-fit:contain;margin-bottom:10px;border-radius:8px";
-    card.insertBefore(logo, card.querySelector("h2"));
+    logo.className = "np-logo";
+    card.querySelector(".np-titles")?.insertAdjacentElement("afterbegin", logo);
   }
   const grid = card.querySelector(".np-grid")!;
   const add = (html: string) => grid.insertAdjacentHTML("beforeend", html);
@@ -401,7 +466,7 @@ const buildForm = (
         },
         file ? [file] : [],
       );
-      card.innerHTML = `<div class="np-success"><strong>Thank you!</strong><br />Your feedback has been sent to the team.${options.showPoweredBy === false ? "" : "<br /><small>Powered by NitroPing</small>"}</div>`;
+      card.innerHTML = `<div class="np-success"><span class="np-success-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><strong>Thank you!</strong><span>Your feedback has been sent to the team.</span>${options.showPoweredBy === false ? "" : "<small>Powered by NitroPing</small>"}</div>`;
       setTimeout(close, 2600);
     } catch (cause) {
       card.querySelector(".np-error")?.remove();
@@ -463,7 +528,10 @@ export const NitroPing = {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "np-button";
-      button.textContent = merged.buttonLabel ?? "Give feedback";
+      const label = merged.buttonLabel ?? "Give feedback";
+      button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span></span>`;
+      (button.querySelector("span") as HTMLElement).textContent = label;
+      button.setAttribute("aria-label", label);
       button.addEventListener("click", open);
       (host ?? document.body).appendChild(root);
       if (host) host.appendChild(button);
