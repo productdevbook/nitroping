@@ -156,7 +156,7 @@ export function WidgetView({
       customFields.map((field) => (field.id === id ? { ...field, ...next } : field)),
     );
 
-  const snippet = `import { NitroPing } from "@nitroping/web";\n\nNitroPing.init({\n  projectKey: "${publicKey}",\n  mode: "${mode}",\n  theme: "system",\n  brandName: "${value("brandName", "Your feedback")}",\n  colors: { primary: "${value("primary", "#7C3AED")}" },\n  fields: ${JSON.stringify(fields)},${customFields.length ? `\n  customFields: ${JSON.stringify(customFields)},` : ""}${categories.length ? `\n  categoryOptions: ${JSON.stringify(categories.map((category) => ({ id: category.id, name: category.name })))},` : ""}\n});`;
+  const snippet = `import { NitroPing } from "@nitroping/web";\n\nNitroPing.init({\n  projectKey: "${publicKey}",\n  mode: "${mode}",\n  theme: "system",\n  brandName: "${value("brandName", "Your feedback")}",\n  colors: { primary: "${value("primary", "#1C1C1E")}" },\n  fields: ${JSON.stringify(fields)},${customFields.length ? `\n  customFields: ${JSON.stringify(customFields)},` : ""}${categories.length ? `\n  categoryOptions: ${JSON.stringify(categories.map((category) => ({ id: category.id, name: category.name })))},` : ""}\n});`;
 
   return (
     <>
@@ -198,7 +198,7 @@ export function WidgetView({
                   id="widget-primary"
                   type="color"
                   className="h-8 p-1"
-                  value={value("primary", "#7C3AED")}
+                  value={value("primary", "#1C1C1E")}
                   onChange={(event) => updateTheme("primary", event.target.value)}
                 />
               </Field>
@@ -300,31 +300,32 @@ export function WidgetView({
               color: value("text", "#181221"),
             }}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-2">
               <span
-                className="grid size-7 place-items-center rounded-md text-sm font-semibold text-white"
-                style={{ background: value("primary", "#7C3AED") }}
+                className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                style={{
+                  background: `color-mix(in oklab, ${value("primary", "#1C1C1E")} 10%, transparent)`,
+                  color: value("primary", "#1C1C1E"),
+                }}
               >
-                N
+                Something broke
               </span>
-              <div>
-                <p className="text-sm font-medium">{value("brandName", "Your feedback")}</p>
-                <p className="text-xs opacity-70">
-                  Help us make this product better.
-                </p>
-              </div>
+              <span className="text-xs opacity-40">✕</span>
             </div>
-            <div className="rounded-md border border-black/10 px-2 py-1.5 text-xs opacity-70">
-              Tell us what happened…
+            <div className="rounded-xl bg-black/5 px-3 py-4 text-xs opacity-60">
+              What happened, and what did you expect?
             </div>
-            <div className="rounded-md border border-black/10 px-2 py-4 text-xs opacity-70">
-              Describe your feedback…
+            <div className="rounded-xl bg-black/5 px-3 py-2 text-xs opacity-60">
+              Email for updates (optional)
             </div>
-            <div
-              className="rounded-md py-1.5 text-center text-xs font-medium text-white"
-              style={{ background: value("primary", "#7C3AED") }}
-            >
-              {value("buttonLabel", "Give feedback")}
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-[10px] opacity-40">⌘↵</span>
+              <span
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-white"
+                style={{ background: value("primary", "#1C1C1E") }}
+              >
+                Send
+              </span>
             </div>
           </div>
         </section>

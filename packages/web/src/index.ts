@@ -84,20 +84,67 @@ const escapeHtml = (value: unknown): string =>
         "'": "&#39;",
       })[character] ?? character,
   );
-const labelFor = (value: string) =>
-  escapeHtml(
-    value
-      .replaceAll("_", " ")
-      .replace(/(^|\s)\S/g, (letter) => letter.toUpperCase()),
-  );
-const segmentLabels: Record<string, string> = {
-  complaint: "Complaint",
-  bug: "Bug",
-  suggestion: "Idea",
-  feature_request: "Feature",
+const titleCase = (value: string) =>
+  value
+    .replaceAll("_", " ")
+    .replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+const labelFor = (value: string) => escapeHtml(titleCase(value));
+
+const icons = {
+  bug: "M8 6a4 4 0 0 1 8 0M6 10h12M7 10v6a5 5 0 0 0 10 0v-6M4 14h3M17 14h3",
+  idea: "M9 18h6M10 21h4M12 3a6 6 0 0 1 4 10.5c-.6.6-1 1.3-1 2.1H9c0-.8-.4-1.5-1-2.1A6 6 0 0 1 12 3z",
+  alert:
+    "M12 9v4M12 17h.01M10.3 3.9 2.5 17.4A2 2 0 0 0 4.2 20.4h15.6a2 2 0 0 0 1.7-3l-7.8-13.5a2 2 0 0 0-3.4 0z",
+  plus: "M12 3v18M3 12h18",
+  message: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  check: "M20 6 9 17l-5-5",
+  close: "M6 6l12 12M18 6L6 18",
+  back: "M15 5l-7 7 7 7",
+  clip: "M21.4 11.1 12.3 20a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.8 1.8 0 0 1-2.6-2.6l8.5-8.5",
+  mail: "M4 5h16v14H4zM4 6l8 6 8-6",
 };
-const segmentLabel = (value: string) =>
-  segmentLabels[value] ? escapeHtml(segmentLabels[value]) : labelFor(value);
+const drawing = (path: string, width = 2) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;
+
+/*
+ * Every feedback type is one tile on the first step: an icon, a sentence a
+ * person would actually say instead of the taxonomy word, and the prompt the
+ * writing box opens with once that tile is picked.
+ */
+type TypeMeta = { label: string; icon: string; prompt: string };
+const typeMeta: Record<string, TypeMeta> = {
+  bug: {
+    label: "Something broke",
+    icon: icons.bug,
+    prompt: "What happened, and what did you expect?",
+  },
+  complaint: {
+    label: "Something annoys me",
+    icon: icons.alert,
+    prompt: "What is getting in your way?",
+  },
+  suggestion: {
+    label: "I have an idea",
+    icon: icons.idea,
+    prompt: "What would make this better?",
+  },
+  feature_request: {
+    label: "Missing feature",
+    icon: icons.plus,
+    prompt: "What is missing?",
+  },
+};
+/* The ⌘ glyph is missing from most non-Apple font stacks. */
+const sendHint = () =>
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
+    ? "⌘↵"
+    : "Ctrl ↵";
+const metaFor = (value: string): TypeMeta =>
+  typeMeta[value] ?? {
+    label: titleCase(value),
+    icon: icons.message,
+    prompt: "Tell us more…",
+  };
 
 let configured: Partial<NitroPingOptions> = {};
 
@@ -150,109 +197,133 @@ export const loadNitroPingConfig = async (
 
 const css = `
 .np-root{all:initial;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif;color:var(--np-text,#1c1c1e);-webkit-font-smoothing:antialiased;
+--np-accent:var(--np-primary,#1c1c1e);
+--np-on-accent:#fff;
 --np-surface:var(--np-background,#fff);
 --np-fill:color-mix(in oklab,var(--np-text,#1c1c1e) 5%,transparent);
 --np-fill-strong:color-mix(in oklab,var(--np-text,#1c1c1e) 9%,transparent);
 --np-line:color-mix(in oklab,var(--np-text,#1c1c1e) 9%,transparent);
---np-ring:color-mix(in oklab,var(--np-primary,#7c3aed) 20%,transparent);
+--np-tint:color-mix(in oklab,var(--np-accent) 10%,transparent);
+--np-edge:color-mix(in oklab,var(--np-accent) 34%,transparent);
+--np-ring:color-mix(in oklab,var(--np-accent) 20%,transparent);
 --np-spring:cubic-bezier(.32,.72,0,1)}
 .np-root *{box-sizing:border-box}
-.np-button{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:inline-flex;align-items:center;gap:7px;border:.5px solid var(--np-line);border-radius:999px;padding:9px 14px;background:color-mix(in oklab,var(--np-surface) 88%,transparent);backdrop-filter:saturate(180%) blur(16px);color:var(--np-text,#1c1c1e);font:510 13px/1 inherit;letter-spacing:-.01em;cursor:pointer;box-shadow:0 4px 14px #00000014,0 1px 2px #0000000f;transition:transform .18s var(--np-spring),box-shadow .18s ease,opacity .18s ease}
+.np-root [hidden]{display:none!important}
+/* Launcher: a quiet circle. The accent only reaches the glyph inside it. */
+.np-button{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:grid;place-items:center;width:40px;height:40px;padding:0;border:.5px solid var(--np-line);border-radius:999px;background:var(--np-surface);color:var(--np-accent);cursor:pointer;box-shadow:0 4px 14px #00000014,0 1px 2px #0000000f;transition:transform .18s var(--np-spring),box-shadow .18s ease,opacity .18s ease}
 .np-button:hover{transform:translateY(-1px);box-shadow:0 8px 20px #0000001f}
-.np-button:active{transform:scale(.96)}
+.np-button:active{transform:scale(.94)}
 .np-button:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
-.np-button svg{width:15px;height:15px;color:var(--np-primary,#7c3aed)}
+.np-button svg{width:17px;height:17px}
 .np-root:has(.np-backdrop) .np-button{opacity:0;transform:translateY(8px);pointer-events:none}
 .np-inline{width:100%}
 /* Anchored panel: no scrim, grows out of the launcher it belongs to. */
 .np-popover{position:fixed;right:18px;bottom:70px;z-index:2147483647;width:min(340px,calc(100vw - 36px));transform-origin:bottom right;animation:np-grow .3s var(--np-spring) both}
-.np-popover .np-card{width:100%;max-height:min(74vh,560px)}
+.np-popover .np-card{width:100%}
 .np-backdrop{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:24px;background:color-mix(in oklab,#0a0a0c 40%,transparent);backdrop-filter:saturate(180%) blur(16px);animation:np-fade .2s ease both}
 .np-backdrop.np-side{place-items:stretch;padding:0}
-.np-card{position:relative;width:min(100%,400px);max-height:calc(100vh - 48px);overflow:auto;background:color-mix(in oklab,var(--np-surface) 92%,transparent);backdrop-filter:saturate(180%) blur(20px);border:.5px solid var(--np-line);border-radius:20px;padding:16px;box-shadow:0 18px 48px #00000024,0 2px 6px #0000000f;animation:np-pop .28s var(--np-spring) both}
-.np-popover .np-card{animation:none}
-.np-side .np-card{width:min(100%,380px);height:100%;max-height:none;margin-left:auto;border-radius:22px 0 0 22px;animation:np-slide .3s var(--np-spring) both}
-.np-inline .np-card{backdrop-filter:none;background:var(--np-surface);box-shadow:none;animation:none}
-.np-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
-.np-titles{flex:1;min-width:0}
-.np-logo{display:block;margin-bottom:8px;border-radius:9px;object-fit:contain}
-.np-card h2{margin:0;font:600 15px/1.3 inherit;letter-spacing:-.01em}
-.np-card p{margin:2px 0 0;color:var(--np-muted,#6e6e73);font:400 13px/1.4 inherit}
-.np-close{display:grid;place-items:center;width:24px;height:24px;flex:none;border:0;border-radius:999px;background:transparent;color:var(--np-muted,#6e6e73);cursor:pointer;transition:background .16s ease,transform .16s ease}
-.np-close:hover{background:var(--np-fill)}
-.np-close:active{transform:scale(.9)}
-.np-close svg{width:12px;height:12px}
-.np-grid{display:grid;gap:12px}
+.np-card{position:relative;width:min(100%,340px);max-height:min(78vh,620px);overflow:auto;background:var(--np-surface);border:.5px solid var(--np-line);border-radius:20px;padding:14px;box-shadow:0 18px 48px #0000001a,0 2px 6px #0000000d}
+.np-backdrop .np-card{animation:np-pop .28s var(--np-spring) both}
+.np-side .np-card{width:min(100%,360px);height:100%;max-height:none;margin-left:auto;border-radius:22px 0 0 22px;animation:np-slide .3s var(--np-spring) both}
+.np-inline .np-card{box-shadow:none}
+.np-step{display:flex;flex-direction:column;gap:14px;animation:np-step .26s var(--np-spring) both}
+.np-compose{gap:12px}
+.np-bar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.np-bar-l{display:flex;align-items:center;gap:8px;min-width:0}
+.np-dots{display:flex;align-items:center;gap:5px}
+.np-dot{display:block;width:6px;height:3px;border-radius:999px;background:var(--np-fill-strong)}
+.np-dot-on{width:14px;background:var(--np-accent)}
+.np-x,.np-back{display:grid;place-items:center;width:22px;height:22px;flex:none;padding:0;border:0;border-radius:999px;background:transparent;color:var(--np-muted,#8e8e93);cursor:pointer;transition:background .16s ease,transform .16s ease}
+.np-x:hover,.np-back:hover{background:var(--np-fill)}
+.np-x:active,.np-back:active{transform:scale(.9)}
+.np-x svg{width:11px;height:11px}
+.np-back svg{width:12px;height:12px}
+.np-logo{display:block;width:20px;height:20px;flex:none;border-radius:6px;object-fit:contain}
+.np-ask{margin:0;font:600 17px/1.25 inherit;letter-spacing:-.02em;color:var(--np-text,#1c1c1e)}
+.np-ask-sm{font-size:15px;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.np-tile{display:flex;flex-direction:column;justify-content:space-between;gap:14px;min-height:84px;padding:12px;border:1.5px solid transparent;border-radius:16px;background:var(--np-fill);color:var(--np-muted,#48484a);font:510 14px/1.2 inherit;letter-spacing:-.01em;text-align:left;cursor:pointer;transition:background .18s var(--np-spring),color .18s ease,border-color .18s ease,transform .18s var(--np-spring)}
+.np-tile svg{width:20px;height:20px}
+.np-tile:hover{background:var(--np-fill-strong)}
+.np-tile:active{transform:scale(.98)}
+.np-tile[aria-checked="true"]{background:var(--np-tint);border-color:var(--np-edge);color:var(--np-accent);font-weight:590}
+.np-tile:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
+.np-hint{margin:0;font:400 11px/1.4 inherit;color:var(--np-muted,#a1a1a6)}
+.np-chip{display:inline-flex;align-items:center;gap:6px;min-width:0;padding:4px 9px 4px 7px;border-radius:999px;background:var(--np-tint);color:var(--np-accent);font:590 12px/1.2 inherit}
+.np-chip svg{width:13px;height:13px;flex:none}
+.np-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-box{width:100%;min-height:132px;resize:none;border:0;border-radius:14px;padding:11px 12px;background:var(--np-fill);color:var(--np-text,#1c1c1e);font:400 15px/1.5 inherit;letter-spacing:-.01em;transition:box-shadow .16s ease,background .16s ease}
+.np-box::placeholder{color:color-mix(in oklab,var(--np-muted,#8e8e93) 80%,transparent)}
+.np-box:focus{outline:0;box-shadow:0 0 0 3px var(--np-ring)}
+.np-mail{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:14px;background:var(--np-fill);color:var(--np-muted,#a1a1a6);transition:box-shadow .16s ease}
+.np-mail:focus-within{box-shadow:0 0 0 3px var(--np-ring)}
+.np-mail svg{width:14px;height:14px;flex:none}
+.np-mail input{flex:1;min-width:0;padding:8px 0;border:0;background:transparent;color:var(--np-text,#1c1c1e);font:400 14px/1.2 inherit;letter-spacing:-.01em}
+.np-mail input:focus{outline:0}
+.np-mail input::placeholder{color:currentColor}
+.np-extra{display:grid;gap:8px}
 .np-field{display:grid;gap:5px}
-.np-field-label{font:510 12px/1.2 inherit;color:var(--np-muted,#6e6e73)}
-.np-input,.np-select{width:100%;min-height:38px;font:400 15px/1.35 inherit;letter-spacing:-.01em;padding:9px 11px;border:0;border-radius:11px;background:var(--np-fill);color:var(--np-text,#1c1c1e);appearance:none;transition:box-shadow .16s ease,background .16s ease}
-.np-select{background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 16px) 17px,calc(100% - 11px) 17px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:32px}
-.np-input::placeholder{color:color-mix(in oklab,var(--np-muted,#6e6e73) 60%,transparent)}
-.np-input:focus,.np-select:focus{outline:0;background:var(--np-surface);box-shadow:0 0 0 3px var(--np-ring),0 0 0 1px color-mix(in oklab,var(--np-primary,#7c3aed) 40%,transparent)}
-.np-textarea{min-height:84px;resize:vertical;line-height:1.45}
-.np-segment{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
-.np-seg{position:relative}
-.np-seg input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
-.np-seg span{display:grid;place-items:center;min-height:32px;padding:6px 4px;border:.5px solid transparent;border-radius:10px;background:var(--np-fill);font:510 12px/1.2 inherit;color:var(--np-muted,#6e6e73);white-space:nowrap;transition:background .18s var(--np-spring),color .18s ease,border-color .18s ease}
-.np-seg input:checked+span{background:color-mix(in oklab,var(--np-primary,#7c3aed) 10%,transparent);border-color:color-mix(in oklab,var(--np-primary,#7c3aed) 32%,transparent);color:var(--np-primary,#7c3aed);font-weight:590}
-.np-seg input:focus-visible+span{box-shadow:0 0 0 3px var(--np-ring)}
-.np-file-drop{display:flex;align-items:center;gap:8px;position:relative;min-height:38px;padding:9px 11px;border-radius:11px;background:var(--np-fill);color:var(--np-muted,#6e6e73);font:400 13px/1.2 inherit;cursor:pointer;transition:background .16s ease}
-.np-file-drop:hover{background:var(--np-fill-strong)}
-.np-file-drop svg{width:15px;height:15px;flex:none}
-.np-file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
-.np-file-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-field-label{font:510 12px/1.2 inherit;color:var(--np-muted,#8e8e93)}
+.np-input,.np-select{width:100%;min-height:36px;padding:8px 11px;border:0;border-radius:12px;background:var(--np-fill);color:var(--np-text,#1c1c1e);font:400 14px/1.35 inherit;letter-spacing:-.01em;appearance:none;transition:box-shadow .16s ease}
+.np-select{background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 16px) 16px,calc(100% - 11px) 16px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:32px}
+.np-input:focus,.np-select:focus{outline:0;box-shadow:0 0 0 3px var(--np-ring)}
+.np-textarea{min-height:72px;resize:vertical;line-height:1.45}
 .np-field-inline{grid-template-columns:1fr auto;align-items:center}
 .np-switch{appearance:none;width:40px;height:24px;flex:none;position:relative;border:0;border-radius:999px;background:var(--np-fill-strong);cursor:pointer;transition:background .2s ease}
 .np-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:999px;background:#fff;box-shadow:0 1px 2px #00000026;transition:transform .22s var(--np-spring)}
-.np-switch:checked{background:var(--np-primary,#7c3aed)}
+.np-switch:checked{background:var(--np-accent)}
 .np-switch:checked::after{transform:translateX(16px)}
 .np-switch:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
-.np-turnstile{margin-top:12px}
-.np-actions{display:flex;align-items:center;gap:8px;margin-top:16px}
-.np-submit{flex:1;min-height:38px;border:0;border-radius:11px;background:var(--np-primary,#7c3aed);color:#fff;font:590 14px/1 inherit;letter-spacing:-.01em;cursor:pointer;transition:transform .16s var(--np-spring),opacity .16s ease}
-.np-submit:active{transform:scale(.98)}
-.np-submit:disabled{opacity:.5;cursor:progress;transform:none}
-.np-secondary{min-height:38px;padding:0 12px;border:0;border-radius:11px;background:transparent;color:var(--np-muted,#6e6e73);font:510 14px/1 inherit;cursor:pointer;transition:background .16s ease}
-.np-secondary:hover{background:var(--np-fill)}
-.np-secondary:focus-visible,.np-submit:focus-visible,.np-close:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
-.np-error{margin-top:12px;padding:9px 11px;border-radius:11px;background:color-mix(in oklab,#ff3b30 9%,transparent);color:#c9372c;font:500 13px/1.4 inherit}
-.np-success{display:grid;justify-items:center;gap:8px;padding:22px 12px 16px;text-align:center;font:400 13px/1.45 inherit;color:var(--np-muted,#6e6e73)}
-.np-success-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:999px;background:color-mix(in oklab,var(--np-primary,#7c3aed) 12%,transparent);color:var(--np-primary,#7c3aed);animation:np-check .42s cubic-bezier(.32,1.35,.4,1) both}
-.np-success-icon svg{width:20px;height:20px}
-.np-success strong{font:600 15px/1.3 inherit;color:var(--np-text,#1c1c1e)}
-.np-success small{font-size:11px;opacity:.7}
+.np-file{display:inline-flex;align-items:center;align-self:flex-start;max-width:100%;padding:4px 10px;border-radius:999px;background:var(--np-fill);color:var(--np-muted,#8e8e93);font:400 12px/1.3 inherit;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-turnstile{display:flex;justify-content:center}
+.np-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.np-tools{display:flex;align-items:center;gap:2px}
+.np-tool{position:relative;display:grid;place-items:center;width:30px;height:30px;border-radius:10px;color:var(--np-muted,#8e8e93);cursor:pointer;transition:background .16s ease,color .16s ease}
+.np-tool:hover{background:var(--np-fill);color:var(--np-text,#1c1c1e)}
+.np-tool:focus-within{outline:3px solid var(--np-ring);outline-offset:2px}
+.np-tool svg{width:15px;height:15px}
+.np-tool input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.np-actions{display:flex;align-items:center;gap:10px}
+.np-kbd{font:400 11px/1 inherit;color:var(--np-muted,#b7b7bb)}
+.np-send{min-height:34px;padding:0 16px;border:0;border-radius:12px;background:var(--np-accent);color:var(--np-on-accent);font:590 14px/1 inherit;letter-spacing:-.01em;cursor:pointer;transition:transform .16s var(--np-spring),opacity .16s ease}
+.np-send:active{transform:scale(.97)}
+.np-send:disabled{opacity:.5;cursor:progress;transform:none}
+.np-send:focus-visible{outline:3px solid var(--np-ring);outline-offset:2px}
+.np-error{padding:9px 11px;border-radius:12px;background:color-mix(in oklab,#ff3b30 9%,transparent);color:#c9372c;font:500 13px/1.4 inherit}
+.np-sent{display:grid;justify-items:center;gap:8px;padding:12px 2px 6px;text-align:center;font:400 13px/1.45 inherit;color:var(--np-muted,#6e6e73);animation:np-step .26s var(--np-spring) both}
+.np-sent-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:999px;background:var(--np-tint);color:var(--np-accent);animation:np-check .42s cubic-bezier(.32,1.35,.4,1) both}
+.np-sent-icon svg{width:20px;height:20px}
+.np-sent strong{font:600 15px/1.3 inherit;letter-spacing:-.01em;color:var(--np-text,#1c1c1e)}
+.np-sent small{margin-top:4px;font-size:11px;color:var(--np-muted,#b7b7bb)}
 @keyframes np-fade{from{opacity:0}to{opacity:1}}
 @keyframes np-grow{from{opacity:0;transform:scale(.94) translateY(6px)}to{opacity:1;transform:none}}
 @keyframes np-pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
 @keyframes np-slide{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
 @keyframes np-sheet{from{transform:translateY(100%)}to{transform:none}}
+@keyframes np-step{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 @keyframes np-check{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 @media (max-width:540px){
 .np-popover{right:10px;left:10px;bottom:10px;width:auto;transform-origin:bottom center;animation:np-sheet .3s var(--np-spring) both}
-.np-popover .np-card{max-height:min(78vh,560px);border-radius:20px;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+.np-popover .np-card{max-height:min(80vh,620px);padding-bottom:calc(14px + env(safe-area-inset-bottom))}
 .np-backdrop{place-items:end stretch;padding:0}
-.np-backdrop .np-card{width:100%;max-height:88vh;border-radius:22px 22px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));animation:np-sheet .32s var(--np-spring) both}
+.np-backdrop .np-card{width:100%;max-height:88vh;border-radius:22px 22px 0 0;padding:16px 14px calc(14px + env(safe-area-inset-bottom));animation:np-sheet .32s var(--np-spring) both}
 .np-side .np-card{width:100%;height:auto;margin:0;border-radius:22px 22px 0 0}
 .np-button{right:14px;bottom:14px}
-.np-segment{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (prefers-color-scheme:dark){
 .np-root{color:var(--np-text,#f5f5f7);
+--np-accent:var(--np-primary,#f5f5f7);
+--np-on-accent:#1c1c1e;
 --np-surface:var(--np-background,#1c1c1e);
 --np-fill:color-mix(in oklab,#fff 9%,transparent);
 --np-fill-strong:color-mix(in oklab,#fff 14%,transparent);
 --np-line:color-mix(in oklab,#fff 12%,transparent)}
-.np-card p,.np-field-label,.np-close,.np-secondary,.np-success,.np-file-drop{color:var(--np-muted,#98989d)}
+.np-tile{color:var(--np-muted,#c7c7cc)}
 .np-backdrop{background:color-mix(in oklab,#000 50%,transparent)}
-.np-seg input:checked+span{background:color-mix(in oklab,var(--np-primary,#7c3aed) 22%,transparent);color:#fff;border-color:transparent}
-}
-@media (prefers-reduced-transparency:reduce){
-.np-card{background:var(--np-surface);backdrop-filter:none}
-.np-backdrop{backdrop-filter:none}
 }
 @media (prefers-reduced-motion:reduce){
-.np-popover,.np-backdrop,.np-card,.np-success-icon{animation:none}
-.np-button,.np-submit,.np-seg span,.np-switch::after{transition:none}
+.np-popover,.np-backdrop,.np-card,.np-step,.np-sent,.np-sent-icon{animation:none}
+.np-button,.np-send,.np-tile,.np-switch::after{transition:none}
 }
 `;
 
@@ -380,6 +451,11 @@ export const createNitroPingClient = (
   };
 };
 
+/*
+ * Two steps, two taps: pick what the message is about, then write it in a
+ * single box. The first line of that box becomes the title, so nobody is asked
+ * to summarise their own sentence.
+ */
 const buildForm = (
   options: NitroPingOptions,
   client: NitroPingClient,
@@ -393,38 +469,20 @@ const buildForm = (
     "suggestion",
     "feature_request",
   ];
-  const card = document.createElement("form");
-  card.className = "np-card";
-  card.innerHTML = `<div class="np-header"><div class="np-titles"><h2></h2><p></p></div><button type="button" class="np-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="np-grid"></div>${options.turnstileSiteKey ? '<div class="np-turnstile" aria-live="polite"></div>' : ""}<div class="np-actions"><button class="np-submit">Send feedback</button><button type="button" class="np-secondary">Cancel</button></div>`;
-  (card.querySelector("h2") as HTMLElement).textContent =
-    options.title ?? options.brandName ?? "Your feedback";
-  (card.querySelector("p") as HTMLElement).textContent =
-    options.description ?? "Tell us what would make this product better.";
-  if (options.logoUrl) {
-    const logo = document.createElement("img");
-    logo.src = options.logoUrl;
-    logo.alt = options.brandName ?? "";
-    logo.width = 32;
-    logo.height = 32;
-    logo.className = "np-logo";
-    card.querySelector(".np-titles")?.insertAdjacentElement("afterbegin", logo);
-  }
-  const grid = card.querySelector(".np-grid")!;
-  const add = (html: string) => grid.insertAdjacentHTML("beforeend", html);
-  const field = (label: string, control: string) =>
+  const picks =
+    fields.includes("type") && categories.length > 1 ? categories : [];
+  const heading = options.title ?? "What's up?";
+  const initialType = picks[0] ?? categories[0] ?? "suggestion";
+  const logo = options.logoUrl
+    ? `<img class="np-logo" src="${escapeHtml(options.logoUrl)}" alt="${escapeHtml(options.brandName ?? "")}" width="20" height="20" />`
+    : "";
+
+  const fieldRow = (label: string, control: string) =>
     `<label class="np-field"><span class="np-field-label">${label}</span>${control}</label>`;
-  if (fields.includes("type"))
-    add(
-      `<div class="np-field"><span class="np-field-label">Type</span><div class="np-segment" role="radiogroup" aria-label="Type">${categories
-        .map(
-          (value, index) =>
-            `<label class="np-seg"><input type="radio" name="type" value="${escapeHtml(value)}"${index === 0 ? " checked" : ""} /><span>${segmentLabel(value)}</span></label>`,
-        )
-        .join("")}</div></div>`,
-    );
+  const extras: string[] = [];
   if (fields.includes("category") && options.categoryOptions?.length)
-    add(
-      field(
+    extras.push(
+      fieldRow(
         "Category",
         `<select class="np-select" name="categoryId"><option value="">Select a category</option>${options.categoryOptions
           .map(
@@ -434,45 +492,23 @@ const buildForm = (
           .join("")}</select>`,
       ),
     );
-  if (fields.includes("title"))
-    add(
-      field(
-        "Title",
-        `<input class="np-input" name="title" required minlength="3" maxlength="160" placeholder="A short summary" />`,
-      ),
-    );
-  if (fields.includes("description"))
-    add(
-      field(
-        "Description",
-        `<textarea class="np-input np-textarea" name="body" required minlength="3" maxlength="20000" placeholder="What happened, and what did you expect?"></textarea>`,
-      ),
-    );
-  if (fields.includes("email"))
-    add(
-      field(
-        "Email",
-        `<input class="np-input" type="email" name="email" placeholder="you@example.com (optional)" />`,
-      ),
-    );
-  if (fields.includes("attachment"))
-    add(
-      `<label class="np-field"><span class="np-field-label">Attachment</span><span class="np-file-drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.1 12.3 20a5.5 5.5 0 0 1-7.8-7.8l9.2-9.2a3.7 3.7 0 0 1 5.2 5.2l-9.2 9.2a1.8 1.8 0 0 1-2.6-2.6l8.5-8.5"/></svg><span class="np-file-name">Choose a file</span><input type="file" name="attachment" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" /></span></label>`,
-    );
   for (const custom of options.customFields ?? []) {
     const required = custom.required ? " required" : "";
+    const name = `custom_${escapeHtml(custom.id)}`;
     if (custom.type === "textarea")
-      add(
-        field(
+      extras.push(
+        fieldRow(
           labelFor(custom.label),
-          `<textarea class="np-input np-textarea" name="custom_${escapeHtml(custom.id)}" maxlength="2000"${required}></textarea>`,
+          `<textarea class="np-input np-textarea" name="${name}" maxlength="2000"${required}></textarea>`,
         ),
       );
     else if (custom.type === "select")
-      add(
-        field(
+      extras.push(
+        fieldRow(
           labelFor(custom.label),
-          `<select class="np-select" name="custom_${escapeHtml(custom.id)}"${required}><option value="">Select an option</option>${(custom.options ?? [])
+          `<select class="np-select" name="${name}"${required}><option value="">Select an option</option>${(
+            custom.options ?? []
+          )
             .map(
               (option) =>
                 `<option value="${escapeHtml(option)}">${labelFor(option)}</option>`,
@@ -481,23 +517,111 @@ const buildForm = (
         ),
       );
     else if (custom.type === "boolean")
-      add(
-        `<label class="np-field np-field-inline"><span class="np-field-label">${labelFor(custom.label)}</span><input class="np-switch" type="checkbox" name="custom_${escapeHtml(custom.id)}" value="true"${required} /></label>`,
+      extras.push(
+        `<label class="np-field np-field-inline"><span class="np-field-label">${labelFor(custom.label)}</span><input class="np-switch" type="checkbox" name="${name}" value="true"${required} /></label>`,
       );
     else
-      add(
-        field(
+      extras.push(
+        fieldRow(
           labelFor(custom.label),
-          `<input class="np-input" type="${custom.type === "number" ? "number" : "text"}" name="custom_${escapeHtml(custom.id)}" maxlength="512"${required} />`,
+          `<input class="np-input" type="${custom.type === "number" ? "number" : "text"}" name="${name}" maxlength="512"${required} />`,
         ),
       );
   }
-  const fileInput = card.querySelector<HTMLInputElement>('input[type="file"]');
-  const fileName = card.querySelector<HTMLElement>(".np-file-name");
-  fileInput?.addEventListener("change", () => {
-    if (fileName)
-      fileName.textContent = fileInput.files?.[0]?.name ?? "Choose a file";
+
+  const card = document.createElement("form");
+  card.className = "np-card";
+  card.innerHTML =
+    `<section class="np-step np-pick"${picks.length ? "" : " hidden"}>` +
+    `<div class="np-bar"><div class="np-bar-l">${logo}<span class="np-dots"><i class="np-dot np-dot-on"></i><i class="np-dot"></i></span></div>` +
+    `<button type="button" class="np-x" aria-label="Close">${drawing(icons.close, 2.3)}</button></div>` +
+    `<h2 class="np-ask">${escapeHtml(heading)}</h2>` +
+    `<div class="np-tiles" role="radiogroup" aria-label="Feedback type">${picks
+      .map((value) => {
+        const meta = metaFor(value);
+        return `<button type="button" class="np-tile" role="radio" aria-checked="false" data-value="${escapeHtml(value)}">${drawing(meta.icon, 1.7)}<span>${escapeHtml(meta.label)}</span></button>`;
+      })
+      .join("")}</div>` +
+    `<p class="np-hint">${escapeHtml(options.description ?? "Pick one — the next step is a single box.")}</p>` +
+    `</section>` +
+    `<section class="np-step np-compose"${picks.length ? " hidden" : ""}>` +
+    `<div class="np-bar"><div class="np-bar-l">` +
+    (picks.length
+      ? `<button type="button" class="np-back" aria-label="Back">${drawing(icons.back, 2.1)}</button><span class="np-chip">${drawing(icons.message, 1.9)}<span></span></span>`
+      : `${logo}<h2 class="np-ask np-ask-sm">${escapeHtml(heading)}</h2>`) +
+    `</div><button type="button" class="np-x" aria-label="Close">${drawing(icons.close, 2.3)}</button></div>` +
+    `<textarea class="np-box" name="body" required minlength="3" maxlength="20000"></textarea>` +
+    (extras.length ? `<div class="np-extra">${extras.join("")}</div>` : "") +
+    (fields.includes("email")
+      ? `<label class="np-mail">${drawing(icons.mail, 1.8)}<input type="email" name="email" placeholder="Email for updates (optional)" /></label>`
+      : "") +
+    `<span class="np-file" hidden></span>` +
+    (options.turnstileSiteKey
+      ? `<div class="np-turnstile" aria-live="polite"></div>`
+      : "") +
+    `<div class="np-foot"><div class="np-tools">` +
+    (fields.includes("attachment")
+      ? `<label class="np-tool" title="Attach a file" aria-label="Attach a file">${drawing(icons.clip, 1.8)}<input type="file" name="attachment" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" /></label>`
+      : "") +
+    `</div><div class="np-actions"><span class="np-kbd" aria-hidden="true">${sendHint()}</span><button class="np-send">Send</button></div></div>` +
+    `<input type="hidden" name="type" value="${escapeHtml(initialType)}" />` +
+    `</section>`;
+
+  const pick = card.querySelector<HTMLElement>(".np-pick")!;
+  const compose = card.querySelector<HTMLElement>(".np-compose")!;
+  const box = card.querySelector<HTMLTextAreaElement>(".np-box")!;
+  const typeInput = card.querySelector<HTMLInputElement>('input[name="type"]')!;
+  const chip = compose.querySelector<HTMLElement>(".np-chip");
+  const tiles = [...card.querySelectorAll<HTMLElement>(".np-tile")];
+
+  const show = (step: HTMLElement, other: HTMLElement) => {
+    other.hidden = true;
+    step.hidden = false;
+    step.style.animation = "none";
+    void step.offsetWidth;
+    step.style.animation = "";
+  };
+  /* Nothing is pre-selected on the first step: the tiles are the question. */
+  const choose = (value: string, mark = true) => {
+    const meta = metaFor(value);
+    typeInput.value = value;
+    if (mark)
+      for (const tile of tiles)
+        tile.setAttribute("aria-checked", String(tile.dataset.value === value));
+    if (chip) {
+      chip.querySelector("path")?.setAttribute("d", meta.icon);
+      (chip.querySelector("span") as HTMLElement).textContent = meta.label;
+    }
+    box.placeholder = meta.prompt;
+  };
+  choose(initialType, false);
+  for (const tile of tiles)
+    tile.addEventListener("click", () => {
+      choose(String(tile.dataset.value));
+      show(compose, pick);
+      box.focus({ preventScroll: true });
+    });
+  card.querySelector(".np-back")?.addEventListener("click", () => {
+    show(pick, compose);
   });
+  for (const dismiss of card.querySelectorAll(".np-x"))
+    dismiss.addEventListener("click", close);
+
+  const fileInput = card.querySelector<HTMLInputElement>('input[type="file"]');
+  const fileChip = card.querySelector<HTMLElement>(".np-file");
+  fileInput?.addEventListener("change", () => {
+    const file = fileInput.files?.[0];
+    if (!fileChip) return;
+    fileChip.textContent = file?.name ?? "";
+    fileChip.hidden = !file;
+  });
+  box.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      card.requestSubmit();
+    }
+  });
+
   let turnstileToken: string | undefined;
   if (options.turnstileSiteKey) {
     const container = card.querySelector<HTMLElement>(".np-turnstile");
@@ -523,16 +647,14 @@ const buildForm = (
           turnstileToken = undefined;
         });
   }
-  card.querySelector(".np-close")?.addEventListener("click", close);
-  card.querySelector(".np-secondary")?.addEventListener("click", close);
+
   card.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const submit = card.querySelector<HTMLButtonElement>(".np-submit")!;
-    submit.disabled = true;
-    submit.textContent = "Submitting…";
+    const send = card.querySelector<HTMLButtonElement>(".np-send")!;
+    send.disabled = true;
+    send.textContent = "Sending…";
     const data = Object.fromEntries(new FormData(card).entries());
-    const file = (card.querySelector<HTMLInputElement>("input[type=file]")
-      ?.files ?? [])[0];
+    const file = fileInput?.files?.[0];
     try {
       const customMetadata = Object.fromEntries(
         (options.customFields ?? [])
@@ -546,12 +668,19 @@ const buildForm = (
                 : String(data[`custom_${field.id}`]),
           ]),
       );
+      const body = String(data.body ?? "").trim();
+      const opening = body.split("\n")[0]?.trim() ?? "";
+      const title = opening
+        ? opening.length > 160
+          ? `${opening.slice(0, 157)}…`
+          : opening
+        : "Feedback";
       await client.feedback.create(
         {
           type: String(data.type || "suggestion") as FeedbackType,
           categoryId: data.categoryId ? String(data.categoryId) : undefined,
-          title: String(data.title || "Feedback"),
-          body: String(data.body || ""),
+          title,
+          body,
           email: data.email ? String(data.email) : undefined,
           locale: options.locale ?? navigator.language,
           platform: "web",
@@ -560,7 +689,7 @@ const buildForm = (
         },
         file ? [file] : [],
       );
-      card.innerHTML = `<div class="np-success"><span class="np-success-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><strong>Thank you!</strong><span>Your feedback has been sent to the team.</span>${options.showPoweredBy === false ? "" : "<small>Powered by NitroPing</small>"}</div>`;
+      card.innerHTML = `<div class="np-sent"><span class="np-sent-icon">${drawing(icons.check, 2.4)}</span><strong>Got it — thank you</strong><span>We read every message. If you left an email, we'll reply there.</span>${options.showPoweredBy === false ? "" : "<small>Powered by NitroPing</small>"}</div>`;
       setTimeout(close, 2600);
     } catch (cause) {
       card.querySelector(".np-error")?.remove();
@@ -568,10 +697,9 @@ const buildForm = (
       message.className = "np-error";
       message.textContent =
         cause instanceof Error ? cause.message : "Submission failed.";
-      const actions = card.querySelector(".np-actions");
-      if (actions) card.insertBefore(message, actions);
-      submit.disabled = false;
-      submit.textContent = "Submit";
+      compose.insertBefore(message, compose.querySelector(".np-foot"));
+      send.disabled = false;
+      send.textContent = "Send";
     }
   });
   root.appendChild(card);
@@ -599,6 +727,11 @@ export const NitroPing = {
     if (merged.colors)
       for (const [key, value] of Object.entries(merged.colors))
         if (value) root.style.setProperty(`--np-${key}`, value);
+    /*
+     * The stock accent is ink, which flips to a light ink in dark mode; a brand
+     * colour keeps white text in both.
+     */
+    if (merged.colors?.primary) root.style.setProperty("--np-on-accent", "#fff");
     const mode = merged.mode ?? "floating";
     let launcher: HTMLButtonElement | null = null;
     let panel: HTMLElement | null = null;
@@ -632,7 +765,8 @@ export const NitroPing = {
       const onPointerDown = (event: Event) => {
         const target = event.target as Node;
         if (popover.contains(target)) return;
-        if (launcher && (target === launcher || launcher.contains(target))) return;
+        if (launcher && (target === launcher || launcher.contains(target)))
+          return;
         close();
       };
       const onKeyDown = (event: KeyboardEvent) => {
@@ -645,7 +779,7 @@ export const NitroPing = {
         document.removeEventListener("keydown", onKeyDown);
       };
       popover
-        .querySelector<HTMLElement>("input, textarea, select")
+        .querySelector<HTMLElement>(".np-tile, .np-box")
         ?.focus({ preventScroll: true });
     };
 
@@ -688,9 +822,9 @@ export const NitroPing = {
       button.type = "button";
       button.className = "np-button";
       const label = merged.buttonLabel ?? "Give feedback";
-      button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span></span>`;
-      (button.querySelector("span") as HTMLElement).textContent = label;
+      button.innerHTML = drawing(icons.message, 1.8);
       button.setAttribute("aria-label", label);
+      button.setAttribute("title", label);
       button.setAttribute("aria-expanded", "false");
       button.addEventListener("click", () => {
         button.setAttribute("aria-expanded", panel ? "false" : "true");
