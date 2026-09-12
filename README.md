@@ -126,7 +126,7 @@ bun run build
 - `@nitroping/contracts`: shared domain types
 - `@nitroping/web`: web widget and headless client
 - `apps/api`: Effect service boundaries and the Cloudflare Worker API
-- `apps/site`: static marketing site (Vite), deployed as the `nitroping-site` Worker with `bun run deploy:site`. It collects its own feedback with `@nitroping/web`: set `VITE_NITROPING_PROJECT_KEY` to a public project key at build time (`VITE_NITROPING_PROJECT_KEY=pk_live_… bun run deploy:site`) and the floating widget loads as a separate chunk; without the variable the site ships no widget.
+- `apps/site`: static marketing site (Vite), deployed as the `nitroping-site` Worker with `bun run deploy:site`. It collects its own feedback with `@nitroping/web`. The public project key lives in `apps/site/.env.production` (public keys are shipped to browsers by design), and the floating widget loads as a separate chunk; without `VITE_NITROPING_PROJECT_KEY` the site ships no widget.
 - `migrations`: D1 schema migrations
 - `openapi.yaml`: public API contract
 
