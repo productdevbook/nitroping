@@ -1,17 +1,20 @@
 /*
- * Dashboard entry stylesheet.
- *
- * Tailwind's Preflight is deliberately left out while the legacy styles.css is
- * still driving the screens: its base reset would change every hand-written
- * rule at once. The full `@import "tailwindcss"` lands in the cleanup commit,
- * together with the deletion of styles.css.
+ * Dashboard entry stylesheet. The dashboard renders entirely from components
+ * in src/components and src/features, so Preflight and the full utility layer
+ * are safe here. Design tokens come from tokens.css and nowhere else.
  */
 
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+@import "tailwindcss";
 @import "tw-animate-css";
+@import "@fontsource-variable/inter";
 @import "./tokens.css";
 
 @source "../**/*.tsx";
 
 @custom-variant dark (&:is(.dark *));
+
+@layer base {
+  body {
+    @apply bg-background text-foreground text-xs antialiased;
+  }
+}
